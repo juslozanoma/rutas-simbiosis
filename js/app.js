@@ -861,7 +861,6 @@
     MapModule.encuadrar(state.rutaActual.geojson);
     el.statDistancia.textContent = Utils.formatearDistancia(state.rutaActual.distanciaMetros);
     el.statTiempo.textContent = Utils.formatearDuracion(state.rutaActual.duracionSegundos);
-    FiltersModule.precomputarSitios(state.sitios, state.rutaActual.geojson, state.origen);
   }
 
   // -------------------------------------------------------------------

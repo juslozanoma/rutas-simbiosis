@@ -116,10 +116,16 @@ const FiltersModule = (() => {
     return sitios
       .filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)))
       .filter((s) => !idsExcluidos.has(s.id))
+      .map((s) => {
+        if (s.distanciaRutaKm == null) {
+          s.distanciaRutaKm = distanciaARuta(s, rutaGeoJSON);
+          s.tiempoDesvioMin = aproximarTiempoDesvio(s.distanciaRutaKm, velocidadKmH);
+          s.distanciaOrigenKm = distanciaAOrigen(s, origen);
+        }
+        return s;
+      })
       .filter((s) => {
-        if (usarDistancia && s.distanciaRutaKm == null) return false;
         if (usarDistancia && s.distanciaRutaKm > distanciaMaximaKm) return false;
-        if (usarTiempo && s.tiempoDesvioMin == null) return false;
         if (usarTiempo && s.tiempoDesvioMin > tiempoMaximoMin) return false;
         return true;
       })
