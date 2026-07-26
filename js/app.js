@@ -498,6 +498,7 @@
     el.btnCategorias.addEventListener('click', (e) => { e.stopPropagation(); toggleMenuCategorias(); });
     el.btnMostrarSitiosCercanos.addEventListener('click', () => {
       el.panelSitios.hidden = false;
+      el.btnMostrarSitiosCercanos.hidden = true;
       ejecutarFiltrado();
     });
 
