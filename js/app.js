@@ -473,10 +473,22 @@
     return [...mapa.values()].sort((a, b) => a.localeCompare(b, 'es'));
   }
 
-  function renderizarCategoriasMenu() {
+  function categoriasDeRuta() {
+    const cats = new Set();
+    state.sitios.forEach((s) => {
+      if (s.categoria && s.distanciaRutaKm != null && isFinite(s.distanciaRutaKm)) {
+        cats.add(s.categoria.trim());
+      }
+    });
+    if (cats.size === 0) return state.categoriasUnicas;
+    return [...cats].sort((a, b) => a.localeCompare(b, 'es'));
+  }
+
+  function renderizarCategoriasMenu(lista) {
+    const cats = lista || categoriasDeRuta();
     el.categoriasGrid.innerHTML = '';
     const seleccionadas = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase()));
-    state.categoriasUnicas.forEach((cat) => {
+    cats.forEach((cat) => {
       const chip = document.createElement('span');
       chip.className = 'categoria-chip';
       if (seleccionadas.has(cat.toLowerCase())) chip.classList.add('categoria-chip--selected');
@@ -698,6 +710,7 @@
     }
     state.sitiosFiltrados = sitiosResultado;
     renderizarSitios(sitiosResultado);
+    renderizarCategoriasMenu();
   }
 
   function ejecutarFiltradoProgresivo(completado) {
@@ -752,6 +765,7 @@
         resultados.sort((a, b) => (a.distanciaOrigenKm ?? a.distanciaRutaKm) - (b.distanciaOrigenKm ?? b.distanciaRutaKm));
         state.sitiosFiltrados = resultados;
         renderizarSitios(resultados);
+        renderizarCategoriasMenu();
         completado();
       }
     }
@@ -777,6 +791,8 @@
       i = fin;
       if (i < pendientes.length) {
         setTimeout(fondoBloque, 50);
+      } else {
+        renderizarCategoriasMenu();
       }
     }
     if (pendientes.length > 0) fondoBloque();
