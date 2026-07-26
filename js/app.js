@@ -162,7 +162,6 @@
       if (showCurrentLocation) {
         const locLi = document.createElement('li');
         locLi.textContent = 'Ubicación actual';
-        locLi.style.cssText = 'border-bottom:1px solid var(--line-200);margin-bottom:4px;padding-bottom:8px;font-weight:600;color:var(--teal-600)';
         locLi.addEventListener('click', (e) => {
           e.stopPropagation();
           listEl.hidden = true;
@@ -188,7 +187,6 @@
 
       const pickLi = document.createElement('li');
       pickLi.textContent = 'Seleccionar en el mapa';
-      pickLi.style.cssText = 'border-bottom:1px solid var(--line-200);margin-bottom:4px;padding-bottom:8px;font-weight:600;color:var(--teal-600)';
       pickLi.addEventListener('click', (e) => {
         e.stopPropagation();
         listEl.hidden = true;
@@ -337,7 +335,6 @@
       listEl.innerHTML = '';
       const pickLi = document.createElement('li');
       pickLi.textContent = 'Seleccionar en el mapa';
-      pickLi.style.cssText = 'border-bottom:1px solid var(--line-200);margin-bottom:4px;padding-bottom:8px;font-weight:600;color:var(--teal-600)';
       pickLi.addEventListener('click', (e) => {
         e.stopPropagation();
         listEl.hidden = true;
