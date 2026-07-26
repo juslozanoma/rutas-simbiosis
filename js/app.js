@@ -200,6 +200,12 @@
     // El contenedor del mapa cambia de tamaño con la transición CSS; se
     // recalcula el tamaño de Leaflet una vez que el layout se estabiliza.
     setTimeout(() => MapModule.invalidateSize(), 220);
+
+    // Al colapsar el panel se activa la pantalla completa nativa para que
+    // la barra de resumen no quede oculta bajo los menús del navegador.
+    if (vista === 'map' && esMovil() && !document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
   }
 
   // -------------------------------------------------------------------
@@ -495,48 +501,62 @@
   // Renderizar lista de paradas en el panel
   // -------------------------------------------------------------------
   function renderizarParadas() {
-    const paradas = state.paradas;
     el.paradasLista.innerHTML = '';
-    el.paradasContador.textContent = String(paradas.length);
-    el.panelParadas.hidden = paradas.length === 0;
+    el.paradasContador.textContent = String(state.paradas.length);
+    el.panelParadas.hidden = state.paradas.length === 0;
 
-    paradas.forEach((sitio, i) => {
-      const li = Utils.crearElemento(`
-        <li class="parada-item" data-parada-id="${sitio.id}">
-          <span class="parada-item__num">${i + 1}</span>
-          <span class="parada-item__nombre">${sitio.nombre}</span>
-          <div class="parada-item__acciones">
-            <button type="button" class="parada-item__btn" data-dir="arriba" title="Mover hacia arriba" aria-label="Mover ${sitio.nombre} hacia arriba">
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 15l-6-6-6 6"/></svg>
-            </button>
-            <button type="button" class="parada-item__btn" data-dir="abajo" title="Mover hacia abajo" aria-label="Mover ${sitio.nombre} hacia abajo">
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-            </button>
-            <button type="button" class="parada-item__btn parada-item__btn--del" title="Quitar de la ruta" aria-label="Quitar ${sitio.nombre} de la ruta">
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>
-            </button>
-          </div>
-        </li>
-      `);
+    state.paradas.forEach((sitio, i) => {
+      const li = document.createElement('li');
+      li.className = 'parada-item';
+      li.dataset.paradaId = sitio.id;
 
-      const btns = li.querySelectorAll('[data-dir]');
-      btns.forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          moverParada(sitio.id, btn.getAttribute('data-dir'));
-        });
-      });
+      const num = document.createElement('span');
+      num.className = 'parada-item__num';
+      num.textContent = String(i + 1);
 
-      const btnDel = li.querySelector('.parada-item__btn--del');
-      btnDel.addEventListener('click', (e) => {
-        e.stopPropagation();
-        eliminarParada(sitio.id);
-      });
+      const nombre = document.createElement('span');
+      nombre.className = 'parada-item__nombre';
+      nombre.textContent = sitio.nombre;
 
+      const acciones = document.createElement('div');
+      acciones.className = 'parada-item__acciones';
+
+      const btnUp = document.createElement('button');
+      btnUp.type = 'button';
+      btnUp.className = 'parada-item__btn';
+      btnUp.dataset.dir = 'arriba';
+      btnUp.title = 'Mover hacia arriba';
+      btnUp.setAttribute('aria-label', 'Mover ' + sitio.nombre + ' hacia arriba');
+      btnUp.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 15l-6-6-6 6"/></svg>';
+
+      const btnDown = document.createElement('button');
+      btnDown.type = 'button';
+      btnDown.className = 'parada-item__btn';
+      btnDown.dataset.dir = 'abajo';
+      btnDown.title = 'Mover hacia abajo';
+      btnDown.setAttribute('aria-label', 'Mover ' + sitio.nombre + ' hacia abajo');
+      btnDown.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>';
+
+      const btnDel = document.createElement('button');
+      btnDel.type = 'button';
+      btnDel.className = 'parada-item__btn parada-item__btn--del';
+      btnDel.title = 'Quitar de la ruta';
+      btnDel.setAttribute('aria-label', 'Quitar ' + sitio.nombre + ' de la ruta');
+      btnDel.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>';
+
+      btnUp.addEventListener('click', (e) => { e.stopPropagation(); moverParada(sitio.id, 'arriba'); });
+      btnDown.addEventListener('click', (e) => { e.stopPropagation(); moverParada(sitio.id, 'abajo'); });
+      btnDel.addEventListener('click', (e) => { e.stopPropagation(); eliminarParada(sitio.id); });
+
+      acciones.appendChild(btnUp);
+      acciones.appendChild(btnDown);
+      acciones.appendChild(btnDel);
+      li.appendChild(num);
+      li.appendChild(nombre);
+      li.appendChild(acciones);
       el.paradasLista.appendChild(li);
     });
 
-    // Deshabilitar botones en extremos
     const items = el.paradasLista.querySelectorAll('.parada-item');
     items.forEach((item, i) => {
       const up = item.querySelector('[data-dir="arriba"]');

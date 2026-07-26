@@ -495,9 +495,18 @@ input, select{ font-family: inherit; }
     flex: 1 1 55vh;
   }
 
-  /* Mapa a pantalla completa: el panel se retira por completo */
-  #app[data-mobile-view="map"] .map-full{ flex: 1 1 100%; }
-  #app[data-mobile-view="map"] .side-panel{ display: none; }
+  /* Mapa a pantalla completa: solo queda la barra de resumen visible */
+  #app[data-mobile-view="map"] .map-full{ flex: 1; }
+  #app[data-mobile-view="map"] .side-panel{
+    flex: none;
+    height: auto;
+    padding: 6px 12px;
+    gap: 0;
+  }
+  #app[data-mobile-view="map"] .panel-locate,
+  #app[data-mobile-view="map"] .panel-paradas,
+  #app[data-mobile-view="map"] .panel-filters,
+  #app[data-mobile-view="map"] .panel-sites{ display: none; }
 
   /* Panel a pantalla completa: el mapa se retira por completo */
   #app[data-mobile-view="panel"] .map-full{ display: none; }
