@@ -537,8 +537,7 @@
       el.progressFill.classList.add('progress-bar__fill--active');
       ejecutarFiltradoProgresivo(() => {
         el.panelSitios.hidden = false;
-        el.btnAplicarDistancia.disabled = false;
-        el.btnAplicarTiempo.disabled = false;
+        actualizarEstadoBotonesRetry();
         el.loadingSitios.hidden = true;
         el.progressFill.classList.remove('progress-bar__fill--active');
         el.progressFill.style.transition = 'none';
@@ -552,9 +551,11 @@
 
     el.checkDistancia.addEventListener('change', () => {
       el.filtroDistancia.disabled = !el.checkDistancia.checked;
+      actualizarEstadoBotonesRetry();
     });
     el.checkTiempo.addEventListener('change', () => {
       el.filtroTiempo.disabled = !el.checkTiempo.checked;
+      actualizarEstadoBotonesRetry();
     });
     el.filtroDistancia.addEventListener('input', () => {
       el.filtroDistanciaValor.textContent = `${el.filtroDistancia.value} km`;
@@ -789,6 +790,11 @@
       ejecutarFiltrado();
       ponerEnCarga(botonOrigenClic, false);
     }, 15);
+  }
+
+  function actualizarEstadoBotonesRetry() {
+    el.btnAplicarDistancia.disabled = !el.checkDistancia.checked;
+    el.btnAplicarTiempo.disabled = !el.checkTiempo.checked;
   }
 
   function renderizarSitios(sitios) {
