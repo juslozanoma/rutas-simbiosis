@@ -39,14 +39,6 @@
 
     <!-- Resumen: distancia total y tiempo estimado -->
     <section class="panel-summary" id="panel-summary">
-      <div class="stat">
-        <span class="stat__label">Distancia</span>
-        <span class="stat__value mono" id="stat-distancia">—</span>
-      </div>
-      <div class="stat">
-        <span class="stat__label">Tiempo estimado</span>
-        <span class="stat__value mono" id="stat-tiempo">—</span>
-      </div>
       <div class="panel-summary__toggle" id="mobile-view-toggle">
         <button type="button" id="btn-mobile-collapse" class="mobile-toggle-btn" title="Ver mapa completo" aria-label="Ver el mapa a pantalla completa" aria-pressed="false">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
@@ -134,10 +126,22 @@
         Sitios turísticos
         <span class="badge-count mono" id="sitios-contador">0</span>
         <button type="button" id="btn-toggle-sitios" class="btn-toggle-sitios" title="Mostrar/ocultar sitios en el mapa" aria-pressed="true">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span class="btn-toggle-sitios__icon">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </span>
         </button>
         <button type="button" id="btn-categorias" class="btn-categorias" title="Filtrar por categorías">Categorías</button>
       </h2>
+      <div class="panel-sites__stats">
+        <div class="stat">
+          <span class="stat__label">Distancia</span>
+          <span class="stat__value mono" id="stat-distancia">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat__label">Tiempo estimado</span>
+          <span class="stat__value mono" id="stat-tiempo">—</span>
+        </div>
+      </div>
       <div class="panel-categorias" id="panel-categorias" hidden>
         <div class="panel-categorias__header">
           <span class="panel-categorias__title">Categorías</span>

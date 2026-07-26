@@ -617,13 +617,11 @@
         document.documentElement.requestFullscreen().catch(() => {});
       }
 
-      // Activa el filtro de distancia por defecto a 10 km y lo ejecuta.
       el.checkDistancia.checked = true;
       el.filtroDistancia.value = '10';
       el.filtroDistanciaValor.textContent = '10 km';
       el.filtroDistancia.disabled = false;
       actualizarEstadoBotonesFiltro();
-      ejecutarFiltrado();
     } catch (err) {
       el.statDistancia.textContent = '—';
       el.statTiempo.textContent = '—';
@@ -896,6 +894,7 @@
     MapModule.encuadrar(state.rutaActual.geojson);
     el.statDistancia.textContent = Utils.formatearDistancia(state.rutaActual.distanciaMetros);
     el.statTiempo.textContent = Utils.formatearDuracion(state.rutaActual.duracionSegundos);
+    FiltersModule.precomputarSitios(state.sitios, state.rutaActual.geojson, state.origen);
   }
 
   // -------------------------------------------------------------------

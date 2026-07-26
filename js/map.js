@@ -12,7 +12,9 @@
 const MapModule = (() => {
 
   let map = null;
-  let capaRuta = null;          // L.geoJSON de la ruta principal (origen -> paradas -> destino)
+  let capaRuta = null;          // L.layerGroup con la ruta principal (visible + hover)
+  let _capaRutaVisible = null;  // L.geoJSON visible (delgado)
+  let _capaRutaHover = null;    // L.geoJSON invisible (ancho, solo para eventos)
   let capaRutaPreview = null;   // L.geoJSON temporal: ruta de origen a un sitio en previsualización
   let markerOrigen = null;
   let markerDestino = null;
@@ -231,16 +233,24 @@ const MapModule = (() => {
   function dibujarRuta(geojsonLineString, meta = {}) {
     limpiarRuta();
 
-    capaRuta = L.geoJSON(geojsonLineString, {
-      style: { color: '#2f7a6b', weight: 10, opacity: 0.85, lineCap: 'round' },
+    _capaRutaVisible = L.geoJSON(geojsonLineString, {
+      style: { color: '#2f7a6b', weight: 4, opacity: 0.85, lineCap: 'round' },
+      interactive: false,
     }).addTo(map);
+
+    _capaRutaHover = L.geoJSON(geojsonLineString, {
+      style: { color: '#2f7a6b', weight: 20, opacity: 0 },
+      interactive: true,
+    }).addTo(map);
+
+    capaRuta = _capaRutaHover;
 
     const totalKm = (meta.distanciaMetros || 0) / 1000;
     const totalSeg = meta.duracionSegundos || 0;
     const origenNombre = meta.origenNombre || 'el origen';
 
     if (totalKm > 0) {
-      capaRuta.eachLayer((layer) => {
+      _capaRutaHover.eachLayer((layer) => {
         layer.bindTooltip('', { sticky: true, className: 'route-tooltip', opacity: 0.97 });
         layer.on('mousemove', (e) => {
           const snapped = turf.nearestPointOnLine(
@@ -274,7 +284,9 @@ const MapModule = (() => {
   }
 
   function limpiarRuta() {
-    if (capaRuta) { map.removeLayer(capaRuta); capaRuta = null; }
+    if (_capaRutaVisible) { map.removeLayer(_capaRutaVisible); _capaRutaVisible = null; }
+    if (_capaRutaHover) { map.removeLayer(_capaRutaHover); _capaRutaHover = null; }
+    capaRuta = null;
   }
 
   function limpiarTodo() {

@@ -74,14 +74,12 @@ const FiltersModule = (() => {
    * @returns {Array} sitios enriquecidos con distanciaRutaKm, tiempoDesvioMin, distanciaOrigenKm
    */
   function precomputarSitios(sitios, rutaGeoJSON, origen, velocidadKmH = VELOCIDAD_DESVIO_KMH) {
-    return sitios
-      .filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)))
-      .map((s) => {
-        const distanciaRutaKm = distanciaARuta(s, rutaGeoJSON);
-        const tiempoDesvioMin = aproximarTiempoDesvio(distanciaRutaKm, velocidadKmH);
-        const distanciaOrigenKm = distanciaAOrigen(s, origen);
-        return { ...s, distanciaRutaKm, tiempoDesvioMin, distanciaOrigenKm };
-      });
+    sitios.forEach((s) => {
+      if (s.lat == null || s.lon == null || isNaN(Number(s.lat)) || isNaN(Number(s.lon))) return;
+      s.distanciaRutaKm = distanciaARuta(s, rutaGeoJSON);
+      s.tiempoDesvioMin = aproximarTiempoDesvio(s.distanciaRutaKm, velocidadKmH);
+      s.distanciaOrigenKm = distanciaAOrigen(s, origen);
+    });
   }
 
   /**
@@ -118,15 +116,10 @@ const FiltersModule = (() => {
     return sitios
       .filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)))
       .filter((s) => !idsExcluidos.has(s.id))
-      .map((s) => {
-        if (s.distanciaRutaKm != null) return s;
-        const distanciaRutaKm = distanciaARuta(s, rutaGeoJSON);
-        const tiempoDesvioMin = aproximarTiempoDesvio(distanciaRutaKm, velocidadKmH);
-        const distanciaOrigenKm = distanciaAOrigen(s, origen);
-        return { ...s, distanciaRutaKm, tiempoDesvioMin, distanciaOrigenKm };
-      })
       .filter((s) => {
+        if (usarDistancia && s.distanciaRutaKm == null) return false;
         if (usarDistancia && s.distanciaRutaKm > distanciaMaximaKm) return false;
+        if (usarTiempo && s.tiempoDesvioMin == null) return false;
         if (usarTiempo && s.tiempoDesvioMin > tiempoMaximoMin) return false;
         return true;
       })
