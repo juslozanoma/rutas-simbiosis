@@ -40,6 +40,7 @@
     'Vaupés':'Mitú','Vichada':'Puerto Carreño',
   };
 
+  let ultimosValoresAplicados = { distancia: null, tiempo: null };
   /** Estado centralizado de la aplicación. */
   const state = {
     municipios: [],
@@ -522,7 +523,7 @@
     el.btnCategorias.addEventListener('click', (e) => { e.stopPropagation(); toggleMenuCategorias(); });
     el.loadingSitios = document.getElementById('loading-sitios');
     el.btnMostrarSitiosCercanos.addEventListener('click', () => {
-      el.btnMostrarSitiosCercanos.hidden = true;
+      el.btnMostrarSitiosCercanos.remove();
       el.loadingSitios.hidden = false;
       setTimeout(() => {
         el.panelSitios.hidden = false;
@@ -530,6 +531,8 @@
         el.loadingSitios.hidden = true;
       }, 60);
     });
+    el.btnAplicarDistancia.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarDistancia));
+    el.btnAplicarTiempo.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarTiempo));
 
     el.checkDistancia.addEventListener('change', () => {
       el.filtroDistancia.disabled = !el.checkDistancia.checked;
@@ -539,9 +542,11 @@
     });
     el.filtroDistancia.addEventListener('input', () => {
       el.filtroDistanciaValor.textContent = `${el.filtroDistancia.value} km`;
+      actualizarBotonFiltro(el.btnAplicarDistancia, 'distancia');
     });
     el.filtroTiempo.addEventListener('input', () => {
       el.filtroTiempoValor.textContent = `${el.filtroTiempo.value} min`;
+      actualizarBotonFiltro(el.btnAplicarTiempo, 'tiempo');
     });
 
     el.btnCategoriasCerrar.addEventListener('click', cerrarMenuCategorias);
@@ -681,6 +686,36 @@
     }
     state.sitiosFiltrados = sitiosResultado;
     renderizarSitios(sitiosResultado);
+    ultimosValoresAplicados.distancia = Number(el.filtroDistancia.value);
+    ultimosValoresAplicados.tiempo = Number(el.filtroTiempo.value);
+    actualizarBotonFiltro(el.btnAplicarDistancia, 'distancia');
+    actualizarBotonFiltro(el.btnAplicarTiempo, 'tiempo');
+  }
+
+  function aplicarFiltrosConSpinner(botonOrigenClic) {
+    if (!state.rutaActual) return;
+    if (!el.checkDistancia.checked && !el.checkTiempo.checked) return;
+    ponerEnCarga(botonOrigenClic, true);
+    setTimeout(() => {
+      ejecutarFiltrado();
+      ponerEnCarga(botonOrigenClic, false);
+    }, 15);
+  }
+
+  function actualizarBotonFiltro(boton, tipo) {
+    const valorActual = tipo === 'distancia' ? Number(el.filtroDistancia.value) : Number(el.filtroTiempo.value);
+    const aplicado = valorActual === ultimosValoresAplicados[tipo]
+      && (tipo === 'distancia' ? el.checkDistancia.checked : el.checkTiempo.checked);
+    setBotonFiltroIcono(boton, aplicado);
+  }
+
+  function setBotonFiltroIcono(boton, aplicado) {
+    const svg = boton.querySelector('.icon-btn__icon');
+    if (!svg) return;
+    svg.innerHTML = aplicado
+      ? '<path d="M20 6L9 17l-5-5"/>'
+      : '<path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>';
+    boton.classList.toggle('icon-btn--applied', aplicado);
   }
 
   function renderizarSitios(sitios) {
@@ -714,7 +749,6 @@
         <div class="sitio-card__top">
           <span class="sitio-card__nombre">${sitio.nombre}</span>
           <div class="sitio-card__top-right">
-            <span class="sitio-card__cat" style="background:${TourismModule.colorCategoria(sitio.categoria)}"></span>
             <button type="button" class="icon-btn sitio-card__add" title="Agregar a la ruta" aria-label="Agregar ${sitio.nombre} a la ruta">
               <svg class="icon-btn__icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
               <span class="icon-btn__spinner" aria-hidden="true"></span>

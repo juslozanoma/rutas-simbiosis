@@ -423,7 +423,7 @@ input, select{ font-family: inherit; }
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 .btn-toggle-sitios:hover{ background: #f5f3ec; }
-.btn-toggle-sitios[aria-pressed="false"]{ color: var(--text-muted); opacity: 0.5; }
+.btn-toggle-sitios[aria-pressed="false"]{ color: var(--text-muted); opacity: 0.5; border-color: var(--line-300); }
 .badge-count{
   background: var(--ink-900);
   color: #ffffff;
@@ -501,7 +501,7 @@ input, select{ font-family: inherit; }
 .sitio-card__top{ display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .sitio-card__top-right{ display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .sitio-card__nombre{ font-size: 0.85rem; font-weight: 600; color: var(--text-strong); }
-.sitio-card__cat{ width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.sitio-card__cat{ display: none; }
 .sitio-card__meta{ font-size: 0.71rem; color: var(--text-muted); margin-top: 3px; display: flex; justify-content: space-between; gap: 8px; }
 .sitio-card__preview{
   margin: 7px 0 0;
