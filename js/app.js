@@ -51,6 +51,7 @@
     rutaActual: null,
     paradas: [],
     sitiosFiltrados: [],
+    sitiosFiltradosBase: [],
     previewSitioId: null,
     categoriasSeleccionadas: [],
     categoriasUnicas: [],
@@ -474,23 +475,10 @@
   }
 
   function categoriasDeRuta() {
-    const catsDisponibles = new Map();
-    state.sitios.forEach((s) => {
-      if (!s.categoria) return;
-      if (s.distanciaRutaKm == null || !isFinite(s.distanciaRutaKm)) return;
-      const c = s.categoria.trim();
-      if (!catsDisponibles.has(c)) catsDisponibles.set(c, true);
-    });
-    if (catsDisponibles.size === 0) return state.categoriasUnicas.map((c) => [c, 0]);
-    const conteo = new Map();
-    if (state.sitiosFiltrados) {
-      state.sitiosFiltrados.forEach((s) => {
-        if (!s.categoria) return;
-        const c = s.categoria.trim();
-        if (catsDisponibles.has(c)) conteo.set(c, (conteo.get(c) || 0) + 1);
-      });
-    }
-    return [...catsDisponibles.keys()].sort((a, b) => a.localeCompare(b, 'es')).map((c) => [c, conteo.get(c) || 0]);
+    if (!conteoCategoriasBase || conteoCategoriasBase.size === 0) return [];
+    return [...conteoCategoriasBase.entries()]
+      .filter(([, n]) => n > 0)
+      .sort((a, b) => a[0].localeCompare(b[0], 'es'));
   }
 
   function renderizarCategoriasMenu(lista) {
@@ -517,9 +505,17 @@
       state.categoriasSeleccionadas.push(cat);
     }
     renderizarCategoriasMenu();
-    if (state.rutaActual) {
-      ejecutarFiltrado();
+    if (!state.rutaActual || state.sitiosFiltradosBase.length === 0) return;
+    let sitiosResultado = state.sitiosFiltradosBase;
+    if (state.categoriasSeleccionadas.length > 0) {
+      const catsNorm = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase().trim()));
+      sitiosResultado = state.sitiosFiltradosBase.filter((s) => {
+        const sc = (s.categoria || '').toLowerCase().trim();
+        return catsNorm.has(sc);
+      });
     }
+    state.sitiosFiltrados = sitiosResultado;
+    renderizarSitios(sitiosResultado);
   }
 
   // -------------------------------------------------------------------
@@ -589,18 +585,6 @@
       actualizarEstadoBotonesRetry();
     });
 
-    el.paradasLista.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      if (!elementoArrastrando || elementoArrastrando.dataset.tipoParada === 'escala') return;
-      const target = e.target.closest('.parada-item');
-      if (!target || target === elementoArrastrando || target.dataset.tipoParada === 'escala') return;
-      const rect = target.getBoundingClientRect();
-      if (e.clientY > rect.top + rect.height / 2) {
-        target.parentNode.insertBefore(elementoArrastrando, target.nextSibling);
-      } else {
-        target.parentNode.insertBefore(elementoArrastrando, target);
-      }
-    });
   }
   // -------------------------------------------------------------------
   // Vista móvil: alternar entre panel completo y mapa completo
@@ -626,7 +610,7 @@
   }
 
   let ultimosValoresAplicados = { distancia: null, tiempo: null };
-  let elementoArrastrando = null;
+  let conteoCategoriasBase = null;
 
   /** Habilita/deshabilita todos los controles de entrada durante el cálculo de ruta. */
   function ponerEnCargaRuta(cargando) {
@@ -725,10 +709,18 @@
       origen: state.origen,
       excluirIds: state.paradas.map((p) => p.id),
     };
-    let sitiosResultado = FiltersModule.filtrarSitiosPorRuta(state.sitios, rutaFiltro.geojson, opciones);
+    const sitiosBase = FiltersModule.filtrarSitiosPorRuta(state.sitios, rutaFiltro.geojson, opciones);
+    state.sitiosFiltradosBase = sitiosBase;
+    conteoCategoriasBase = new Map();
+    sitiosBase.forEach((s) => {
+      if (!s.categoria) return;
+      const c = s.categoria.trim();
+      conteoCategoriasBase.set(c, (conteoCategoriasBase.get(c) || 0) + 1);
+    });
+    let sitiosResultado = sitiosBase;
     if (state.categoriasSeleccionadas.length > 0) {
       const catsNorm = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase().trim()));
-      sitiosResultado = sitiosResultado.filter((s) => {
+      sitiosResultado = sitiosBase.filter((s) => {
         const sc = (s.categoria || '').toLowerCase().trim();
         return catsNorm.has(sc);
       });
@@ -747,6 +739,7 @@
     const distanciaMax = Number(el.filtroDistancia.value);
     const bbox = FiltersModule.rutaBboxConMargen(rutaFiltro.geojson, distanciaMax);
     const resultados = [];
+    const resultadosBase = [];
     const catsNorm = state.categoriasSeleccionadas.length > 0 ? new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase().trim())) : null;
     let idx = 0;
     let indiceMensaje = 0;
@@ -773,6 +766,7 @@
         if (s.distanciaOrigenKm == null) {
           s.distanciaOrigenKm = FiltersModule.distanciaAOrigen(s, state.origen);
         }
+        resultadosBase.push(s);
         if (catsNorm) {
           const sc = (s.categoria || '').toLowerCase().trim();
           if (!catsNorm.has(sc)) continue;
@@ -788,6 +782,13 @@
       } else {
         clearInterval(intervaloMensajes);
         resultados.sort((a, b) => (a.distanciaOrigenKm ?? a.distanciaRutaKm) - (b.distanciaOrigenKm ?? b.distanciaRutaKm));
+        conteoCategoriasBase = new Map();
+        resultadosBase.forEach((s) => {
+          if (!s.categoria) return;
+          const c = s.categoria.trim();
+          conteoCategoriasBase.set(c, (conteoCategoriasBase.get(c) || 0) + 1);
+        });
+        state.sitiosFiltradosBase = resultadosBase;
         state.sitiosFiltrados = resultados;
         renderizarSitios(resultados);
         renderizarCategoriasMenu();
@@ -1095,33 +1096,12 @@
   // -------------------------------------------------------------------
   // Renderizar lista de paradas en el panel (escalas + sitios turísticos)
   // -------------------------------------------------------------------
-  function adjuntarDragEvents(li, tipo, id) {
-    li.dataset.tipoParada = tipo;
-    li.draggable = true;
-    li.addEventListener('dragstart', (e) => {
-      elementoArrastrando = li;
-      const img = new Image();
-      img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-      e.dataTransfer.setDragImage(img, 0, 0);
-      e.dataTransfer.setData('text/plain', JSON.stringify({ tipo, id }));
-      e.dataTransfer.effectAllowed = 'move';
-    });
-    li.addEventListener('dragend', () => {
-      elementoArrastrando = null;
-    });
-    li.addEventListener('drop', (e) => {
-      e.preventDefault();
-      elementoArrastrando = null;
-      try {
-        const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-        const targetId = Number(li.dataset.paradaId);
-        const targetTipo = tipo;
-        if (data.tipo === 'escala' && targetTipo === 'escala') moverEscala(data.id, targetId);
-        else if (data.tipo === 'parada' && targetTipo === 'parada') moverParada(data.id, targetId);
-        else if (data.tipo === 'escala' && targetTipo === 'parada') moverEscala(data.id, null, targetId);
-        else if (data.tipo === 'parada' && targetTipo === 'escala') moverParada(data.id, null, targetId);
-      } catch (_) {}
-    });
+  function btnIcono(d) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'parada-item__btn';
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+    return b;
   }
 
   function renderizarParadas() {
@@ -1136,7 +1116,6 @@
       li.className = 'parada-item';
       li.dataset.paradaId = e.id;
       li.style.borderLeftColor = '#4a6fa5';
-      adjuntarDragEvents(li, 'escala', e.id);
 
       const num = document.createElement('span');
       num.className = 'parada-item__num';
@@ -1150,14 +1129,26 @@
       const acciones = document.createElement('div');
       acciones.className = 'parada-item__acciones';
 
+      const escalaData = e;
+      if (i > 0) {
+        const btnUp = btnIcono('<polyline points="18 15 12 9 6 15"/>');
+        btnUp.title = 'Subir';
+        btnUp.addEventListener('click', (evt) => { evt.stopPropagation(); moverEscala(escalaData.id, i > 0 ? state.escalas[i - 1].id : null); });
+        acciones.appendChild(btnUp);
+      }
+      if (i < escalas.length - 1) {
+        const btnDown = btnIcono('<polyline points="6 9 12 15 18 9"/>');
+        btnDown.title = 'Bajar';
+        btnDown.addEventListener('click', (evt) => { evt.stopPropagation(); moverEscala(escalaData.id, i + 2 < escalas.length ? state.escalas[i + 2].id : null); });
+        acciones.appendChild(btnDown);
+      }
+
       const btnDel = document.createElement('button');
       btnDel.type = 'button';
-      btnDel.className = 'parada-item__btn parada-item__btn--del';
+      btnDel.className = 'parada-item__btn';
       btnDel.title = 'Quitar de la ruta';
       btnDel.setAttribute('aria-label', 'Quitar ' + e.nombre + ' de la ruta');
       btnDel.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>';
-
-      const escalaData = e;
       btnDel.addEventListener('click', (evt) => { evt.stopPropagation(); eliminarEscala(escalaData.id, escalaData._row); });
 
       acciones.appendChild(btnDel);
@@ -1171,7 +1162,6 @@
       const li = document.createElement('li');
       li.className = 'parada-item';
       li.dataset.paradaId = sitio.id;
-      adjuntarDragEvents(li, 'parada', sitio.id);
 
       const num = document.createElement('span');
       num.className = 'parada-item__num';
@@ -1184,13 +1174,25 @@
       const acciones = document.createElement('div');
       acciones.className = 'parada-item__acciones';
 
+      if (i > 0) {
+        const btnUp = btnIcono('<polyline points="18 15 12 9 6 15"/>');
+        btnUp.title = 'Subir';
+        btnUp.addEventListener('click', (evt) => { evt.stopPropagation(); subir(sitio.id); });
+        acciones.appendChild(btnUp);
+      }
+      if (i < state.paradas.length - 1) {
+        const btnDown = btnIcono('<polyline points="6 9 12 15 18 9"/>');
+        btnDown.title = 'Bajar';
+        btnDown.addEventListener('click', (evt) => { evt.stopPropagation(); bajar(sitio.id); });
+        acciones.appendChild(btnDown);
+      }
+
       const btnDel = document.createElement('button');
       btnDel.type = 'button';
-      btnDel.className = 'parada-item__btn parada-item__btn--del';
+      btnDel.className = 'parada-item__btn';
       btnDel.title = 'Quitar de la ruta';
       btnDel.setAttribute('aria-label', 'Quitar ' + sitio.nombre + ' de la ruta');
       btnDel.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>';
-
       btnDel.addEventListener('click', (e) => { e.stopPropagation(); eliminarParada(sitio.id); });
 
       acciones.appendChild(btnDel);
@@ -1199,6 +1201,23 @@
       li.appendChild(acciones);
       el.paradasLista.appendChild(li);
     });
+  }
+
+  async function subir(id) {
+    const idx = state.paradas.findIndex((p) => p.id === id);
+    if (idx <= 0) return;
+    const item = state.paradas.splice(idx, 1)[0];
+    state.paradas.splice(idx - 1, 0, item);
+    await aplicarRutaConDesvios();
+    renderizarParadas();
+  }
+  async function bajar(id) {
+    const idx = state.paradas.findIndex((p) => p.id === id);
+    if (idx === -1 || idx >= state.paradas.length - 1) return;
+    const item = state.paradas.splice(idx, 1)[0];
+    state.paradas.splice(idx + 1, 0, item);
+    await aplicarRutaConDesvios();
+    renderizarParadas();
   }
 
   async function moverEscala(desdeId, hastaId) {

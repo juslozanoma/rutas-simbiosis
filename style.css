@@ -321,13 +321,11 @@ input, select{ font-family: inherit; }
   padding: 0;
   transition: background 0.1s ease, color 0.1s ease;
 }
-.parada-item__btn:hover{ background: #eee; }
-.parada-item__btn:active{ background: #ddd; }
-.parada-item__btn--del:hover{ background: #fdf3f1; color: #b3402f; }
+.parada-item__btn{ color: #4a6fa5; }
+.parada-item__btn:hover{ background: #eef2f7; }
+.parada-item__btn:active{ background: #dce3ef; }
 .parada-item__btn[disabled]{ opacity: 0.25; cursor: default; background: transparent; }
 
-.parada-item[cursor="grab"]{ cursor: grab; }
-.parada-item:active{ cursor: grabbing; }
 
 
 /* --- Filtros --- */
