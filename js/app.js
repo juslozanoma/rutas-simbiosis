@@ -569,73 +569,25 @@
   }
 
   // -------------------------------------------------------------------
-  // Agregar un sitio como parada de la ruta principal
+  // Agregar un sitio como desvío (parada visual en el mapa, sin recalcular ruta)
   // -------------------------------------------------------------------
-  async function agregarParada(sitio, boton) {
-    ponerEnCarga(boton, true);
-    const paradaAnterior = state.paradas.slice();
+  function agregarParada(sitio, boton) {
     state.paradas.push(sitio);
-
-    try {
-      const puntos = [state.origen, ...state.paradas, state.destino];
-      const ruta = await RoutingModule.calcularRutaConParadas(puntos, PERFIL_FIJO);
-      aplicarRutaCalculada(ruta);
-      renderizarParadas();
-
-      // La ruta cambió: se refresca la lista de candidatos contra el nuevo
-      // trazado, excluyendo los sitios que ya son parada.
-      if (el.checkDistancia.checked || el.checkTiempo.checked || state.categoriasSeleccionadas.length > 0) {
-        ejecutarFiltrado();
-      } else {
-        MapModule.limpiarSitios();
-        state.sitiosFiltrados = [];
-        el.sitiosContador.textContent = '0';
-        el.sitiosLista.hidden = true;
-        el.sitiosLista.innerHTML = '';
-        el.sitiosVacio.hidden = false;
-        el.sitiosVacio.textContent = `${sitio.nombre} se agregó a la ruta. Activa un filtro para ver más sitios cercanos.`;
-      }
-    } catch (err) {
-      state.paradas = paradaAnterior; // revertir si el recálculo falla
-      renderizarParadas();
-      el.sitiosVacio.hidden = false;
-      el.sitiosVacio.textContent = 'No se pudo agregar el sitio a la ruta: ' + err.message;
-    } finally {
-      ponerEnCarga(boton, false);
-    }
+    MapModule.setMarcadoresParadas(state.paradas);
+    renderizarParadas();
+    limpiarPreview();
   }
 
   /**
-   * Quita un sitio de las paradas de la ruta (se invoca desde el botón de
-   * basura del popup que aparece al pulsar su marcador en el mapa) y
-   * recalcula la ruta principal con las paradas restantes.
+   * Quita un sitio de las paradas (solo actualiza marcadores y lista,
+   * sin recalcular la ruta principal).
    */
-  async function eliminarParada(sitioId) {
+  function eliminarParada(sitioId) {
     const indice = state.paradas.findIndex((p) => p.id === sitioId);
     if (indice === -1) return;
-
-    const sitioEliminado = state.paradas[indice];
-    const paradasAnteriores = state.paradas.slice();
     state.paradas.splice(indice, 1);
-
-    try {
-      const puntos = [state.origen, ...state.paradas, state.destino];
-      const ruta = await RoutingModule.calcularRutaConParadas(puntos, PERFIL_FIJO);
-      aplicarRutaCalculada(ruta);
-      renderizarParadas();
-
-      if (el.checkDistancia.checked || el.checkTiempo.checked || state.categoriasSeleccionadas.length > 0) {
-        ejecutarFiltrado();
-      } else {
-        el.sitiosVacio.hidden = false;
-        el.sitiosVacio.textContent = `${sitioEliminado.nombre} se quitó de la ruta. Activa un filtro para ver sitios cercanos.`;
-      }
-    } catch (err) {
-      state.paradas = paradasAnteriores; // revertir si el recálculo falla
-      renderizarParadas();
-      el.sitiosVacio.hidden = false;
-      el.sitiosVacio.textContent = 'No se pudo quitar el sitio de la ruta: ' + err.message;
-    }
+    MapModule.setMarcadoresParadas(state.paradas);
+    renderizarParadas();
   }
 
   // -------------------------------------------------------------------
@@ -707,28 +659,20 @@
     });
   }
 
-  /** Intercambia una parada con su vecina (arriba o abajo) y recalcula la ruta. */
-  async function moverParada(sitioId, direccion) {
+  /** Intercambia una parada con su vecina (arriba o abajo) y actualiza los marcadores. */
+  function moverParada(sitioId, direccion) {
     const indice = state.paradas.findIndex((p) => p.id === sitioId);
     if (indice === -1) return;
 
     const nuevoIndice = direccion === 'arriba' ? indice - 1 : indice + 1;
     if (nuevoIndice < 0 || nuevoIndice >= state.paradas.length) return;
 
-    const paradasPrevias = state.paradas.slice();
     const temp = state.paradas[indice];
     state.paradas[indice] = state.paradas[nuevoIndice];
     state.paradas[nuevoIndice] = temp;
 
-    try {
-      const puntos = [state.origen, ...state.paradas, state.destino];
-      const ruta = await RoutingModule.calcularRutaConParadas(puntos, PERFIL_FIJO);
-      aplicarRutaCalculada(ruta);
-      renderizarParadas();
-    } catch (err) {
-      state.paradas = paradasPrevias;
-      renderizarParadas();
-    }
+    MapModule.setMarcadoresParadas(state.paradas);
+    renderizarParadas();
   }
 
   // -------------------------------------------------------------------
