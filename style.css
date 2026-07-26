@@ -472,12 +472,10 @@ input, select{ font-family: inherit; }
   height: 100%;
   border-radius: 999px;
   background: var(--teal-500);
-  animation: progress-indeterminate 2s ease-in-out infinite;
+  transition: width 1.2s linear;
 }
-@keyframes progress-indeterminate{
-  0%{ width: 0%; }
-  50%{ width: 100%; }
-  100%{ width: 0%; }
+.progress-bar__fill--active{
+  width: 100%;
 }
 .panel-sites__scroll{
   flex: 1;

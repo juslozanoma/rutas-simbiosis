@@ -522,14 +522,24 @@
     });
     el.btnCategorias.addEventListener('click', (e) => { e.stopPropagation(); toggleMenuCategorias(); });
     el.loadingSitios = document.getElementById('loading-sitios');
+    el.progressFill = el.loadingSitios.querySelector('.progress-bar__fill');
     el.btnMostrarSitiosCercanos.addEventListener('click', () => {
       el.btnMostrarSitiosCercanos.remove();
       el.loadingSitios.hidden = false;
-      setTimeout(() => {
-        el.panelSitios.hidden = false;
-        ejecutarFiltrado();
-        el.loadingSitios.hidden = true;
-      }, 60);
+      requestAnimationFrame(() => {
+        el.progressFill.classList.add('progress-bar__fill--active');
+        requestAnimationFrame(() => {
+          el.panelSitios.hidden = false;
+          el.btnAplicarDistancia.disabled = false;
+          el.btnAplicarTiempo.disabled = false;
+          ejecutarFiltrado();
+          el.loadingSitios.hidden = true;
+          el.progressFill.classList.remove('progress-bar__fill--active');
+          el.progressFill.style.transition = 'none';
+          el.progressFill.offsetHeight;
+          el.progressFill.style.transition = '';
+        });
+      });
     });
     el.btnAplicarDistancia.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarDistancia));
     el.btnAplicarTiempo.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarTiempo));
