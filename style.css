@@ -489,7 +489,7 @@ input, select{ font-family: inherit; }
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
 }
-.sitio-card:hover{ background: #f7f5ee; border-color: var(--teal-500); }
+.sitio-card:hover{ border-color: var(--teal-500); }
 .sitio-card--active{ background: #f2f6f4; border-color: var(--teal-500); }
 .sitio-card--loading{ opacity: 0.6; pointer-events: none; }
 .sitio-card__top{ display: flex; align-items: center; justify-content: space-between; gap: 8px; }
