@@ -67,11 +67,23 @@
     filtroDistanciaValor: document.getElementById('filtro-distancia-valor'),
     sitiosVacio: document.getElementById('sitios-vacio'),
     sitiosLista: document.getElementById('sitios-lista'),
+    sitiosContador: document.getElementById('sitios-contador'),
 
     panelParadas: document.getElementById('panel-paradas'),
     paradasLista: document.getElementById('paradas-lista'),
     paradasContador: document.getElementById('paradas-contador'),
 
+    checkDistancia: document.getElementById('check-distancia'),
+    filtroDistancia: document.getElementById('filtro-distancia'),
+    filtroDistanciaValor: document.getElementById('filtro-distancia-valor'),
+    btnAplicarDistancia: document.getElementById('btn-aplicar-distancia'),
+
+    checkTiempo: document.getElementById('check-tiempo'),
+    filtroTiempo: document.getElementById('filtro-tiempo'),
+    filtroTiempoValor: document.getElementById('filtro-tiempo-valor'),
+    btnAplicarTiempo: document.getElementById('btn-aplicar-tiempo'),
+
+    btnCategorias: document.getElementById('btn-categorias'),
     panelCategorias: document.getElementById('panel-categorias'),
     categoriasGrid: document.getElementById('categorias-grid'),
     btnCategoriasCerrar: document.getElementById('btn-categorias-cerrar'),
@@ -79,6 +91,7 @@
     panelEscalas: document.getElementById('panel-escalas'),
     btnAgregarEscala: document.getElementById('btn-agregar-escala'),
 
+    btnToggleSitios: document.getElementById('btn-toggle-sitios'),
     panelSitios: document.getElementById('panel-sites'),
     btnMostrarSitiosCercanos: document.getElementById('btn-mostrar-sitios'),
   };
@@ -481,10 +494,29 @@
     el.btnMobileCollapse.addEventListener('click', () => setVistaMovil('map'));
     el.btnMobileExpand.addEventListener('click', () => setVistaMovil('panel'));
 
+    el.btnToggleSitios.addEventListener('click', () => {
+      const visible = MapModule.toggleSitios();
+      el.btnToggleSitios.setAttribute('aria-pressed', String(visible));
+    });
+    el.btnCategorias.addEventListener('click', (e) => { e.stopPropagation(); toggleMenuCategorias(); });
     el.btnMostrarSitiosCercanos.addEventListener('click', () => {
       el.panelSitios.hidden = false;
       ejecutarFiltrado();
     });
+
+    el.checkDistancia.addEventListener('change', () => {
+      el.filtroDistancia.disabled = !el.checkDistancia.checked;
+    });
+    el.checkTiempo.addEventListener('change', () => {
+      el.filtroTiempo.disabled = !el.checkTiempo.checked;
+    });
+    el.filtroDistancia.addEventListener('input', () => {
+      el.filtroDistanciaValor.textContent = `${el.filtroDistancia.value} km`;
+    });
+    el.filtroTiempo.addEventListener('input', () => {
+      el.filtroTiempoValor.textContent = `${el.filtroTiempo.value} min`;
+    });
+
     el.btnCategoriasCerrar.addEventListener('click', cerrarMenuCategorias);
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !el.panelCategorias.hidden) cerrarMenuCategorias();
@@ -569,6 +601,11 @@
       renderizarParadas();
       el.btnMostrarSitiosCercanos.disabled = false;
 
+      el.checkDistancia.checked = true;
+      el.filtroDistancia.value = '10';
+      el.filtroDistanciaValor.textContent = '10 km';
+      el.filtroDistancia.disabled = false;
+
       // En dispositivos móviles, calcular la ruta pone toda la página en
       // pantalla completa (modo nativo del navegador) sin ocultar el panel.
       if (esMovil() && !document.fullscreenElement) {
@@ -595,9 +632,15 @@
     if (!state.rutaActual) return;
     if (el.panelSitios.hidden) return;
     const rutaFiltro = state.rutaBase || state.rutaActual;
+    const usarDistancia = el.checkDistancia.checked || (state.categoriasSeleccionadas.length > 0 && !el.checkDistancia.checked && !el.checkTiempo.checked);
+    const usarTiempo = el.checkTiempo.checked;
+    if (!usarDistancia && !usarTiempo && state.categoriasSeleccionadas.length === 0) return;
+
     const opciones = {
-      usarDistancia: true,
-      distanciaMaximaKm: 60,
+      usarDistancia,
+      usarTiempo,
+      distanciaMaximaKm: usarDistancia ? Number(el.filtroDistancia.value) : 60,
+      tiempoMaximoMin: usarTiempo ? Number(el.filtroTiempo.value) : 120,
       origen: state.origen,
       excluirIds: state.paradas.map((p) => p.id),
     };
@@ -617,6 +660,7 @@
     limpiarPreview();
     MapModule.limpiarSitios();
     el.sitiosLista.innerHTML = '';
+    el.sitiosContador.textContent = String(sitios.length);
 
     if (sitios.length === 0) {
       el.sitiosVacio.hidden = false;
