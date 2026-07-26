@@ -29,8 +29,6 @@
   const PERFIL_FIJO = 'driving';
   const MEDIA_MOVIL = '(max-width: 860px)';
 
-  let ultimosValoresAplicados = { distancia: null, tiempo: null };
-
   /** Estado centralizado de la aplicación. */
   const state = {
     municipios: [],
@@ -67,22 +65,13 @@
     checkDistancia: document.getElementById('check-distancia'),
     filtroDistancia: document.getElementById('filtro-distancia'),
     filtroDistanciaValor: document.getElementById('filtro-distancia-valor'),
-    btnAplicarDistancia: document.getElementById('btn-aplicar-distancia'),
-
-    checkTiempo: document.getElementById('check-tiempo'),
-    filtroTiempo: document.getElementById('filtro-tiempo'),
-    filtroTiempoValor: document.getElementById('filtro-tiempo-valor'),
-    btnAplicarTiempo: document.getElementById('btn-aplicar-tiempo'),
-
     sitiosVacio: document.getElementById('sitios-vacio'),
     sitiosLista: document.getElementById('sitios-lista'),
-    sitiosContador: document.getElementById('sitios-contador'),
 
     panelParadas: document.getElementById('panel-paradas'),
     paradasLista: document.getElementById('paradas-lista'),
     paradasContador: document.getElementById('paradas-contador'),
 
-    btnCategorias: document.getElementById('btn-categorias'),
     panelCategorias: document.getElementById('panel-categorias'),
     categoriasGrid: document.getElementById('categorias-grid'),
     btnCategoriasCerrar: document.getElementById('btn-categorias-cerrar'),
@@ -90,10 +79,7 @@
     panelEscalas: document.getElementById('panel-escalas'),
     btnAgregarEscala: document.getElementById('btn-agregar-escala'),
 
-    btnToggleSitios: document.getElementById('btn-toggle-sitios'),
-    btnMostrarSitios: document.getElementById('btn-mostrar-sitios'),
     panelSitios: document.getElementById('panel-sites'),
-    sitiosContadorBtn: document.getElementById('sitios-contador-btn'),
   };
 
   // -------------------------------------------------------------------
@@ -494,58 +480,11 @@
     el.btnMobileCollapse.addEventListener('click', () => setVistaMovil('map'));
     el.btnMobileExpand.addEventListener('click', () => setVistaMovil('panel'));
 
-    el.checkDistancia.addEventListener('change', () => {
-      el.filtroDistancia.disabled = !el.checkDistancia.checked;
-      actualizarEstadoBotonesFiltro();
-    });
-    el.checkTiempo.addEventListener('change', () => {
-      el.filtroTiempo.disabled = !el.checkTiempo.checked;
-      actualizarEstadoBotonesFiltro();
-    });
-
-    el.filtroDistancia.addEventListener('input', () => {
-      el.filtroDistanciaValor.textContent = `${el.filtroDistancia.value} km`;
-      if (ultimosValoresAplicados.distancia !== null && Number(el.filtroDistancia.value) !== ultimosValoresAplicados.distancia) {
-        setBotonFiltroIcono(el.btnAplicarDistancia, false);
-      }
-    });
-    el.filtroTiempo.addEventListener('input', () => {
-      el.filtroTiempoValor.textContent = `${el.filtroTiempo.value} min`;
-      if (ultimosValoresAplicados.tiempo !== null && Number(el.filtroTiempo.value) !== ultimosValoresAplicados.tiempo) {
-        setBotonFiltroIcono(el.btnAplicarTiempo, false);
-      }
-    });
-
-    el.btnAplicarDistancia.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarDistancia));
-    el.btnAplicarTiempo.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarTiempo));
-
-    el.btnCategorias.addEventListener('click', (e) => { e.stopPropagation(); toggleMenuCategorias(); });
     el.btnCategoriasCerrar.addEventListener('click', cerrarMenuCategorias);
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !el.panelCategorias.hidden) cerrarMenuCategorias();
     });
 
-    el.btnToggleSitios.addEventListener('click', () => {
-      const visible = MapModule.toggleSitios();
-      el.btnToggleSitios.setAttribute('aria-pressed', String(visible));
-    });
-    el.btnMostrarSitios.addEventListener('click', () => {
-      el.panelSitios.hidden = !el.panelSitios.hidden;
-      el.btnMostrarSitios.hidden = !el.panelSitios.hidden;
-      if (!el.panelSitios.hidden && state.rutaActual) {
-        ejecutarFiltrado();
-      }
-      if (el.panelSitios.hidden) {
-        MapModule.limpiarSitios();
-      }
-    });
-  }
-
-  function actualizarEstadoBotonesFiltro() {
-    const hayRuta = Boolean(state.rutaActual);
-    const hayFiltroActivo = el.checkDistancia.checked || el.checkTiempo.checked;
-    el.btnAplicarDistancia.disabled = !(hayRuta && hayFiltroActivo);
-    el.btnAplicarTiempo.disabled = !(hayRuta && hayFiltroActivo);
   }
 
   // -------------------------------------------------------------------
@@ -630,18 +569,9 @@
         document.documentElement.requestFullscreen().catch(() => {});
       }
 
-      el.checkDistancia.checked = true;
-      el.filtroDistancia.value = '10';
-      el.filtroDistanciaValor.textContent = '10 km';
-      el.filtroDistancia.disabled = false;
-      el.sitiosContadorBtn.textContent = String(state.sitios.length || 0);
-      el.btnMostrarSitios.hidden = false;
-      actualizarEstadoBotonesFiltro();
     } catch (err) {
       el.statDistancia.textContent = '—';
       el.statTiempo.textContent = '—';
-      el.sitiosVacio.hidden = false;
-      el.sitiosVacio.textContent = 'No se pudo calcular la ruta: ' + err.message;
     } finally {
       ponerEnCargaRuta(false);
     }
@@ -655,67 +585,31 @@
   // -------------------------------------------------------------------
   // Filtro espacial + render de sitios sobre el mapa (solo al aplicar)
   // -------------------------------------------------------------------
-  function aplicarFiltrosConSpinner(botonOrigenClic) {
-    if (!state.rutaActual) return;
-    if (!el.checkDistancia.checked && !el.checkTiempo.checked) return;
-
-    ponerEnCarga(botonOrigenClic, true);
-
-    // Se libera al siguiente tick para que el spinner del botón alcance a pintarse
-    // antes de una operación de Turf.js potencialmente costosa con muchos registros.
-    setTimeout(() => {
-      ejecutarFiltrado();
-      ponerEnCarga(botonOrigenClic, false);
-    }, 15);
-  }
-
-  /** Recalcula qué sitios cumplen los filtros activos y los muestra en el mapa y la lista. */
   function ejecutarFiltrado() {
     if (!state.rutaActual) return;
-    if (el.panelSitios.hidden) return;
-
-    const hayFiltroEspacial = el.checkDistancia.checked || el.checkTiempo.checked;
-    const hayCategorias = state.categoriasSeleccionadas.length > 0;
-    if (!hayFiltroEspacial && !hayCategorias) return;
-
-    const usarDistancia = el.checkDistancia.checked || (hayCategorias && !hayFiltroEspacial);
-    const usarTiempo = el.checkTiempo.checked;
-
+    const rutaFiltro = state.rutaBase || state.rutaActual;
     const opciones = {
-      usarDistancia,
-      usarTiempo,
-      distanciaMaximaKm: usarDistancia ? Number(el.filtroDistancia.value) : 60,
-      tiempoMaximoMin: usarTiempo ? Number(el.filtroTiempo.value) : 120,
+      usarDistancia: true,
+      distanciaMaximaKm: 60,
       origen: state.origen,
       excluirIds: state.paradas.map((p) => p.id),
     };
-
-    const rutaFiltro = state.rutaBase || state.rutaActual;
     let sitiosResultado = FiltersModule.filtrarSitiosPorRuta(state.sitios, rutaFiltro.geojson, opciones);
-
-    if (hayCategorias) {
+    if (state.categoriasSeleccionadas.length > 0) {
       const catsNorm = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase().trim()));
       sitiosResultado = sitiosResultado.filter((s) => {
         const sc = (s.categoria || '').toLowerCase().trim();
         return catsNorm.has(sc);
       });
     }
-
     state.sitiosFiltrados = sitiosResultado;
     renderizarSitios(sitiosResultado);
-
-    ultimosValoresAplicados.distancia = Number(el.filtroDistancia.value);
-    ultimosValoresAplicados.tiempo = Number(el.filtroTiempo.value);
-    setBotonFiltroIcono(el.btnAplicarDistancia, true);
-    setBotonFiltroIcono(el.btnAplicarTiempo, true);
   }
 
   function renderizarSitios(sitios) {
     limpiarPreview();
     MapModule.limpiarSitios();
     el.sitiosLista.innerHTML = '';
-    el.sitiosContador.textContent = String(sitios.length);
-    el.sitiosContadorBtn.textContent = String(sitios.length);
 
     if (sitios.length === 0) {
       el.sitiosVacio.hidden = false;
@@ -1111,15 +1005,6 @@
   }
 
   /** Cambia el icono del botón de filtro entre retry y check. */
-  function setBotonFiltroIcono(boton, aplicado) {
-    const svg = boton.querySelector('.icon-btn__icon');
-    if (!svg) return;
-    svg.innerHTML = aplicado
-      ? '<path d="M20 6L9 17l-5-5"/>'
-      : '<path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>';
-    boton.classList.toggle('icon-btn--applied', aplicado);
-  }
-
   // -------------------------------------------------------------------
   document.addEventListener('DOMContentLoaded', init);
 })();

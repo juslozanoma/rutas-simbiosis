@@ -381,46 +381,6 @@ input, select{ font-family: inherit; }
   flex-direction: column;
   gap: 10px;
 }
-.panel-sites__title{
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.btn-mostrar-sitios{
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--line-300);
-  background: #ffffff;
-  color: var(--teal-600);
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background 0.12s ease, border-color 0.12s ease;
-}
-.btn-mostrar-sitios:hover{ background: #f5f3ec; border-color: var(--teal-500); }
-.btn-toggle-sitios{
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  border: 1px solid var(--line-300);
-  background: var(--teal-500);
-  color: #ffffff;
-  cursor: pointer;
-  flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
-}
-.btn-toggle-sitios:hover{ background: #246054; border-color: #246054; }
-.btn-toggle-sitios[aria-pressed="false"]{ color: var(--text-muted); opacity: 0.5; background: #ffffff; border-color: var(--line-300); }
 .badge-count{
   background: var(--ink-900);
   color: #ffffff;
@@ -647,27 +607,6 @@ input, select{ font-family: inherit; }
 /* ==========================================================================
    BOTÓN DE CATEGORÍAS
    ========================================================================== */
-.btn-categorias{
-  margin-left: auto;
-  height: 26px;
-  padding: 0 10px;
-  border-radius: 999px;
-  border: 1px solid var(--line-300);
-  background: #ffffff;
-  color: var(--text-muted);
-  font-size: 0.68rem;
-  font-weight: 600;
-  cursor: pointer;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
-}
-.btn-categorias:hover{ background: #f5f3ec; border-color: var(--teal-500); color: var(--teal-600); }
-
-
-
 /* ==========================================================================
    PANEL INLINE DE CATEGORÍAS
    ========================================================================== */
