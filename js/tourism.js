@@ -42,6 +42,10 @@ const TourismModule = (() => {
   function getSitios() { return sitios; }
   function getMunicipios() { return municipios; }
 
+  let onAgregarParadaCallback = null;
+
+  function setOnAgregarParada(cb) { onAgregarParadaCallback = cb; }
+
   function colorCategoria(categoria) {
     return COLORES_CATEGORIA[categoria] || '#6c7369';
   }
@@ -85,6 +89,18 @@ const TourismModule = (() => {
     wrapper.appendChild(nodo);
     marker.bindPopup(wrapper.innerHTML);
     marker.__sitioId = sitio.id;
+
+    marker.on('popupopen', (e) => {
+      const btn = e.popup.getElement().querySelector('.popup-sitio__add');
+      if (btn && !btn.dataset._listener) {
+        btn.dataset._listener = '1';
+        btn.addEventListener('click', () => {
+          marker.closePopup();
+          if (onAgregarParadaCallback) onAgregarParadaCallback(sitio, btn);
+        });
+      }
+    });
+
     return marker;
   }
 
@@ -98,5 +114,6 @@ const TourismModule = (() => {
     departamentosUnicos,
     municipiosUnicos,
     crearMarcador,
+    setOnAgregarParada,
   };
 })();

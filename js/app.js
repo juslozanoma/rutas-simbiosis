@@ -83,6 +83,7 @@
   async function init() {
     MapModule.init('map');
     MapModule.setOnEliminarParada(eliminarParada);
+    TourismModule.setOnAgregarParada((sitio, btn) => agregarParada(sitio, btn));
 
     try {
       const [municipios, sitios] = await Promise.all([
@@ -239,17 +240,13 @@
         document.documentElement.requestFullscreen().catch(() => {});
       }
 
-      // Limpia resultados de una búsqueda de sitios anterior, ya que
-      // corresponden a otra ruta.
-      MapModule.limpiarSitios();
-      state.sitiosFiltrados = [];
-      el.sitiosContador.textContent = '0';
-      el.sitiosLista.hidden = true;
-      el.sitiosLista.innerHTML = '';
-      el.sitiosVacio.hidden = false;
-      el.sitiosVacio.textContent = 'Activa un filtro (distancia o tiempo) y pulsa el botón de aplicar para ver los sitios turísticos cercanos.';
-
+      // Activa el filtro de distancia por defecto a 5 km y lo ejecuta.
+      el.checkDistancia.checked = true;
+      el.filtroDistancia.value = '5';
+      el.filtroDistanciaValor.textContent = '5 km';
+      el.filtroDistancia.disabled = false;
       actualizarEstadoBotonesFiltro();
+      ejecutarFiltrado();
     } catch (err) {
       el.statDistancia.textContent = '—';
       el.statTiempo.textContent = '—';
