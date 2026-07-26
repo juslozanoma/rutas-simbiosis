@@ -90,6 +90,7 @@
     panelEscalas: document.getElementById('panel-escalas'),
     btnAgregarEscala: document.getElementById('btn-agregar-escala'),
 
+    btnToggleSitios: document.getElementById('btn-toggle-sitios'),
     btnMostrarSitios: document.getElementById('btn-mostrar-sitios'),
     panelSitios: document.getElementById('panel-sites'),
     sitiosContadorBtn: document.getElementById('sitios-contador-btn'),
@@ -116,7 +117,8 @@
     }
 
     initCombos();
-    state.categoriasUnicas = [];
+    state.categoriasUnicas = obtenerCategoriasUnicas();
+    renderizarCategoriasMenu();
     initEscalas();
     initEventos();
   }
@@ -440,27 +442,25 @@
   // Categorías: extracción, menú flotante y filtrado
   // -------------------------------------------------------------------
   function obtenerCategoriasUnicas() {
-    const fuente = state.sitiosFiltrados || state.sitios;
     const mapa = new Map();
-    fuente.forEach((s) => {
+    state.sitios.forEach((s) => {
       const c = s.categoria ? s.categoria.trim() : '';
       if (!c) return;
       const key = c.toLowerCase();
-      mapa.set(key, (mapa.get(key) || 0) + 1);
+      if (!mapa.has(key)) mapa.set(key, c);
     });
-    return [...mapa.entries()].sort((a, b) => a[0].localeCompare(b[0], 'es'))
-      .map(([nombre, cuenta]) => ({ nombre, cuenta }));
+    return [...mapa.values()].sort((a, b) => a.localeCompare(b, 'es'));
   }
 
   function renderizarCategoriasMenu() {
     el.categoriasGrid.innerHTML = '';
     const seleccionadas = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase()));
-    state.categoriasUnicas.forEach(({ nombre, cuenta }) => {
+    state.categoriasUnicas.forEach((cat) => {
       const chip = document.createElement('span');
       chip.className = 'categoria-chip';
-      if (seleccionadas.has(nombre.toLowerCase())) chip.classList.add('categoria-chip--selected');
-      chip.textContent = cuenta > 0 ? `${nombre} (${cuenta})` : nombre;
-      chip.addEventListener('click', () => toggleCategoria(nombre));
+      if (seleccionadas.has(cat.toLowerCase())) chip.classList.add('categoria-chip--selected');
+      chip.textContent = cat;
+      chip.addEventListener('click', () => toggleCategoria(cat));
       el.categoriasGrid.appendChild(chip);
     });
   }
@@ -479,8 +479,6 @@
   }
 
   function toggleMenuCategorias() {
-    state.categoriasUnicas = obtenerCategoriasUnicas();
-    renderizarCategoriasMenu();
     el.panelCategorias.hidden = !el.panelCategorias.hidden;
   }
   function cerrarMenuCategorias() {
@@ -527,6 +525,10 @@
       if (e.key === 'Escape' && !el.panelCategorias.hidden) cerrarMenuCategorias();
     });
 
+    el.btnToggleSitios.addEventListener('click', () => {
+      const visible = MapModule.toggleSitios();
+      el.btnToggleSitios.setAttribute('aria-pressed', String(visible));
+    });
     el.btnMostrarSitios.addEventListener('click', () => {
       el.panelSitios.hidden = !el.panelSitios.hidden;
       el.btnMostrarSitios.hidden = !el.panelSitios.hidden;
@@ -700,8 +702,6 @@
     }
 
     state.sitiosFiltrados = sitiosResultado;
-    state.categoriasUnicas = obtenerCategoriasUnicas();
-    renderizarCategoriasMenu();
     renderizarSitios(sitiosResultado);
 
     ultimosValoresAplicados.distancia = Number(el.filtroDistancia.value);

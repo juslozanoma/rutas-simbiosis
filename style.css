@@ -408,6 +408,19 @@ input, select{ font-family: inherit; }
   transition: background 0.12s ease, border-color 0.12s ease;
 }
 .btn-mostrar-sitios:hover{ background: #f5f3ec; border-color: var(--teal-500); }
+.btn-toggle-sitios{
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--line-300);
+  background: var(--teal-500);
+  color: #ffffff;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.btn-toggle-sitios:hover{ background: #246054; border-color: #246054; }
+.btn-toggle-sitios[aria-pressed="false"]{ color: var(--text-muted); opacity: 0.5; background: #ffffff; border-color: var(--line-300); }
 .badge-count{
   background: var(--ink-900);
   color: #ffffff;
