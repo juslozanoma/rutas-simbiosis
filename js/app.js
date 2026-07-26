@@ -28,6 +28,17 @@
 
   const PERFIL_FIJO = 'driving';
   const MEDIA_MOVIL = '(max-width: 860px)';
+  const CAPITALES = {
+    'Amazonas':'Leticia','Antioquia':'Medellín','Arauca':'Arauca','Atlántico':'Barranquilla',
+    'Bogotá D.C.':'Bogotá D.C.','Bolívar':'Cartagena de Indias','Boyacá':'Tunja','Caldas':'Manizales',
+    'Caquetá':'Florencia','Casanare':'Yopal','Cauca':'Popayán','Cesar':'Valledupar',
+    'Chocó':'Quibdó','Córdoba':'Montería','Cundinamarca':'Bogotá D.C.','Guainía':'Puerto Inírida',
+    'Guaviare':'San José del Guaviare','Huila':'Neiva','La Guajira':'Riohacha','Magdalena':'Santa Marta',
+    'Meta':'Villavicencio','Nariño':'Pasto','Norte de Santander':'Cúcuta','Putumayo':'Mocoa',
+    'Quindío':'Armenia','Risaralda':'Pereira','San Andrés y Providencia':'San Andrés',
+    'Santander':'Bucaramanga','Sucre':'Sincelejo','Tolima':'Ibagué','Valle del Cauca':'Cali',
+    'Vaupés':'Mitú','Vichada':'Puerto Carreño',
+  };
 
   /** Estado centralizado de la aplicación. */
   const state = {
@@ -150,9 +161,18 @@
     }
 
     function obtenerMunicipios(depto) {
-      return state.municipios
+      const capitalNombre = CAPITALES[depto];
+      const lista = state.municipios
         .filter((m) => m.departamento === depto)
         .sort((a, b) => a.nombre.localeCompare(b.nombre));
+      if (capitalNombre) {
+        const capitalIdx = lista.findIndex((m) => m.nombre === capitalNombre);
+        if (capitalIdx > 0) {
+          const capital = lista.splice(capitalIdx, 1)[0];
+          lista.unshift(capital);
+        }
+      }
+      return lista;
     }
 
     function renderDepartamentos() {
@@ -367,7 +387,11 @@
       if (state.origen?.id) idsNoDisponibles.add(state.origen.id);
       if (state.destino?.id) idsNoDisponibles.add(state.destino.id);
       state.escalas.forEach((e) => { if (e.id != null && e._row !== row) idsNoDisponibles.add(e.id); });
-      state.municipios.filter((m) => m.departamento === depto && !idsNoDisponibles.has(m.id)).sort((a, b) => a.nombre.localeCompare(b.nombre)).forEach((m) => {
+      const muns = state.municipios.filter((m) => m.departamento === depto && !idsNoDisponibles.has(m.id)).sort((a, b) => a.nombre.localeCompare(b.nombre));
+      const capNombre = CAPITALES[depto];
+      const capIdx = capNombre ? muns.findIndex((m) => m.nombre === capNombre) : -1;
+      if (capIdx > 0) { const cap = muns.splice(capIdx, 1)[0]; muns.unshift(cap); }
+      muns.forEach((m) => {
         const li = document.createElement('li');
         li.textContent = m.nombre;
         li.addEventListener('click', (e) => {
@@ -496,10 +520,15 @@
       el.btnToggleSitios.setAttribute('aria-pressed', String(visible));
     });
     el.btnCategorias.addEventListener('click', (e) => { e.stopPropagation(); toggleMenuCategorias(); });
+    el.loadingSitios = document.getElementById('loading-sitios');
     el.btnMostrarSitiosCercanos.addEventListener('click', () => {
-      el.panelSitios.hidden = false;
       el.btnMostrarSitiosCercanos.hidden = true;
-      ejecutarFiltrado();
+      el.loadingSitios.hidden = false;
+      setTimeout(() => {
+        el.panelSitios.hidden = false;
+        ejecutarFiltrado();
+        el.loadingSitios.hidden = true;
+      }, 60);
     });
 
     el.checkDistancia.addEventListener('change', () => {
