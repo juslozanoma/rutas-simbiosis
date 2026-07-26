@@ -389,6 +389,23 @@ input, select{ font-family: inherit; }
   border-radius: 999px;
   font-weight: 600;
 }
+.btn-mostrar-sitios-cercanos{
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--teal-500);
+  background: var(--teal-500);
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  font-family: inherit;
+  transition: opacity 0.15s ease, background 0.12s ease, border-color 0.12s ease;
+}
+.btn-mostrar-sitios-cercanos:hover:not(:disabled){ background: var(--teal-600); border-color: var(--teal-600); }
+.btn-mostrar-sitios-cercanos:disabled{ opacity: 0.45; cursor: default; }
 .panel-sites__scroll{
   flex: 1;
   min-height: 0;

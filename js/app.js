@@ -80,6 +80,7 @@
     btnAgregarEscala: document.getElementById('btn-agregar-escala'),
 
     panelSitios: document.getElementById('panel-sites'),
+    btnMostrarSitiosCercanos: document.getElementById('btn-mostrar-sitios'),
   };
 
   // -------------------------------------------------------------------
@@ -480,6 +481,10 @@
     el.btnMobileCollapse.addEventListener('click', () => setVistaMovil('map'));
     el.btnMobileExpand.addEventListener('click', () => setVistaMovil('panel'));
 
+    el.btnMostrarSitiosCercanos.addEventListener('click', () => {
+      el.panelSitios.hidden = false;
+      ejecutarFiltrado();
+    });
     el.btnCategoriasCerrar.addEventListener('click', cerrarMenuCategorias);
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !el.panelCategorias.hidden) cerrarMenuCategorias();
@@ -562,6 +567,7 @@
       state.escalas.forEach((e) => { if (e._row && e._row.parentNode) e._row.remove(); });
       state.escalas.forEach((e) => { delete e._row; });
       renderizarParadas();
+      el.btnMostrarSitiosCercanos.disabled = false;
 
       // En dispositivos móviles, calcular la ruta pone toda la página en
       // pantalla completa (modo nativo del navegador) sin ocultar el panel.
@@ -587,6 +593,7 @@
   // -------------------------------------------------------------------
   function ejecutarFiltrado() {
     if (!state.rutaActual) return;
+    if (el.panelSitios.hidden) return;
     const rutaFiltro = state.rutaBase || state.rutaActual;
     const opciones = {
       usarDistancia: true,
