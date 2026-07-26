@@ -605,7 +605,7 @@ input, select{ font-family: inherit; }
   letter-spacing: 0.04em;
 }
 .panel-categorias__close{
-  width: 22px; height: 22px;
+  width: 28px; height: 28px;
   border-radius: 50%;
   border: none;
   background: transparent;

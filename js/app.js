@@ -295,12 +295,6 @@
 
     el.btnCategorias.addEventListener('click', (e) => { e.stopPropagation(); toggleMenuCategorias(); });
     el.btnCategoriasCerrar.addEventListener('click', cerrarMenuCategorias);
-    document.addEventListener('click', (e) => {
-      if (el.panelCategorias.hidden) return;
-      if (!el.panelCategorias.contains(e.target) && e.target !== el.btnCategorias && !el.btnCategorias.contains(e.target)) {
-        cerrarMenuCategorias();
-      }
-    });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !el.panelCategorias.hidden) cerrarMenuCategorias();
     });
