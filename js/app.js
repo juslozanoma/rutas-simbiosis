@@ -429,6 +429,10 @@
       }
     });
     actualizarEstadoBotonCalcular();
+    if (state.origen && state.destino && state.escalas.some((e) => e._row && e.id != null)) {
+      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
+      calcularRutaPrincipal(true);
+    }
   }
 
   // -------------------------------------------------------------------
@@ -945,20 +949,27 @@
     });
     li.addEventListener('dragover', (e) => {
       e.preventDefault();
-      el.paradasLista.querySelectorAll('.parada-item').forEach((el_) => {
-        el_.classList.remove('parada-item--drag-over');
-      });
       li.classList.add('parada-item--drag-over');
+      el.paradasLista.querySelectorAll('.parada-item').forEach((el_) => {
+        if (el_ !== li) el_.classList.remove('parada-item--drag-over');
+      });
+    });
+    li.addEventListener('dragleave', () => {
+      li.classList.remove('parada-item--drag-over');
     });
     li.addEventListener('drop', (e) => {
       e.preventDefault();
+      el.paradasLista.querySelectorAll('.parada-item').forEach((el_) => {
+        el_.classList.remove('parada-item--drag-over');
+      });
       try {
         const data = JSON.parse(e.dataTransfer.getData('text/plain'));
         if (data.tipo === 'escala' && tipo === 'escala') moverEscala(data.id, id);
         else if (data.tipo === 'parada' && tipo === 'parada') moverParada(data.id, id);
+        else if (data.tipo === 'escala' && tipo === 'parada') moverEscala(data.id, null, id);
+        else if (data.tipo === 'parada' && tipo === 'escala') moverParada(data.id, null, id);
       } catch (_) {}
     });
-    li.addEventListener('dragenter', (e) => e.preventDefault());
   }
 
   function renderizarParadas() {
@@ -1041,7 +1052,12 @@
   async function moverEscala(desdeId, hastaId) {
     if (desdeId === hastaId) return;
     const desdeIdx = state.escalas.findIndex((e) => e.id === desdeId);
-    const hastaIdx = state.escalas.findIndex((e) => e.id === hastaId);
+    let hastaIdx;
+    if (hastaId == null) {
+      hastaIdx = state.escalas.length - 1;
+    } else {
+      hastaIdx = state.escalas.findIndex((e) => e.id === hastaId);
+    }
     if (desdeIdx === -1 || hastaIdx === -1) return;
     const item = state.escalas.splice(desdeIdx, 1)[0];
     state.escalas.splice(hastaIdx, 0, item);
@@ -1052,7 +1068,12 @@
   async function moverParada(desdeId, hastaId) {
     if (desdeId === hastaId) return;
     const desdeIdx = state.paradas.findIndex((p) => p.id === desdeId);
-    const hastaIdx = state.paradas.findIndex((p) => p.id === hastaId);
+    let hastaIdx;
+    if (hastaId == null) {
+      hastaIdx = 0;
+    } else {
+      hastaIdx = state.paradas.findIndex((p) => p.id === hastaId);
+    }
     if (desdeIdx === -1 || hastaIdx === -1) return;
     const item = state.paradas.splice(desdeIdx, 1)[0];
     state.paradas.splice(hastaIdx, 0, item);

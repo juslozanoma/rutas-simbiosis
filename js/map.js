@@ -232,7 +232,7 @@ const MapModule = (() => {
     limpiarRuta();
 
     capaRuta = L.geoJSON(geojsonLineString, {
-      style: { color: '#e35c2b', weight: 10, opacity: 0.92, lineCap: 'round' },
+      style: { color: '#2f7a6b', weight: 10, opacity: 0.85, lineCap: 'round' },
     }).addTo(map);
 
     const totalKm = (meta.distanciaMetros || 0) / 1000;
