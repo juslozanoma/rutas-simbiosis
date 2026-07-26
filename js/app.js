@@ -12,8 +12,9 @@
  *      sitios turísticos no se muestran hasta que se aplica un filtro.
  *   4. Lista de sitios resultantes (ordenada por cercanía al origen), con
  *      scroll propio. Cada tarjeta permite:
- *        - clic en la tarjeta: previsualizar en el mapa la ruta directa
- *          desde el origen hasta ese sitio (sin alterar la ruta principal).
+ *        - clic en la tarjeta: previsualizar en el mapa, en azul continuo,
+ *          la ruta desde el punto de la vía principal donde se produce el
+ *          desvío hasta ese sitio (sin alterar la ruta principal).
  *        - clic en el botón "+": agregar el sitio como parada de la ruta
  *          principal, que se recalcula pasando por todas las paradas
  *          agregadas en orden; la lista de candidatos se refresca contra
@@ -26,6 +27,7 @@
 (() => {
 
   const PERFIL_FIJO = 'driving';
+  const MEDIA_MOVIL = '(max-width: 860px)';
 
   /** Estado centralizado de la aplicación. */
   const state = {
@@ -43,6 +45,10 @@
   // Referencias DOM
   // -------------------------------------------------------------------
   const el = {
+    appRoot: document.getElementById('app'),
+    btnMobileCollapse: document.getElementById('btn-mobile-collapse'),
+    btnMobileExpand: document.getElementById('btn-mobile-expand'),
+
     statDistancia: document.getElementById('stat-distancia'),
     statTiempo: document.getElementById('stat-tiempo'),
 
@@ -72,6 +78,7 @@
   // -------------------------------------------------------------------
   async function init() {
     MapModule.init('map');
+    MapModule.setOnEliminarParada(eliminarParada);
 
     try {
       const [municipios, sitios] = await Promise.all([
@@ -144,6 +151,9 @@
   function initEventos() {
     el.btnCalcular.addEventListener('click', calcularRutaPrincipal);
 
+    el.btnMobileCollapse.addEventListener('click', () => setVistaMovil('map'));
+    el.btnMobileExpand.addEventListener('click', () => setVistaMovil('panel'));
+
     el.checkDistancia.addEventListener('change', () => {
       el.filtroDistancia.disabled = !el.checkDistancia.checked;
       actualizarEstadoBotonesFiltro();
@@ -172,6 +182,23 @@
   }
 
   // -------------------------------------------------------------------
+  // Vista móvil: alternar entre panel completo y mapa completo
+  // -------------------------------------------------------------------
+  function esMovil() {
+    return window.matchMedia(MEDIA_MOVIL).matches;
+  }
+
+  /** Cambia el estado de la vista en móvil: 'split' | 'map' | 'panel'. */
+  function setVistaMovil(vista) {
+    el.appRoot.setAttribute('data-mobile-view', vista);
+    el.btnMobileCollapse.setAttribute('aria-pressed', String(vista === 'map'));
+    el.btnMobileExpand.setAttribute('aria-pressed', String(vista === 'panel'));
+    // El contenedor del mapa cambia de tamaño con la transición CSS; se
+    // recalcula el tamaño de Leaflet una vez que el layout se estabiliza.
+    setTimeout(() => MapModule.invalidateSize(), 220);
+  }
+
+  // -------------------------------------------------------------------
   // Cálculo de la ruta principal (solo al pulsar el botón)
   // -------------------------------------------------------------------
   async function calcularRutaPrincipal() {
@@ -194,6 +221,11 @@
     try {
       const ruta = await RoutingModule.calcularRuta(state.origen, state.destino, PERFIL_FIJO);
       aplicarRutaCalculada(ruta);
+
+      // En dispositivos móviles, calcular la ruta inicial pone el mapa en
+      // pantalla completa automáticamente; el usuario puede volver al panel
+      // con las flechas junto al tiempo estimado.
+      if (esMovil()) setVistaMovil('map');
 
       // Limpia resultados de una búsqueda de sitios anterior, ya que
       // corresponden a otra ruta.
@@ -334,10 +366,21 @@
       return;
     }
 
+    if (!state.rutaActual) return;
+
     cardEl.classList.add('sitio-card--loading');
 
     try {
-      const ruta = await RoutingModule.calcularRuta(state.origen, sitio, PERFIL_FIJO);
+      // Punto sobre la ruta principal más cercano al sitio: es ahí donde
+      // realmente se produce el desvío, no en el municipio de origen.
+      const puntoDesvio = turf.nearestPointOnLine(
+        state.rutaActual.geojson,
+        turf.point([sitio.lon, sitio.lat])
+      );
+      const [lonDesvio, latDesvio] = puntoDesvio.geometry.coordinates;
+      const origenDesvio = { lat: latDesvio, lon: lonDesvio };
+
+      const ruta = await RoutingModule.calcularRuta(origenDesvio, sitio, PERFIL_FIJO);
       MapModule.dibujarRutaPreview(ruta.geojson);
       MapModule.encuadrar(ruta.geojson);
 
@@ -346,7 +389,7 @@
 
       const preview = cardEl.querySelector('.sitio-card__preview');
       preview.hidden = false;
-      preview.innerHTML = `Ruta desde el origen: <span class="mono">${Utils.formatearDistancia(ruta.distanciaMetros)} · ${Utils.formatearDuracion(ruta.duracionSegundos)}</span>`;
+      preview.innerHTML = `Ruta desde el desvío: <span class="mono">${Utils.formatearDistancia(ruta.distanciaMetros)} · ${Utils.formatearDuracion(ruta.duracionSegundos)}</span>`;
     } catch (err) {
       const preview = cardEl.querySelector('.sitio-card__preview');
       preview.hidden = false;
@@ -404,6 +447,37 @@
       el.sitiosVacio.textContent = 'No se pudo agregar el sitio a la ruta: ' + err.message;
     } finally {
       ponerEnCarga(boton, false);
+    }
+  }
+
+  /**
+   * Quita un sitio de las paradas de la ruta (se invoca desde el botón de
+   * basura del popup que aparece al pulsar su marcador en el mapa) y
+   * recalcula la ruta principal con las paradas restantes.
+   */
+  async function eliminarParada(sitioId) {
+    const indice = state.paradas.findIndex((p) => p.id === sitioId);
+    if (indice === -1) return;
+
+    const sitioEliminado = state.paradas[indice];
+    const paradasAnteriores = state.paradas.slice();
+    state.paradas.splice(indice, 1);
+
+    try {
+      const puntos = [state.origen, ...state.paradas, state.destino];
+      const ruta = await RoutingModule.calcularRutaConParadas(puntos, PERFIL_FIJO);
+      aplicarRutaCalculada(ruta);
+
+      if (el.checkDistancia.checked || el.checkTiempo.checked) {
+        ejecutarFiltrado();
+      } else {
+        el.sitiosVacio.hidden = false;
+        el.sitiosVacio.textContent = `${sitioEliminado.nombre} se quitó de la ruta. Activa un filtro para ver sitios cercanos.`;
+      }
+    } catch (err) {
+      state.paradas = paradasAnteriores; // revertir si el recálculo falla
+      el.sitiosVacio.hidden = false;
+      el.sitiosVacio.textContent = 'No se pudo quitar el sitio de la ruta: ' + err.message;
     }
   }
 

@@ -27,7 +27,7 @@
 </head>
 <body>
 
-<div id="app" class="app-shell">
+<div id="app" class="app-shell" data-mobile-view="split">
 
   <!-- ============ MAPA A PANTALLA COMPLETA ============ -->
   <main class="map-full">
@@ -46,6 +46,14 @@
       <div class="stat">
         <span class="stat__label">Tiempo estimado</span>
         <span class="stat__value mono" id="stat-tiempo">—</span>
+      </div>
+      <div class="panel-summary__toggle" id="mobile-view-toggle">
+        <button type="button" id="btn-mobile-collapse" class="mobile-toggle-btn" title="Ver mapa completo" aria-label="Ver el mapa a pantalla completa" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <button type="button" id="btn-mobile-expand" class="mobile-toggle-btn" title="Ver panel completo" aria-label="Ver el panel a pantalla completa" aria-pressed="false">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>
+        </button>
       </div>
     </section>
 

@@ -139,13 +139,46 @@ const MapModule = (() => {
   // Paradas (sitios agregados a la ruta)
   // ---------------------------------------------------------------------
 
+  let onEliminarParadaCallback = null;
+
+  /** Registra la función que se ejecuta al pulsar "Quitar de la ruta" en el popup de una parada. */
+  function setOnEliminarParada(callback) {
+    onEliminarParadaCallback = callback;
+  }
+
   /** Repinta los marcadores numerados de los sitios agregados a la ruta, en orden de visita. */
   function setMarcadoresParadas(paradas) {
     capaParadas.clearLayers();
     paradas.forEach((sitio, i) => {
-      L.marker([sitio.lat, sitio.lon], { icon: _iconoParada(i + 1), zIndexOffset: 900 })
-        .bindTooltip(`Parada ${i + 1}: ${sitio.nombre}`, { direction: 'top' })
-        .addTo(capaParadas);
+      const marker = L.marker([sitio.lat, sitio.lon], { icon: _iconoParada(i + 1), zIndexOffset: 900 });
+
+      marker.bindPopup(`
+        <div class="popup-parada">
+          <span class="popup-parada__badge">Parada ${i + 1}</span>
+          <h3 class="popup-parada__nombre">${sitio.nombre}</h3>
+          <button type="button" class="popup-parada__eliminar" data-parada-id="${sitio.id}">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/>
+              <path d="M10 11v6M14 11v6"/>
+            </svg>
+            Quitar de la ruta
+          </button>
+        </div>
+      `);
+
+      // El botón de eliminar solo existe en el DOM mientras el popup está
+      // abierto, por lo que el listener se ata cada vez que se abre.
+      marker.on('popupopen', (e) => {
+        const boton = e.popup.getElement().querySelector('.popup-parada__eliminar');
+        if (boton) {
+          boton.addEventListener('click', () => {
+            marker.closePopup();
+            if (onEliminarParadaCallback) onEliminarParadaCallback(sitio.id);
+          });
+        }
+      });
+
+      marker.addTo(capaParadas);
     });
   }
 
@@ -196,11 +229,11 @@ const MapModule = (() => {
     return capaRuta;
   }
 
-  /** Dibuja una ruta de previsualización (origen -> sitio) en un estilo secundario, sin afectar la ruta principal. */
+  /** Dibuja una ruta de previsualización (desde el punto de desvío sobre la ruta hasta un sitio) en azul continuo, sin afectar la ruta principal. */
   function dibujarRutaPreview(geojsonLineString) {
     limpiarRutaPreview();
     capaRutaPreview = L.geoJSON(geojsonLineString, {
-      style: { color: '#2f7a6b', weight: 4, opacity: 0.85, dashArray: '2 8', lineCap: 'round' },
+      style: { color: '#2f6fdb', weight: 4, opacity: 0.9, lineCap: 'round' },
     }).addTo(map);
     return capaRutaPreview;
   }
@@ -256,6 +289,7 @@ const MapModule = (() => {
     setMarcadorDestino,
     limpiarMarcadoresRuta,
     setMarcadoresParadas,
+    setOnEliminarParada,
     limpiarParadas,
     dibujarRuta,
     dibujarRutaPreview,
