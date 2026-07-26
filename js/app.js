@@ -474,25 +474,28 @@
   }
 
   function categoriasDeRuta() {
-    const cats = new Set();
-    state.sitios.forEach((s) => {
-      if (s.categoria && s.distanciaRutaKm != null && isFinite(s.distanciaRutaKm)) {
-        cats.add(s.categoria.trim());
-      }
+    if (!state.sitiosFiltrados || state.sitiosFiltrados.length === 0) return state.categoriasUnicas;
+    const conteo = new Map();
+    state.sitiosFiltrados.forEach((s) => {
+      if (!s.categoria) return;
+      const c = s.categoria.trim();
+      conteo.set(c, (conteo.get(c) || 0) + 1);
     });
-    if (cats.size === 0) return state.categoriasUnicas;
-    return [...cats].sort((a, b) => a.localeCompare(b, 'es'));
+    if (conteo.size === 0) return state.categoriasUnicas;
+    return [...conteo.entries()].sort((a, b) => a[0].localeCompare(b[0], 'es'));
   }
 
   function renderizarCategoriasMenu(lista) {
     const cats = lista || categoriasDeRuta();
     el.categoriasGrid.innerHTML = '';
     const seleccionadas = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase()));
-    cats.forEach((cat) => {
+    cats.forEach((ent) => {
+      const cat = Array.isArray(ent) ? ent[0] : ent;
+      const n = Array.isArray(ent) ? ent[1] : 0;
       const chip = document.createElement('span');
       chip.className = 'categoria-chip';
       if (seleccionadas.has(cat.toLowerCase())) chip.classList.add('categoria-chip--selected');
-      chip.textContent = cat;
+      chip.textContent = n > 0 ? `${cat} (${n})` : cat;
       chip.addEventListener('click', () => toggleCategoria(cat));
       el.categoriasGrid.appendChild(chip);
     });
