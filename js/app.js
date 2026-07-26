@@ -154,6 +154,22 @@
     function renderDepartamentos() {
       deptoSeleccionado = null;
       listEl.innerHTML = '';
+      const pickLi = document.createElement('li');
+      pickLi.textContent = 'Seleccionar en el mapa';
+      pickLi.style.cssText = 'border-bottom:1px solid var(--line-200);margin-bottom:4px;padding-bottom:8px;font-weight:600;color:var(--teal-600)';
+      pickLi.addEventListener('click', (e) => {
+        e.stopPropagation();
+        listEl.hidden = true;
+        iniciarSeleccionMapa((lat, lon) => {
+          const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+          const txt = trigger.querySelector('.combo__trigger-text');
+          txt.textContent = nombre;
+          txt.removeAttribute('data-placeholder');
+          trigger.setAttribute('aria-label', 'Punto en el mapa');
+          onSelect({ id: 'map_' + Date.now(), lat, lon, nombre, departamento: '' });
+        });
+      });
+      listEl.appendChild(pickLi);
       const deptos = obtenerDepartamentos();
       deptos.forEach((d) => {
         const li = document.createElement('li');
@@ -229,6 +245,24 @@
     el.btnCalcular.disabled = !(state.origen && state.destino);
   }
 
+  /** Activa modo de selección en el mapa: el usuario hace clic y se llama a `callback(lat, lon)`. */
+  function iniciarSeleccionMapa(callback) {
+    const map = MapModule.getMap();
+    const container = map.getContainer();
+    container.style.cursor = 'crosshair';
+    const tooltip = L.tooltip({ permanent: true, direction: 'center', className: 'route-tooltip' })
+      .setLatLng(map.getCenter())
+      .setContent('Haz clic en el mapa para seleccionar')
+      .addTo(map);
+    function onClick(e) {
+      map.off('click', onClick);
+      container.style.cursor = '';
+      map.removeLayer(tooltip);
+      callback(e.latlng.lat, e.latlng.lng);
+    }
+    map.on('click', onClick);
+  }
+
   // -------------------------------------------------------------------
   // Escalas: municipios intermedios entre origen y destino
   // -------------------------------------------------------------------
@@ -263,13 +297,27 @@
     row.appendChild(combo);
     row.appendChild(removeBtn);
     el.panelEscalas.appendChild(row);
-    el.panelEscalas.hidden = false;
 
     let seleccion = null;
 
     function renderDeptos() {
       seleccion = null;
       listEl.innerHTML = '';
+      const pickLi = document.createElement('li');
+      pickLi.textContent = 'Seleccionar en el mapa';
+      pickLi.style.cssText = 'border-bottom:1px solid var(--line-200);margin-bottom:4px;padding-bottom:8px;font-weight:600;color:var(--teal-600)';
+      pickLi.addEventListener('click', (e) => {
+        e.stopPropagation();
+        listEl.hidden = true;
+        iniciarSeleccionMapa((lat, lon) => {
+          const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+          trigger.querySelector('.combo__trigger-text').textContent = nombre;
+          trigger.querySelector('.combo__trigger-text').removeAttribute('data-placeholder');
+          seleccion = { id: 'map_' + Date.now(), lat, lon, nombre, departamento: '' };
+          actualizarEscalas();
+        });
+      });
+      listEl.appendChild(pickLi);
       const deptos = [...new Set(state.municipios.map((m) => m.departamento))].sort();
       deptos.forEach((d) => {
         const li = document.createElement('li');
@@ -322,7 +370,7 @@
       const idx = state.escalas.findIndex((e) => e._row === row);
       if (idx !== -1) state.escalas.splice(idx, 1);
       row.remove();
-      if (state.escalas.length === 0) el.panelEscalas.hidden = true;
+      if (state.rutaActual) calcularRutaPrincipal();
       actualizarEstadoBotonCalcular();
     });
 
@@ -485,6 +533,11 @@
 
     // Una nueva ruta principal invalida cualquier parada agregada previamente.
     state.paradas = [];
+    state.sitios.forEach((s) => {
+      delete s._detourCoords;
+      delete s._detourDist;
+      delete s._detourDur;
+    });
     MapModule.limpiarParadas();
     MapModule.limpiarEscalas();
     limpiarPreview();
@@ -498,6 +551,9 @@
         ? await RoutingModule.calcularRutaConParadas(puntosRuta, PERFIL_FIJO)
         : await RoutingModule.calcularRuta(state.origen, state.destino, PERFIL_FIJO);
       aplicarRutaCalculada(ruta);
+      // Limpia las filas de escala del DOM (pasan a la lista de paradas)
+      state.escalas.forEach((e) => { if (e._row && e._row.parentNode) e._row.remove(); });
+      state.escalas.forEach((e) => { delete e._row; });
       renderizarParadas();
 
       // En dispositivos móviles, calcular la ruta pone toda la página en
@@ -723,27 +779,18 @@
       let detourDist;
       let detourDur;
 
-      if (p._detourCoords) {
-        detourCoords = p._detourCoords;
-        detourDist = p._detourDist;
-        detourDur = p._detourDur;
-      } else {
-        try {
-          const rutaDesvio = await RoutingModule.calcularRuta(
-            { lat: nearestLat, lon: nearestLon },
-            { lat: p.lat, lon: p.lon },
-            PERFIL_FIJO
-          );
-          detourCoords = rutaDesvio.geojson.geometry.coordinates;
-          detourDist = rutaDesvio.distanciaMetros;
-          detourDur = rutaDesvio.duracionSegundos;
-          p._detourCoords = detourCoords;
-          p._detourDist = detourDist;
-          p._detourDur = detourDur;
-        } catch (_err) {
-          idsFallidos.push(p.id);
-          continue;
-        }
+      try {
+        const rutaDesvio = await RoutingModule.calcularRuta(
+          { lat: nearestLat, lon: nearestLon },
+          { lat: p.lat, lon: p.lon },
+          PERFIL_FIJO
+        );
+        detourCoords = rutaDesvio.geojson.geometry.coordinates;
+        detourDist = rutaDesvio.distanciaMetros;
+        detourDur = rutaDesvio.duracionSegundos;
+      } catch (_err) {
+        idsFallidos.push(p.id);
+        continue;
       }
 
       const before = coords.slice(0, index + 1);
@@ -785,9 +832,11 @@
     });
     MapModule.setMarcadorOrigen(state.origen.lat, state.origen.lon, state.origen.nombre);
     MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);
+
+    let num = 1;
+    state.escalas.filter((e) => e.lat != null).forEach((e) => { e._numero = num++; });
+    state.paradas.forEach((p) => { p._numero = num++; });
     MapModule.setMarcadoresEscalas(state.escalas);
-    const numEscalas = state.escalas.filter((e) => e.lat != null).length;
-    state.paradas.forEach((p, i) => { p._numero = numEscalas + i + 1; });
     MapModule.setMarcadoresParadas(state.paradas);
     MapModule.encuadrar(state.rutaActual.geojson);
     el.statDistancia.textContent = Utils.formatearDistancia(state.rutaActual.distanciaMetros);
@@ -817,13 +866,61 @@
     renderizarParadas();
   }
 
+  function eliminarEscala(id, rowEl) {
+    const idx = state.escalas.findIndex((e) => e.id === id);
+    if (idx !== -1) state.escalas.splice(idx, 1);
+    if (rowEl && rowEl.parentNode) rowEl.remove();
+    if (state.rutaActual) {
+      calcularRutaPrincipal();
+    } else {
+      renderizarParadas();
+    }
+  }
+
   // -------------------------------------------------------------------
-  // Renderizar lista de paradas en el panel
+  // Renderizar lista de paradas en el panel (escalas + sitios turísticos)
   // -------------------------------------------------------------------
   function renderizarParadas() {
+    const escalas = state.escalas.filter((e) => e.lat != null);
+    const total = escalas.length + state.paradas.length;
     el.paradasLista.innerHTML = '';
-    el.paradasContador.textContent = String(state.paradas.length);
-    el.panelParadas.hidden = state.paradas.length === 0;
+    el.paradasContador.textContent = String(total);
+    el.panelParadas.hidden = total === 0;
+
+    escalas.forEach((e, i) => {
+      const li = document.createElement('li');
+      li.className = 'parada-item';
+      li.dataset.paradaId = e.id;
+      li.style.borderLeftColor = '#4a6fa5';
+
+      const num = document.createElement('span');
+      num.className = 'parada-item__num';
+      num.textContent = String(i + 1);
+      num.style.background = '#4a6fa5';
+
+      const nombre = document.createElement('span');
+      nombre.className = 'parada-item__nombre';
+      nombre.textContent = e.nombre;
+
+      const acciones = document.createElement('div');
+      acciones.className = 'parada-item__acciones';
+
+      const btnDel = document.createElement('button');
+      btnDel.type = 'button';
+      btnDel.className = 'parada-item__btn parada-item__btn--del';
+      btnDel.title = 'Quitar de la ruta';
+      btnDel.setAttribute('aria-label', 'Quitar ' + e.nombre + ' de la ruta');
+      btnDel.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>';
+
+      const escalaData = e;
+      btnDel.addEventListener('click', (evt) => { evt.stopPropagation(); eliminarEscala(escalaData.id, escalaData._row); });
+
+      acciones.appendChild(btnDel);
+      li.appendChild(num);
+      li.appendChild(nombre);
+      li.appendChild(acciones);
+      el.paradasLista.appendChild(li);
+    });
 
     state.paradas.forEach((sitio, i) => {
       const li = document.createElement('li');
@@ -856,7 +953,7 @@
 
       const num = document.createElement('span');
       num.className = 'parada-item__num';
-      num.textContent = String(i + 1);
+      num.textContent = String(escalas.length + i + 1);
 
       const nombre = document.createElement('span');
       nombre.className = 'parada-item__nombre';

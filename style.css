@@ -116,12 +116,15 @@ input, select{ font-family: inherit; }
   align-items: center;
   gap: 8px;
 }
-.panel-escalas{
+.panel-locate__escalas{
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding: 4px 0 4px 4px;
+  border-left: 2px solid var(--line-200);
+  margin-left: 2px;
 }
-.panel-escalas[hidden]{ display: none; }
+.panel-locate__escalas:empty{ display: none; }
 .escala-row{
   display: flex;
   align-items: center;

@@ -205,7 +205,8 @@ const MapModule = (() => {
     capaEscalas.clearLayers();
     escalas.forEach((e, i) => {
       if (e.lat == null || e.lon == null) return;
-      const marker = L.marker([e.lat, e.lon], { icon: _iconoEscala(i + 1), zIndexOffset: 950 });
+      const num = e._numero || i + 1;
+      const marker = L.marker([e.lat, e.lon], { icon: _iconoEscala(num), zIndexOffset: 950 });
       marker.bindTooltip(e.nombre, { direction: 'top' });
       marker.addTo(capaEscalas);
     });
