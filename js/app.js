@@ -571,9 +571,11 @@
     });
     el.filtroDistancia.addEventListener('input', () => {
       el.filtroDistanciaValor.textContent = `${el.filtroDistancia.value} km`;
+      actualizarEstadoBotonesRetry();
     });
     el.filtroTiempo.addEventListener('input', () => {
       el.filtroTiempoValor.textContent = `${el.filtroTiempo.value} min`;
+      actualizarEstadoBotonesRetry();
     });
 
 
@@ -603,9 +605,11 @@
     }
   }
 
+  let ultimosValoresAplicados = { distancia: null, tiempo: null };
+
   /** Habilita/deshabilita todos los controles de entrada durante el cálculo de ruta. */
   function ponerEnCargaRuta(cargando) {
-    el.btnCalcular.disabled = cargando || !(state.origen && state.destino);
+    if (cargando) el.btnCalcular.disabled = true;
     el.btnCalcular.setAttribute('data-loading', cargando ? 'true' : 'false');
     el.btnAgregarEscala.disabled = cargando;
     el.origenInput.disabled = cargando;
@@ -766,6 +770,8 @@
         state.sitiosFiltrados = resultados;
         renderizarSitios(resultados);
         renderizarCategoriasMenu();
+        ultimosValoresAplicados.distancia = Number(el.filtroDistancia.value);
+        actualizarEstadoBotonesRetry();
         completado();
       }
     }
@@ -798,19 +804,25 @@
     if (pendientes.length > 0) fondoBloque();
   }
 
+  function actualizarEstadoBotonesRetry() {
+    const distVal = Number(el.filtroDistancia.value);
+    const tiempoVal = Number(el.filtroTiempo.value);
+    el.btnAplicarDistancia.disabled = !el.checkDistancia.checked || distVal === ultimosValoresAplicados.distancia;
+    el.btnAplicarTiempo.disabled = !el.checkTiempo.checked || tiempoVal === ultimosValoresAplicados.tiempo;
+  }
+
   function aplicarFiltrosConSpinner(botonOrigenClic) {
     if (!state.rutaActual) return;
-    if (!el.checkDistancia.checked && !el.checkTiempo.checked) return;
+    if (botonOrigenClic === el.btnAplicarDistancia && !el.checkDistancia.checked) return;
+    if (botonOrigenClic === el.btnAplicarTiempo && !el.checkTiempo.checked) return;
     ponerEnCarga(botonOrigenClic, true);
     setTimeout(() => {
       ejecutarFiltrado();
+      if (botonOrigenClic === el.btnAplicarDistancia) ultimosValoresAplicados.distancia = Number(el.filtroDistancia.value);
+      if (botonOrigenClic === el.btnAplicarTiempo) ultimosValoresAplicados.tiempo = Number(el.filtroTiempo.value);
+      actualizarEstadoBotonesRetry();
       ponerEnCarga(botonOrigenClic, false);
     }, 15);
-  }
-
-  function actualizarEstadoBotonesRetry() {
-    el.btnAplicarDistancia.disabled = !el.checkDistancia.checked;
-    el.btnAplicarTiempo.disabled = !el.checkTiempo.checked;
   }
 
   function renderizarSitios(sitios) {
