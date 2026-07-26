@@ -7,15 +7,19 @@
  *
  * El panel lateral ofrece dos criterios independientes, cada uno con su
  * propio checkbox de activación:
- *   - Distancia máxima al corredor (km)
+ *   - Distancia máxima a la ruta (km)
  *   - Desvío máximo estimado (min)
  * Cuando ambos están activos se exige que el sitio cumpla los dos a la vez
  * (AND). Si ninguno está activo, no hay resultados que mostrar.
  *
- * El mapa ya no dibuja el polígono de corredor (buffer): el buffer se
- * calculaba únicamente con fines de visualización y se retiró a pedido del
- * usuario. El filtrado en sí nunca dependió de esa geometría, sino de la
- * distancia perpendicular punto-línea, así que la lógica no cambia.
+ * El resultado se ordena por cercanía al municipio de ORIGEN (distancia en
+ * línea recta con turf.distance), no por la distancia a la ruta: así el
+ * primer sitio de la lista es siempre el más próximo a donde arranca el
+ * viaje, sin importar cuánto se aleje del trazado de la vía.
+ *
+ * Los sitios ya agregados como parada de la ruta (ver app.js) se excluyen
+ * del resultado mediante `excluirIds`, para no ofrecerlos de nuevo como
+ * candidatos.
  *
  * La velocidad promedio usada para aproximar el tiempo de desvío es un
  * parámetro configurable en código (VELOCIDAD_DESVIO_KMH). El punto de
@@ -31,9 +35,17 @@ const FiltersModule = (() => {
   const MINUTOS_MANIOBRA = 3;
 
   /** Distancia perpendicular mínima (km) de un punto a la línea de ruta. */
-  function distanciaAPuntoRuta(sitio, rutaGeoJSON) {
+  function distanciaARuta(sitio, rutaGeoJSON) {
     const punto = turf.point([sitio.lon, sitio.lat]);
     return turf.pointToLineDistance(punto, rutaGeoJSON, { units: 'kilometers' });
+  }
+
+  /** Distancia en línea recta (km) entre un sitio y el punto de origen. */
+  function distanciaAOrigen(sitio, origen) {
+    if (!origen) return null;
+    const puntoOrigen = turf.point([origen.lon, origen.lat]);
+    const puntoSitio = turf.point([sitio.lon, sitio.lat]);
+    return turf.distance(puntoOrigen, puntoSitio, { units: 'kilometers' });
   }
 
   /**
@@ -60,8 +72,10 @@ const FiltersModule = (() => {
    *    distanciaMaximaKm {number}
    *    tiempoMaximoMin {number}
    *    velocidadKmH {number} - opcional, por defecto VELOCIDAD_DESVIO_KMH
+   *    origen {{lat:number, lon:number}} - usado para ordenar el resultado
+   *    excluirIds {Array<number>} - ids de sitios a omitir (ya agregados como parada)
    * @returns {Array} sitios que cumplen los criterios activos, con
-   *    distanciaCorredorKm y tiempoDesvioMin calculados, ordenados por cercanía.
+   *    distanciaRutaKm y tiempoDesvioMin calculados, ordenados por cercanía al origen.
    */
   function filtrarSitiosPorRuta(sitios, rutaGeoJSON, opciones) {
     const {
@@ -70,27 +84,34 @@ const FiltersModule = (() => {
       distanciaMaximaKm = 15,
       tiempoMaximoMin = 20,
       velocidadKmH = VELOCIDAD_DESVIO_KMH,
+      origen = null,
+      excluirIds = [],
     } = opciones;
 
     if (!usarDistancia && !usarTiempo) return [];
 
+    const idsExcluidos = new Set(excluirIds);
+
     return sitios
+      .filter((s) => !idsExcluidos.has(s.id))
       .map((s) => {
-        const distanciaCorredorKm = distanciaAPuntoRuta(s, rutaGeoJSON);
-        const tiempoDesvioMin = aproximarTiempoDesvio(distanciaCorredorKm, velocidadKmH);
-        return { ...s, distanciaCorredorKm, tiempoDesvioMin };
+        const distanciaRutaKm = distanciaARuta(s, rutaGeoJSON);
+        const tiempoDesvioMin = aproximarTiempoDesvio(distanciaRutaKm, velocidadKmH);
+        const distanciaOrigenKm = distanciaAOrigen(s, origen);
+        return { ...s, distanciaRutaKm, tiempoDesvioMin, distanciaOrigenKm };
       })
       .filter((s) => {
-        if (usarDistancia && s.distanciaCorredorKm > distanciaMaximaKm) return false;
+        if (usarDistancia && s.distanciaRutaKm > distanciaMaximaKm) return false;
         if (usarTiempo && s.tiempoDesvioMin > tiempoMaximoMin) return false;
         return true;
       })
-      .sort((a, b) => a.distanciaCorredorKm - b.distanciaCorredorKm);
+      .sort((a, b) => (a.distanciaOrigenKm ?? a.distanciaRutaKm) - (b.distanciaOrigenKm ?? b.distanciaRutaKm));
   }
 
   return {
     VELOCIDAD_DESVIO_KMH,
-    distanciaAPuntoRuta,
+    distanciaARuta,
+    distanciaAOrigen,
     aproximarTiempoDesvio,
     filtrarSitiosPorRuta,
   };

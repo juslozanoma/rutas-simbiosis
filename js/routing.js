@@ -32,8 +32,26 @@ const RoutingModule = (() => {
    * @returns {Promise<object>} ruta normalizada
    */
   async function calcularRuta(origen, destino, perfil = 'driving') {
+    return calcularRutaConParadas([origen, destino], perfil);
+  }
+
+  /**
+   * Calcula una ruta que pasa, en orden, por una lista de puntos (origen,
+   * cero o más sitios turísticos agregados como parada, y destino). OSRM
+   * admite varios pares de coordenadas en una sola consulta y devuelve la
+   * geometría y las métricas ya combinadas para el recorrido completo.
+   *
+   * @param {Array<{lat:number, lon:number}>} puntos - mínimo 2 puntos, en orden de visita
+   * @param {string} perfil - 'driving' | 'cycling' | 'walking'
+   * @returns {Promise<object>} ruta normalizada
+   */
+  async function calcularRutaConParadas(puntos, perfil = 'driving') {
+    if (!Array.isArray(puntos) || puntos.length < 2) {
+      throw new Error('Se requieren al menos dos puntos para calcular una ruta.');
+    }
+
     const base = ENDPOINTS[perfil] || ENDPOINTS.driving;
-    const coords = `${origen.lon},${origen.lat};${destino.lon},${destino.lat}`;
+    const coords = puntos.map((p) => `${p.lon},${p.lat}`).join(';');
     const url = `${base}/${coords}?overview=full&geometries=geojson&steps=false&alternatives=false`;
 
     const respuesta = await fetch(url);
@@ -43,7 +61,7 @@ const RoutingModule = (() => {
     const data = await respuesta.json();
 
     if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
-      throw new Error('No fue posible calcular una ruta entre los municipios seleccionados.');
+      throw new Error('No fue posible calcular una ruta con los puntos seleccionados.');
     }
 
     const ruta = data.routes[0];
@@ -90,6 +108,7 @@ const RoutingModule = (() => {
 
   return {
     calcularRuta,
+    calcularRutaConParadas,
     calcularTiempoDesvioPreciso,
   };
 })();
