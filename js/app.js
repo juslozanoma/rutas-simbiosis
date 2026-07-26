@@ -45,7 +45,6 @@
     previewSitioId: null,
     categoriasSeleccionadas: [],
     categoriasUnicas: [],
-    sitiosEnriquecidos: [],
   };
 
   // -------------------------------------------------------------------
@@ -368,9 +367,15 @@
 
     removeBtn.addEventListener('click', () => {
       const idx = state.escalas.findIndex((e) => e._row === row);
-      if (idx !== -1) state.escalas.splice(idx, 1);
+      if (idx !== -1) {
+        const e = state.escalas[idx];
+        state.escalas.splice(idx, 1);
+        if (state.rutaActual) {
+          state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
+          calcularRutaPrincipal(true);
+        }
+      }
       row.remove();
-      if (state.rutaActual) calcularRutaPrincipal();
       actualizarEstadoBotonCalcular();
     });
 
@@ -521,7 +526,7 @@
   // -------------------------------------------------------------------
   // Cálculo de la ruta principal (solo al pulsar el botón)
   // -------------------------------------------------------------------
-  async function calcularRutaPrincipal() {
+  async function calcularRutaPrincipal(conservarParadas = false) {
     if (!state.origen || !state.destino) return;
 
     if (state.origen.id === state.destino.id) {
@@ -531,12 +536,16 @@
       return;
     }
 
-    // Una nueva ruta principal invalida cualquier parada agregada previamente.
-    state.paradas = [];
+    // Una nueva ruta principal invalida cualquier parada agregada previamente
+    // (excepto cuando se reordenan escalas, que deben conservarse).
+    if (!conservarParadas) state.paradas = [];
     state.sitios.forEach((s) => {
       delete s._detourCoords;
       delete s._detourDist;
       delete s._detourDur;
+      delete s.distanciaRutaKm;
+      delete s.tiempoDesvioMin;
+      delete s.distanciaOrigenKm;
     });
     MapModule.limpiarParadas();
     MapModule.limpiarEscalas();
@@ -581,7 +590,6 @@
 
   async function aplicarRutaCalculada(ruta) {
     state.rutaBase = ruta;
-    state.sitiosEnriquecidos = FiltersModule.precomputarSitios(state.sitios, ruta.geojson, state.origen);
     await aplicarRutaConDesvios();
   }
 
@@ -623,7 +631,7 @@
     };
 
     const rutaFiltro = state.rutaBase || state.rutaActual;
-    let sitiosResultado = FiltersModule.filtrarSitiosPorRuta(state.sitiosEnriquecidos, rutaFiltro.geojson, opciones);
+    let sitiosResultado = FiltersModule.filtrarSitiosPorRuta(state.sitios, rutaFiltro.geojson, opciones);
 
     if (hayCategorias) {
       const catsNorm = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase().trim()));
@@ -829,6 +837,7 @@
     MapModule.dibujarRuta(state.rutaActual.geojson, {
       distanciaMetros: state.rutaActual.distanciaMetros,
       duracionSegundos: state.rutaActual.duracionSegundos,
+      origenNombre: state.origen?.nombre || 'el origen',
     });
     MapModule.setMarcadorOrigen(state.origen.lat, state.origen.lon, state.origen.nombre);
     MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);
@@ -871,7 +880,8 @@
     if (idx !== -1) state.escalas.splice(idx, 1);
     if (rowEl && rowEl.parentNode) rowEl.remove();
     if (state.rutaActual) {
-      calcularRutaPrincipal();
+      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
+      calcularRutaPrincipal(true);
     } else {
       renderizarParadas();
     }
@@ -880,6 +890,35 @@
   // -------------------------------------------------------------------
   // Renderizar lista de paradas en el panel (escalas + sitios turísticos)
   // -------------------------------------------------------------------
+  function adjuntarDragEvents(li, tipo, id) {
+    li.draggable = true;
+    li.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', JSON.stringify({ tipo, id }));
+      li.classList.add('parada-item--dragging');
+    });
+    li.addEventListener('dragend', () => {
+      el.paradasLista.querySelectorAll('.parada-item').forEach((el_) => {
+        el_.classList.remove('parada-item--dragging', 'parada-item--drag-over');
+      });
+    });
+    li.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      el.paradasLista.querySelectorAll('.parada-item').forEach((el_) => {
+        el_.classList.remove('parada-item--drag-over');
+      });
+      li.classList.add('parada-item--drag-over');
+    });
+    li.addEventListener('drop', (e) => {
+      e.preventDefault();
+      try {
+        const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+        if (data.tipo === 'escala' && tipo === 'escala') moverEscala(data.id, id);
+        else if (data.tipo === 'parada' && tipo === 'parada') moverParada(data.id, id);
+      } catch (_) {}
+    });
+    li.addEventListener('dragenter', (e) => e.preventDefault());
+  }
+
   function renderizarParadas() {
     const escalas = state.escalas.filter((e) => e.lat != null);
     const total = escalas.length + state.paradas.length;
@@ -892,6 +931,7 @@
       li.className = 'parada-item';
       li.dataset.paradaId = e.id;
       li.style.borderLeftColor = '#4a6fa5';
+      adjuntarDragEvents(li, 'escala', e.id);
 
       const num = document.createElement('span');
       num.className = 'parada-item__num';
@@ -926,30 +966,7 @@
       const li = document.createElement('li');
       li.className = 'parada-item';
       li.dataset.paradaId = sitio.id;
-      li.draggable = true;
-
-      li.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', String(sitio.id));
-        li.classList.add('parada-item--dragging');
-      });
-      li.addEventListener('dragend', () => {
-        el.paradasLista.querySelectorAll('.parada-item').forEach((el_) => {
-          el_.classList.remove('parada-item--dragging', 'parada-item--drag-over');
-        });
-      });
-      li.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        el.paradasLista.querySelectorAll('.parada-item').forEach((el_) => {
-          el_.classList.remove('parada-item--drag-over');
-        });
-        li.classList.add('parada-item--drag-over');
-      });
-      li.addEventListener('drop', (e) => {
-        e.preventDefault();
-        const draggedId = Number(e.dataTransfer.getData('text/plain'));
-        moverParada(draggedId, sitio.id);
-      });
-      li.addEventListener('dragenter', (e) => e.preventDefault());
+      adjuntarDragEvents(li, 'parada', sitio.id);
 
       const num = document.createElement('span');
       num.className = 'parada-item__num';
@@ -977,6 +994,17 @@
       li.appendChild(acciones);
       el.paradasLista.appendChild(li);
     });
+  }
+
+  async function moverEscala(desdeId, hastaId) {
+    if (desdeId === hastaId) return;
+    const desdeIdx = state.escalas.findIndex((e) => e.id === desdeId);
+    const hastaIdx = state.escalas.findIndex((e) => e.id === hastaId);
+    if (desdeIdx === -1 || hastaIdx === -1) return;
+    const item = state.escalas.splice(desdeIdx, 1)[0];
+    state.escalas.splice(hastaIdx, 0, item);
+    state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
+    await calcularRutaPrincipal(true);
   }
 
   async function moverParada(desdeId, hastaId) {

@@ -232,11 +232,12 @@ const MapModule = (() => {
     limpiarRuta();
 
     capaRuta = L.geoJSON(geojsonLineString, {
-      style: { color: '#e35c2b', weight: 5, opacity: 0.92, lineCap: 'round' },
+      style: { color: '#e35c2b', weight: 10, opacity: 0.92, lineCap: 'round' },
     }).addTo(map);
 
     const totalKm = (meta.distanciaMetros || 0) / 1000;
     const totalSeg = meta.duracionSegundos || 0;
+    const origenNombre = meta.origenNombre || 'el origen';
 
     if (totalKm > 0) {
       capaRuta.eachLayer((layer) => {
@@ -250,7 +251,7 @@ const MapModule = (() => {
           const distKm = Math.max(0, snapped.properties.location);
           const tiempoSeg = totalSeg * (distKm / totalKm);
           layer.setTooltipContent(
-            `${distKm.toFixed(1)} km · ${Utils.formatearDuracion(tiempoSeg)} desde el origen`
+            `${distKm.toFixed(1)} km · ${Utils.formatearDuracion(tiempoSeg)} desde ${origenNombre}`
           );
         });
       });
