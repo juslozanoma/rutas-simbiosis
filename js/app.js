@@ -1041,6 +1041,11 @@
       await aplicarRutaConDesvios();
       renderizarParadas();
       limpiarPreview();
+      const idx = state.sitiosFiltrados.findIndex((s) => s.id === sitio.id);
+      if (idx !== -1) {
+        state.sitiosFiltrados.splice(idx, 1);
+        renderizarSitios(state.sitiosFiltrados);
+      }
     } finally {
       if (boton) ponerEnCarga(boton, false);
     }
