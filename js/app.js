@@ -581,10 +581,19 @@
       actualizarEstadoBotonesRetry();
     });
 
-
-
+    el.paradasLista.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (!elementoArrastrando || elementoArrastrando.dataset.tipoParada === 'escala') return;
+      const target = e.target.closest('.parada-item');
+      if (!target || target === elementoArrastrando || target.dataset.tipoParada === 'escala') return;
+      const rect = target.getBoundingClientRect();
+      if (e.clientY > rect.top + rect.height / 2) {
+        target.parentNode.insertBefore(elementoArrastrando, target.nextSibling);
+      } else {
+        target.parentNode.insertBefore(elementoArrastrando, target);
+      }
+    });
   }
-
   // -------------------------------------------------------------------
   // Vista móvil: alternar entre panel completo y mapa completo
   // -------------------------------------------------------------------
@@ -609,6 +618,7 @@
   }
 
   let ultimosValoresAplicados = { distancia: null, tiempo: null };
+  let elementoArrastrando = null;
 
   /** Habilita/deshabilita todos los controles de entrada durante el cálculo de ruta. */
   function ponerEnCargaRuta(cargando) {
@@ -823,8 +833,8 @@
       ejecutarFiltrado();
       if (botonOrigenClic === el.btnAplicarDistancia) ultimosValoresAplicados.distancia = Number(el.filtroDistancia.value);
       if (botonOrigenClic === el.btnAplicarTiempo) ultimosValoresAplicados.tiempo = Number(el.filtroTiempo.value);
-      actualizarEstadoBotonesRetry();
       ponerEnCarga(botonOrigenClic, false);
+      actualizarEstadoBotonesRetry();
     }, 15);
   }
 
@@ -1078,37 +1088,27 @@
   // Renderizar lista de paradas en el panel (escalas + sitios turísticos)
   // -------------------------------------------------------------------
   function adjuntarDragEvents(li, tipo, id) {
+    li.dataset.tipoParada = tipo;
     li.draggable = true;
     li.addEventListener('dragstart', (e) => {
+      elementoArrastrando = li;
       e.dataTransfer.setData('text/plain', JSON.stringify({ tipo, id }));
-      li.classList.add('parada-item--dragging');
+      e.dataTransfer.effectAllowed = 'move';
     });
     li.addEventListener('dragend', () => {
-      el.paradasLista.querySelectorAll('.parada-item').forEach((el_) => {
-        el_.classList.remove('parada-item--dragging', 'parada-item--drag-over');
-      });
-    });
-    li.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      li.classList.add('parada-item--drag-over');
-      el.paradasLista.querySelectorAll('.parada-item').forEach((el_) => {
-        if (el_ !== li) el_.classList.remove('parada-item--drag-over');
-      });
-    });
-    li.addEventListener('dragleave', () => {
-      li.classList.remove('parada-item--drag-over');
+      elementoArrastrando = null;
     });
     li.addEventListener('drop', (e) => {
       e.preventDefault();
-      el.paradasLista.querySelectorAll('.parada-item').forEach((el_) => {
-        el_.classList.remove('parada-item--drag-over');
-      });
+      elementoArrastrando = null;
       try {
         const data = JSON.parse(e.dataTransfer.getData('text/plain'));
-        if (data.tipo === 'escala' && tipo === 'escala') moverEscala(data.id, id);
-        else if (data.tipo === 'parada' && tipo === 'parada') moverParada(data.id, id);
-        else if (data.tipo === 'escala' && tipo === 'parada') moverEscala(data.id, null, id);
-        else if (data.tipo === 'parada' && tipo === 'escala') moverParada(data.id, null, id);
+        const targetId = Number(li.dataset.paradaId);
+        const targetTipo = tipo;
+        if (data.tipo === 'escala' && targetTipo === 'escala') moverEscala(data.id, targetId);
+        else if (data.tipo === 'parada' && targetTipo === 'parada') moverParada(data.id, targetId);
+        else if (data.tipo === 'escala' && targetTipo === 'parada') moverEscala(data.id, null, targetId);
+        else if (data.tipo === 'parada' && targetTipo === 'escala') moverParada(data.id, null, targetId);
       } catch (_) {}
     });
   }
