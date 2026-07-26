@@ -40,7 +40,6 @@
     'Vaupés':'Mitú','Vichada':'Puerto Carreño',
   };
 
-  let ultimosValoresAplicados = { distancia: null, tiempo: null };
   /** Estado centralizado de la aplicación. */
   const state = {
     municipios: [],
@@ -559,11 +558,9 @@
     });
     el.filtroDistancia.addEventListener('input', () => {
       el.filtroDistanciaValor.textContent = `${el.filtroDistancia.value} km`;
-      actualizarBotonFiltro(el.btnAplicarDistancia, 'distancia');
     });
     el.filtroTiempo.addEventListener('input', () => {
       el.filtroTiempoValor.textContent = `${el.filtroTiempo.value} min`;
-      actualizarBotonFiltro(el.btnAplicarTiempo, 'tiempo');
     });
 
 
@@ -700,10 +697,6 @@
     }
     state.sitiosFiltrados = sitiosResultado;
     renderizarSitios(sitiosResultado);
-    ultimosValoresAplicados.distancia = Number(el.filtroDistancia.value);
-    ultimosValoresAplicados.tiempo = Number(el.filtroTiempo.value);
-    actualizarBotonFiltro(el.btnAplicarDistancia, 'distancia');
-    actualizarBotonFiltro(el.btnAplicarTiempo, 'tiempo');
   }
 
   function ejecutarFiltradoProgresivo(completado) {
@@ -758,8 +751,6 @@
         resultados.sort((a, b) => (a.distanciaOrigenKm ?? a.distanciaRutaKm) - (b.distanciaOrigenKm ?? b.distanciaRutaKm));
         state.sitiosFiltrados = resultados;
         renderizarSitios(resultados);
-        ultimosValoresAplicados.distancia = distanciaMax;
-        actualizarBotonFiltro(el.btnAplicarDistancia, 'distancia');
         completado();
       }
     }
@@ -798,22 +789,6 @@
       ejecutarFiltrado();
       ponerEnCarga(botonOrigenClic, false);
     }, 15);
-  }
-
-  function actualizarBotonFiltro(boton, tipo) {
-    const valorActual = tipo === 'distancia' ? Number(el.filtroDistancia.value) : Number(el.filtroTiempo.value);
-    const aplicado = valorActual === ultimosValoresAplicados[tipo]
-      && (tipo === 'distancia' ? el.checkDistancia.checked : el.checkTiempo.checked);
-    setBotonFiltroIcono(boton, aplicado);
-  }
-
-  function setBotonFiltroIcono(boton, aplicado) {
-    const svg = boton.querySelector('.icon-btn__icon');
-    if (!svg) return;
-    svg.innerHTML = aplicado
-      ? '<path d="M20 6L9 17l-5-5"/>'
-      : '<path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>';
-    boton.classList.toggle('icon-btn--applied', aplicado);
   }
 
   function renderizarSitios(sitios) {

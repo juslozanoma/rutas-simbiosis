@@ -230,9 +230,6 @@ input, select{ font-family: inherit; }
 .icon-btn--accent:hover:not(:disabled){ background: var(--teal-600); border-color: var(--teal-600); }
 .icon-btn--accent:disabled{ opacity: 0.4; }
 
-.icon-btn--applied{ border-color: var(--teal-500); color: var(--teal-600); }
-.icon-btn--applied:hover:not(:disabled){ background: #e8f5ef; border-color: var(--teal-500); }
-
 .icon-btn__spinner{
   display: none;
   position: absolute;
@@ -406,6 +403,23 @@ input, select{ font-family: inherit; }
 }
 .btn-toggle-sitios:hover{ background: #f5f3ec; }
 .btn-toggle-sitios[aria-pressed="false"]{ color: var(--text-muted); opacity: 0.5; border-color: var(--line-300); }
+.btn-toggle-pill{
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--teal-500);
+  background: #ffffff;
+  color: var(--teal-500);
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex; align-items: center;
+  font-family: inherit;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.btn-toggle-pill:hover{ background: #f5f3ec; }
+.btn-toggle-pill[aria-pressed="false"]{ color: var(--text-muted); opacity: 0.5; border-color: var(--line-300); background: #ffffff; }
 .badge-count{
   background: var(--ink-900);
   color: #ffffff;
