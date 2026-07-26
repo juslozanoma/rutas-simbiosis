@@ -16,7 +16,8 @@ const MapModule = (() => {
   let capaRutaPreview = null;   // L.geoJSON temporal: ruta de origen a un sitio en previsualización
   let markerOrigen = null;
   let markerDestino = null;
-  let capaParadas = null;       // L.layerGroup con los sitios agregados a la ruta
+  let capaParadas = null;       // L.layerGroup con las paradas (escalas + sitios agregados)
+  let capaEscalas = null;       // L.layerGroup con marcadores de municipios intermedios
   let clusterSitios = null;     // L.markerClusterGroup con los sitios candidatos filtrados
 
   const CENTRO_COLOMBIA = [4.6, -74.1];
@@ -51,6 +52,7 @@ const MapModule = (() => {
     clusterSitios.addTo(map);
 
     capaParadas = L.layerGroup().addTo(map);
+    capaEscalas = L.layerGroup().addTo(map);
 
     // El contenedor del mapa nace con un tamaño definido por CSS (flex),
     // por lo que conviene forzar un recálculo tras el primer render.
@@ -104,7 +106,18 @@ const MapModule = (() => {
   /** Ícono numerado para un sitio agregado como parada de la ruta. */
   function _iconoParada(numero) {
     return L.divIcon({
-      html: `<div class="parada-pin">${numero}</div>`,
+      html: `<div class="parada-pin parada-pin--parada">${numero}</div>`,
+      className: '',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+      popupAnchor: [0, -14],
+    });
+  }
+
+  /** Ícono numerado para una escala (municipio intermedio). */
+  function _iconoEscala(numero) {
+    return L.divIcon({
+      html: `<div class="parada-pin parada-pin--escala">${numero}</div>`,
       className: '',
       iconSize: [24, 24],
       iconAnchor: [12, 12],
@@ -150,11 +163,12 @@ const MapModule = (() => {
   function setMarcadoresParadas(paradas) {
     capaParadas.clearLayers();
     paradas.forEach((sitio, i) => {
-      const marker = L.marker([sitio.lat, sitio.lon], { icon: _iconoParada(i + 1), zIndexOffset: 900 });
+      const num = sitio._numero || i + 1;
+      const marker = L.marker([sitio.lat, sitio.lon], { icon: _iconoParada(num), zIndexOffset: 900 });
 
       marker.bindPopup(`
         <div class="popup-parada">
-          <span class="popup-parada__badge">Parada ${i + 1}</span>
+          <span class="popup-parada__badge">Parada ${num}</span>
           <h3 class="popup-parada__nombre">${sitio.nombre}</h3>
           <button type="button" class="popup-parada__eliminar" data-parada-id="${sitio.id}">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -184,6 +198,21 @@ const MapModule = (() => {
 
   function limpiarParadas() {
     capaParadas.clearLayers();
+  }
+
+  /** Repinta los marcadores numerados de las escalas (municipios intermedios). */
+  function setMarcadoresEscalas(escalas) {
+    capaEscalas.clearLayers();
+    escalas.forEach((e, i) => {
+      if (e.lat == null || e.lon == null) return;
+      const marker = L.marker([e.lat, e.lon], { icon: _iconoEscala(i + 1), zIndexOffset: 950 });
+      marker.bindTooltip(e.nombre, { direction: 'top' });
+      marker.addTo(capaEscalas);
+    });
+  }
+
+  function limpiarEscalas() {
+    capaEscalas.clearLayers();
   }
 
   // ---------------------------------------------------------------------
@@ -291,6 +320,8 @@ const MapModule = (() => {
     setMarcadoresParadas,
     setOnEliminarParada,
     limpiarParadas,
+    setMarcadoresEscalas,
+    limpiarEscalas,
     dibujarRuta,
     dibujarRutaPreview,
     limpiarRutaPreview,

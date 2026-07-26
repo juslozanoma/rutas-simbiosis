@@ -37,8 +37,9 @@
     sitios: [],
     origen: null,
     destino: null,
-    rutaBase: null,       // ruta OSRM original (sin desvíos)
-    rutaActual: null,     // ruta mostrada (con desvíos si hay paradas)
+    escalas: [],          // municipios intermedios (recalculan ruta + turf)
+    rutaBase: null,
+    rutaActual: null,
     paradas: [],
     sitiosFiltrados: [],
     previewSitioId: null,
@@ -86,6 +87,9 @@
     panelCategorias: document.getElementById('panel-categorias'),
     categoriasGrid: document.getElementById('categorias-grid'),
     btnCategoriasCerrar: document.getElementById('btn-categorias-cerrar'),
+
+    panelEscalas: document.getElementById('panel-escalas'),
+    btnAgregarEscala: document.getElementById('btn-agregar-escala'),
   };
 
   // -------------------------------------------------------------------
@@ -111,6 +115,7 @@
     initCombos();
     state.categoriasUnicas = obtenerCategoriasUnicas();
     renderizarCategoriasMenu();
+    initEscalas();
     initEventos();
   }
 
@@ -118,11 +123,21 @@
   // Combos de búsqueda (origen / destino)
   // -------------------------------------------------------------------
   function initCombos() {
-    setupCombo(el.origenInput, el.origenList, (m) => { state.origen = m; actualizarEstadoBotonCalcular(); });
-    setupCombo(el.destinoInput, el.destinoList, (m) => { state.destino = m; actualizarEstadoBotonCalcular(); });
+    setupCombo(el.origenInput, el.origenList, (m) => { state.origen = m; actualizarEstadoBotonCalcular(); }, () => {
+      const ids = new Set();
+      if (state.destino?.id) ids.add(state.destino.id);
+      state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
+      return ids;
+    });
+    setupCombo(el.destinoInput, el.destinoList, (m) => { state.destino = m; actualizarEstadoBotonCalcular(); }, () => {
+      const ids = new Set();
+      if (state.origen?.id) ids.add(state.origen.id);
+      state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
+      return ids;
+    });
   }
 
-  function setupCombo(trigger, listEl, onSelect) {
+  function setupCombo(trigger, listEl, onSelect, excluirIdsFn) {
     const combo = trigger.parentElement;
     let deptoSeleccionado = null;
 
@@ -164,7 +179,8 @@
       });
       listEl.appendChild(back);
 
-      const municipios = obtenerMunicipios(deptoSeleccionado);
+      const idsExcluidos = excluirIdsFn ? excluirIdsFn() : new Set();
+      const municipios = obtenerMunicipios(deptoSeleccionado).filter((m) => !idsExcluidos.has(m.id));
       municipios.forEach((m) => {
         const li = document.createElement('li');
         li.textContent = m.nombre;
@@ -211,6 +227,118 @@
 
   function actualizarEstadoBotonCalcular() {
     el.btnCalcular.disabled = !(state.origen && state.destino);
+  }
+
+  // -------------------------------------------------------------------
+  // Escalas: municipios intermedios entre origen y destino
+  // -------------------------------------------------------------------
+  function initEscalas() {
+    el.btnAgregarEscala.addEventListener('click', () => agregarEscala());
+  }
+
+  function agregarEscala() {
+    const row = document.createElement('div');
+    row.className = 'escala-row';
+
+    const combo = document.createElement('div');
+    combo.className = 'combo';
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'combo__trigger escala-trigger';
+    trigger.innerHTML = '<span class="combo__trigger-text" data-placeholder="true">Pueblo intermedio</span>'
+      + '<svg class="combo__chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>';
+    const listEl = document.createElement('ul');
+    listEl.className = 'combo__list';
+    listEl.role = 'listbox';
+    listEl.hidden = true;
+    combo.appendChild(trigger);
+    combo.appendChild(listEl);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'escala-row__remove';
+    removeBtn.title = 'Quitar';
+    removeBtn.textContent = '×';
+
+    row.appendChild(combo);
+    row.appendChild(removeBtn);
+    el.panelEscalas.appendChild(row);
+    el.panelEscalas.hidden = false;
+
+    let seleccion = null;
+
+    function renderDeptos() {
+      seleccion = null;
+      listEl.innerHTML = '';
+      const deptos = [...new Set(state.municipios.map((m) => m.departamento))].sort();
+      deptos.forEach((d) => {
+        const li = document.createElement('li');
+        li.textContent = d;
+        li.addEventListener('click', (e) => { e.stopPropagation(); renderMunicipios(d); });
+        listEl.appendChild(li);
+      });
+      listEl.hidden = false;
+    }
+    function renderMunicipios(depto) {
+      listEl.innerHTML = '';
+      const back = document.createElement('li');
+      back.className = 'combo__back';
+      back.textContent = '← Volver';
+      back.addEventListener('click', (e) => { e.stopPropagation(); renderDeptos(); });
+      listEl.appendChild(back);
+      const idsNoDisponibles = new Set();
+      if (state.origen?.id) idsNoDisponibles.add(state.origen.id);
+      if (state.destino?.id) idsNoDisponibles.add(state.destino.id);
+      state.escalas.forEach((e) => { if (e.id != null && e._row !== row) idsNoDisponibles.add(e.id); });
+      state.municipios.filter((m) => m.departamento === depto && !idsNoDisponibles.has(m.id)).sort((a, b) => a.nombre.localeCompare(b.nombre)).forEach((m) => {
+        const li = document.createElement('li');
+        li.textContent = m.nombre;
+        li.addEventListener('click', (e) => {
+          e.stopPropagation();
+          listEl.hidden = true;
+          trigger.querySelector('.combo__trigger-text').textContent = m.nombre;
+          trigger.querySelector('.combo__trigger-text').removeAttribute('data-placeholder');
+          seleccion = m;
+          actualizarEscalas();
+        });
+        listEl.appendChild(li);
+      });
+      listEl.hidden = false;
+    }
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (listEl.hidden) renderDeptos(); else listEl.hidden = true;
+    });
+    document.addEventListener('click', function onClickOutside(e) {
+      if (!row.contains(e.target)) listEl.hidden = true;
+    });
+    trigger.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') listEl.hidden = true;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (listEl.hidden) renderDeptos(); else listEl.hidden = true; }
+    });
+
+    removeBtn.addEventListener('click', () => {
+      const idx = state.escalas.findIndex((e) => e._row === row);
+      if (idx !== -1) state.escalas.splice(idx, 1);
+      row.remove();
+      if (state.escalas.length === 0) el.panelEscalas.hidden = true;
+      actualizarEstadoBotonCalcular();
+    });
+
+    state.escalas.push({ _row: row });
+  }
+
+  function actualizarEscalas() {
+    state.escalas.forEach((e) => {
+      if (!e._row) return;
+      const txt = e._row.querySelector('.combo__trigger-text');
+      if (!txt || txt.hasAttribute('data-placeholder')) return;
+      const nombre = txt.textContent;
+      const m = state.municipios.find((mun) => mun.nombre === nombre);
+      if (m) Object.assign(e, m);
+    });
+    actualizarEstadoBotonCalcular();
   }
 
   // -------------------------------------------------------------------
@@ -331,6 +459,17 @@
     }
   }
 
+  /** Habilita/deshabilita todos los controles de entrada durante el cálculo de ruta. */
+  function ponerEnCargaRuta(cargando) {
+    el.btnCalcular.disabled = cargando || !(state.origen && state.destino);
+    el.btnCalcular.setAttribute('data-loading', cargando ? 'true' : 'false');
+    el.btnAgregarEscala.disabled = cargando;
+    el.origenInput.disabled = cargando;
+    el.destinoInput.disabled = cargando;
+    document.querySelectorAll('.combo__trigger.escala-trigger').forEach((b) => { b.disabled = cargando; });
+    document.querySelectorAll('.sitio-card__add').forEach((b) => { b.disabled = cargando; });
+  }
+
   // -------------------------------------------------------------------
   // Cálculo de la ruta principal (solo al pulsar el botón)
   // -------------------------------------------------------------------
@@ -347,12 +486,17 @@
     // Una nueva ruta principal invalida cualquier parada agregada previamente.
     state.paradas = [];
     MapModule.limpiarParadas();
+    MapModule.limpiarEscalas();
     limpiarPreview();
 
-    ponerEnCarga(el.btnCalcular, true);
+    ponerEnCargaRuta(true);
 
     try {
-      const ruta = await RoutingModule.calcularRuta(state.origen, state.destino, PERFIL_FIJO);
+      const puntosRuta = [state.origen, ...state.escalas.filter((e) => e.lat != null), state.destino];
+      const usarConParadas = puntosRuta.length > 2;
+      const ruta = usarConParadas
+        ? await RoutingModule.calcularRutaConParadas(puntosRuta, PERFIL_FIJO)
+        : await RoutingModule.calcularRuta(state.origen, state.destino, PERFIL_FIJO);
       aplicarRutaCalculada(ruta);
       renderizarParadas();
 
@@ -375,14 +519,14 @@
       el.sitiosVacio.hidden = false;
       el.sitiosVacio.textContent = 'No se pudo calcular la ruta: ' + err.message;
     } finally {
-      ponerEnCarga(el.btnCalcular, false);
+      ponerEnCargaRuta(false);
     }
   }
 
-  function aplicarRutaCalculada(ruta) {
+  async function aplicarRutaCalculada(ruta) {
     state.rutaBase = ruta;
     state.sitiosEnriquecidos = FiltersModule.precomputarSitios(state.sitios, ruta.geojson, state.origen);
-    aplicarRutaConDesvios();
+    await aplicarRutaConDesvios();
   }
 
   // -------------------------------------------------------------------
@@ -559,15 +703,15 @@
   }
 
   // -------------------------------------------------------------------
-  // Construcción de ruta con desvíos (inserta ida y vuelta en el punto
-  // más cercano de la ruta original para cada parada, en el orden dado)
+  // Construcción de ruta con desvíos por carretera (OSRM para cada desvío)
   // -------------------------------------------------------------------
-  function construirRutaConDesvios(rutaBase, paradas) {
+  async function construirRutaConDesvios(rutaBase, paradas) {
     if (!rutaBase || paradas.length === 0) return rutaBase;
 
     let coords = rutaBase.geojson.geometry.coordinates.slice();
     let distanciaExtra = 0;
     let tiempoExtra = 0;
+    const idsFallidos = [];
 
     for (const p of paradas) {
       const line = turf.lineString(coords);
@@ -575,26 +719,40 @@
       const [nearestLon, nearestLat] = nearest.geometry.coordinates;
       const index = nearest.properties.index;
 
-      const detourKm = turf.distance(
-        turf.point([nearestLon, nearestLat]),
-        turf.point([p.lon, p.lat]),
-        { units: 'kilometers' }
-      );
+      let detourCoords;
+      let detourDist;
+      let detourDur;
+
+      if (p._detourCoords) {
+        detourCoords = p._detourCoords;
+        detourDist = p._detourDist;
+        detourDur = p._detourDur;
+      } else {
+        try {
+          const rutaDesvio = await RoutingModule.calcularRuta(
+            { lat: nearestLat, lon: nearestLon },
+            { lat: p.lat, lon: p.lon },
+            PERFIL_FIJO
+          );
+          detourCoords = rutaDesvio.geojson.geometry.coordinates;
+          detourDist = rutaDesvio.distanciaMetros;
+          detourDur = rutaDesvio.duracionSegundos;
+          p._detourCoords = detourCoords;
+          p._detourDist = detourDist;
+          p._detourDur = detourDur;
+        } catch (_err) {
+          idsFallidos.push(p.id);
+          continue;
+        }
+      }
 
       const before = coords.slice(0, index + 1);
       const after = coords.slice(index + 1);
+      const returnCoords = detourCoords.slice().reverse();
 
-      coords = [
-        ...before,
-        [nearestLon, nearestLat],
-        [p.lon, p.lat],
-        [nearestLon, nearestLat],
-        ...after,
-      ];
-
-      distanciaExtra += detourKm * 2000;
-      tiempoExtra += (detourKm * 2) / FiltersModule.VELOCIDAD_DESVIO_KMH * 3600
-                   + FiltersModule.MINUTOS_MANIOBRA * 60;
+      coords = [...before, ...detourCoords, ...returnCoords, ...after];
+      distanciaExtra += detourDist * 2;
+      tiempoExtra += detourDur * 2;
     }
 
     return {
@@ -604,18 +762,32 @@
       },
       distanciaMetros: rutaBase.distanciaMetros + Math.round(distanciaExtra),
       duracionSegundos: rutaBase.duracionSegundos + Math.round(tiempoExtra),
+      idsFallidos,
     };
   }
 
-  function aplicarRutaConDesvios() {
+  async function aplicarRutaConDesvios() {
     if (!state.rutaBase) return;
-    state.rutaActual = construirRutaConDesvios(state.rutaBase, state.paradas);
+    state.rutaActual = await construirRutaConDesvios(state.rutaBase, state.paradas);
+
+    let iteraciones = 0;
+    while (state.rutaActual.idsFallidos && state.rutaActual.idsFallidos.length > 0 && iteraciones < 3) {
+      const idsSet = new Set(state.rutaActual.idsFallidos);
+      state.paradas = state.paradas.filter((p) => !idsSet.has(p.id));
+      renderizarParadas();
+      state.rutaActual = await construirRutaConDesvios(state.rutaBase, state.paradas);
+      iteraciones++;
+    }
+
     MapModule.dibujarRuta(state.rutaActual.geojson, {
       distanciaMetros: state.rutaActual.distanciaMetros,
       duracionSegundos: state.rutaActual.duracionSegundos,
     });
     MapModule.setMarcadorOrigen(state.origen.lat, state.origen.lon, state.origen.nombre);
     MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);
+    MapModule.setMarcadoresEscalas(state.escalas);
+    const numEscalas = state.escalas.filter((e) => e.lat != null).length;
+    state.paradas.forEach((p, i) => { p._numero = numEscalas + i + 1; });
     MapModule.setMarcadoresParadas(state.paradas);
     MapModule.encuadrar(state.rutaActual.geojson);
     el.statDistancia.textContent = Utils.formatearDistancia(state.rutaActual.distanciaMetros);
@@ -623,20 +795,25 @@
   }
 
   // -------------------------------------------------------------------
-  // Agregar un sitio como desvío (inserta ida/vuelta sobre la ruta original)
+  // Agregar un sitio como desvío (calcula ruta por OSRM ida y vuelta)
   // -------------------------------------------------------------------
-  function agregarParada(sitio, _boton) {
+  async function agregarParada(sitio, boton) {
+    if (boton) ponerEnCarga(boton, true);
     state.paradas.push(sitio);
-    aplicarRutaConDesvios();
-    renderizarParadas();
-    limpiarPreview();
+    try {
+      await aplicarRutaConDesvios();
+      renderizarParadas();
+      limpiarPreview();
+    } finally {
+      if (boton) ponerEnCarga(boton, false);
+    }
   }
 
-  function eliminarParada(sitioId) {
+  async function eliminarParada(sitioId) {
     const indice = state.paradas.findIndex((p) => p.id === sitioId);
     if (indice === -1) return;
     state.paradas.splice(indice, 1);
-    aplicarRutaConDesvios();
+    await aplicarRutaConDesvios();
     renderizarParadas();
   }
 
@@ -675,6 +852,7 @@
         const draggedId = Number(e.dataTransfer.getData('text/plain'));
         moverParada(draggedId, sitio.id);
       });
+      li.addEventListener('dragenter', (e) => e.preventDefault());
 
       const num = document.createElement('span');
       num.className = 'parada-item__num';
@@ -704,14 +882,14 @@
     });
   }
 
-  function moverParada(desdeId, hastaId) {
+  async function moverParada(desdeId, hastaId) {
     if (desdeId === hastaId) return;
     const desdeIdx = state.paradas.findIndex((p) => p.id === desdeId);
     const hastaIdx = state.paradas.findIndex((p) => p.id === hastaId);
     if (desdeIdx === -1 || hastaIdx === -1) return;
     const item = state.paradas.splice(desdeIdx, 1)[0];
     state.paradas.splice(hastaIdx, 0, item);
-    aplicarRutaConDesvios();
+    await aplicarRutaConDesvios();
     renderizarParadas();
   }
 
