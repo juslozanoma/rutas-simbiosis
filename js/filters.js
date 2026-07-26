@@ -62,20 +62,43 @@ const FiltersModule = (() => {
   }
 
   /**
-   * Enriquece y filtra el catálogo completo de sitios contra una ruta.
+   * Precomputa distanciaRutaKm, tiempoDesvioMin y distanciaOrigenKm para
+   * todos los sitios con coordenadas. Se invoca UNA SOLA VEZ al cambiar la
+   * ruta, para que los cambios posteriores de filtros (distancia/tiempo/
+   * categorías) sean instantáneos sin llamar a turf.pointToLineDistance.
    *
-   * @param {Array} sitios - catálogo completo de sitios turísticos
-   * @param {object} rutaGeoJSON - Feature LineString de la ruta calculada
+   * @param {Array} sitios - catálogo completo
+   * @param {object} rutaGeoJSON - Feature LineString de la ruta
+   * @param {object|null} origen - {lat, lon}
+   * @param {number} velocidadKmH
+   * @returns {Array} sitios enriquecidos con distanciaRutaKm, tiempoDesvioMin, distanciaOrigenKm
+   */
+  function precomputarSitios(sitios, rutaGeoJSON, origen, velocidadKmH = VELOCIDAD_DESVIO_KMH) {
+    return sitios
+      .filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)))
+      .map((s) => {
+        const distanciaRutaKm = distanciaARuta(s, rutaGeoJSON);
+        const tiempoDesvioMin = aproximarTiempoDesvio(distanciaRutaKm, velocidadKmH);
+        const distanciaOrigenKm = distanciaAOrigen(s, origen);
+        return { ...s, distanciaRutaKm, tiempoDesvioMin, distanciaOrigenKm };
+      });
+  }
+
+  /**
+   * Filtra un arreglo de sitios (ya enriquecidos con precomputarSitios)
+   * según los criterios espaciales activos. Si los sitios ya tienen
+   * distanciaRutaKm, se salta el cómputo costoso con Turf.js.
+   *
+   * @param {Array} sitios - sitios (pueden venir ya enriquecidos)
+   * @param {object} rutaGeoJSON - Feature LineString
    * @param {object} opciones
-   *    usarDistancia {boolean} - si el criterio de distancia está activo
-   *    usarTiempo {boolean} - si el criterio de tiempo está activo
+   *    usarDistancia {boolean}
+   *    usarTiempo {boolean}
    *    distanciaMaximaKm {number}
    *    tiempoMaximoMin {number}
-   *    velocidadKmH {number} - opcional, por defecto VELOCIDAD_DESVIO_KMH
-   *    origen {{lat:number, lon:number}} - usado para ordenar el resultado
-   *    excluirIds {Array<number>} - ids de sitios a omitir (ya agregados como parada)
-   * @returns {Array} sitios que cumplen los criterios activos, con
-   *    distanciaRutaKm y tiempoDesvioMin calculados, ordenados por cercanía al origen.
+   *    origen {{lat:number, lon:number}}
+   *    excluirIds {Array<number>}
+   * @returns {Array} sitios filtrados y ordenados
    */
   function filtrarSitiosPorRuta(sitios, rutaGeoJSON, opciones) {
     const {
@@ -96,6 +119,7 @@ const FiltersModule = (() => {
       .filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)))
       .filter((s) => !idsExcluidos.has(s.id))
       .map((s) => {
+        if (s.distanciaRutaKm != null) return s;
         const distanciaRutaKm = distanciaARuta(s, rutaGeoJSON);
         const tiempoDesvioMin = aproximarTiempoDesvio(distanciaRutaKm, velocidadKmH);
         const distanciaOrigenKm = distanciaAOrigen(s, origen);
@@ -114,6 +138,7 @@ const FiltersModule = (() => {
     distanciaARuta,
     distanciaAOrigen,
     aproximarTiempoDesvio,
+    precomputarSitios,
     filtrarSitiosPorRuta,
   };
 })();

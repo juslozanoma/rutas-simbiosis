@@ -43,6 +43,7 @@
     previewSitioId: null, // id del sitio actualmente previsualizado (si hay alguno)
     categoriasSeleccionadas: [], // categorías activas como filtro adicional
     categoriasUnicas: [],        // lista normalizada de categorías únicas
+    sitiosEnriquecidos: [],      // sitios con distanciaRutaKm precomputada (evita turf en cada filtro)
   };
 
   // -------------------------------------------------------------------
@@ -81,7 +82,7 @@
     paradasContador: document.getElementById('paradas-contador'),
 
     btnCategorias: document.getElementById('btn-categorias'),
-    categoriasOverlay: document.getElementById('categorias-overlay'),
+    panelCategorias: document.getElementById('panel-categorias'),
     categoriasGrid: document.getElementById('categorias-grid'),
     btnCategoriasCerrar: document.getElementById('btn-categorias-cerrar'),
   };
@@ -251,11 +252,11 @@
     }
   }
 
-  function abrirMenuCategorias() {
-    el.categoriasOverlay.hidden = false;
+  function toggleMenuCategorias() {
+    el.panelCategorias.hidden = !el.panelCategorias.hidden;
   }
   function cerrarMenuCategorias() {
-    el.categoriasOverlay.hidden = true;
+    el.panelCategorias.hidden = true;
   }
 
   // -------------------------------------------------------------------
@@ -292,13 +293,16 @@
     el.btnAplicarDistancia.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarDistancia));
     el.btnAplicarTiempo.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarTiempo));
 
-    el.btnCategorias.addEventListener('click', (e) => { e.stopPropagation(); abrirMenuCategorias(); });
+    el.btnCategorias.addEventListener('click', (e) => { e.stopPropagation(); toggleMenuCategorias(); });
     el.btnCategoriasCerrar.addEventListener('click', cerrarMenuCategorias);
-    el.categoriasOverlay.addEventListener('click', (e) => {
-      if (e.target === el.categoriasOverlay) cerrarMenuCategorias();
+    document.addEventListener('click', (e) => {
+      if (el.panelCategorias.hidden) return;
+      if (!el.panelCategorias.contains(e.target) && e.target !== el.btnCategorias && !el.btnCategorias.contains(e.target)) {
+        cerrarMenuCategorias();
+      }
     });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !el.categoriasOverlay.hidden) cerrarMenuCategorias();
+      if (e.key === 'Escape' && !el.panelCategorias.hidden) cerrarMenuCategorias();
     });
   }
 
@@ -383,6 +387,7 @@
   /** Dibuja la ruta calculada, coloca los marcadores y actualiza el resumen del panel. */
   function aplicarRutaCalculada(ruta) {
     state.rutaActual = ruta;
+    state.sitiosEnriquecidos = FiltersModule.precomputarSitios(state.sitios, ruta.geojson, state.origen);
 
     MapModule.dibujarRuta(ruta.geojson, {
       distanciaMetros: ruta.distanciaMetros,
@@ -434,7 +439,7 @@
       excluirIds: state.paradas.map((p) => p.id),
     };
 
-    let sitiosResultado = FiltersModule.filtrarSitiosPorRuta(state.sitios, state.rutaActual.geojson, opciones);
+    let sitiosResultado = FiltersModule.filtrarSitiosPorRuta(state.sitiosEnriquecidos, state.rutaActual.geojson, opciones);
 
     if (hayCategorias) {
       const catsNorm = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase().trim()));
@@ -585,7 +590,7 @@
 
       // La ruta cambió: se refresca la lista de candidatos contra el nuevo
       // trazado, excluyendo los sitios que ya son parada.
-      if (el.checkDistancia.checked || el.checkTiempo.checked) {
+      if (el.checkDistancia.checked || el.checkTiempo.checked || state.categoriasSeleccionadas.length > 0) {
         ejecutarFiltrado();
       } else {
         MapModule.limpiarSitios();
@@ -625,7 +630,7 @@
       aplicarRutaCalculada(ruta);
       renderizarParadas();
 
-      if (el.checkDistancia.checked || el.checkTiempo.checked) {
+      if (el.checkDistancia.checked || el.checkTiempo.checked || state.categoriasSeleccionadas.length > 0) {
         ejecutarFiltrado();
       } else {
         el.sitiosVacio.hidden = false;
