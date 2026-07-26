@@ -35,15 +35,16 @@
   const state = {
     municipios: [],
     sitios: [],
-    origen: null,        // {id, nombre, departamento, lat, lon}
+    origen: null,
     destino: null,
-    rutaActual: null,    // resultado de RoutingModule.calcularRuta(ConParadas)
-    paradas: [],          // sitios agregados a la ruta, en orden de visita
+    rutaBase: null,       // ruta OSRM original (sin desvíos)
+    rutaActual: null,     // ruta mostrada (con desvíos si hay paradas)
+    paradas: [],
     sitiosFiltrados: [],
-    previewSitioId: null, // id del sitio actualmente previsualizado (si hay alguno)
-    categoriasSeleccionadas: [], // categorías activas como filtro adicional
-    categoriasUnicas: [],        // lista normalizada de categorías únicas
-    sitiosEnriquecidos: [],      // sitios con distanciaRutaKm precomputada (evita turf en cada filtro)
+    previewSitioId: null,
+    categoriasSeleccionadas: [],
+    categoriasUnicas: [],
+    sitiosEnriquecidos: [],
   };
 
   // -------------------------------------------------------------------
@@ -378,22 +379,10 @@
     }
   }
 
-  /** Dibuja la ruta calculada, coloca los marcadores y actualiza el resumen del panel. */
   function aplicarRutaCalculada(ruta) {
-    state.rutaActual = ruta;
+    state.rutaBase = ruta;
     state.sitiosEnriquecidos = FiltersModule.precomputarSitios(state.sitios, ruta.geojson, state.origen);
-
-    MapModule.dibujarRuta(ruta.geojson, {
-      distanciaMetros: ruta.distanciaMetros,
-      duracionSegundos: ruta.duracionSegundos,
-    });
-    MapModule.setMarcadorOrigen(state.origen.lat, state.origen.lon, state.origen.nombre);
-    MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);
-    MapModule.setMarcadoresParadas(state.paradas);
-    MapModule.encuadrar(ruta.geojson);
-
-    el.statDistancia.textContent = Utils.formatearDistancia(ruta.distanciaMetros);
-    el.statTiempo.textContent = Utils.formatearDuracion(ruta.duracionSegundos);
+    aplicarRutaConDesvios();
   }
 
   // -------------------------------------------------------------------
@@ -433,7 +422,8 @@
       excluirIds: state.paradas.map((p) => p.id),
     };
 
-    let sitiosResultado = FiltersModule.filtrarSitiosPorRuta(state.sitiosEnriquecidos, state.rutaActual.geojson, opciones);
+    const rutaFiltro = state.rutaBase || state.rutaActual;
+    let sitiosResultado = FiltersModule.filtrarSitiosPorRuta(state.sitiosEnriquecidos, rutaFiltro.geojson, opciones);
 
     if (hayCategorias) {
       const catsNorm = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase().trim()));
@@ -569,24 +559,84 @@
   }
 
   // -------------------------------------------------------------------
-  // Agregar un sitio como desvío (parada visual en el mapa, sin recalcular ruta)
+  // Construcción de ruta con desvíos (inserta ida y vuelta en el punto
+  // más cercano de la ruta original para cada parada, en el orden dado)
   // -------------------------------------------------------------------
-  function agregarParada(sitio, boton) {
-    state.paradas.push(sitio);
+  function construirRutaConDesvios(rutaBase, paradas) {
+    if (!rutaBase || paradas.length === 0) return rutaBase;
+
+    let coords = rutaBase.geojson.geometry.coordinates.slice();
+    let distanciaExtra = 0;
+    let tiempoExtra = 0;
+
+    for (const p of paradas) {
+      const line = turf.lineString(coords);
+      const nearest = turf.nearestPointOnLine(line, turf.point([p.lon, p.lat]));
+      const [nearestLon, nearestLat] = nearest.geometry.coordinates;
+      const index = nearest.properties.index;
+
+      const detourKm = turf.distance(
+        turf.point([nearestLon, nearestLat]),
+        turf.point([p.lon, p.lat]),
+        { units: 'kilometers' }
+      );
+
+      const before = coords.slice(0, index + 1);
+      const after = coords.slice(index + 1);
+
+      coords = [
+        ...before,
+        [nearestLon, nearestLat],
+        [p.lon, p.lat],
+        [nearestLon, nearestLat],
+        ...after,
+      ];
+
+      distanciaExtra += detourKm * 2000;
+      tiempoExtra += (detourKm * 2) / FiltersModule.VELOCIDAD_DESVIO_KMH * 3600
+                   + FiltersModule.MINUTOS_MANIOBRA * 60;
+    }
+
+    return {
+      geojson: {
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: coords },
+      },
+      distanciaMetros: rutaBase.distanciaMetros + Math.round(distanciaExtra),
+      duracionSegundos: rutaBase.duracionSegundos + Math.round(tiempoExtra),
+    };
+  }
+
+  function aplicarRutaConDesvios() {
+    if (!state.rutaBase) return;
+    state.rutaActual = construirRutaConDesvios(state.rutaBase, state.paradas);
+    MapModule.dibujarRuta(state.rutaActual.geojson, {
+      distanciaMetros: state.rutaActual.distanciaMetros,
+      duracionSegundos: state.rutaActual.duracionSegundos,
+    });
+    MapModule.setMarcadorOrigen(state.origen.lat, state.origen.lon, state.origen.nombre);
+    MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);
     MapModule.setMarcadoresParadas(state.paradas);
+    MapModule.encuadrar(state.rutaActual.geojson);
+    el.statDistancia.textContent = Utils.formatearDistancia(state.rutaActual.distanciaMetros);
+    el.statTiempo.textContent = Utils.formatearDuracion(state.rutaActual.duracionSegundos);
+  }
+
+  // -------------------------------------------------------------------
+  // Agregar un sitio como desvío (inserta ida/vuelta sobre la ruta original)
+  // -------------------------------------------------------------------
+  function agregarParada(sitio, _boton) {
+    state.paradas.push(sitio);
+    aplicarRutaConDesvios();
     renderizarParadas();
     limpiarPreview();
   }
 
-  /**
-   * Quita un sitio de las paradas (solo actualiza marcadores y lista,
-   * sin recalcular la ruta principal).
-   */
   function eliminarParada(sitioId) {
     const indice = state.paradas.findIndex((p) => p.id === sitioId);
     if (indice === -1) return;
     state.paradas.splice(indice, 1);
-    MapModule.setMarcadoresParadas(state.paradas);
+    aplicarRutaConDesvios();
     renderizarParadas();
   }
 
@@ -602,6 +652,29 @@
       const li = document.createElement('li');
       li.className = 'parada-item';
       li.dataset.paradaId = sitio.id;
+      li.draggable = true;
+
+      li.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', String(sitio.id));
+        li.classList.add('parada-item--dragging');
+      });
+      li.addEventListener('dragend', () => {
+        el.paradasLista.querySelectorAll('.parada-item').forEach((el_) => {
+          el_.classList.remove('parada-item--dragging', 'parada-item--drag-over');
+        });
+      });
+      li.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        el.paradasLista.querySelectorAll('.parada-item').forEach((el_) => {
+          el_.classList.remove('parada-item--drag-over');
+        });
+        li.classList.add('parada-item--drag-over');
+      });
+      li.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const draggedId = Number(e.dataTransfer.getData('text/plain'));
+        moverParada(draggedId, sitio.id);
+      });
 
       const num = document.createElement('span');
       num.className = 'parada-item__num';
@@ -614,22 +687,6 @@
       const acciones = document.createElement('div');
       acciones.className = 'parada-item__acciones';
 
-      const btnUp = document.createElement('button');
-      btnUp.type = 'button';
-      btnUp.className = 'parada-item__btn';
-      btnUp.dataset.dir = 'arriba';
-      btnUp.title = 'Mover hacia arriba';
-      btnUp.setAttribute('aria-label', 'Mover ' + sitio.nombre + ' hacia arriba');
-      btnUp.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 15l-6-6-6 6"/></svg>';
-
-      const btnDown = document.createElement('button');
-      btnDown.type = 'button';
-      btnDown.className = 'parada-item__btn';
-      btnDown.dataset.dir = 'abajo';
-      btnDown.title = 'Mover hacia abajo';
-      btnDown.setAttribute('aria-label', 'Mover ' + sitio.nombre + ' hacia abajo');
-      btnDown.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>';
-
       const btnDel = document.createElement('button');
       btnDel.type = 'button';
       btnDel.className = 'parada-item__btn parada-item__btn--del';
@@ -637,41 +694,24 @@
       btnDel.setAttribute('aria-label', 'Quitar ' + sitio.nombre + ' de la ruta');
       btnDel.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>';
 
-      btnUp.addEventListener('click', (e) => { e.stopPropagation(); moverParada(sitio.id, 'arriba'); });
-      btnDown.addEventListener('click', (e) => { e.stopPropagation(); moverParada(sitio.id, 'abajo'); });
       btnDel.addEventListener('click', (e) => { e.stopPropagation(); eliminarParada(sitio.id); });
 
-      acciones.appendChild(btnUp);
-      acciones.appendChild(btnDown);
       acciones.appendChild(btnDel);
       li.appendChild(num);
       li.appendChild(nombre);
       li.appendChild(acciones);
       el.paradasLista.appendChild(li);
     });
-
-    const items = el.paradasLista.querySelectorAll('.parada-item');
-    items.forEach((item, i) => {
-      const up = item.querySelector('[data-dir="arriba"]');
-      const down = item.querySelector('[data-dir="abajo"]');
-      if (up) up.disabled = i === 0;
-      if (down) down.disabled = i === items.length - 1;
-    });
   }
 
-  /** Intercambia una parada con su vecina (arriba o abajo) y actualiza los marcadores. */
-  function moverParada(sitioId, direccion) {
-    const indice = state.paradas.findIndex((p) => p.id === sitioId);
-    if (indice === -1) return;
-
-    const nuevoIndice = direccion === 'arriba' ? indice - 1 : indice + 1;
-    if (nuevoIndice < 0 || nuevoIndice >= state.paradas.length) return;
-
-    const temp = state.paradas[indice];
-    state.paradas[indice] = state.paradas[nuevoIndice];
-    state.paradas[nuevoIndice] = temp;
-
-    MapModule.setMarcadoresParadas(state.paradas);
+  function moverParada(desdeId, hastaId) {
+    if (desdeId === hastaId) return;
+    const desdeIdx = state.paradas.findIndex((p) => p.id === desdeId);
+    const hastaIdx = state.paradas.findIndex((p) => p.id === hastaId);
+    if (desdeIdx === -1 || hastaIdx === -1) return;
+    const item = state.paradas.splice(desdeIdx, 1)[0];
+    state.paradas.splice(hastaIdx, 0, item);
+    aplicarRutaConDesvios();
     renderizarParadas();
   }
 

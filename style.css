@@ -295,6 +295,11 @@ input, select{ font-family: inherit; }
 .parada-item__btn--del:hover{ background: #fdf3f1; color: #b3402f; }
 .parada-item__btn[disabled]{ opacity: 0.25; cursor: default; background: transparent; }
 
+.parada-item[cursor="grab"]{ cursor: grab; }
+.parada-item:active{ cursor: grabbing; }
+.parada-item--dragging{ opacity: 0.4; }
+.parada-item--drag-over{ border-color: var(--teal-500); background: #e8f5ef; }
+
 /* --- Filtros --- */
 .panel-filters{
   display: flex;
