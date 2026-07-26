@@ -783,7 +783,7 @@
     if (!state.rutaActual) return;
     const rutaFiltro = state.rutaBase || state.rutaActual;
     const pendientes = state.sitios.filter((s) => s.distanciaRutaKm == null || !isFinite(s.distanciaRutaKm));
-    const TAM = 600;
+    const TAM = 100;
     let i = 0;
     function fondoBloque() {
       const fin = Math.min(i + TAM, pendientes.length);

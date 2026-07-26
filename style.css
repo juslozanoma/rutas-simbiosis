@@ -419,7 +419,7 @@ input, select{ font-family: inherit; }
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 .btn-toggle-pill:hover{ background: #f5f3ec; }
-.btn-toggle-pill[aria-pressed="false"]{ color: var(--text-body); border-color: var(--line-300); background: #ffffff; }
+.btn-toggle-pill[aria-pressed="false"]{ color: var(--text-body); border-color: var(--text-body); background: #ffffff; }
 .badge-count{
   background: var(--ink-900);
   color: #ffffff;
