@@ -187,6 +187,89 @@ input, select{ font-family: inherit; }
 .icon-btn[data-loading="true"] .icon-btn__spinner{ display: inline-block; animation: spin 0.75s linear infinite; }
 @keyframes spin{ to{ transform: rotate(360deg); } }
 
+/* --- Paradas agregadas a la ruta --- */
+.panel-paradas{
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.panel-paradas[hidden]{ display: none; }
+.panel-paradas__title{
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.paradas-lista{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.parada-item{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  background: #f9faf8;
+  border: 1px solid var(--line-200);
+  font-size: 0.78rem;
+}
+.parada-item__num{
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--teal-600);
+  color: #ffffff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.parada-item__nombre{
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-strong);
+  font-weight: 500;
+}
+.parada-item__acciones{
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.parada-item__btn{
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.parada-item__btn:hover{ background: #eee; }
+.parada-item__btn:active{ background: #ddd; }
+.parada-item__btn--del:hover{ background: #fdf3f1; color: #b3402f; }
+.parada-item__btn[disabled]{ opacity: 0.25; cursor: default; background: transparent; }
+
 /* --- Filtros --- */
 .panel-filters{
   display: flex;

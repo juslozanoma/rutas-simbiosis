@@ -71,6 +71,10 @@
     sitiosVacio: document.getElementById('sitios-vacio'),
     sitiosLista: document.getElementById('sitios-lista'),
     sitiosContador: document.getElementById('sitios-contador'),
+
+    panelParadas: document.getElementById('panel-paradas'),
+    paradasLista: document.getElementById('paradas-lista'),
+    paradasContador: document.getElementById('paradas-contador'),
   };
 
   // -------------------------------------------------------------------
@@ -221,6 +225,7 @@
     try {
       const ruta = await RoutingModule.calcularRuta(state.origen, state.destino, PERFIL_FIJO);
       aplicarRutaCalculada(ruta);
+      renderizarParadas();
 
       // En dispositivos móviles, calcular la ruta pone toda la página en
       // pantalla completa (modo nativo del navegador) sin ocultar el panel.
@@ -428,6 +433,7 @@
       const puntos = [state.origen, ...state.paradas, state.destino];
       const ruta = await RoutingModule.calcularRutaConParadas(puntos, PERFIL_FIJO);
       aplicarRutaCalculada(ruta);
+      renderizarParadas();
 
       // La ruta cambió: se refresca la lista de candidatos contra el nuevo
       // trazado, excluyendo los sitios que ya son parada.
@@ -444,6 +450,7 @@
       }
     } catch (err) {
       state.paradas = paradaAnterior; // revertir si el recálculo falla
+      renderizarParadas();
       el.sitiosVacio.hidden = false;
       el.sitiosVacio.textContent = 'No se pudo agregar el sitio a la ruta: ' + err.message;
     } finally {
@@ -468,6 +475,7 @@
       const puntos = [state.origen, ...state.paradas, state.destino];
       const ruta = await RoutingModule.calcularRutaConParadas(puntos, PERFIL_FIJO);
       aplicarRutaCalculada(ruta);
+      renderizarParadas();
 
       if (el.checkDistancia.checked || el.checkTiempo.checked) {
         ejecutarFiltrado();
@@ -477,8 +485,88 @@
       }
     } catch (err) {
       state.paradas = paradasAnteriores; // revertir si el recálculo falla
+      renderizarParadas();
       el.sitiosVacio.hidden = false;
       el.sitiosVacio.textContent = 'No se pudo quitar el sitio de la ruta: ' + err.message;
+    }
+  }
+
+  // -------------------------------------------------------------------
+  // Renderizar lista de paradas en el panel
+  // -------------------------------------------------------------------
+  function renderizarParadas() {
+    const paradas = state.paradas;
+    el.paradasLista.innerHTML = '';
+    el.paradasContador.textContent = String(paradas.length);
+    el.panelParadas.hidden = paradas.length === 0;
+
+    paradas.forEach((sitio, i) => {
+      const li = Utils.crearElemento(`
+        <li class="parada-item" data-parada-id="${sitio.id}">
+          <span class="parada-item__num">${i + 1}</span>
+          <span class="parada-item__nombre">${sitio.nombre}</span>
+          <div class="parada-item__acciones">
+            <button type="button" class="parada-item__btn" data-dir="arriba" title="Mover hacia arriba" aria-label="Mover ${sitio.nombre} hacia arriba">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 15l-6-6-6 6"/></svg>
+            </button>
+            <button type="button" class="parada-item__btn" data-dir="abajo" title="Mover hacia abajo" aria-label="Mover ${sitio.nombre} hacia abajo">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <button type="button" class="parada-item__btn parada-item__btn--del" title="Quitar de la ruta" aria-label="Quitar ${sitio.nombre} de la ruta">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>
+            </button>
+          </div>
+        </li>
+      `);
+
+      const btns = li.querySelectorAll('[data-dir]');
+      btns.forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          moverParada(sitio.id, btn.getAttribute('data-dir'));
+        });
+      });
+
+      const btnDel = li.querySelector('.parada-item__btn--del');
+      btnDel.addEventListener('click', (e) => {
+        e.stopPropagation();
+        eliminarParada(sitio.id);
+      });
+
+      el.paradasLista.appendChild(li);
+    });
+
+    // Deshabilitar botones en extremos
+    const items = el.paradasLista.querySelectorAll('.parada-item');
+    items.forEach((item, i) => {
+      const up = item.querySelector('[data-dir="arriba"]');
+      const down = item.querySelector('[data-dir="abajo"]');
+      if (up) up.disabled = i === 0;
+      if (down) down.disabled = i === items.length - 1;
+    });
+  }
+
+  /** Intercambia una parada con su vecina (arriba o abajo) y recalcula la ruta. */
+  async function moverParada(sitioId, direccion) {
+    const indice = state.paradas.findIndex((p) => p.id === sitioId);
+    if (indice === -1) return;
+
+    const nuevoIndice = direccion === 'arriba' ? indice - 1 : indice + 1;
+    if (nuevoIndice < 0 || nuevoIndice >= state.paradas.length) return;
+
+    const paradasPrevias = state.paradas.slice();
+    const temp = state.paradas[indice];
+    state.paradas[indice] = state.paradas[nuevoIndice];
+    state.paradas[nuevoIndice] = temp;
+
+    try {
+      const puntos = [state.origen, ...state.paradas, state.destino];
+      const ruta = await RoutingModule.calcularRutaConParadas(puntos, PERFIL_FIJO);
+      aplicarRutaCalculada(ruta);
+      renderizarParadas();
+    } catch (err) {
+      state.paradas = paradasPrevias;
+      renderizarParadas();
     }
   }
 
