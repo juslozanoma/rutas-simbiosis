@@ -1,0 +1,309 @@
+/* ==========================================================================
+   RUTAS & DESTINOS — Mapa a pantalla completa + panel lateral fijo
+   ========================================================================== */
+:root{
+  --ink-900: #14201b;
+  --line-200: #e4e0d6;
+  --line-300: #d3cdbd;
+  --route-500: #e35c2b;
+  --teal-500: #2f7a6b;
+  --teal-600: #246054;
+
+  --cat-patrimonio: #b0592a;
+  --cat-naturaleza: #2f7a6b;
+  --cat-entretenimiento: #c9972b;
+  --cat-descanso: #4a6fa5;
+
+  --text-strong: #14201b;
+  --text-body: #3c463f;
+  --text-muted: #8a8f86;
+
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+
+  --panel-w: 380px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+}
+
+*, *::before, *::after{ box-sizing: border-box; }
+html, body{ height: 100%; }
+body{
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--text-body);
+  background: #ffffff;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3{ margin: 0; }
+button{ font-family: inherit; }
+input, select{ font-family: inherit; }
+.mono{ font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+:focus-visible{ outline: 2px solid var(--teal-500); outline-offset: 2px; }
+
+/* ==========================================================================
+   ESTRUCTURA GENERAL: mapa a pantalla completa + panel fijo
+   ========================================================================== */
+.app-shell{
+  height: 100vh;
+  display: flex;
+}
+
+.map-full{
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+#map{ position: absolute; inset: 0; background: #ffffff; }
+.leaflet-container{ background: #ffffff; font-family: var(--font-body); }
+
+/* ==========================================================================
+   PANEL LATERAL
+   ========================================================================== */
+.side-panel{
+  width: var(--panel-w);
+  flex-shrink: 0;
+  height: 100vh;
+  background: #ffffff;
+  border-left: 1px solid var(--line-200);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  gap: 20px;
+  overflow: hidden; /* solo la lista de sitios tiene scroll propio */
+}
+
+/* --- Resumen de ruta --- */
+.panel-summary{
+  display: flex;
+  gap: 20px;
+  flex-shrink: 0;
+}
+.stat{ display: flex; flex-direction: column; gap: 3px; }
+.stat__label{ font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; }
+.stat__value{ font-size: 1.15rem; color: var(--text-strong); font-weight: 600; }
+
+/* --- Origen / destino + calcular --- */
+.panel-locate{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.combo{ position: relative; flex: 1; min-width: 0; }
+.combo input{
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-300);
+  background: #ffffff;
+  color: var(--text-strong);
+  font-size: 0.85rem;
+}
+.combo input::placeholder{ color: var(--text-muted); }
+.combo input:focus{ border-color: var(--teal-500); }
+.combo__list{
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  max-height: 260px;
+  overflow-y: auto;
+  margin: 0; padding: 4px;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid var(--line-200);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 30px rgba(20, 32, 27, 0.14);
+  z-index: 900;
+}
+.combo__list li{
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--text-body);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.combo__list li small{ color: var(--text-muted); font-size: 0.72rem; }
+.combo__list li:hover,
+.combo__list li[aria-selected="true"]{ background: #f5f3ec; }
+.combo__list li.no-results{ cursor: default; color: var(--text-muted); font-style: italic; }
+.combo__list li.no-results:hover{ background: none; }
+
+/* --- Botones circulares con ícono (calcular / aplicar filtro) --- */
+.icon-btn{
+  position: relative;
+  width: 40px; height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--line-300);
+  background: #ffffff;
+  color: var(--text-strong);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
+}
+.icon-btn:hover:not(:disabled){ background: #f5f3ec; border-color: var(--teal-500); }
+.icon-btn:active:not(:disabled){ transform: translateY(1px); }
+.icon-btn:disabled{ opacity: 0.35; cursor: not-allowed; }
+.icon-btn--accent{ background: var(--route-500); border-color: var(--route-500); color: #ffffff; }
+.icon-btn--accent:hover:not(:disabled){ background: #cf4f22; border-color: #cf4f22; }
+.icon-btn--accent:disabled{ opacity: 0.4; }
+
+.icon-btn__spinner{
+  display: none;
+  position: absolute;
+  width: 15px; height: 15px;
+  border: 2px solid rgba(20,32,27,0.2);
+  border-top-color: var(--teal-500);
+  border-radius: 50%;
+}
+.icon-btn--accent .icon-btn__spinner{ border-color: rgba(255,255,255,0.4); border-top-color: #ffffff; }
+.icon-btn[data-loading="true"] .icon-btn__icon{ visibility: hidden; }
+.icon-btn[data-loading="true"] .icon-btn__spinner{ display: inline-block; animation: spin 0.75s linear infinite; }
+@keyframes spin{ to{ transform: rotate(360deg); } }
+
+/* --- Filtros --- */
+.panel-filters{
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex-shrink: 0;
+}
+.filter-row{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.filter-row__check{
+  width: 17px; height: 17px;
+  accent-color: var(--teal-500);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.filter-row__field{ flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.filter-row__field label{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.filter-row__value{ color: var(--text-strong); font-size: 0.72rem; font-weight: 600; }
+.filter-row__field input[type="range"]{
+  width: 100%;
+  accent-color: var(--teal-500);
+  height: 18px;
+}
+.filter-row__field input[type="range"]:disabled{ opacity: 0.4; }
+
+/* --- Lista de sitios turísticos --- */
+.panel-sites{
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.panel-sites__title{
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-strong);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.badge-count{
+  background: var(--ink-900);
+  color: #ffffff;
+  font-size: 0.66rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+.panel-sites__scroll{
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.empty-state{ margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+
+.sitios-lista{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.sitio-card{
+  border: 1px solid var(--line-200);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.sitio-card:hover{ background: #f7f5ee; border-color: var(--teal-500); }
+.sitio-card__top{ display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sitio-card__nombre{ font-size: 0.85rem; font-weight: 600; color: var(--text-strong); }
+.sitio-card__cat{ width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.sitio-card__meta{ font-size: 0.71rem; color: var(--text-muted); margin-top: 3px; display: flex; justify-content: space-between; gap: 8px; }
+
+/* ==========================================================================
+   MARCADORES Y POPUPS DEL MAPA
+   ========================================================================== */
+.pin-icon{ display: flex; align-items: center; justify-content: center; }
+.pin-svg{ filter: drop-shadow(0 2px 3px rgba(20,32,27,0.3)); }
+.site-dot{
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 3px rgba(20,32,27,0.35);
+}
+.marker-cluster-custom{
+  background: var(--ink-900);
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+  border: 2px solid #ffffff;
+}
+
+.leaflet-popup-content-wrapper{ border-radius: var(--radius-md); }
+.popup-sitio{ font-family: var(--font-body); min-width: 190px; }
+.popup-sitio__cat{
+  display: inline-block;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #f5f3ec;
+  color: var(--text-strong);
+  margin-bottom: 4px;
+}
+.popup-sitio__nombre{ margin: 2px 0 3px; font-size: 0.95rem; color: var(--text-strong); }
+.popup-sitio__ubicacion{ margin: 0 0 5px; font-size: 0.76rem; color: var(--text-muted); }
+.popup-sitio__desc{ margin: 0 0 6px; font-size: 0.8rem; line-height: 1.4; color: var(--text-body); }
+.popup-sitio__dist{ margin: 0; font-size: 0.72rem; color: var(--teal-600); font-weight: 600; }
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 860px){
+  .app-shell{ flex-direction: column; }
+  .map-full{ flex: 1 1 45vh; }
+  .side-panel{
+    width: 100%;
+    height: auto;
+    border-left: none;
+    border-top: 1px solid var(--line-200);
+    flex: 1 1 55vh;
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .icon-btn__spinner{ animation: none; }
+}

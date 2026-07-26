@@ -1,0 +1,95 @@
+/**
+ * routing.js
+ * ---------------------------------------------------------------------------
+ * Responsable de consultar el motor de ruteo OSRM y normalizar la respuesta
+ * a un objeto de ruta usado por el resto de la aplicación.
+ *
+ * OSRM se consulta contra el servidor de demostración público
+ * (router.project-osrm.org). Para producción se recomienda desplegar una
+ * instancia propia de OSRM (self-hosted) o un servicio equivalente con
+ * cobertura y límites de uso garantizados; ese cambio solo implica ajustar
+ * `ENDPOINTS` abajo, el resto de la aplicación no depende del proveedor.
+ *
+ * La arquitectura deja el punto de extensión `calcularTiempoDesvioPreciso`
+ * preparado para reemplazar, en el futuro, la aproximación por distancia
+ * (ver filters.js) por consultas reales de ruteo origen→sitio→ruta.
+ * ---------------------------------------------------------------------------
+ */
+const RoutingModule = (() => {
+
+  // Perfiles soportados por el servidor demo de OSRM.
+  const ENDPOINTS = {
+    driving: 'https://router.project-osrm.org/route/v1/driving',
+    cycling: 'https://router.project-osrm.org/route/v1/cycling',
+    walking: 'https://router.project-osrm.org/route/v1/walking',
+  };
+
+  /**
+   * Calcula la mejor ruta entre dos municipios usando OSRM.
+   * @param {{lat:number, lon:number}} origen
+   * @param {{lat:number, lon:number}} destino
+   * @param {string} perfil - 'driving' | 'cycling' | 'walking'
+   * @returns {Promise<object>} ruta normalizada
+   */
+  async function calcularRuta(origen, destino, perfil = 'driving') {
+    const base = ENDPOINTS[perfil] || ENDPOINTS.driving;
+    const coords = `${origen.lon},${origen.lat};${destino.lon},${destino.lat}`;
+    const url = `${base}/${coords}?overview=full&geometries=geojson&steps=false&alternatives=false`;
+
+    const respuesta = await fetch(url);
+    if (!respuesta.ok) {
+      throw new Error(`El servicio de ruteo respondió con error ${respuesta.status}`);
+    }
+    const data = await respuesta.json();
+
+    if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+      throw new Error('No fue posible calcular una ruta entre los municipios seleccionados.');
+    }
+
+    const ruta = data.routes[0];
+    const geojson = {
+      type: 'Feature',
+      properties: {
+        distancia_m: ruta.distance,
+        duracion_s: ruta.duration,
+        perfil,
+      },
+      geometry: ruta.geometry, // LineString
+    };
+
+    return {
+      geojson,
+      distanciaMetros: ruta.distance,
+      duracionSegundos: ruta.duration,
+      vertices: ruta.geometry.coordinates.length,
+      perfil,
+    };
+  }
+
+  /**
+   * Punto de extensión para un cálculo preciso del tiempo de desvío hacia un
+   * sitio turístico, consultando el motor de ruteo real en vez de aproximar
+   * por distancia y velocidad promedio (ver filters.js -> aproximarTiempoDesvio).
+   *
+   * Firma prevista: (puntoRuta, sitio, perfil) => Promise<segundosDesvioIdaYVuelta>
+   * No se activa por defecto para evitar cientos de peticiones simultáneas al
+   * servidor OSRM de demostración; requiere limitar concurrencia (throttling)
+   * antes de habilitarse en producción, o un servidor OSRM propio con mayor
+   * capacidad de peticiones por segundo.
+   */
+  async function calcularTiempoDesvioPreciso(puntoRuta, sitio, perfil = 'driving') {
+    const base = ENDPOINTS[perfil] || ENDPOINTS.driving;
+    const coords = `${puntoRuta.lon},${puntoRuta.lat};${sitio.lon},${sitio.lat}`;
+    const url = `${base}/${coords}?overview=false`;
+    const respuesta = await fetch(url);
+    if (!respuesta.ok) throw new Error('Error consultando desvío preciso');
+    const data = await respuesta.json();
+    if (data.code !== 'Ok') throw new Error('Ruta de desvío no disponible');
+    return data.routes[0].duration * 2; // ida y vuelta
+  }
+
+  return {
+    calcularRuta,
+    calcularTiempoDesvioPreciso,
+  };
+})();
