@@ -401,8 +401,8 @@ input, select{ font-family: inherit; }
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--teal-500);
-  background: #ffffff;
-  color: var(--teal-500);
+  background: var(--teal-500);
+  color: #ffffff;
   font-size: 0.68rem;
   font-weight: 600;
   cursor: pointer;
@@ -411,8 +411,8 @@ input, select{ font-family: inherit; }
   font-family: inherit;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
-.btn-toggle-pill:hover{ background: #f5f3ec; }
-.btn-toggle-pill[aria-pressed="false"]{ color: var(--text-body); border-color: var(--text-body); background: #ffffff; }
+.btn-toggle-pill[aria-pressed="false"]{ background: #ffffff; color: var(--teal-500); }
+.btn-toggle-pill[aria-pressed="false"]:hover{ background: #f5f3ec; }
 .badge-count{
   background: var(--ink-900);
   color: #ffffff;
@@ -716,7 +716,7 @@ input, select{ font-family: inherit; }
   user-select: none;
   transition: background 0.1s ease, border-color 0.1s ease, color 0.1s ease;
 }
-.categoria-chip:hover{ border-color: var(--teal-500); background: #f0f5f2; }
+.categoria-chip:hover{ border-color: var(--teal-500); }
 .categoria-chip--selected{
   background: var(--teal-500) !important;
   color: #ffffff !important;
