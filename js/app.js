@@ -29,6 +29,8 @@
   const PERFIL_FIJO = 'driving';
   const MEDIA_MOVIL = '(max-width: 860px)';
 
+  let ultimosValoresAplicados = { distancia: null, tiempo: null };
+
   /** Estado centralizado de la aplicación. */
   const state = {
     municipios: [],
@@ -170,9 +172,15 @@
 
     el.filtroDistancia.addEventListener('input', () => {
       el.filtroDistanciaValor.textContent = `${el.filtroDistancia.value} km`;
+      if (ultimosValoresAplicados.distancia !== null && Number(el.filtroDistancia.value) !== ultimosValoresAplicados.distancia) {
+        setBotonFiltroIcono(el.btnAplicarDistancia, false);
+      }
     });
     el.filtroTiempo.addEventListener('input', () => {
       el.filtroTiempoValor.textContent = `${el.filtroTiempo.value} min`;
+      if (ultimosValoresAplicados.tiempo !== null && Number(el.filtroTiempo.value) !== ultimosValoresAplicados.tiempo) {
+        setBotonFiltroIcono(el.btnAplicarTiempo, false);
+      }
     });
 
     el.btnAplicarDistancia.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarDistancia));
@@ -240,10 +248,10 @@
         document.documentElement.requestFullscreen().catch(() => {});
       }
 
-      // Activa el filtro de distancia por defecto a 5 km y lo ejecuta.
+      // Activa el filtro de distancia por defecto a 10 km y lo ejecuta.
       el.checkDistancia.checked = true;
-      el.filtroDistancia.value = '5';
-      el.filtroDistanciaValor.textContent = '5 km';
+      el.filtroDistancia.value = '10';
+      el.filtroDistanciaValor.textContent = '10 km';
       el.filtroDistancia.disabled = false;
       actualizarEstadoBotonesFiltro();
       ejecutarFiltrado();
@@ -307,6 +315,11 @@
     const sitiosResultado = FiltersModule.filtrarSitiosPorRuta(state.sitios, state.rutaActual.geojson, opciones);
     state.sitiosFiltrados = sitiosResultado;
     renderizarSitios(sitiosResultado);
+
+    ultimosValoresAplicados.distancia = Number(el.filtroDistancia.value);
+    ultimosValoresAplicados.tiempo = Number(el.filtroTiempo.value);
+    setBotonFiltroIcono(el.btnAplicarDistancia, true);
+    setBotonFiltroIcono(el.btnAplicarTiempo, true);
   }
 
   function renderizarSitios(sitios) {
@@ -593,6 +606,16 @@
   function ponerEnCarga(boton, cargando) {
     boton.disabled = cargando;
     boton.setAttribute('data-loading', cargando ? 'true' : 'false');
+  }
+
+  /** Cambia el icono del botón de filtro entre retry y check. */
+  function setBotonFiltroIcono(boton, aplicado) {
+    const svg = boton.querySelector('.icon-btn__icon');
+    if (!svg) return;
+    svg.innerHTML = aplicado
+      ? '<path d="M20 6L9 17l-5-5"/>'
+      : '<path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>';
+    boton.classList.toggle('icon-btn--applied', aplicado);
   }
 
   // -------------------------------------------------------------------
