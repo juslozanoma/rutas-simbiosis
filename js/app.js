@@ -98,7 +98,7 @@
     btnCategorias: document.getElementById('btn-categorias'),
     panelCategorias: document.getElementById('panel-categorias'),
     categoriasGrid: document.getElementById('categorias-grid'),
-    btnCategoriasCerrar: document.getElementById('btn-categorias-cerrar'),
+
 
     panelEscalas: document.getElementById('panel-escalas'),
     btnAgregarEscala: document.getElementById('btn-agregar-escala'),
@@ -500,13 +500,6 @@
     }
   }
 
-  function toggleMenuCategorias() {
-    el.panelCategorias.hidden = !el.panelCategorias.hidden;
-  }
-  function cerrarMenuCategorias() {
-    el.panelCategorias.hidden = true;
-  }
-
   // -------------------------------------------------------------------
   // Eventos generales
   // -------------------------------------------------------------------
@@ -520,25 +513,39 @@
       const visible = MapModule.toggleSitios();
       el.btnToggleSitios.setAttribute('aria-pressed', String(visible));
     });
-    el.btnCategorias.addEventListener('click', (e) => { e.stopPropagation(); toggleMenuCategorias(); });
+    el.btnCategorias.addEventListener('click', () => {
+      const visible = !el.panelCategorias.hidden;
+      el.panelCategorias.hidden = visible;
+      el.btnCategorias.setAttribute('aria-pressed', String(!visible));
+    });
     el.loadingSitios = document.getElementById('loading-sitios');
     el.progressFill = el.loadingSitios.querySelector('.progress-bar__fill');
+    el.loadingMsg = el.loadingSitios.querySelector('.loading-sitios__msg');
+    el.mensajesCarga = [
+      'Cargando lugares cercanos…',
+      'Buscando sitios turísticos…',
+      'Calculando distancias…',
+      'Preparando resultados…',
+      'Casi listo…',
+    ];
     el.btnMostrarSitiosCercanos.addEventListener('click', () => {
       el.btnMostrarSitiosCercanos.remove();
+      el.checkDistancia.checked = true;
+      el.filtroDistancia.disabled = false;
+      el.filtroDistancia.value = '5';
+      el.filtroDistanciaValor.textContent = '5 km';
       el.loadingSitios.hidden = false;
-      requestAnimationFrame(() => {
-        el.progressFill.classList.add('progress-bar__fill--active');
-        requestAnimationFrame(() => {
-          el.panelSitios.hidden = false;
-          el.btnAplicarDistancia.disabled = false;
-          el.btnAplicarTiempo.disabled = false;
-          ejecutarFiltrado();
-          el.loadingSitios.hidden = true;
-          el.progressFill.classList.remove('progress-bar__fill--active');
-          el.progressFill.style.transition = 'none';
-          el.progressFill.offsetHeight;
-          el.progressFill.style.transition = '';
-        });
+      el.progressFill.classList.add('progress-bar__fill--active');
+      ejecutarFiltradoProgresivo(() => {
+        el.panelSitios.hidden = false;
+        el.btnAplicarDistancia.disabled = false;
+        el.btnAplicarTiempo.disabled = false;
+        el.loadingSitios.hidden = true;
+        el.progressFill.classList.remove('progress-bar__fill--active');
+        el.progressFill.style.transition = 'none';
+        el.progressFill.offsetHeight;
+        el.progressFill.style.transition = '';
+        setTimeout(() => cargarFondoSitios(), 100);
       });
     });
     el.btnAplicarDistancia.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarDistancia));
@@ -559,10 +566,7 @@
       actualizarBotonFiltro(el.btnAplicarTiempo, 'tiempo');
     });
 
-    el.btnCategoriasCerrar.addEventListener('click', cerrarMenuCategorias);
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && !el.panelCategorias.hidden) cerrarMenuCategorias();
-    });
+
 
   }
 
@@ -681,7 +685,7 @@
     const opciones = {
       usarDistancia,
       usarTiempo,
-      distanciaMaximaKm: usarDistancia ? Number(el.filtroDistancia.value) : 60,
+      distanciaMaximaKm: usarDistancia ? Number(el.filtroDistancia.value) : 5,
       tiempoMaximoMin: usarTiempo ? Number(el.filtroTiempo.value) : 120,
       origen: state.origen,
       excluirIds: state.paradas.map((p) => p.id),
@@ -700,6 +704,90 @@
     ultimosValoresAplicados.tiempo = Number(el.filtroTiempo.value);
     actualizarBotonFiltro(el.btnAplicarDistancia, 'distancia');
     actualizarBotonFiltro(el.btnAplicarTiempo, 'tiempo');
+  }
+
+  function ejecutarFiltradoProgresivo(completado) {
+    if (!state.rutaActual) return;
+    const rutaFiltro = state.rutaBase || state.rutaActual;
+    const TAMANO_BLOQUE = 400;
+    const sitios = state.sitios.filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)));
+    const idsExcluidos = new Set(state.paradas.map((p) => p.id));
+    const distanciaMax = Number(el.filtroDistancia.value);
+    const bbox = FiltersModule.rutaBboxConMargen(rutaFiltro.geojson, distanciaMax);
+    const resultados = [];
+    const catsNorm = state.categoriasSeleccionadas.length > 0 ? new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase().trim())) : null;
+    let idx = 0;
+    let indiceMensaje = 0;
+    const intervaloMensajes = setInterval(() => {
+      indiceMensaje = (indiceMensaje + 1) % el.mensajesCarga.length;
+      el.loadingMsg.textContent = el.mensajesCarga[indiceMensaje];
+    }, 2000);
+
+    function procesarBloque() {
+      const fin = Math.min(idx + TAMANO_BLOQUE, sitios.length);
+      for (let i = idx; i < fin; i++) {
+        const s = sitios[i];
+        if (idsExcluidos.has(s.id)) continue;
+        if (FiltersModule.fueraDeBbox(s, bbox)) {
+          s.distanciaRutaKm = Infinity;
+          continue;
+        }
+        if (s.distanciaRutaKm == null) {
+          s.distanciaRutaKm = FiltersModule.distanciaARuta(s, rutaFiltro.geojson);
+          s.tiempoDesvioMin = FiltersModule.aproximarTiempoDesvio(s.distanciaRutaKm);
+        }
+        if (!isFinite(s.distanciaRutaKm)) continue;
+        if (s.distanciaRutaKm > distanciaMax) continue;
+        if (s.distanciaOrigenKm == null) {
+          s.distanciaOrigenKm = FiltersModule.distanciaAOrigen(s, state.origen);
+        }
+        if (catsNorm) {
+          const sc = (s.categoria || '').toLowerCase().trim();
+          if (!catsNorm.has(sc)) continue;
+        }
+        resultados.push(s);
+      }
+      idx = fin;
+      const progreso = idx / sitios.length;
+      el.progressFill.style.width = `${Math.round(progreso * 100)}%`;
+
+      if (idx < sitios.length) {
+        setTimeout(procesarBloque, 0);
+      } else {
+        clearInterval(intervaloMensajes);
+        resultados.sort((a, b) => (a.distanciaOrigenKm ?? a.distanciaRutaKm) - (b.distanciaOrigenKm ?? b.distanciaRutaKm));
+        state.sitiosFiltrados = resultados;
+        renderizarSitios(resultados);
+        ultimosValoresAplicados.distancia = distanciaMax;
+        actualizarBotonFiltro(el.btnAplicarDistancia, 'distancia');
+        completado();
+      }
+    }
+
+    setTimeout(procesarBloque, 30);
+  }
+
+  function cargarFondoSitios() {
+    if (!state.rutaActual) return;
+    const rutaFiltro = state.rutaBase || state.rutaActual;
+    const pendientes = state.sitios.filter((s) => s.distanciaRutaKm == null || !isFinite(s.distanciaRutaKm));
+    const TAM = 600;
+    let i = 0;
+    function fondoBloque() {
+      const fin = Math.min(i + TAM, pendientes.length);
+      for (let j = i; j < fin; j++) {
+        const s = pendientes[j];
+        if (s.lat == null || s.lon == null || isNaN(Number(s.lat)) || isNaN(Number(s.lon))) continue;
+        s.distanciaRutaKm = FiltersModule.distanciaARuta(s, rutaFiltro.geojson);
+        s.tiempoDesvioMin = FiltersModule.aproximarTiempoDesvio(s.distanciaRutaKm);
+        s.distanciaOrigenKm = FiltersModule.distanciaAOrigen(s, state.origen);
+      }
+      i = fin;
+      if (i < pendientes.length) {
+        setTimeout(fondoBloque, 50);
+      }
+    }
+    if (pendientes.length > 0) fondoBloque();
   }
 
   function aplicarFiltrosConSpinner(botonOrigenClic) {

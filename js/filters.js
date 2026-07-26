@@ -40,6 +40,21 @@ const FiltersModule = (() => {
     return turf.pointToLineDistance(punto, rutaGeoJSON, { units: 'kilometers' });
   }
 
+  /** Bounding box de la ruta + margen en km para descartar puntos lejanos. */
+  function rutaBboxConMargen(rutaGeoJSON, margenKm) {
+    const bbox = turf.bbox(rutaGeoJSON);
+    const [minLon, minLat, maxLon, maxLat] = bbox;
+    const latCentro = (minLat + maxLat) / 2 * Math.PI / 180;
+    const dLat = margenKm / 111;
+    const dLon = margenKm / (111 * Math.cos(latCentro));
+    return [minLon - dLon, minLat - dLat, maxLon + dLon, maxLat + dLat];
+  }
+
+  function fueraDeBbox(sitio, bbox) {
+    if (!bbox) return false;
+    return sitio.lat < bbox[1] || sitio.lat > bbox[3] || sitio.lon < bbox[0] || sitio.lon > bbox[2];
+  }
+
   /** Distancia en línea recta (km) entre un sitio y el punto de origen. */
   function distanciaAOrigen(sitio, origen) {
     if (!origen) return null;
@@ -112,12 +127,17 @@ const FiltersModule = (() => {
     if (!usarDistancia && !usarTiempo) return [];
 
     const idsExcluidos = new Set(excluirIds);
+    const bboxLimite = distanciaMaximaKm <= 5 ? rutaBboxConMargen(rutaGeoJSON, distanciaMaximaKm) : null;
 
     return sitios
       .filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)))
       .filter((s) => !idsExcluidos.has(s.id))
       .map((s) => {
         if (s.distanciaRutaKm == null) {
+          if (bboxLimite && fueraDeBbox(s, bboxLimite)) {
+            s.distanciaRutaKm = Infinity;
+            return s;
+          }
           s.distanciaRutaKm = distanciaARuta(s, rutaGeoJSON);
           s.tiempoDesvioMin = aproximarTiempoDesvio(s.distanciaRutaKm, velocidadKmH);
           s.distanciaOrigenKm = distanciaAOrigen(s, origen);
@@ -139,5 +159,7 @@ const FiltersModule = (() => {
     aproximarTiempoDesvio,
     precomputarSitios,
     filtrarSitiosPorRuta,
+    rutaBboxConMargen,
+    fueraDeBbox,
   };
 })();
