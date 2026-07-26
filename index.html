@@ -122,7 +122,11 @@
 
     <!-- Lista de sitios turísticos (con scroll propio) -->
     <section class="panel-sites">
-      <h2 class="panel-sites__title">Sitios turísticos <span class="badge-count mono" id="sitios-contador">0</span></h2>
+      <h2 class="panel-sites__title">
+        Sitios turísticos
+        <span class="badge-count mono" id="sitios-contador">0</span>
+        <button type="button" id="btn-categorias" class="btn-categorias" title="Filtrar por categorías">Categorías</button>
+      </h2>
       <div class="panel-sites__scroll">
         <p class="empty-state" id="sitios-vacio">Calcula una ruta, activa un filtro y pulsa el botón de aplicar para ver los sitios turísticos cercanos.</p>
         <ul class="sitios-lista" id="sitios-lista" hidden></ul>
@@ -130,6 +134,19 @@
     </section>
 
   </aside>
+</div>
+
+<!-- Menú flotante de categorías -->
+<div class="categorias-overlay" id="categorias-overlay" hidden>
+  <div class="categorias-menu" id="categorias-menu">
+    <div class="categorias-menu__header">
+      <span class="categorias-menu__title">Categorías</span>
+      <button type="button" id="btn-categorias-cerrar" class="categorias-menu__close" aria-label="Cerrar" title="Cerrar">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="categorias-menu__grid" id="categorias-grid"></div>
+  </div>
 </div>
 
 <!-- Plantilla de popup de sitio turístico -->

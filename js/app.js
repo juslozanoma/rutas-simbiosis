@@ -41,6 +41,8 @@
     paradas: [],          // sitios agregados a la ruta, en orden de visita
     sitiosFiltrados: [],
     previewSitioId: null, // id del sitio actualmente previsualizado (si hay alguno)
+    categoriasSeleccionadas: [], // categorías activas como filtro adicional
+    categoriasUnicas: [],        // lista normalizada de categorías únicas
   };
 
   // -------------------------------------------------------------------
@@ -77,6 +79,11 @@
     panelParadas: document.getElementById('panel-paradas'),
     paradasLista: document.getElementById('paradas-lista'),
     paradasContador: document.getElementById('paradas-contador'),
+
+    btnCategorias: document.getElementById('btn-categorias'),
+    categoriasOverlay: document.getElementById('categorias-overlay'),
+    categoriasGrid: document.getElementById('categorias-grid'),
+    btnCategoriasCerrar: document.getElementById('btn-categorias-cerrar'),
   };
 
   // -------------------------------------------------------------------
@@ -100,6 +107,8 @@
     }
 
     initCombos();
+    state.categoriasUnicas = obtenerCategoriasUnicas();
+    renderizarCategoriasMenu();
     initEventos();
   }
 
@@ -203,6 +212,53 @@
   }
 
   // -------------------------------------------------------------------
+  // Categorías: extracción, menú flotante y filtrado
+  // -------------------------------------------------------------------
+  function obtenerCategoriasUnicas() {
+    const mapa = new Map();
+    state.sitios.forEach((s) => {
+      const c = s.categoria ? s.categoria.trim() : '';
+      if (!c) return;
+      const key = c.toLowerCase();
+      if (!mapa.has(key)) mapa.set(key, c);
+    });
+    return [...mapa.values()].sort((a, b) => a.localeCompare(b, 'es'));
+  }
+
+  function renderizarCategoriasMenu() {
+    el.categoriasGrid.innerHTML = '';
+    const seleccionadas = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase()));
+    state.categoriasUnicas.forEach((cat) => {
+      const chip = document.createElement('span');
+      chip.className = 'categoria-chip';
+      if (seleccionadas.has(cat.toLowerCase())) chip.classList.add('categoria-chip--selected');
+      chip.textContent = cat;
+      chip.addEventListener('click', () => toggleCategoria(cat));
+      el.categoriasGrid.appendChild(chip);
+    });
+  }
+
+  function toggleCategoria(cat) {
+    const idx = state.categoriasSeleccionadas.findIndex((c) => c.toLowerCase() === cat.toLowerCase());
+    if (idx !== -1) {
+      state.categoriasSeleccionadas.splice(idx, 1);
+    } else {
+      state.categoriasSeleccionadas.push(cat);
+    }
+    renderizarCategoriasMenu();
+    if (state.rutaActual) {
+      ejecutarFiltrado();
+    }
+  }
+
+  function abrirMenuCategorias() {
+    el.categoriasOverlay.hidden = false;
+  }
+  function cerrarMenuCategorias() {
+    el.categoriasOverlay.hidden = true;
+  }
+
+  // -------------------------------------------------------------------
   // Eventos generales
   // -------------------------------------------------------------------
   function initEventos() {
@@ -235,6 +291,15 @@
 
     el.btnAplicarDistancia.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarDistancia));
     el.btnAplicarTiempo.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarTiempo));
+
+    el.btnCategorias.addEventListener('click', (e) => { e.stopPropagation(); abrirMenuCategorias(); });
+    el.btnCategoriasCerrar.addEventListener('click', cerrarMenuCategorias);
+    el.categoriasOverlay.addEventListener('click', (e) => {
+      if (e.target === el.categoriasOverlay) cerrarMenuCategorias();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !el.categoriasOverlay.hidden) cerrarMenuCategorias();
+    });
   }
 
   function actualizarEstadoBotonesFiltro() {
@@ -353,16 +418,32 @@
   function ejecutarFiltrado() {
     if (!state.rutaActual) return;
 
+    const hayFiltroEspacial = el.checkDistancia.checked || el.checkTiempo.checked;
+    const hayCategorias = state.categoriasSeleccionadas.length > 0;
+    if (!hayFiltroEspacial && !hayCategorias) return;
+
+    const usarDistancia = el.checkDistancia.checked || (hayCategorias && !hayFiltroEspacial);
+    const usarTiempo = el.checkTiempo.checked;
+
     const opciones = {
-      usarDistancia: el.checkDistancia.checked,
-      usarTiempo: el.checkTiempo.checked,
-      distanciaMaximaKm: Number(el.filtroDistancia.value),
-      tiempoMaximoMin: Number(el.filtroTiempo.value),
+      usarDistancia,
+      usarTiempo,
+      distanciaMaximaKm: usarDistancia ? Number(el.filtroDistancia.value) : 60,
+      tiempoMaximoMin: usarTiempo ? Number(el.filtroTiempo.value) : 120,
       origen: state.origen,
       excluirIds: state.paradas.map((p) => p.id),
     };
 
-    const sitiosResultado = FiltersModule.filtrarSitiosPorRuta(state.sitios, state.rutaActual.geojson, opciones);
+    let sitiosResultado = FiltersModule.filtrarSitiosPorRuta(state.sitios, state.rutaActual.geojson, opciones);
+
+    if (hayCategorias) {
+      const catsNorm = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase().trim()));
+      sitiosResultado = sitiosResultado.filter((s) => {
+        const sc = (s.categoria || '').toLowerCase().trim();
+        return catsNorm.has(sc);
+      });
+    }
+
     state.sitiosFiltrados = sitiosResultado;
     renderizarSitios(sitiosResultado);
 
