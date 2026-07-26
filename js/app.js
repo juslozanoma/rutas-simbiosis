@@ -474,15 +474,23 @@
   }
 
   function categoriasDeRuta() {
-    if (!state.sitiosFiltrados || state.sitiosFiltrados.length === 0) return state.categoriasUnicas;
-    const conteo = new Map();
-    state.sitiosFiltrados.forEach((s) => {
+    const catsDisponibles = new Map();
+    state.sitios.forEach((s) => {
       if (!s.categoria) return;
+      if (s.distanciaRutaKm == null || !isFinite(s.distanciaRutaKm)) return;
       const c = s.categoria.trim();
-      conteo.set(c, (conteo.get(c) || 0) + 1);
+      if (!catsDisponibles.has(c)) catsDisponibles.set(c, true);
     });
-    if (conteo.size === 0) return state.categoriasUnicas;
-    return [...conteo.entries()].sort((a, b) => a[0].localeCompare(b[0], 'es'));
+    if (catsDisponibles.size === 0) return state.categoriasUnicas.map((c) => [c, 0]);
+    const conteo = new Map();
+    if (state.sitiosFiltrados) {
+      state.sitiosFiltrados.forEach((s) => {
+        if (!s.categoria) return;
+        const c = s.categoria.trim();
+        if (catsDisponibles.has(c)) conteo.set(c, (conteo.get(c) || 0) + 1);
+      });
+    }
+    return [...catsDisponibles.keys()].sort((a, b) => a.localeCompare(b, 'es')).map((c) => [c, conteo.get(c) || 0]);
   }
 
   function renderizarCategoriasMenu(lista) {
@@ -1092,6 +1100,9 @@
     li.draggable = true;
     li.addEventListener('dragstart', (e) => {
       elementoArrastrando = li;
+      const img = new Image();
+      img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      e.dataTransfer.setDragImage(img, 0, 0);
       e.dataTransfer.setData('text/plain', JSON.stringify({ tipo, id }));
       e.dataTransfer.effectAllowed = 'move';
     });
