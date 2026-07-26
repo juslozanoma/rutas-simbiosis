@@ -75,7 +75,8 @@ input, select{ font-family: inherit; }
 /* --- Resumen de ruta --- */
 .panel-summary{
   display: flex;
-  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 20px;
   flex-shrink: 0;
 }
 .stat{ display: flex; flex-direction: column; gap: 3px; }
@@ -390,14 +391,23 @@ input, select{ font-family: inherit; }
   align-items: center;
   gap: 6px;
 }
-.panel-sites__stats{
+.btn-mostrar-sitios{
   display: flex;
-  gap: 16px;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-300);
+  background: #ffffff;
+  color: var(--teal-600);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
   flex-shrink: 0;
-  padding: 0;
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
-.panel-sites__stats .stat__label{ font-size: 0.62rem; }
-.panel-sites__stats .stat__value{ font-size: 0.95rem; }
+.btn-mostrar-sitios:hover{ background: #f5f3ec; border-color: var(--teal-500); }
 .badge-count{
   background: var(--ink-900);
   color: #ffffff;
@@ -643,30 +653,7 @@ input, select{ font-family: inherit; }
 }
 .btn-categorias:hover{ background: #f5f3ec; border-color: var(--teal-500); color: var(--teal-600); }
 
-.btn-toggle-sitios{
-  width: 26px; height: 26px;
-  border-radius: 50%;
-  border: 1px solid var(--line-300);
-  background: var(--teal-500);
-  color: #ffffff;
-  cursor: pointer;
-  flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
-}
-.btn-toggle-sitios__icon{ display: flex; align-items: center; justify-content: center; position: relative; }
-.btn-toggle-sitios[aria-pressed="false"]{
-  background: #d9534f;
-  border-color: #d9534f;
-  color: #ffffff;
-}
-.btn-toggle-sitios[aria-pressed="false"] .btn-toggle-sitios__icon::after{
-  content: '';
-  position: absolute;
-  width: 18px; height: 2px;
-  background: #ffffff;
-  transform: rotate(-30deg);
-}
+
 
 /* ==========================================================================
    PANEL INLINE DE CATEGORÍAS

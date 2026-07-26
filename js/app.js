@@ -90,7 +90,9 @@
     panelEscalas: document.getElementById('panel-escalas'),
     btnAgregarEscala: document.getElementById('btn-agregar-escala'),
 
-    btnToggleSitios: document.getElementById('btn-toggle-sitios'),
+    btnMostrarSitios: document.getElementById('btn-mostrar-sitios'),
+    panelSitios: document.getElementById('panel-sites'),
+    sitiosContadorBtn: document.getElementById('sitios-contador-btn'),
   };
 
   // -------------------------------------------------------------------
@@ -114,8 +116,7 @@
     }
 
     initCombos();
-    state.categoriasUnicas = obtenerCategoriasUnicas();
-    renderizarCategoriasMenu();
+    state.categoriasUnicas = [];
     initEscalas();
     initEventos();
   }
@@ -439,25 +440,27 @@
   // Categorías: extracción, menú flotante y filtrado
   // -------------------------------------------------------------------
   function obtenerCategoriasUnicas() {
+    const fuente = state.sitiosFiltrados || state.sitios;
     const mapa = new Map();
-    state.sitios.forEach((s) => {
+    fuente.forEach((s) => {
       const c = s.categoria ? s.categoria.trim() : '';
       if (!c) return;
       const key = c.toLowerCase();
-      if (!mapa.has(key)) mapa.set(key, c);
+      mapa.set(key, (mapa.get(key) || 0) + 1);
     });
-    return [...mapa.values()].sort((a, b) => a.localeCompare(b, 'es'));
+    return [...mapa.entries()].sort((a, b) => a[0].localeCompare(b[0], 'es'))
+      .map(([nombre, cuenta]) => ({ nombre, cuenta }));
   }
 
   function renderizarCategoriasMenu() {
     el.categoriasGrid.innerHTML = '';
     const seleccionadas = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase()));
-    state.categoriasUnicas.forEach((cat) => {
+    state.categoriasUnicas.forEach(({ nombre, cuenta }) => {
       const chip = document.createElement('span');
       chip.className = 'categoria-chip';
-      if (seleccionadas.has(cat.toLowerCase())) chip.classList.add('categoria-chip--selected');
-      chip.textContent = cat;
-      chip.addEventListener('click', () => toggleCategoria(cat));
+      if (seleccionadas.has(nombre.toLowerCase())) chip.classList.add('categoria-chip--selected');
+      chip.textContent = cuenta > 0 ? `${nombre} (${cuenta})` : nombre;
+      chip.addEventListener('click', () => toggleCategoria(nombre));
       el.categoriasGrid.appendChild(chip);
     });
   }
@@ -476,6 +479,8 @@
   }
 
   function toggleMenuCategorias() {
+    state.categoriasUnicas = obtenerCategoriasUnicas();
+    renderizarCategoriasMenu();
     el.panelCategorias.hidden = !el.panelCategorias.hidden;
   }
   function cerrarMenuCategorias() {
@@ -522,9 +527,15 @@
       if (e.key === 'Escape' && !el.panelCategorias.hidden) cerrarMenuCategorias();
     });
 
-    el.btnToggleSitios.addEventListener('click', () => {
-      const visible = MapModule.toggleSitios();
-      el.btnToggleSitios.setAttribute('aria-pressed', String(visible));
+    el.btnMostrarSitios.addEventListener('click', () => {
+      el.panelSitios.hidden = !el.panelSitios.hidden;
+      el.btnMostrarSitios.hidden = !el.panelSitios.hidden;
+      if (!el.panelSitios.hidden && state.rutaActual) {
+        ejecutarFiltrado();
+      }
+      if (el.panelSitios.hidden) {
+        MapModule.limpiarSitios();
+      }
     });
   }
 
@@ -621,6 +632,8 @@
       el.filtroDistancia.value = '10';
       el.filtroDistanciaValor.textContent = '10 km';
       el.filtroDistancia.disabled = false;
+      el.sitiosContadorBtn.textContent = String(state.sitios.length || 0);
+      el.btnMostrarSitios.hidden = false;
       actualizarEstadoBotonesFiltro();
     } catch (err) {
       el.statDistancia.textContent = '—';
@@ -657,6 +670,7 @@
   /** Recalcula qué sitios cumplen los filtros activos y los muestra en el mapa y la lista. */
   function ejecutarFiltrado() {
     if (!state.rutaActual) return;
+    if (el.panelSitios.hidden) return;
 
     const hayFiltroEspacial = el.checkDistancia.checked || el.checkTiempo.checked;
     const hayCategorias = state.categoriasSeleccionadas.length > 0;
@@ -686,6 +700,8 @@
     }
 
     state.sitiosFiltrados = sitiosResultado;
+    state.categoriasUnicas = obtenerCategoriasUnicas();
+    renderizarCategoriasMenu();
     renderizarSitios(sitiosResultado);
 
     ultimosValoresAplicados.distancia = Number(el.filtroDistancia.value);
@@ -699,6 +715,7 @@
     MapModule.limpiarSitios();
     el.sitiosLista.innerHTML = '';
     el.sitiosContador.textContent = String(sitios.length);
+    el.sitiosContadorBtn.textContent = String(sitios.length);
 
     if (sitios.length === 0) {
       el.sitiosVacio.hidden = false;
@@ -816,42 +833,47 @@
   async function construirRutaConDesvios(rutaBase, paradas) {
     if (!rutaBase || paradas.length === 0) return rutaBase;
 
-    let coords = rutaBase.geojson.geometry.coordinates.slice();
-    let distanciaExtra = 0;
-    let tiempoExtra = 0;
-    const idsFallidos = [];
+    const baseLine = turf.lineString(rutaBase.geojson.geometry.coordinates);
 
-    for (const p of paradas) {
-      const line = turf.lineString(coords);
-      const nearest = turf.nearestPointOnLine(line, turf.point([p.lon, p.lat]));
+    const results = await Promise.all(paradas.map(async (p) => {
+      const nearest = turf.nearestPointOnLine(baseLine, turf.point([p.lon, p.lat]));
       const [nearestLon, nearestLat] = nearest.geometry.coordinates;
-      const index = nearest.properties.index;
-
-      let detourCoords;
-      let detourDist;
-      let detourDur;
-
       try {
         const rutaDesvio = await RoutingModule.calcularRuta(
           { lat: nearestLat, lon: nearestLon },
           { lat: p.lat, lon: p.lon },
           PERFIL_FIJO
         );
-        detourCoords = rutaDesvio.geojson.geometry.coordinates;
-        detourDist = rutaDesvio.distanciaMetros;
-        detourDur = rutaDesvio.duracionSegundos;
-      } catch (_err) {
-        idsFallidos.push(p.id);
+        return {
+          index: nearest.properties.index,
+          detourCoords: rutaDesvio.geojson.geometry.coordinates,
+          detourDist: rutaDesvio.distanciaMetros,
+          detourDur: rutaDesvio.duracionSegundos,
+        };
+      } catch {
+        return { id: p.id, error: true };
+      }
+    }));
+
+    let coords = rutaBase.geojson.geometry.coordinates.slice();
+    let distanciaExtra = 0;
+    let tiempoExtra = 0;
+    const idsFallidos = [];
+    let offsetAccum = 0;
+
+    for (const r of results) {
+      if (r.error) {
+        idsFallidos.push(r.id);
         continue;
       }
-
-      const before = coords.slice(0, index + 1);
-      const after = coords.slice(index + 1);
-      const returnCoords = detourCoords.slice().reverse();
-
-      coords = [...before, ...detourCoords, ...returnCoords, ...after];
-      distanciaExtra += detourDist * 2;
-      tiempoExtra += detourDur * 2;
+      const adjustedIndex = r.index + offsetAccum;
+      const before = coords.slice(0, adjustedIndex + 1);
+      const after = coords.slice(adjustedIndex + 1);
+      const returnCoords = r.detourCoords.slice().reverse();
+      coords = [...before, ...r.detourCoords, ...returnCoords, ...after];
+      offsetAccum += r.detourCoords.length * 2;
+      distanciaExtra += r.detourDist * 2;
+      tiempoExtra += r.detourDur * 2;
     }
 
     return {
