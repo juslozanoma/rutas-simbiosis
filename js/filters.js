@@ -93,6 +93,7 @@ const FiltersModule = (() => {
     const idsExcluidos = new Set(excluirIds);
 
     return sitios
+      .filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)))
       .filter((s) => !idsExcluidos.has(s.id))
       .map((s) => {
         const distanciaRutaKm = distanciaARuta(s, rutaGeoJSON);

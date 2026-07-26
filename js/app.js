@@ -111,40 +111,90 @@
     setupCombo(el.destinoInput, el.destinoList, (m) => { state.destino = m; actualizarEstadoBotonCalcular(); });
   }
 
-  function setupCombo(input, listEl, onSelect) {
-    const render = Utils.debounce((query) => {
-      const q = Utils.normalizar(query);
-      const resultados = q.length === 0
-        ? state.municipios.slice(0, 12)
-        : state.municipios
-            .filter((m) => Utils.normalizar(m.nombre).includes(q) || Utils.normalizar(m.departamento).includes(q))
-            .slice(0, 30);
+  function setupCombo(trigger, listEl, onSelect) {
+    const combo = trigger.parentElement;
+    let deptoSeleccionado = null;
 
+    function obtenerDepartamentos() {
+      return [...new Set(state.municipios.map((m) => m.departamento))].sort();
+    }
+
+    function obtenerMunicipios(depto) {
+      return state.municipios
+        .filter((m) => m.departamento === depto)
+        .sort((a, b) => a.nombre.localeCompare(b.nombre));
+    }
+
+    function renderDepartamentos() {
+      deptoSeleccionado = null;
       listEl.innerHTML = '';
-      if (resultados.length === 0) {
-        listEl.innerHTML = '<li class="no-results">Sin resultados</li>';
-      } else {
-        resultados.forEach((m) => {
-          const li = document.createElement('li');
-          li.setAttribute('role', 'option');
-          li.innerHTML = `<span>${m.nombre}</span><small>${m.departamento}</small>`;
-          li.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            input.value = m.nombre;
-            listEl.hidden = true;
-            onSelect(m);
-          });
-          listEl.appendChild(li);
+      const deptos = obtenerDepartamentos();
+      deptos.forEach((d) => {
+        const li = document.createElement('li');
+        li.textContent = d;
+        li.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deptoSeleccionado = d;
+          renderMunicipios();
         });
-      }
+        listEl.appendChild(li);
+      });
       listEl.hidden = false;
-    }, 120);
+    }
 
-    input.addEventListener('input', () => render(input.value));
-    input.addEventListener('focus', () => render(input.value));
-    input.addEventListener('blur', () => setTimeout(() => { listEl.hidden = true; }, 120));
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') listEl.hidden = true;
+    function renderMunicipios() {
+      listEl.innerHTML = '';
+      const back = document.createElement('li');
+      back.className = 'combo__back';
+      back.textContent = '← Volver';
+      back.addEventListener('click', (e) => {
+        e.stopPropagation();
+        renderDepartamentos();
+      });
+      listEl.appendChild(back);
+
+      const municipios = obtenerMunicipios(deptoSeleccionado);
+      municipios.forEach((m) => {
+        const li = document.createElement('li');
+        li.textContent = m.nombre;
+        li.addEventListener('click', (e) => {
+          e.stopPropagation();
+          listEl.hidden = true;
+          const txt = trigger.querySelector('.combo__trigger-text');
+          txt.textContent = m.nombre;
+          txt.removeAttribute('data-placeholder');
+          trigger.setAttribute('aria-label', m.nombre + ' — municipio de ' + m.departamento);
+          onSelect(m);
+        });
+        listEl.appendChild(li);
+      });
+      listEl.hidden = false;
+    }
+
+    function cerrar() {
+      listEl.hidden = true;
+    }
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (listEl.hidden) {
+        renderDepartamentos();
+      } else {
+        cerrar();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!combo.contains(e.target)) cerrar();
+    });
+
+    trigger.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') cerrar();
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (listEl.hidden) renderDepartamentos();
+        else cerrar();
+      }
     });
   }
 
@@ -339,6 +389,7 @@
     el.sitiosLista.hidden = false;
 
     sitios.forEach((sitio) => {
+      if (sitio.lat == null || sitio.lon == null || isNaN(Number(sitio.lat)) || isNaN(Number(sitio.lon))) return;
       const marker = TourismModule.crearMarcador(sitio);
       MapModule.agregarMarcadorSitio(marker);
       el.sitiosLista.appendChild(crearTarjetaSitio(sitio));

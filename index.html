@@ -60,11 +60,17 @@
     <!-- Origen / destino + botón calcular -->
     <section class="panel-locate">
       <div class="combo" data-combo="origen">
-        <input type="text" id="origen-input" placeholder="Origen" aria-label="Municipio de origen" aria-expanded="false" aria-autocomplete="list" role="combobox">
+        <button type="button" class="combo__trigger" id="origen-input" aria-label="Seleccionar municipio de origen">
+          <span class="combo__trigger-text" data-placeholder="true">Origen</span>
+          <svg class="combo__chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
         <ul class="combo__list" id="origen-list" role="listbox" hidden></ul>
       </div>
       <div class="combo" data-combo="destino">
-        <input type="text" id="destino-input" placeholder="Destino" aria-label="Municipio de destino" aria-expanded="false" aria-autocomplete="list" role="combobox">
+        <button type="button" class="combo__trigger" id="destino-input" aria-label="Seleccionar municipio de destino">
+          <span class="combo__trigger-text" data-placeholder="true">Destino</span>
+          <svg class="combo__chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
         <ul class="combo__list" id="destino-list" role="listbox" hidden></ul>
       </div>
       <button type="button" id="btn-calcular" class="icon-btn icon-btn--accent" title="Calcular ruta" aria-label="Calcular ruta" disabled>
