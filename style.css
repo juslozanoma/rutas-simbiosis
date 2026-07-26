@@ -381,6 +381,7 @@ input, select{ font-family: inherit; }
   flex-direction: column;
   gap: 8px;
 }
+.panel-sites[hidden]{ display: none !important; }
 .panel-sites__title{
   font-size: 0.72rem;
   font-weight: 600;
