@@ -222,10 +222,11 @@
       const ruta = await RoutingModule.calcularRuta(state.origen, state.destino, PERFIL_FIJO);
       aplicarRutaCalculada(ruta);
 
-      // En dispositivos móviles, calcular la ruta inicial pone el mapa en
-      // pantalla completa automáticamente; el usuario puede volver al panel
-      // con las flechas junto al tiempo estimado.
-      if (esMovil()) setVistaMovil('map');
+      // En dispositivos móviles, calcular la ruta pone toda la página en
+      // pantalla completa (modo nativo del navegador) sin ocultar el panel.
+      if (esMovil() && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
 
       // Limpia resultados de una búsqueda de sitios anterior, ya que
       // corresponden a otra ruta.
