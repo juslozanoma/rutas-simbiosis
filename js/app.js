@@ -89,6 +89,8 @@
 
     panelEscalas: document.getElementById('panel-escalas'),
     btnAgregarEscala: document.getElementById('btn-agregar-escala'),
+
+    btnToggleSitios: document.getElementById('btn-toggle-sitios'),
   };
 
   // -------------------------------------------------------------------
@@ -127,16 +129,16 @@
       if (state.destino?.id) ids.add(state.destino.id);
       state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
       return ids;
-    });
+    }, true);
     setupCombo(el.destinoInput, el.destinoList, (m) => { state.destino = m; actualizarEstadoBotonCalcular(); }, () => {
       const ids = new Set();
       if (state.origen?.id) ids.add(state.origen.id);
       state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
       return ids;
-    });
+    }, false);
   }
 
-  function setupCombo(trigger, listEl, onSelect, excluirIdsFn) {
+  function setupCombo(trigger, listEl, onSelect, excluirIdsFn, showCurrentLocation) {
     const combo = trigger.parentElement;
     let deptoSeleccionado = null;
 
@@ -153,6 +155,34 @@
     function renderDepartamentos() {
       deptoSeleccionado = null;
       listEl.innerHTML = '';
+
+      if (showCurrentLocation) {
+        const locLi = document.createElement('li');
+        locLi.textContent = 'Ubicación actual';
+        locLi.style.cssText = 'border-bottom:1px solid var(--line-200);margin-bottom:4px;padding-bottom:8px;font-weight:600;color:var(--teal-600)';
+        locLi.addEventListener('click', (e) => {
+          e.stopPropagation();
+          listEl.hidden = true;
+          ponerEnCargaRuta(true);
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              const { latitude: lat, longitude: lon } = pos.coords;
+              const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+              const txt = trigger.querySelector('.combo__trigger-text');
+              txt.textContent = nombre;
+              txt.removeAttribute('data-placeholder');
+              trigger.setAttribute('aria-label', 'Ubicación actual');
+              onSelect({ id: 'gps_' + Date.now(), lat, lon, nombre, departamento: '' });
+              ponerEnCargaRuta(false);
+            },
+            () => {
+              ponerEnCargaRuta(false);
+            }
+          );
+        });
+        listEl.appendChild(locLi);
+      }
+
       const pickLi = document.createElement('li');
       pickLi.textContent = 'Seleccionar en el mapa';
       pickLi.style.cssText = 'border-bottom:1px solid var(--line-200);margin-bottom:4px;padding-bottom:8px;font-weight:600;color:var(--teal-600)';
@@ -389,7 +419,14 @@
       if (!txt || txt.hasAttribute('data-placeholder')) return;
       const nombre = txt.textContent;
       const m = state.municipios.find((mun) => mun.nombre === nombre);
-      if (m) Object.assign(e, m);
+      if (m) {
+        Object.assign(e, m);
+      } else {
+        const partes = nombre.split(',').map((s) => parseFloat(s.trim()));
+        if (partes.length === 2 && !isNaN(partes[0]) && !isNaN(partes[1])) {
+          Object.assign(e, { id: 'map_' + Date.now(), lat: partes[0], lon: partes[1], nombre, departamento: '' });
+        }
+      }
     });
     actualizarEstadoBotonCalcular();
   }
@@ -479,6 +516,11 @@
     el.btnCategoriasCerrar.addEventListener('click', cerrarMenuCategorias);
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && !el.panelCategorias.hidden) cerrarMenuCategorias();
+    });
+
+    el.btnToggleSitios.addEventListener('click', () => {
+      const visible = MapModule.toggleSitios();
+      el.btnToggleSitios.setAttribute('aria-pressed', String(visible));
     });
   }
 

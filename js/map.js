@@ -108,9 +108,9 @@ const MapModule = (() => {
     return L.divIcon({
       html: `<div class="parada-pin parada-pin--parada">${numero}</div>`,
       className: '',
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
-      popupAnchor: [0, -14],
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+      popupAnchor: [0, -17],
     });
   }
 
@@ -119,9 +119,9 @@ const MapModule = (() => {
     return L.divIcon({
       html: `<div class="parada-pin parada-pin--escala">${numero}</div>`,
       className: '',
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
-      popupAnchor: [0, -14],
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+      popupAnchor: [0, -17],
     });
   }
 
@@ -297,6 +297,16 @@ const MapModule = (() => {
     clusterSitios.addLayer(marker);
   }
 
+  function toggleSitios() {
+    if (map.hasLayer(clusterSitios)) {
+      map.removeLayer(clusterSitios);
+      return false;
+    } else {
+      map.addLayer(clusterSitios);
+      return true;
+    }
+  }
+
   // ---------------------------------------------------------------------
   // Encuadre / zoom
   // ---------------------------------------------------------------------
@@ -331,6 +341,7 @@ const MapModule = (() => {
     limpiarTodo,
     limpiarSitios,
     agregarMarcadorSitio,
+    toggleSitios,
     encuadrar,
   };
 })();

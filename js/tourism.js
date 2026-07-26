@@ -71,6 +71,12 @@ const TourismModule = (() => {
   function crearMarcador(sitio) {
     const icono = MapModule.iconoSitio(colorCategoria(sitio.categoria));
     const marker = L.marker([sitio.lat, sitio.lon], { icon: icono });
+    marker.bindTooltip(sitio.nombre, {
+      permanent: true,
+      direction: 'top',
+      offset: [0, -6],
+      className: 'site-label',
+    });
 
     const tpl = document.getElementById('tpl-popup-sitio');
     const nodo = tpl.content.cloneNode(true);

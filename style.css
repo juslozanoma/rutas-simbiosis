@@ -466,6 +466,21 @@ input, select{ font-family: inherit; }
 
 .leaflet-popup-content-wrapper{ border-radius: var(--radius-md); }
 
+/* Etiqueta permanente de nombre de sitio turístico (visible al individualizarse) */
+.site-label{
+  background: rgba(255,255,255,0.88);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 0.6rem;
+  font-family: var(--font-body);
+  color: var(--text-strong);
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(20,32,27,0.15);
+  white-space: nowrap;
+}
+.site-label::before{ display: none; }
+
 /* Tooltip que sigue al cursor sobre la ruta (distancia y tiempo desde el origen) */
 .route-tooltip{
   background: var(--ink-900);
@@ -482,14 +497,13 @@ input, select{ font-family: inherit; }
 
 /* Pin numerado para un sitio agregado como parada de la ruta */
 .parada-pin{
-  width: 22px; height: 22px;
+  width: 28px; height: 28px;
   border-radius: 50%;
   color: #ffffff;
-  border: 2px solid #ffffff;
   box-shadow: 0 1px 4px rgba(20,32,27,0.4);
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.8rem;
   font-weight: 700;
 }
 .parada-pin--parada{ background: var(--teal-600); }
@@ -617,6 +631,20 @@ input, select{ font-family: inherit; }
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 .btn-categorias:hover{ background: #f5f3ec; border-color: var(--teal-500); color: var(--teal-600); }
+
+.btn-toggle-sitios{
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--line-300);
+  background: #ffffff;
+  color: var(--teal-600);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.btn-toggle-sitios:hover{ background: #f5f3ec; border-color: var(--teal-500); }
+.btn-toggle-sitios[aria-pressed="false"]{ color: var(--text-muted); opacity: 0.5; }
 
 /* ==========================================================================
    PANEL INLINE DE CATEGORÍAS
