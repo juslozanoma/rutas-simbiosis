@@ -528,6 +528,14 @@
     const cats = lista || categoriasDeRuta();
     el.categoriasGrid.innerHTML = '';
     const seleccionadas = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase()));
+    cats.sort((a, b) => {
+      const an = (Array.isArray(a) ? a[0] : a).toLowerCase();
+      const bn = (Array.isArray(b) ? b[0] : b).toLowerCase();
+      const aSel = seleccionadas.has(an) ? 0 : 1;
+      const bSel = seleccionadas.has(bn) ? 0 : 1;
+      if (aSel !== bSel) return aSel - bSel;
+      return an.localeCompare(bn, 'es');
+    });
     cats.forEach((ent) => {
       const cat = Array.isArray(ent) ? ent[0] : ent;
       const n = Array.isArray(ent) ? ent[1] : 0;
@@ -832,6 +840,9 @@
         if (s.distanciaOrigenKm == null) {
           s.distanciaOrigenKm = FiltersModule.distanciaAOrigen(s, state.origen);
         }
+        if (s.distanciaDestinoKm == null) {
+          s.distanciaDestinoKm = FiltersModule.distanciaADestino(s, state.destino);
+        }
         resultadosBase.push(s);
         if (catsNorm) {
           const sc = (s.categoria || '').toLowerCase().trim();
@@ -847,7 +858,7 @@
         setTimeout(procesarBloque, 0);
       } else {
         clearInterval(intervaloMensajes);
-        resultados.sort((a, b) => (a.distanciaOrigenKm ?? a.distanciaRutaKm) - (b.distanciaOrigenKm ?? b.distanciaRutaKm));
+        resultados.sort((a, b) => (a.distanciaDestinoKm ?? a.distanciaRutaKm) - (b.distanciaDestinoKm ?? b.distanciaRutaKm) || (b.distanciaOrigenKm ?? b.distanciaRutaKm) - (a.distanciaOrigenKm ?? a.distanciaRutaKm));
         conteoCategoriasBase = new Map();
         resultadosBase.forEach((s) => {
           if (!s.categoria) return;
@@ -1139,14 +1150,16 @@
   // -------------------------------------------------------------------
   function refiltrarSitios() {
     if (!state.rutaActual) return;
-    if (state.sitiosFiltrados?.length === 0) return;
     state.sitios.forEach((s) => {
       delete s.distanciaRutaKm;
       delete s.tiempoDesvioMin;
       delete s.distanciaOrigenKm;
+      delete s.distanciaDestinoKm;
     });
+    const rutaFiltro = state.rutaBase || state.rutaActual;
+    FiltersModule.precomputarSitios(state.sitios, rutaFiltro.geojson, state.origen, state.destino);
     const opciones = {
-      usarDistancia: el.checkDistancia.checked,
+      usarDistancia: el.checkDistancia.checked || (state.categoriasSeleccionadas.length > 0 && !el.checkDistancia.checked && !el.checkTiempo.checked),
       usarTiempo: el.checkTiempo.checked,
       distanciaMaximaKm: el.checkDistancia.checked ? Number(el.filtroDistancia.value) : 5,
       tiempoMaximoMin: el.checkTiempo.checked ? Number(el.filtroTiempo.value) : 120,
@@ -1154,7 +1167,6 @@
       destino: state.destino,
       excluirIds: state.paradas.map((p) => p.id),
     };
-    const rutaFiltro = state.rutaBase || state.rutaActual;
     const sitiosBase = FiltersModule.filtrarSitiosPorRuta(state.sitios, rutaFiltro.geojson, opciones);
     state.sitiosFiltradosBase = sitiosBase;
     conteoCategoriasBase = new Map();
