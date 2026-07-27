@@ -846,8 +846,6 @@ input, select{ font-family: inherit; }
 
   #app[data-mobile-tab="descubre"] .panel-locate{ display: none; }
   #app[data-mobile-tab="descubre"] .panel-paradas{ display: none; }
-  #app[data-mobile-tab="descubre"] .filter-row{ display: none; }
-  #app[data-mobile-tab="descubre"] .panel-desvios{ display: none; }
 
   /* En móvil, el panel de desvíos se muestra tras calcular la ruta */
   #app[data-mobile-tab="descubre"] .panel-sites > h2{ display: none; }
@@ -902,7 +900,9 @@ input, select{ font-family: inherit; }
     overflow-y: hidden;
     gap: 4px 6px;
     align-content: flex-start;
+    scrollbar-width: none;
   }
+  .panel-categorias__grid::-webkit-scrollbar{ display: none; }
   .panel-categorias__grid > .categoria-chip{
     flex-shrink: 0;
   }
