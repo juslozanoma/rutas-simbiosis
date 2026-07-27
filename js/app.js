@@ -47,6 +47,7 @@
     origen: null,
     destino: null,
     escalas: [],          // municipios intermedios (recalculan ruta + turf)
+    orden: [],            // orden combinado de escalas + paradas para visualización
     rutaBase: null,
     rutaActual: null,
     paradas: [],
@@ -1062,18 +1063,54 @@
     }
   }
 
+  // -------------------------------------------------------------------
+  // Sincronizar el orden combinado de escalas + paradas
+  // -------------------------------------------------------------------
+  function sincronizarOrden() {
+    const escalas = state.escalas.filter((e) => e.lat != null);
+    const idsEscalas = new Set(escalas.map((e) => e.id));
+    const idsParadas = new Set(state.paradas.map((p) => p.id));
+
+    state.orden = state.orden.filter((o) =>
+      (o.tipo === 'escala' && idsEscalas.has(o.id)) ||
+      (o.tipo === 'parada' && idsParadas.has(o.id))
+    );
+
+    const enOrden = new Set(state.orden.map((o) => o.tipo + '_' + o.id));
+
+    let ultimaEscala = -1;
+    for (let i = 0; i < state.orden.length; i++) {
+      if (state.orden[i].tipo === 'escala') ultimaEscala = i;
+    }
+
+    for (const e of escalas) {
+      if (!enOrden.has('escala_' + e.id)) {
+        state.orden.splice(ultimaEscala + 1, 0, { tipo: 'escala', id: e.id });
+        ultimaEscala++;
+        enOrden.add('escala_' + e.id);
+      }
+    }
+    for (const p of state.paradas) {
+      if (!enOrden.has('parada_' + p.id)) {
+        state.orden.push({ tipo: 'parada', id: p.id });
+        enOrden.add('parada_' + p.id);
+      }
+    }
+  }
+
   async function eliminarParada(sitioId) {
-    const indice = state.paradas.findIndex((p) => p.id === sitioId);
-    if (indice === -1) return;
-    state.paradas.splice(indice, 1);
+    const idx = state.paradas.findIndex((p) => p.id === sitioId);
+    if (idx === -1) return;
+    state.paradas.splice(idx, 1);
     await aplicarRutaConDesvios();
+    sincronizarOrden();
     renderizarParadas();
   }
 
-  function eliminarEscala(id, rowEl) {
+  function eliminarEscala(id) {
     const idx = state.escalas.findIndex((e) => e.id === id);
     if (idx !== -1) state.escalas.splice(idx, 1);
-    if (rowEl && rowEl.parentNode) rowEl.remove();
+    sincronizarOrden();
     if (state.rutaActual) {
       state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
       calcularRutaPrincipal(true);
@@ -1082,15 +1119,31 @@
     }
   }
 
+  function btnIcono(d) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'parada-item__btn';
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+    return b;
+  }
+
   // -------------------------------------------------------------------
   // Renderizar lista de paradas en el panel (escalas + sitios turísticos)
   // -------------------------------------------------------------------
   function renderizarParadas() {
-    const escalas = state.escalas.filter((e) => e.lat != null);
-    const items = [
-      ...escalas.map((e) => ({ tipo: 'escala', datos: e })),
-      ...state.paradas.map((p) => ({ tipo: 'parada', datos: p })),
-    ];
+    sincronizarOrden();
+
+    const items = state.orden.map((o) => {
+      if (o.tipo === 'escala') {
+        const e = state.escalas.find((e) => e.id === o.id);
+        if (!e || e.lat == null) return null;
+        return { tipo: 'escala', datos: e };
+      }
+      const p = state.paradas.find((p) => p.id === o.id);
+      if (!p) return null;
+      return { tipo: 'parada', datos: p };
+    }).filter(Boolean);
+
     const total = items.length;
     el.paradasLista.innerHTML = '';
     el.paradasContador.textContent = String(total);
@@ -1102,12 +1155,10 @@
       li.className = 'parada-item';
       li.dataset.paradaId = e.id;
       li.dataset.tipoParada = item.tipo;
-      li.style.borderLeftColor = item.tipo === 'escala' ? '#4a6fa5' : '#6b9e7a';
 
       const num = document.createElement('span');
       num.className = 'parada-item__num';
       num.textContent = String(idx + 1);
-      num.style.background = item.tipo === 'escala' ? '#4a6fa5' : '#6b9e7a';
 
       const nombre = document.createElement('span');
       nombre.className = 'parada-item__nombre';
@@ -1133,7 +1184,7 @@
       btnDel.type = 'button';
       btnDel.className = 'parada-item__btn';
       if (item.tipo === 'escala') {
-        btnDel.addEventListener('click', (evt) => { evt.stopPropagation(); eliminarEscala(e.id, e._row); });
+        btnDel.addEventListener('click', (evt) => { evt.stopPropagation(); eliminarEscala(e.id); });
       } else {
         btnDel.addEventListener('click', (evt) => { evt.stopPropagation(); eliminarParada(e.id); });
       }
@@ -1149,28 +1200,24 @@
     });
   }
 
-  function btnIcono(d) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'parada-item__btn';
-    b.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
-    return b;
-  }
-
   async function reordenar(desde, hasta) {
     if (desde === hasta) return;
-    const escalas = state.escalas.filter((e) => e.lat != null);
-    const items = [
-      ...escalas.map((e) => ({ tipo: 'escala', datos: e })),
-      ...state.paradas.map((p) => ({ tipo: 'parada', datos: p })),
-    ];
-    if (desde < 0 || desde >= items.length || hasta < 0 || hasta >= items.length) return;
-    const movido = items.splice(desde, 1)[0];
-    items.splice(hasta, 0, movido);
-    const nuevasEscalas = items.filter((it) => it.tipo === 'escala').map((it) => it.datos);
-    const nuevasParadas = items.filter((it) => it.tipo === 'parada').map((it) => it.datos);
+    sincronizarOrden();
+    if (desde < 0 || desde >= state.orden.length || hasta < 0 || hasta >= state.orden.length) return;
+    const movido = state.orden.splice(desde, 1)[0];
+    state.orden.splice(hasta, 0, movido);
+
+    const nuevasEscalas = state.orden
+      .filter((o) => o.tipo === 'escala')
+      .map((o) => state.escalas.find((e) => e.id === o.id))
+      .filter(Boolean);
+    const nuevasParadas = state.orden
+      .filter((o) => o.tipo === 'parada')
+      .map((o) => state.paradas.find((p) => p.id === o.id))
+      .filter(Boolean);
     state.escalas.splice(0, state.escalas.length, ...nuevasEscalas);
     state.paradas.splice(0, state.paradas.length, ...nuevasParadas);
+
     if (movido.tipo === 'escala') {
       state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
       await calcularRutaPrincipal(true);

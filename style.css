@@ -283,13 +283,14 @@ input, select{ font-family: inherit; }
   border-radius: var(--radius-sm);
   background: #f9faf8;
   border: 1px solid var(--line-200);
+  border-left: 3px solid #4a6fa5;
   font-size: 0.78rem;
 }
 .parada-item__num{
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--teal-600);
+  background: #4a6fa5;
   color: #ffffff;
   font-size: 0.62rem;
   font-weight: 700;
@@ -697,7 +698,6 @@ input, select{ font-family: inherit; }
   flex-shrink: 0;
   max-height: 160px;
   overflow-y: auto;
-  border: 1px solid var(--line-200);
   border-radius: var(--radius-md);
   padding: 8px 10px;
   background: #ffffff;
