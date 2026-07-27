@@ -63,8 +63,6 @@
   // -------------------------------------------------------------------
   const el = {
     appRoot: document.getElementById('app'),
-    btnMobileCollapse: document.getElementById('btn-mobile-collapse'),
-    btnMobileExpand: document.getElementById('btn-mobile-expand'),
 
     statDistancia: document.getElementById('stat-distancia'),
     statTiempo: document.getElementById('stat-tiempo'),
@@ -100,6 +98,8 @@
 
     btnCategorias: document.getElementById('btn-categorias'),
     panelCategorias: document.getElementById('panel-categorias'),
+    btnDesvios: document.getElementById('btn-desvios'),
+    panelDesvios: document.getElementById('panel-desvios'),
     categoriasGrid: document.getElementById('categorias-grid'),
 
 
@@ -543,9 +543,6 @@
   function initEventos() {
     el.btnCalcular.addEventListener('click', calcularRutaPrincipal);
 
-    el.btnMobileCollapse.addEventListener('click', () => setVistaMovil('map'));
-    el.btnMobileExpand.addEventListener('click', () => setVistaMovil('panel'));
-
     function toggleSitiosHandler() {
       const visible = MapModule.toggleSitios();
       el.btnToggleSitios.setAttribute('aria-pressed', String(visible));
@@ -572,6 +569,11 @@
       const visible = !el.panelCategorias.hidden;
       el.panelCategorias.hidden = visible;
       el.btnCategorias.setAttribute('aria-pressed', String(!visible));
+    });
+    el.btnDesvios.addEventListener('click', () => {
+      const visible = !el.panelDesvios.hidden;
+      el.panelDesvios.hidden = visible;
+      el.btnDesvios.setAttribute('aria-pressed', String(!visible));
     });
     el.loadingSitios = document.getElementById('loading-sitios');
     el.progressFill = el.loadingSitios.querySelector('.progress-bar__fill');
@@ -639,22 +641,6 @@
   }
 
   window.addEventListener('resize', garantizarVisibilidadMovil);
-
-  /** Cambia el estado de la vista en móvil: 'split' | 'map' | 'panel'. */
-  function setVistaMovil(vista) {
-    el.appRoot.setAttribute('data-mobile-view', vista);
-    el.btnMobileCollapse.setAttribute('aria-pressed', String(vista === 'map'));
-    el.btnMobileExpand.setAttribute('aria-pressed', String(vista === 'panel'));
-    // El contenedor del mapa cambia de tamaño con la transición CSS; se
-    // recalcula el tamaño de Leaflet una vez que el layout se estabiliza.
-    setTimeout(() => MapModule.invalidateSize(), 220);
-
-    // Al colapsar el panel se activa la pantalla completa nativa para que
-    // la barra de resumen no quede oculta bajo los menús del navegador.
-    if (vista === 'map' && esMovil() && !document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    }
-  }
 
   let ultimosValoresAplicados = { distancia: null, tiempo: null };
   let conteoCategoriasBase = null;

@@ -693,8 +693,13 @@ input, select{ font-family: inherit; }
    ELEMENTOS EXCLUSIVOS MÓVIL
    ========================================================================== */
 
-/* Barra superior de resumen (móvil) */
+/* Barra superior de resumen sobre el mapa */
 .mobile-summary{
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -704,12 +709,7 @@ input, select{ font-family: inherit; }
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 500;
-  flex-shrink: 0;
-}
-
-.mobile-summary .panel-summary__toggle{
-  margin-left: auto;
-  display: none;
+  pointer-events: none;
 }
 .mobile-summary strong{ color: #ffffff; font-weight: 700; }
 
@@ -724,6 +724,27 @@ input, select{ font-family: inherit; }
   height: 34px;
 }
 .btn-toggle-sitios--float[aria-pressed="false"]{ color: var(--text-muted); opacity: 0.5; border-color: var(--line-300); }
+
+/* Botón flotante de pantalla completa (arriba a la derecha del mapa) */
+.btn-fullscreen{
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--teal-500);
+  background: #ffffff;
+  color: var(--teal-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.12s ease;
+}
+.btn-fullscreen:hover{ background: var(--teal-500); color: #ffffff; }
+.btn-fullscreen:active{ opacity: 0.7; }
 
 /* Barra de pestañas inferior (móvil) */
 .mobile-tab-bar{
@@ -757,7 +778,6 @@ input, select{ font-family: inherit; }
    ========================================================================== */
 @media (max-width: 860px){
   .app-body{ flex-direction: column; }
-  .mobile-summary .panel-summary__toggle{ display: flex; }
   .map-full{ flex: 1 1 50%; min-height: 30vh; }
   .btn-toggle-sitios--float{ display: flex; }
 
@@ -781,6 +801,7 @@ input, select{ font-family: inherit; }
   /* Ocultar elementos de escritorio en móvil */
   #btn-toggle-sitios{ display: none !important; }
   #btn-categorias{ display: none !important; }
+  #btn-desvios{ display: none !important; }
 
   /* Mostrar botón de sitios solo en la pestaña Ruta */
   #btn-mostrar-sitios{ display: block !important; }
@@ -808,6 +829,11 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="descubre"] .panel-locate{ display: none; }
   #app[data-mobile-tab="descubre"] .panel-paradas{ display: none; }
   #app[data-mobile-tab="descubre"] .filter-row{ display: none; }
+  #app[data-mobile-tab="descubre"] .panel-desvios{ display: none; }
+
+  /* En móvil, el panel de desvíos siempre visible en la pestaña Ruta */
+  #app[data-mobile-tab="ruta"] .panel-desvios{ display: block !important; }
+  #app[data-mobile-tab="ruta"] .panel-desvios[hidden]{ display: block !important; }
   #app[data-mobile-tab="descubre"] .panel-sites > h2{ display: none; }
 
   /* Mapa a pantalla completa: solo queda la barra de resumen visible */
