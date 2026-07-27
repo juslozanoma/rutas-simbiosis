@@ -494,12 +494,21 @@
     actualizarEstadoBotonCalcular();
     if (state.origen && state.destino && state.escalas.some((e) => e._row && e.id != null)) {
       state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
-      el.loadingMsg.textContent = 'Calculando ruta…';
+      state.sitiosFiltrados = [];
+      state.sitiosFiltradosBase = [];
+      conteoCategoriasBase = new Map();
+      renderizarSitios([]);
+      renderizarCategoriasMenu();
+      el.loadingMsg.textContent = 'Calculando nueva ruta…';
+      if (el.spinnerBike) el.spinnerBike.hidden = true;
+      if (el.spinnerPacmanWrap) el.spinnerPacmanWrap.hidden = false;
       el.loadingSitios.hidden = false;
+      let idxMsg = 0;
+      const msgs = ['Calculando nueva ruta…', 'Espera un poco más, estamos ajustando detalles…'];
       const intervalo = setInterval(() => {
-        const msgs = ['Calculando ruta…', 'Optimizando paradas…', 'Consultando OSRM…', 'Procesando resultados…'];
-        el.loadingMsg.textContent = msgs[Math.floor(Math.random() * msgs.length)];
-      }, 2500);
+        idxMsg = (idxMsg + 1) % msgs.length;
+        el.loadingMsg.textContent = msgs[idxMsg];
+      }, 2000);
       try {
         if (el.checkAutoOrganizar.checked) {
           await organizarAutomaticamente();
@@ -510,6 +519,8 @@
       } finally {
         clearInterval(intervalo);
         el.loadingSitios.hidden = true;
+        if (el.spinnerBike) el.spinnerBike.hidden = false;
+        if (el.spinnerPacmanWrap) el.spinnerPacmanWrap.hidden = true;
       }
     }
   }
@@ -630,6 +641,8 @@
     });
     el.loadingSitios = document.getElementById('loading-sitios');
     el.loadingMsg = el.loadingSitios.querySelector('.loading-sitios__msg');
+    el.spinnerBike = el.loadingSitios.querySelector('.spinner-bike');
+    el.spinnerPacmanWrap = el.loadingSitios.querySelector('.spinner-pacman-wrap');
     el.mensajesCarga = [
       'Cargando lugares cercanos…',
       'Buscando sitios turísticos…',

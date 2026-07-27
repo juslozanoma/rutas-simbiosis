@@ -484,6 +484,21 @@ input, select{ font-family: inherit; }
 .loading-sitios{
   padding: 16px 10px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.loading-sitios .spinner-bike{
+  width: 100px;
+}
+.loading-sitios .spinner-pacman-wrap{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.loading-sitios .spinner-pacman{
+  transform: scale(0.4);
+  transform-origin: center center;
 }
 .loading-sitios__msg{
   display: block;
