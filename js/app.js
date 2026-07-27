@@ -144,6 +144,7 @@
     renderizarCategoriasMenu();
     initEscalas();
     initEventos();
+    garantizarVisibilidadMovil();
   }
 
   // -------------------------------------------------------------------
@@ -614,6 +615,16 @@
   function esMovil() {
     return window.matchMedia(MEDIA_MOVIL).matches;
   }
+
+  function garantizarVisibilidadMovil() {
+    if (esMovil()) {
+      if (el.mobileTabBar) el.mobileTabBar.removeAttribute('hidden');
+      if (el.btnMostrarSitiosCercanos) el.btnMostrarSitiosCercanos.removeAttribute('hidden');
+      setTimeout(() => MapModule.invalidateSize(), 50);
+    }
+  }
+
+  window.addEventListener('resize', garantizarVisibilidadMovil);
 
   /** Cambia el estado de la vista en móvil: 'split' | 'map' | 'panel'. */
   function setVistaMovil(vista) {

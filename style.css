@@ -738,8 +738,8 @@ input, select{ font-family: inherit; }
   .app-shell{ flex-direction: column; }
   .panel-summary__toggle{ display: flex; }
 
-  .mobile-summary{ display: flex; order: 0; }
-  .map-full{ flex: 1 1 50%; position: relative; order: 1; min-height: 30vh; }
+  .mobile-summary{ display: flex; }
+  .map-full{ flex: 1 1 50%; min-height: 30vh; }
   .btn-toggle-sitios--float{ display: flex; }
 
   .side-panel{
@@ -749,9 +749,15 @@ input, select{ font-family: inherit; }
     border-top: 1px solid var(--line-200);
     flex: 1 1 50%;
     overflow-y: auto;
-    order: 2;
   }
-  .mobile-tab-bar{ display: flex; order: 3; }
+  .mobile-tab-bar{
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1100;
+  }
 
   /* Ocultar elementos de escritorio en móvil */
   #btn-toggle-sitios{ display: none !important; }
@@ -807,7 +813,7 @@ input, select{ font-family: inherit; }
   #app[data-mobile-view="panel"] .side-panel{ flex: 1 1 100%; height: 100vh; }
 
   /* Ajuste de padding del panel en móvil */
-  .side-panel{ padding: 12px; gap: 12px; }
+  .side-panel{ padding: 12px 12px 56px; gap: 12px; }
 
   /* Filtros más compactos en móvil */
   .filter-row{ gap: 6px; }
