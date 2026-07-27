@@ -619,6 +619,7 @@
         el.progressFill.offsetHeight;
         el.progressFill.style.transition = '';
         setTimeout(() => cargarFondoSitios(), 100);
+        if (esMovil()) setMobileTab('descubre');
       });
     });
     el.btnAplicarDistancia.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarDistancia));
@@ -759,6 +760,7 @@
       distanciaMaximaKm: usarDistancia ? Number(el.filtroDistancia.value) : 5,
       tiempoMaximoMin: usarTiempo ? Number(el.filtroTiempo.value) : 120,
       origen: state.origen,
+      destino: state.destino,
       excluirIds: state.paradas.map((p) => p.id),
     };
     const sitiosBase = FiltersModule.filtrarSitiosPorRuta(state.sitios, rutaFiltro.geojson, opciones);
@@ -1137,6 +1139,7 @@
       distanciaMaximaKm: el.checkDistancia.checked ? Number(el.filtroDistancia.value) : 5,
       tiempoMaximoMin: el.checkTiempo.checked ? Number(el.filtroTiempo.value) : 120,
       origen: state.origen,
+      destino: state.destino,
       excluirIds: state.paradas.map((p) => p.id),
     };
     const rutaFiltro = state.rutaBase || state.rutaActual;
