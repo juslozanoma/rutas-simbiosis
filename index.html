@@ -98,7 +98,13 @@
 
     <!-- Paradas agregadas a la ruta -->
     <section class="panel-paradas" id="panel-paradas" hidden>
-      <h2 class="panel-paradas__title">Paradas <span class="badge-count mono" id="paradas-contador">0</span></h2>
+      <h2 class="panel-paradas__title">
+        Paradas <span class="badge-count mono" id="paradas-contador">0</span>
+        <label class="auto-organizar-label">
+          <input type="checkbox" id="check-auto-organizar" checked>
+          Organizar automáticamente
+        </label>
+      </h2>
       <ul class="paradas-lista" id="paradas-lista"></ul>
     </section>
 

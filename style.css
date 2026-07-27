@@ -266,6 +266,25 @@ input, select{ font-family: inherit; }
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
+}
+.auto-organizar-label{
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.auto-organizar-label input[type="checkbox"]{
+  width: 13px; height: 13px;
+  accent-color: var(--teal-500);
+  cursor: pointer;
 }
 .paradas-lista{
   list-style: none;

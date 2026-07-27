@@ -75,6 +75,8 @@
     destinoList: document.getElementById('destino-list'),
     btnCalcular: document.getElementById('btn-calcular'),
 
+    checkAutoOrganizar: document.getElementById('check-auto-organizar'),
+
     checkDistancia: document.getElementById('check-distancia'),
     filtroDistancia: document.getElementById('filtro-distancia'),
     filtroDistanciaValor: document.getElementById('filtro-distancia-valor'),
@@ -465,7 +467,11 @@
     actualizarEstadoBotonCalcular();
     if (state.origen && state.destino && state.escalas.some((e) => e._row && e.id != null)) {
       state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
-      calcularRutaPrincipal(true);
+      if (el.checkAutoOrganizar.checked) {
+        organizarAutomaticamente();
+      } else {
+        calcularRutaPrincipal(true);
+      }
     }
   }
 
@@ -544,6 +550,9 @@
     }
     el.btnTabDescubre.addEventListener('click', () => setMobileTab('descubre'));
     el.btnTabRuta.addEventListener('click', () => setMobileTab('ruta'));
+    el.checkAutoOrganizar.addEventListener('change', () => {
+      if (el.checkAutoOrganizar.checked) organizarAutomaticamente();
+    });
     el.btnCategorias.addEventListener('click', () => {
       const visible = !el.panelCategorias.hidden;
       el.panelCategorias.hidden = visible;
@@ -1090,8 +1099,12 @@
     if (boton) ponerEnCarga(boton, true);
     state.paradas.push(sitio);
     try {
-      await aplicarRutaConDesvios();
-      renderizarParadas();
+      if (el.checkAutoOrganizar.checked) {
+        await organizarAutomaticamente();
+      } else {
+        await aplicarRutaConDesvios();
+        renderizarParadas();
+      }
       limpiarPreview();
       const idx = state.sitiosFiltrados.findIndex((s) => s.id === sitio.id);
       if (idx !== -1) {
@@ -1238,6 +1251,46 @@
       li.appendChild(acciones);
       el.paradasLista.appendChild(li);
     });
+  }
+
+  async function organizarAutomaticamente() {
+    if (!el.checkAutoOrganizar.checked) return;
+    if (!state.origen) return;
+    sincronizarOrden();
+    const itemsConDistancia = state.orden.map((o) => {
+      if (o.tipo === 'escala') {
+        const e = state.escalas.find((ee) => ee.id === o.id);
+        if (!e || e.lat == null) return null;
+        const dist = FiltersModule.distanciaAOrigen(e, state.origen);
+        if (dist == null) return null;
+        return { ...o, distancia: dist };
+      }
+      const p = state.paradas.find((pp) => pp.id === o.id);
+      if (!p) return null;
+      const dist = p.distanciaOrigenKm ?? FiltersModule.distanciaAOrigen(p, state.origen);
+      if (dist == null) return { ...o, distancia: Infinity };
+      return { ...o, distancia: dist };
+    }).filter(Boolean);
+
+    itemsConDistancia.sort((a, b) => (a.distancia ?? Infinity) - (b.distancia ?? Infinity));
+    state.orden = itemsConDistancia.map(({ tipo, id }) => ({ tipo, id }));
+
+    const nuevasEscalas = state.orden
+      .filter((o) => o.tipo === 'escala')
+      .map((o) => state.escalas.find((e) => e.id === o.id))
+      .filter(Boolean);
+    const nuevasParadas = state.orden
+      .filter((o) => o.tipo === 'parada')
+      .map((o) => state.paradas.find((p) => p.id === o.id))
+      .filter(Boolean);
+    state.escalas.splice(0, state.escalas.length, ...nuevasEscalas);
+    state.paradas.splice(0, state.paradas.length, ...nuevasParadas);
+
+    if (state.rutaActual) {
+      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
+      await calcularRutaPrincipal(true);
+    }
+    renderizarParadas();
   }
 
   async function reordenar(desde, hasta) {
