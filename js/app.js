@@ -716,10 +716,18 @@
       delete s.distanciaRutaKm;
       delete s.tiempoDesvioMin;
       delete s.distanciaOrigenKm;
+      delete s.distanciaDestinoKm;
     });
+    MapModule.limpiarSitios();
     MapModule.limpiarParadas();
     MapModule.limpiarEscalas();
     limpiarPreview();
+    el.panelSitios.hidden = true;
+    state.sitiosFiltrados = [];
+    state.sitiosFiltradosBase = [];
+    state.categoriasSeleccionadas = [];
+    conteoCategoriasBase = new Map();
+    if (el.hintSitiosEmpty) el.hintSitiosEmpty.hidden = true;
 
     ponerEnCargaRuta(true);
 
@@ -741,6 +749,9 @@
       el.filtroDistancia.value = '10';
       el.filtroDistanciaValor.textContent = '10 km';
       el.filtroDistancia.disabled = false;
+
+      // Volver a la pestaña Ruta en móvil y reiniciar estado de sitios
+      if (esMovil()) setMobileTab('ruta');
 
       // En dispositivos móviles, calcular la ruta pone toda la página en
       // pantalla completa (modo nativo del navegador) sin ocultar el panel.
