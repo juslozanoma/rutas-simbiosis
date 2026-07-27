@@ -1,7 +1,7 @@
 /* From Uiverse.io by SelfMadeSystem */
 .loader {
-  width: 2.4em;
-  height: 2.4em;
+  width: 4em;
+  height: 4em;
   display: inline-block;
   vertical-align: middle;
 }
@@ -23,4 +23,399 @@
 @keyframes dashOffset {
   0%   { stroke-dashoffset: 365; }
   100% { stroke-dashoffset: 5; }
+}
+
+/* From Uiverse.io by fanishah */
+.spinner-bike {
+  display: block;
+  width: 150px;
+  height: auto;
+}
+
+.spinner-bike_body,
+.spinner-bike_front,
+.spinner-bike_handlebars,
+.spinner-bike_pedals,
+.spinner-bike_pedals-spin,
+.spinner-bike_seat,
+.spinner-bike_spokes,
+.spinner-bike_spokes-spin,
+.spinner-bike_tire {
+  animation: bikeBody 3s ease-in-out infinite;
+  stroke: var(--teal-500);
+}
+
+.spinner-bike_front {
+  animation-name: bikeFront;
+}
+
+.spinner-bike_handlebars {
+  animation-name: bikeHandlebars;
+}
+
+.spinner-bike_pedals {
+  animation-name: bikePedals;
+}
+
+.spinner-bike_pedals-spin {
+  animation-name: bikePedalsSpin;
+}
+
+.spinner-bike_seat {
+  animation-name: bikeSeat;
+}
+
+.spinner-bike_spokes,
+.spinner-bike_tire {
+  stroke: currentColor;
+}
+
+.spinner-bike_spokes {
+  animation-name: bikeSpokes;
+}
+
+.spinner-bike_spokes-spin {
+  animation-name: bikeSpokesSpin;
+}
+
+.spinner-bike_tire {
+  animation-name: bikeTire;
+}
+
+@keyframes bikeBody {
+  from { stroke-dashoffset: 79; }
+  33%, 67% { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -79; }
+}
+
+@keyframes bikeFront {
+  from { stroke-dashoffset: 19; }
+  33%, 67% { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -19; }
+}
+
+@keyframes bikeHandlebars {
+  from { stroke-dashoffset: 10; }
+  33%, 67% { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -10; }
+}
+
+@keyframes bikePedals {
+  from { animation-timing-function: ease-in; stroke-dashoffset: -25.133; }
+  33%, 67% { animation-timing-function: ease-out; stroke-dashoffset: -21.991; }
+  to { stroke-dashoffset: -25.133; }
+}
+
+@keyframes bikePedalsSpin {
+  from { transform: rotate(0.1875turn); }
+  to { transform: rotate(3.1875turn); }
+}
+
+@keyframes bikeSeat {
+  from { stroke-dashoffset: 5; }
+  33%, 67% { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -5; }
+}
+
+@keyframes bikeSpokes {
+  from { animation-timing-function: ease-in; stroke-dashoffset: -31.416; }
+  33%, 67% { animation-timing-function: ease-out; stroke-dashoffset: -23.562; }
+  to { stroke-dashoffset: -31.416; }
+}
+
+@keyframes bikeSpokesSpin {
+  from { transform: rotate(0); }
+  to { transform: rotate(3turn); }
+}
+
+@keyframes bikeTire {
+  from { animation-timing-function: ease-in; stroke-dashoffset: 56.549; transform: rotate(0); }
+  33% { stroke-dashoffset: 0; transform: rotate(0.33turn); }
+  67% { animation-timing-function: ease-out; stroke-dashoffset: 0; transform: rotate(0.67turn); }
+  to { stroke-dashoffset: -56.549; transform: rotate(1turn); }
+}
+
+/* From Uiverse.io by JkHuger */
+.spinner-pacman {
+  position: relative;
+  width: 300px;
+  height: 130px;
+}
+
+.spinner-pacman_circle {
+  position: relative;
+  left: -100px;
+  width: 0;
+  height: 0;
+  border: 50px solid #FDD835;
+  border-radius: 50%;
+  border-right-color: transparent;
+  animation: pacmanMove 5s linear 0s infinite normal forwards;
+}
+
+.spinner-pacman_circle:before {
+  content: "";
+  position: absolute;
+  top: -50px;
+  left: -50px;
+  width: 0;
+  height: 0;
+  border: 50px solid #FDD835;
+  border-radius: 50%;
+  border-right-color: transparent;
+  animation: pacmanChomp1 .25s ease-in-out 0s infinite normal forwards;
+}
+
+.spinner-pacman_circle:after {
+  content: "";
+  position: absolute;
+  top: -50px;
+  left: -50px;
+  width: 0;
+  height: 0;
+  border: 50px solid #FDD835;
+  border-radius: 50%;
+  border-right-color: transparent;
+  animation: pacmanChomp2 .25s ease-in-out 0s infinite normal forwards;
+}
+
+.spinner-pacman_loader {
+  position: relative;
+  top: 50px;
+  width: 300px;
+  height: 0px;
+  border-top: 10px dotted black;
+  animation: pacmanLine 5s ease-in-out 0s infinite normal forwards;
+}
+
+.spinner-pacman_dots {
+  position: relative;
+  top: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.spinner-pacman_dot {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  margin: 0 10px;
+  border-radius: 50%;
+  background: #1E88E5;
+  animation: pacmanDot1 5s linear 0s infinite none normal;
+}
+
+.spinner-pacman_dot:nth-child(1) { animation-delay: 0s }
+.spinner-pacman_dot:nth-child(2) { animation-delay: 0.25s }
+.spinner-pacman_dot:nth-child(3) { animation-delay: 0.5s }
+.spinner-pacman_dot:nth-child(4) { animation-delay: 0.75s }
+.spinner-pacman_dot:nth-child(5) { animation-delay: 1s }
+.spinner-pacman_dot:nth-child(6) { animation-delay: 1.25s }
+.spinner-pacman_dot:nth-child(7) { animation-delay: 1.5s }
+.spinner-pacman_dot:nth-child(8) { animation-delay: 1.75s }
+.spinner-pacman_dot:nth-child(9) { animation-delay: 1.9s }
+.spinner-pacman_dot:nth-child(10) { animation-delay: 2.1s }
+
+.spinner-pacman_dots2 {
+  position: relative;
+  top: 50px;
+  left: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.spinner-pacman_dot2 {
+  position: relative;
+  left: -10px;
+  width: 10px;
+  height: 10px;
+  margin: 0 10px;
+  border-radius: 50%;
+  background: #F44336;
+  opacity: 0;
+  animation: pacmanDot2 5s linear 0s infinite none normal;
+}
+
+.spinner-pacman_dot2:nth-child(10) { animation-delay: 2.5s }
+.spinner-pacman_dot2:nth-child(9) { animation-delay: 2.75s }
+.spinner-pacman_dot2:nth-child(8) { animation-delay: 3.0s }
+.spinner-pacman_dot2:nth-child(7) { animation-delay: 3.25s }
+.spinner-pacman_dot2:nth-child(6) { animation-delay: 3.5s }
+.spinner-pacman_dot2:nth-child(5) { animation-delay: 3.75s }
+.spinner-pacman_dot2:nth-child(4) { animation-delay: 4.0s }
+.spinner-pacman_dot2:nth-child(3) { animation-delay: 4.25s }
+.spinner-pacman_dot2:nth-child(2) { animation-delay: 4.5s }
+.spinner-pacman_dot2:nth-child(1) { animation-delay: 4.6s }
+
+@keyframes pacmanChomp1 {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(45deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes pacmanChomp2 {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(-45deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes pacmanMove {
+  0%, 100% { left: -100px; }
+  0%, 48% { transform: rotateY(0deg); }
+  50%, 100% { transform: rotateY(180deg); }
+  50% { left: 100%; }
+}
+
+@keyframes pacmanLine {
+  0%, 100% { border-top: 10px dotted #1E88E5; }
+  0%, 48% { border-top: 10px dotted #1E88E5; }
+  50%, 100% { border-top: 10px dotted #F44336; }
+  50% { border-top: 10px dotted #F44336; }
+}
+
+@keyframes pacmanDot1 {
+  0%,4% { background: #1E88E5; opacity: 1; }
+  5%,94% { background: #F44336; opacity: 0; }
+  95%,100% { background: #1E88E5; opacity: 1; }
+}
+
+@keyframes pacmanDot2 {
+  0%,4% { background: #F44336; opacity: 1; }
+  5%,94% { opacity: 0; }
+  95%,100% { background: #F44336; opacity: 1; }
+}
+
+/* From Uiverse.io by JkHuger — compiled from SCSS */
+.spinner-hex {
+  --dur: 8s;
+  margin-bottom: 1.5em;
+  overflow: hidden;
+  position: relative;
+  width: 15em;
+  height: 15em;
+  color: var(--teal-500);
+}
+
+.spinner-hex_group {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+.spinner-hex_group:nth-child(odd) {
+  transform: rotate(30deg);
+}
+
+.spinner-hex_sector {
+  animation-name: hexMoveOut1;
+  animation-duration: var(--dur);
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+  top: calc(50% - 0.1em);
+  left: calc(50% - 0.1em);
+  position: absolute;
+  width: 0.2em;
+  height: 0.2em;
+}
+
+.spinner-hex_sector:before,
+.spinner-hex_sector:after {
+  animation-name: hexRipple;
+  animation-duration: var(--dur);
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+  background-color: currentColor;
+  border-radius: 0.1em;
+  content: "";
+  display: block;
+  top: 0;
+  left: 0;
+  transform-origin: 0.1em 0.1em;
+  position: absolute;
+  width: 0.2em;
+  height: 0.2em;
+}
+
+.spinner-hex_sector:before {
+  transform: rotate(-30deg);
+}
+
+.spinner-hex_sector:after {
+  transform: rotate(-150deg);
+}
+
+.spinner-hex_sector:nth-child(2) { animation-name: hexMoveOut2; }
+.spinner-hex_sector:nth-child(3) { animation-name: hexMoveOut3; }
+.spinner-hex_sector:nth-child(4) { animation-name: hexMoveOut4; }
+.spinner-hex_sector:nth-child(5) { animation-name: hexMoveOut5; }
+.spinner-hex_sector:nth-child(6) { animation-name: hexMoveOut6; }
+
+.spinner-hex_group:nth-child(2) .spinner-hex_sector,
+.spinner-hex_group:nth-child(2) .spinner-hex_sector:before,
+.spinner-hex_group:nth-child(2) .spinner-hex_sector:after {
+  animation-delay: calc(var(--dur) * -1 / 6);
+}
+.spinner-hex_group:nth-child(3) .spinner-hex_sector,
+.spinner-hex_group:nth-child(3) .spinner-hex_sector:before,
+.spinner-hex_group:nth-child(3) .spinner-hex_sector:after {
+  animation-delay: calc(var(--dur) * -2 / 6);
+}
+.spinner-hex_group:nth-child(4) .spinner-hex_sector,
+.spinner-hex_group:nth-child(4) .spinner-hex_sector:before,
+.spinner-hex_group:nth-child(4) .spinner-hex_sector:after {
+  animation-delay: calc(var(--dur) * -3 / 6);
+}
+.spinner-hex_group:nth-child(5) .spinner-hex_sector,
+.spinner-hex_group:nth-child(5) .spinner-hex_sector:before,
+.spinner-hex_group:nth-child(5) .spinner-hex_sector:after {
+  animation-delay: calc(var(--dur) * -4 / 6);
+}
+.spinner-hex_group:nth-child(6) .spinner-hex_sector,
+.spinner-hex_group:nth-child(6) .spinner-hex_sector:before,
+.spinner-hex_group:nth-child(6) .spinner-hex_sector:after {
+  animation-delay: calc(var(--dur) * -5 / 6);
+}
+
+@keyframes hexMoveOut1 {
+  from { transform: rotate(0deg) translateY(0) scale(0); }
+  3% { transform: rotate(0deg) translateY(0.2em) scale(1); }
+  97% { transform: rotate(0deg) translateY(7.3em) scale(1); }
+  to { transform: rotate(0deg) translateY(7.5em) scale(0); }
+}
+@keyframes hexMoveOut2 {
+  from { transform: rotate(60deg) translateY(0) scale(0); }
+  3% { transform: rotate(60deg) translateY(0.2em) scale(1); }
+  97% { transform: rotate(60deg) translateY(7.3em) scale(1); }
+  to { transform: rotate(60deg) translateY(7.5em) scale(0); }
+}
+@keyframes hexMoveOut3 {
+  from { transform: rotate(120deg) translateY(0) scale(0); }
+  3% { transform: rotate(120deg) translateY(0.2em) scale(1); }
+  97% { transform: rotate(120deg) translateY(7.3em) scale(1); }
+  to { transform: rotate(120deg) translateY(7.5em) scale(0); }
+}
+@keyframes hexMoveOut4 {
+  from { transform: rotate(180deg) translateY(0) scale(0); }
+  3% { transform: rotate(180deg) translateY(0.2em) scale(1); }
+  97% { transform: rotate(180deg) translateY(7.3em) scale(1); }
+  to { transform: rotate(180deg) translateY(7.5em) scale(0); }
+}
+@keyframes hexMoveOut5 {
+  from { transform: rotate(240deg) translateY(0) scale(0); }
+  3% { transform: rotate(240deg) translateY(0.2em) scale(1); }
+  97% { transform: rotate(240deg) translateY(7.3em) scale(1); }
+  to { transform: rotate(240deg) translateY(7.5em) scale(0); }
+}
+@keyframes hexMoveOut6 {
+  from { transform: rotate(300deg) translateY(0) scale(0); }
+  3% { transform: rotate(300deg) translateY(0.2em) scale(1); }
+  97% { transform: rotate(300deg) translateY(7.3em) scale(1); }
+  to { transform: rotate(300deg) translateY(7.5em) scale(0); }
+}
+
+@keyframes hexRipple {
+  from, to { width: 0.2em; }
+  33% { width: 2.4em; }
 }
