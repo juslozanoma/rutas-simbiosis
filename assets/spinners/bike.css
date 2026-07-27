@@ -1,0 +1,109 @@
+/* From Uiverse.io by fanishah */
+.spinner-bike {
+  display: block;
+  width: 150px;
+  height: auto;
+}
+
+.spinner-bike_body,
+.spinner-bike_front,
+.spinner-bike_handlebars,
+.spinner-bike_pedals,
+.spinner-bike_pedals-spin,
+.spinner-bike_seat,
+.spinner-bike_spokes,
+.spinner-bike_spokes-spin,
+.spinner-bike_tire {
+  animation: bikeBody 3s ease-in-out infinite;
+  stroke: var(--teal-500);
+}
+
+.spinner-bike_front {
+  animation-name: bikeFront;
+}
+
+.spinner-bike_handlebars {
+  animation-name: bikeHandlebars;
+}
+
+.spinner-bike_pedals {
+  animation-name: bikePedals;
+}
+
+.spinner-bike_pedals-spin {
+  animation-name: bikePedalsSpin;
+}
+
+.spinner-bike_seat {
+  animation-name: bikeSeat;
+}
+
+.spinner-bike_spokes,
+.spinner-bike_tire {
+  stroke: currentColor;
+}
+
+.spinner-bike_spokes {
+  animation-name: bikeSpokes;
+}
+
+.spinner-bike_spokes-spin {
+  animation-name: bikeSpokesSpin;
+}
+
+.spinner-bike_tire {
+  animation-name: bikeTire;
+}
+
+@keyframes bikeBody {
+  from { stroke-dashoffset: 79; }
+  33%, 67% { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -79; }
+}
+
+@keyframes bikeFront {
+  from { stroke-dashoffset: 19; }
+  33%, 67% { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -19; }
+}
+
+@keyframes bikeHandlebars {
+  from { stroke-dashoffset: 10; }
+  33%, 67% { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -10; }
+}
+
+@keyframes bikePedals {
+  from { animation-timing-function: ease-in; stroke-dashoffset: -25.133; }
+  33%, 67% { animation-timing-function: ease-out; stroke-dashoffset: -21.991; }
+  to { stroke-dashoffset: -25.133; }
+}
+
+@keyframes bikePedalsSpin {
+  from { transform: rotate(0.1875turn); }
+  to { transform: rotate(3.1875turn); }
+}
+
+@keyframes bikeSeat {
+  from { stroke-dashoffset: 5; }
+  33%, 67% { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -5; }
+}
+
+@keyframes bikeSpokes {
+  from { animation-timing-function: ease-in; stroke-dashoffset: -31.416; }
+  33%, 67% { animation-timing-function: ease-out; stroke-dashoffset: -23.562; }
+  to { stroke-dashoffset: -31.416; }
+}
+
+@keyframes bikeSpokesSpin {
+  from { transform: rotate(0); }
+  to { transform: rotate(3turn); }
+}
+
+@keyframes bikeTire {
+  from { animation-timing-function: ease-in; stroke-dashoffset: 56.549; transform: rotate(0); }
+  33% { stroke-dashoffset: 0; transform: rotate(0.33turn); }
+  67% { animation-timing-function: ease-out; stroke-dashoffset: 0; transform: rotate(0.67turn); }
+  to { stroke-dashoffset: -56.549; transform: rotate(1turn); }
+}
