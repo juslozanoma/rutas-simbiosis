@@ -723,8 +723,13 @@ input, select{ font-family: inherit; }
   z-index: 1000;
   width: 34px;
   height: 34px;
+  background: var(--teal-500);
+  color: #ffffff;
+  border: none;
 }
-.btn-toggle-sitios--float[aria-pressed="false"]{ color: var(--text-muted); opacity: 0.5; border-color: var(--line-300); }
+.btn-toggle-sitios--float:hover{ background: #256b5e; }
+.btn-toggle-sitios--float[aria-pressed="false"]{ background: var(--bg-subtle); color: var(--text-muted); opacity: 0.5; }
+.btn-toggle-sitios--float .btn-toggle-sitios__icon{ width: 20px; height: 20px; }
 
 /* Botón flotante de pantalla completa (solo móvil, debajo de la barra) */
 .btn-fullscreen{
@@ -779,17 +784,29 @@ input, select{ font-family: inherit; }
    ========================================================================== */
 @media (max-width: 860px){
   .app-body{ flex-direction: column; }
-  .map-full{ flex: 1 1 50%; min-height: 30vh; }
+  .map-full{ flex: 0 0 50%; min-height: 0; }
   .btn-fullscreen{ display: flex; }
 
   .side-panel{
     width: 100%;
-    height: auto;
     border-left: none;
     border-top: 1px solid var(--line-200);
-    flex: 1 1 50%;
-    overflow-y: auto;
+    flex: 0 0 50%;
+    min-height: 0;
+    overflow: hidden;
+    padding: 12px 12px 56px;
+    gap: 12px;
   }
+
+  /* En Ruta: el panel de sitios no ocupa espacio, paradas crece para llenar */
+  #app[data-mobile-tab="ruta"] .panel-sites{ display: none !important; }
+  #app[data-mobile-tab="ruta"] .panel-paradas{ flex: 1; min-height: 0; overflow-y: auto; }
+  #app[data-mobile-tab="ruta"] .paradas-lista{ flex: 1; min-height: 0; }
+  #app[data-mobile-tab="ruta"] #hint-sitios-empty{ display: block; }
+
+  /* En Descubre: panel-sites llena el panel, hint oculto */
+  #app[data-mobile-tab="descubre"] .panel-sites{ flex: 1; min-height: 0; }
+  #app[data-mobile-tab="descubre"] #hint-sitios-empty{ display: none !important; }
   .mobile-tab-bar{
     display: flex !important;
     position: fixed;
@@ -821,10 +838,11 @@ input, select{ font-family: inherit; }
 
   /* Reordenar contenido del panel en móvil */
   .side-panel > .panel-locate{ order: 1; }
-  .side-panel > .panel-paradas{ order: 2; }
-  .side-panel > .panel-sites{ order: 3; }
-  .side-panel > #btn-mostrar-sitios{ order: 4; }
-  .side-panel > #loading-sitios{ order: 5; }
+  .side-panel > #hint-sitios-empty{ order: 2; }
+  .side-panel > .panel-paradas{ order: 3; }
+  .side-panel > .panel-sites{ order: 4; }
+  .side-panel > #btn-mostrar-sitios{ order: 5; }
+  .side-panel > #loading-sitios{ order: 6; }
 
   #app[data-mobile-tab="descubre"] .panel-locate{ display: none; }
   #app[data-mobile-tab="descubre"] .panel-paradas{ display: none; }
