@@ -465,7 +465,7 @@
         const e = state.escalas[idx];
         state.escalas.splice(idx, 1);
     if (state.rutaActual) {
-      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; });
+      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
           calcularRutaPrincipal(true);
         }
       }
@@ -494,7 +494,7 @@
     });
     actualizarEstadoBotonCalcular();
     if (state.origen && state.destino && state.escalas.some((e) => e._row && e.id != null)) {
-      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; });
+      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
       if (el.checkAutoOrganizar.checked) {
         await organizarAutomaticamente();
       } else {
@@ -639,7 +639,10 @@
         el.progressFill.offsetHeight;
         el.progressFill.style.transition = '';
         setTimeout(() => cargarFondoSitios(), 100);
-        if (esMovil()) setMobileTab('descubre');
+        if (esMovil()) {
+          if (el.panelDesvios) el.panelDesvios.hidden = false;
+          setMobileTab('descubre');
+        }
       });
     });
     el.btnAplicarDistancia.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarDistancia));
@@ -718,17 +721,24 @@
       delete s.tiempoDesvioMin;
       delete s.distanciaOrigenKm;
       delete s.distanciaDestinoKm;
+      delete s._offsetLado;
     });
     MapModule.limpiarSitios();
-    MapModule.limpiarParadas();
-    MapModule.limpiarEscalas();
-    limpiarPreview();
-    el.panelSitios.hidden = true;
-    state.sitiosFiltrados = [];
-    state.sitiosFiltradosBase = [];
-    state.categoriasSeleccionadas = [];
-    conteoCategoriasBase = new Map();
-    if (el.hintSitiosEmpty) el.hintSitiosEmpty.hidden = true;
+
+    // Cuando se conservan paradas (reordenar escalas, agregar parada),
+    // se preserva el panel de sitios, categorías y filtros; solo se
+    // invalidan las distancias cacheadas para que se recalculen.
+    if (!conservarParadas) {
+      MapModule.limpiarParadas();
+      MapModule.limpiarEscalas();
+      limpiarPreview();
+      el.panelSitios.hidden = true;
+      state.sitiosFiltrados = [];
+      state.sitiosFiltradosBase = [];
+      state.categoriasSeleccionadas = [];
+      conteoCategoriasBase = new Map();
+      if (el.hintSitiosEmpty) el.hintSitiosEmpty.hidden = true;
+    }
 
     ponerEnCargaRuta(true);
 
@@ -744,7 +754,6 @@
       state.escalas.forEach((e) => { delete e._row; });
       renderizarParadas();
       el.btnMostrarSitiosCercanos.disabled = false;
-      if (esMovil() && el.panelDesvios) el.panelDesvios.hidden = false;
 
       el.checkDistancia.checked = true;
       el.filtroDistancia.value = '10';
@@ -1139,6 +1148,7 @@
       delete s.tiempoDesvioMin;
       delete s.distanciaOrigenKm;
       delete s.distanciaDestinoKm;
+      delete s._offsetLado;
     });
     const rutaFiltro = state.rutaBase || state.rutaActual;
     FiltersModule.precomputarSitios(state.sitios, rutaFiltro.geojson, state.origen, state.destino);
@@ -1243,7 +1253,7 @@
     if (idx !== -1) state.escalas.splice(idx, 1);
     sincronizarOrden();
     if (state.rutaActual) {
-      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
+      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
       calcularRutaPrincipal(true).then(() => refiltrarSitios());
     } else {
       renderizarParadas();
@@ -1370,7 +1380,7 @@
     state.paradas.splice(0, state.paradas.length, ...nuevasParadas);
 
     if (state.rutaActual) {
-      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
+      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
       await calcularRutaPrincipal(true);
     }
     renderizarParadas();

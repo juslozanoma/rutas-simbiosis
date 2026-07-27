@@ -42,9 +42,6 @@ const MapModule = (() => {
       attribution: '&copy; OpenStreetMap',
     }).addTo(map);
 
-    map.createPane('routePane');
-    map.getPane('routePane').style.zIndex = 10000;
-
     clusterSitios = L.markerClusterGroup({
       maxClusterRadius: 45,
       iconCreateFunction: (cluster) => {
@@ -258,13 +255,11 @@ const MapModule = (() => {
     _capaRutaVisible = L.geoJSON(geojsonLineString, {
       style: { color: '#2f7a6b', weight: 4, opacity: 0.85, lineCap: 'round' },
       interactive: false,
-      pane: 'routePane',
     }).addTo(map);
 
     _capaRutaHover = L.geoJSON(geojsonLineString, {
       style: { color: '#2f7a6b', weight: 20, opacity: 0 },
       interactive: true,
-      pane: 'routePane',
     }).addTo(map);
 
     _capaRutaVisible.bringToFront();
