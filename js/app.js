@@ -118,7 +118,6 @@
     btnTabRuta: document.getElementById('btn-tab-ruta'),
     mobileTabBar: document.getElementById('mobile-tab-bar'),
     hintParadas: document.getElementById('hint-paradas'),
-    hintSitiosEmpty: document.getElementById('hint-sitios-empty'),
   };
 
   // -------------------------------------------------------------------
@@ -615,11 +614,19 @@
       const visible = !el.panelCategorias.hidden;
       el.panelCategorias.hidden = visible;
       el.btnCategorias.setAttribute('aria-pressed', String(!visible));
+      if (visible) {
+        el.panelDesvios.hidden = true;
+        el.btnDesvios.setAttribute('aria-pressed', 'false');
+      }
     });
     el.btnDesvios.addEventListener('click', () => {
       const visible = !el.panelDesvios.hidden;
       el.panelDesvios.hidden = visible;
       el.btnDesvios.setAttribute('aria-pressed', String(!visible));
+      if (visible) {
+        el.panelCategorias.hidden = true;
+        el.btnCategorias.setAttribute('aria-pressed', 'false');
+      }
     });
     el.loadingSitios = document.getElementById('loading-sitios');
     el.loadingMsg = el.loadingSitios.querySelector('.loading-sitios__msg');
@@ -640,7 +647,6 @@
       el.loadingSitios.hidden = false;
       ejecutarFiltradoProgresivo(() => {
         el.panelSitios.hidden = false;
-        if (el.hintSitiosEmpty) el.hintSitiosEmpty.hidden = false;
         actualizarEstadoBotonesRetry();
         el.loadingSitios.hidden = true;
         setTimeout(() => cargarFondoSitios(), 100);
@@ -743,7 +749,6 @@
       state.sitiosFiltradosBase = [];
       state.categoriasSeleccionadas = [];
       conteoCategoriasBase = new Map();
-      if (el.hintSitiosEmpty) el.hintSitiosEmpty.hidden = true;
       // Re-insertar el botón "Mostrar sitios" si fue removido del DOM
       if (!el.btnMostrarSitiosCercanos.parentNode) {
         el.loadingSitios.parentNode.insertBefore(el.btnMostrarSitiosCercanos, el.loadingSitios);
@@ -1197,7 +1202,6 @@
   async function agregarParada(sitio, boton) {
     if (boton) ponerEnCarga(boton, true);
     state.paradas.push(sitio);
-    if (el.hintSitiosEmpty) el.hintSitiosEmpty.hidden = true;
     try {
       if (el.checkAutoOrganizar.checked) {
         await organizarAutomaticamente();

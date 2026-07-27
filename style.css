@@ -481,13 +481,6 @@ input, select{ font-family: inherit; }
   text-align: center;
 }
 
-.hint-sitios-empty{
-  margin: 8px 0;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  text-align: center;
-}
-
 .loading-sitios{
   padding: 16px 10px;
   text-align: center;
@@ -801,7 +794,6 @@ input, select{ font-family: inherit; }
 
   /* En Descubre: panel-sites llena el panel, hint y desvíos ocultos */
   #app[data-mobile-tab="descubre"] .panel-sites{ flex: 1; min-height: 0; }
-  #app[data-mobile-tab="descubre"] #hint-sitios-empty{ display: none !important; }
   #app[data-mobile-tab="descubre"] .panel-desvios{ display: none !important; }
   .mobile-tab-bar{
     display: flex !important;
