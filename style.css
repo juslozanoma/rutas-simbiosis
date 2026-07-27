@@ -803,11 +803,11 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="ruta"] .panel-sites__scroll{ display: none; }
   #app[data-mobile-tab="ruta"] .panel-sites > h2{ display: none; }
   #app[data-mobile-tab="ruta"] .panel-categorias{ display: none !important; }
-  #app[data-mobile-tab="ruta"] .panel-desvios{ display: none !important; }
 
-  /* En Descubre: panel-sites llena el panel, hint oculto */
+  /* En Descubre: panel-sites llena el panel, hint y desvíos ocultos */
   #app[data-mobile-tab="descubre"] .panel-sites{ flex: 1; min-height: 0; }
   #app[data-mobile-tab="descubre"] #hint-sitios-empty{ display: none !important; }
+  #app[data-mobile-tab="descubre"] .panel-desvios{ display: none !important; }
   .mobile-tab-bar{
     display: flex !important;
     position: fixed;

@@ -464,8 +464,8 @@
       if (idx !== -1) {
         const e = state.escalas[idx];
         state.escalas.splice(idx, 1);
-        if (state.rutaActual) {
-          state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
+    if (state.rutaActual) {
+      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; });
           calcularRutaPrincipal(true);
         }
       }
@@ -476,7 +476,7 @@
     state.escalas.push({ _row: row });
   }
 
-  function actualizarEscalas() {
+  async function actualizarEscalas() {
     state.escalas.forEach((e) => {
       if (!e._row) return;
       const txt = e._row.querySelector('.combo__trigger-text');
@@ -494,12 +494,13 @@
     });
     actualizarEstadoBotonCalcular();
     if (state.origen && state.destino && state.escalas.some((e) => e._row && e.id != null)) {
-      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
+      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; });
       if (el.checkAutoOrganizar.checked) {
-        organizarAutomaticamente();
+        await organizarAutomaticamente();
       } else {
-        calcularRutaPrincipal(true);
+        await calcularRutaPrincipal(true);
       }
+      refiltrarSitios();
     }
   }
 
@@ -1186,7 +1187,7 @@
         renderizarParadas();
       }
       limpiarPreview();
-      refiltrarSitios();
+      ejecutarFiltrado();
     } finally {
       if (boton) ponerEnCarga(boton, false);
     }

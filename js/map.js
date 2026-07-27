@@ -43,7 +43,7 @@ const MapModule = (() => {
     }).addTo(map);
 
     map.createPane('routePane');
-    map.getPane('routePane').style.zIndex = 500;
+    map.getPane('routePane').style.zIndex = 10000;
 
     clusterSitios = L.markerClusterGroup({
       maxClusterRadius: 45,
@@ -266,6 +266,9 @@ const MapModule = (() => {
       interactive: true,
       pane: 'routePane',
     }).addTo(map);
+
+    _capaRutaVisible.bringToFront();
+    _capaRutaHover.bringToFront();
 
     capaRuta = _capaRutaHover;
 
