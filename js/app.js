@@ -504,18 +504,7 @@
     } else {
       state.categoriasSeleccionadas.push(cat);
     }
-    renderizarCategoriasMenu();
-    if (!state.rutaActual || state.sitiosFiltradosBase.length === 0) return;
-    let sitiosResultado = state.sitiosFiltradosBase;
-    if (state.categoriasSeleccionadas.length > 0) {
-      const catsNorm = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase().trim()));
-      sitiosResultado = state.sitiosFiltradosBase.filter((s) => {
-        const sc = (s.categoria || '').toLowerCase().trim();
-        return catsNorm.has(sc);
-      });
-    }
-    state.sitiosFiltrados = sitiosResultado;
-    renderizarSitios(sitiosResultado);
+    if (state.rutaActual) ejecutarFiltrado();
   }
 
   // -------------------------------------------------------------------
@@ -1096,31 +1085,29 @@
   // -------------------------------------------------------------------
   // Renderizar lista de paradas en el panel (escalas + sitios turísticos)
   // -------------------------------------------------------------------
-  function btnIcono(d) {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'parada-item__btn';
-    b.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
-    return b;
-  }
-
   function renderizarParadas() {
     const escalas = state.escalas.filter((e) => e.lat != null);
-    const total = escalas.length + state.paradas.length;
+    const items = [
+      ...escalas.map((e) => ({ tipo: 'escala', datos: e })),
+      ...state.paradas.map((p) => ({ tipo: 'parada', datos: p })),
+    ];
+    const total = items.length;
     el.paradasLista.innerHTML = '';
     el.paradasContador.textContent = String(total);
     el.panelParadas.hidden = total === 0;
 
-    escalas.forEach((e, i) => {
+    items.forEach((item, idx) => {
+      const e = item.datos;
       const li = document.createElement('li');
       li.className = 'parada-item';
       li.dataset.paradaId = e.id;
-      li.style.borderLeftColor = '#4a6fa5';
+      li.dataset.tipoParada = item.tipo;
+      li.style.borderLeftColor = item.tipo === 'escala' ? '#4a6fa5' : '#6b9e7a';
 
       const num = document.createElement('span');
       num.className = 'parada-item__num';
-      num.textContent = String(i + 1);
-      num.style.background = '#4a6fa5';
+      num.textContent = String(idx + 1);
+      num.style.background = item.tipo === 'escala' ? '#4a6fa5' : '#6b9e7a';
 
       const nombre = document.createElement('span');
       nombre.className = 'parada-item__nombre';
@@ -1129,71 +1116,30 @@
       const acciones = document.createElement('div');
       acciones.className = 'parada-item__acciones';
 
-      const escalaData = e;
-      if (i > 0) {
+      if (idx > 0) {
         const btnUp = btnIcono('<polyline points="18 15 12 9 6 15"/>');
         btnUp.title = 'Subir';
-        btnUp.addEventListener('click', (evt) => { evt.stopPropagation(); moverEscala(escalaData.id, i > 0 ? state.escalas[i - 1].id : null); });
+        btnUp.addEventListener('click', (evt) => { evt.stopPropagation(); reordenar(idx, idx - 1); });
         acciones.appendChild(btnUp);
       }
-      if (i < escalas.length - 1) {
+      if (idx < total - 1) {
         const btnDown = btnIcono('<polyline points="6 9 12 15 18 9"/>');
         btnDown.title = 'Bajar';
-        btnDown.addEventListener('click', (evt) => { evt.stopPropagation(); moverEscala(escalaData.id, i + 2 < escalas.length ? state.escalas[i + 2].id : null); });
+        btnDown.addEventListener('click', (evt) => { evt.stopPropagation(); reordenar(idx, idx + 1); });
         acciones.appendChild(btnDown);
       }
 
       const btnDel = document.createElement('button');
       btnDel.type = 'button';
       btnDel.className = 'parada-item__btn';
+      if (item.tipo === 'escala') {
+        btnDel.addEventListener('click', (evt) => { evt.stopPropagation(); eliminarEscala(e.id, e._row); });
+      } else {
+        btnDel.addEventListener('click', (evt) => { evt.stopPropagation(); eliminarParada(e.id); });
+      }
       btnDel.title = 'Quitar de la ruta';
       btnDel.setAttribute('aria-label', 'Quitar ' + e.nombre + ' de la ruta');
       btnDel.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>';
-      btnDel.addEventListener('click', (evt) => { evt.stopPropagation(); eliminarEscala(escalaData.id, escalaData._row); });
-
-      acciones.appendChild(btnDel);
-      li.appendChild(num);
-      li.appendChild(nombre);
-      li.appendChild(acciones);
-      el.paradasLista.appendChild(li);
-    });
-
-    state.paradas.forEach((sitio, i) => {
-      const li = document.createElement('li');
-      li.className = 'parada-item';
-      li.dataset.paradaId = sitio.id;
-
-      const num = document.createElement('span');
-      num.className = 'parada-item__num';
-      num.textContent = String(escalas.length + i + 1);
-
-      const nombre = document.createElement('span');
-      nombre.className = 'parada-item__nombre';
-      nombre.textContent = sitio.nombre;
-
-      const acciones = document.createElement('div');
-      acciones.className = 'parada-item__acciones';
-
-      if (i > 0) {
-        const btnUp = btnIcono('<polyline points="18 15 12 9 6 15"/>');
-        btnUp.title = 'Subir';
-        btnUp.addEventListener('click', (evt) => { evt.stopPropagation(); subir(sitio.id); });
-        acciones.appendChild(btnUp);
-      }
-      if (i < state.paradas.length - 1) {
-        const btnDown = btnIcono('<polyline points="6 9 12 15 18 9"/>');
-        btnDown.title = 'Bajar';
-        btnDown.addEventListener('click', (evt) => { evt.stopPropagation(); bajar(sitio.id); });
-        acciones.appendChild(btnDown);
-      }
-
-      const btnDel = document.createElement('button');
-      btnDel.type = 'button';
-      btnDel.className = 'parada-item__btn';
-      btnDel.title = 'Quitar de la ruta';
-      btnDel.setAttribute('aria-label', 'Quitar ' + sitio.nombre + ' de la ruta');
-      btnDel.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>';
-      btnDel.addEventListener('click', (e) => { e.stopPropagation(); eliminarParada(sitio.id); });
 
       acciones.appendChild(btnDel);
       li.appendChild(num);
@@ -1203,52 +1149,34 @@
     });
   }
 
-  async function subir(id) {
-    const idx = state.paradas.findIndex((p) => p.id === id);
-    if (idx <= 0) return;
-    const item = state.paradas.splice(idx, 1)[0];
-    state.paradas.splice(idx - 1, 0, item);
-    await aplicarRutaConDesvios();
-    renderizarParadas();
-  }
-  async function bajar(id) {
-    const idx = state.paradas.findIndex((p) => p.id === id);
-    if (idx === -1 || idx >= state.paradas.length - 1) return;
-    const item = state.paradas.splice(idx, 1)[0];
-    state.paradas.splice(idx + 1, 0, item);
-    await aplicarRutaConDesvios();
-    renderizarParadas();
+  function btnIcono(d) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'parada-item__btn';
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+    return b;
   }
 
-  async function moverEscala(desdeId, hastaId) {
-    if (desdeId === hastaId) return;
-    const desdeIdx = state.escalas.findIndex((e) => e.id === desdeId);
-    let hastaIdx;
-    if (hastaId == null) {
-      hastaIdx = state.escalas.length - 1;
+  async function reordenar(desde, hasta) {
+    if (desde === hasta) return;
+    const escalas = state.escalas.filter((e) => e.lat != null);
+    const items = [
+      ...escalas.map((e) => ({ tipo: 'escala', datos: e })),
+      ...state.paradas.map((p) => ({ tipo: 'parada', datos: p })),
+    ];
+    if (desde < 0 || desde >= items.length || hasta < 0 || hasta >= items.length) return;
+    const movido = items.splice(desde, 1)[0];
+    items.splice(hasta, 0, movido);
+    const nuevasEscalas = items.filter((it) => it.tipo === 'escala').map((it) => it.datos);
+    const nuevasParadas = items.filter((it) => it.tipo === 'parada').map((it) => it.datos);
+    state.escalas.splice(0, state.escalas.length, ...nuevasEscalas);
+    state.paradas.splice(0, state.paradas.length, ...nuevasParadas);
+    if (movido.tipo === 'escala') {
+      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
+      await calcularRutaPrincipal(true);
     } else {
-      hastaIdx = state.escalas.findIndex((e) => e.id === hastaId);
+      await aplicarRutaConDesvios();
     }
-    if (desdeIdx === -1 || hastaIdx === -1) return;
-    const item = state.escalas.splice(desdeIdx, 1)[0];
-    state.escalas.splice(hastaIdx, 0, item);
-    state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
-    await calcularRutaPrincipal(true);
-  }
-
-  async function moverParada(desdeId, hastaId) {
-    if (desdeId === hastaId) return;
-    const desdeIdx = state.paradas.findIndex((p) => p.id === desdeId);
-    let hastaIdx;
-    if (hastaId == null) {
-      hastaIdx = 0;
-    } else {
-      hastaIdx = state.paradas.findIndex((p) => p.id === hastaId);
-    }
-    if (desdeIdx === -1 || hastaIdx === -1) return;
-    const item = state.paradas.splice(desdeIdx, 1)[0];
-    state.paradas.splice(hastaIdx, 0, item);
-    await aplicarRutaConDesvios();
     renderizarParadas();
   }
 
