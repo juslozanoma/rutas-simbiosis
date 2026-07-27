@@ -495,12 +495,23 @@
     actualizarEstadoBotonCalcular();
     if (state.origen && state.destino && state.escalas.some((e) => e._row && e.id != null)) {
       state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
-      if (el.checkAutoOrganizar.checked) {
-        await organizarAutomaticamente();
-      } else {
-        await calcularRutaPrincipal(true);
+      el.loadingMsg.textContent = 'Calculando ruta…';
+      el.loadingSitios.hidden = false;
+      const intervalo = setInterval(() => {
+        const msgs = ['Calculando ruta…', 'Optimizando paradas…', 'Consultando OSRM…', 'Procesando resultados…'];
+        el.loadingMsg.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+      }, 2500);
+      try {
+        if (el.checkAutoOrganizar.checked) {
+          await organizarAutomaticamente();
+        } else {
+          await calcularRutaPrincipal(true);
+        }
+        refiltrarSitios();
+      } finally {
+        clearInterval(intervalo);
+        el.loadingSitios.hidden = true;
       }
-      refiltrarSitios();
     }
   }
 
@@ -611,7 +622,6 @@
       el.btnDesvios.setAttribute('aria-pressed', String(!visible));
     });
     el.loadingSitios = document.getElementById('loading-sitios');
-    el.progressFill = el.loadingSitios.querySelector('.progress-bar__fill');
     el.loadingMsg = el.loadingSitios.querySelector('.loading-sitios__msg');
     el.mensajesCarga = [
       'Cargando lugares cercanos…',
@@ -628,16 +638,11 @@
       el.filtroDistancia.value = '5';
       el.filtroDistanciaValor.textContent = '5 km';
       el.loadingSitios.hidden = false;
-      el.progressFill.classList.add('progress-bar__fill--active');
       ejecutarFiltradoProgresivo(() => {
         el.panelSitios.hidden = false;
         if (el.hintSitiosEmpty) el.hintSitiosEmpty.hidden = false;
         actualizarEstadoBotonesRetry();
         el.loadingSitios.hidden = true;
-        el.progressFill.classList.remove('progress-bar__fill--active');
-        el.progressFill.style.transition = 'none';
-        el.progressFill.offsetHeight;
-        el.progressFill.style.transition = '';
         setTimeout(() => cargarFondoSitios(), 100);
         if (esMovil()) {
           if (el.panelDesvios) el.panelDesvios.hidden = false;
@@ -733,11 +738,17 @@
       MapModule.limpiarEscalas();
       limpiarPreview();
       el.panelSitios.hidden = true;
+      if (el.panelDesvios) el.panelDesvios.hidden = true;
       state.sitiosFiltrados = [];
       state.sitiosFiltradosBase = [];
       state.categoriasSeleccionadas = [];
       conteoCategoriasBase = new Map();
       if (el.hintSitiosEmpty) el.hintSitiosEmpty.hidden = true;
+      // Re-insertar el botón "Mostrar sitios" si fue removido del DOM
+      if (!el.btnMostrarSitiosCercanos.parentNode) {
+        el.loadingSitios.parentNode.insertBefore(el.btnMostrarSitiosCercanos, el.loadingSitios);
+      }
+      el.btnMostrarSitiosCercanos.disabled = false;
     }
 
     ponerEnCargaRuta(true);
@@ -756,8 +767,8 @@
       el.btnMostrarSitiosCercanos.disabled = false;
 
       el.checkDistancia.checked = true;
-      el.filtroDistancia.value = '10';
-      el.filtroDistanciaValor.textContent = '10 km';
+      el.filtroDistancia.value = '5';
+      el.filtroDistanciaValor.textContent = '5 km';
       el.filtroDistancia.disabled = false;
 
       // Volver a la pestaña Ruta en móvil y reiniciar estado de sitios
@@ -872,8 +883,6 @@
         resultados.push(s);
       }
       idx = fin;
-      const progreso = idx / sitios.length;
-      el.progressFill.style.width = `${Math.round(progreso * 100)}%`;
 
       if (idx < sitios.length) {
         setTimeout(procesarBloque, 0);
