@@ -560,12 +560,6 @@ input, select{ font-family: inherit; }
    ========================================================================== */
 .pin-icon{ display: flex; align-items: center; justify-content: center; }
 .pin-svg{ filter: drop-shadow(0 2px 3px rgba(20,32,27,0.3)); }
-.site-dot{
-  width: 13px; height: 13px;
-  border-radius: 50%;
-  border: 2px solid #ffffff;
-  box-shadow: 0 1px 3px rgba(20,32,27,0.35);
-}
 .marker-cluster-custom{
   background: var(--ink-900);
   color: #ffffff;
@@ -713,11 +707,11 @@ input, select{ font-family: inherit; }
 }
 .mobile-summary strong{ color: #ffffff; font-weight: 700; }
 
-/* Botón flotante de toggle sitios en el mapa (móvil) */
+/* Botón flotante de toggle sitios en el mapa (solo móvil, debajo de la barra) */
 .btn-toggle-sitios--float{
   display: none;
   position: absolute;
-  top: 12px;
+  top: 36px;
   left: 12px;
   z-index: 1000;
   width: 34px;
@@ -725,10 +719,11 @@ input, select{ font-family: inherit; }
 }
 .btn-toggle-sitios--float[aria-pressed="false"]{ color: var(--text-muted); opacity: 0.5; border-color: var(--line-300); }
 
-/* Botón flotante de pantalla completa (arriba a la derecha del mapa) */
+/* Botón flotante de pantalla completa (solo móvil, debajo de la barra) */
 .btn-fullscreen{
+  display: none;
   position: absolute;
-  top: 12px;
+  top: 36px;
   right: 12px;
   z-index: 1000;
   width: 34px;
@@ -737,7 +732,6 @@ input, select{ font-family: inherit; }
   border: 1.5px solid var(--teal-500);
   background: #ffffff;
   color: var(--teal-500);
-  display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
@@ -780,6 +774,7 @@ input, select{ font-family: inherit; }
   .app-body{ flex-direction: column; }
   .map-full{ flex: 1 1 50%; min-height: 30vh; }
   .btn-toggle-sitios--float{ display: flex; }
+  .btn-fullscreen{ display: flex; }
 
   .side-panel{
     width: 100%;
@@ -819,12 +814,10 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="ruta"]  .panel-sites__scroll{ display: none; }
   #app[data-mobile-tab="ruta"]  .panel-sites > h2{ display: none; }
 
-  /* Reordenar contenido del panel en móvil (botón de sitios debajo de los filtros) */
+  /* Reordenar contenido del panel en móvil */
   .side-panel > .panel-locate{ order: 1; }
   .side-panel > .panel-paradas{ order: 2; }
   .side-panel > .panel-sites{ order: 3; }
-  .side-panel > #btn-mostrar-sitios{ order: 4; }
-  .side-panel > #loading-sitios{ order: 5; }
 
   #app[data-mobile-tab="descubre"] .panel-locate{ display: none; }
   #app[data-mobile-tab="descubre"] .panel-paradas{ display: none; }
@@ -836,22 +829,12 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="ruta"] .panel-desvios[hidden]{ display: block !important; }
   #app[data-mobile-tab="descubre"] .panel-sites > h2{ display: none; }
 
-  /* Mapa a pantalla completa: solo queda la barra de resumen visible */
-  #app[data-mobile-view="map"] .map-full{ flex: 1; }
-  #app[data-mobile-view="map"] .side-panel{
-    flex: none;
-    height: auto;
-    padding: 6px 12px;
-    gap: 0;
-  }
-  #app[data-mobile-view="map"] .panel-locate,
-  #app[data-mobile-view="map"] .panel-paradas,
-  #app[data-mobile-view="map"] .panel-filters,
-  #app[data-mobile-view="map"] .panel-sites{ display: none; }
+  /* El botón Mostrar sitios dentro del panel en móvil */
+  .panel-sites > #btn-mostrar-sitios{ display: block !important; }
+  #app[data-mobile-tab="descubre"] .panel-sites > #btn-mostrar-sitios{ display: none !important; }
 
-  /* Panel a pantalla completa: el mapa se retira por completo */
-  #app[data-mobile-view="panel"] .map-full{ display: none; }
-  #app[data-mobile-view="panel"] .side-panel{ flex: 1 1 100%; height: 100vh; }
+  /* Evitar que el contenido se salga de la pantalla en móvil */
+  .app-shell{ overflow: hidden; height: 100dvh; }
 
   /* Ajuste de padding del panel en móvil */
   .side-panel{ padding: 12px 12px 56px; gap: 12px; }

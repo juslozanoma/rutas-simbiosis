@@ -27,7 +27,7 @@
 </head>
 <body>
 
-<div id="app" class="app-shell" data-mobile-view="split" data-mobile-tab="ruta">
+<div id="app" class="app-shell" data-mobile-tab="ruta">
 
   <div class="app-body">
 
@@ -39,7 +39,7 @@
     </div>
     <div id="map" role="application" aria-label="Mapa interactivo de la ruta y los sitios turísticos"></div>
     <button type="button" id="btn-toggle-sitios-float" class="btn-toggle-sitios btn-toggle-sitios--float" title="Mostrar/ocultar sitios en el mapa" aria-pressed="true">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      <svg viewBox="0 0 32 32" width="14" height="14" fill="currentColor"><path d="M29.83,17.45l-2-3A1,1,0,0,0,27,14H17V12h8a1,1,0,0,0,1-1V5a1,1,0,0,0-1-1H17V3a1,1,0,0,0-2,0V4H6a1,1,0,0,0-.71.29l-3,3a1,1,0,0,0,0,1.41l3,3A1,1,0,0,0,6,12h9v2H7a1,1,0,0,0-1,1v6a1,1,0,0,0,1,1h8v6H11a1,1,0,0,0,0,2H21a1,1,0,0,0,0-2H17V22H27a1,1,0,0,0,.83-.45l2-3A1,1,0,0,0,29.83,17.45Z"/></svg>
     </button>
     <button type="button" id="btn-fullscreen" class="btn-fullscreen" title="Pantalla completa" aria-label="Activar o desactivar pantalla completa">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
@@ -92,7 +92,7 @@
     </section>
 
     <!-- Aviso de paradas antes de calcular -->
-    <p class="hint-paradas" id="hint-paradas">No olvides añadir tus paradas antes de calcular la ruta.</p>
+    <p class="hint-paradas" id="hint-paradas">No olvides añadir tus paradas antes de mostrar los sitios cercanos.</p>
 
     <!-- Paradas agregadas a la ruta -->
     <section class="panel-paradas" id="panel-paradas" hidden>
@@ -106,18 +106,12 @@
       <ul class="paradas-lista" id="paradas-lista"></ul>
     </section>
 
-    <button type="button" id="btn-mostrar-sitios" class="btn-mostrar-sitios-cercanos" disabled>Mostrar sitios turísticos cercanos</button>
-    <div id="loading-sitios" class="loading-sitios" hidden>
-      <span class="loading-sitios__msg">Cargando lugares cercanos…</span>
-      <div class="progress-bar"><div class="progress-bar__fill"></div></div>
-    </div>
-
     <section class="panel-sites" id="panel-sites" hidden>
       <h2 class="panel-sites__title">
         Sitios turísticos
         <span class="badge-count mono" id="sitios-contador">0</span>
         <button type="button" id="btn-toggle-sitios" class="btn-toggle-sitios" title="Mostrar/ocultar sitios en el mapa" aria-pressed="true">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          <svg viewBox="0 0 32 32" width="14" height="14" fill="currentColor"><path d="M29.83,17.45l-2-3A1,1,0,0,0,27,14H17V12h8a1,1,0,0,0,1-1V5a1,1,0,0,0-1-1H17V3a1,1,0,0,0-2,0V4H6a1,1,0,0,0-.71.29l-3,3a1,1,0,0,0,0,1.41l3,3A1,1,0,0,0,6,12h9v2H7a1,1,0,0,0-1,1v6a1,1,0,0,0,1,1h8v6H11a1,1,0,0,0,0,2H21a1,1,0,0,0,0-2H17V22H27a1,1,0,0,0,.83-.45l2-3A1,1,0,0,0,29.83,17.45Z"/></svg>
         </button>
         <button type="button" id="btn-categorias" class="btn-toggle-pill" title="Filtrar por categorías" aria-pressed="false">Categorías</button>
         <button type="button" id="btn-desvios" class="btn-toggle-pill" title="Filtrar por distancia y desvío" aria-pressed="false">Desvíos</button>
@@ -154,6 +148,11 @@
           <span class="icon-btn__spinner" aria-hidden="true"></span>
         </button>
       </div>
+      </div>
+      <button type="button" id="btn-mostrar-sitios" class="btn-mostrar-sitios-cercanos" disabled>Mostrar sitios turísticos cercanos</button>
+      <div id="loading-sitios" class="loading-sitios" hidden>
+        <span class="loading-sitios__msg">Cargando lugares cercanos…</span>
+        <div class="progress-bar"><div class="progress-bar__fill"></div></div>
       </div>
       <div class="panel-sites__scroll">
         <p class="empty-state" id="sitios-vacio">Activa un filtro y pulsa el botón de aplicar para ver los sitios turísticos cercanos.</p>

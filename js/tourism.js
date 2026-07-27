@@ -69,7 +69,7 @@ const TourismModule = (() => {
    * con `distanciaCorredorKm` (calculado en filters.js).
    */
   function crearMarcador(sitio) {
-    const icono = MapModule.iconoSitio(colorCategoria(sitio.categoria));
+    const icono = MapModule.iconoSitio();
     const marker = L.marker([sitio.lat, sitio.lon], { icon: icono });
     marker.bindTooltip(sitio.nombre, {
       permanent: true,

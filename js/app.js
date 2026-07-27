@@ -108,6 +108,7 @@
 
     btnToggleSitios: document.getElementById('btn-toggle-sitios'),
     btnToggleSitiosFloat: document.getElementById('btn-toggle-sitios-float'),
+    btnFullscreen: document.getElementById('btn-fullscreen'),
     panelSitios: document.getElementById('panel-sites'),
     btnMostrarSitiosCercanos: document.getElementById('btn-mostrar-sitios'),
 
@@ -152,13 +153,13 @@
   // Combos de búsqueda (origen / destino)
   // -------------------------------------------------------------------
   function initCombos() {
-    setupCombo(el.origenInput, el.origenList, (m) => { state.origen = m; actualizarEstadoBotonCalcular(); if (el.hintParadas) el.hintParadas.hidden = false; }, () => {
+    setupCombo(el.origenInput, el.origenList, (m) => { state.origen = m; actualizarEstadoBotonCalcular(); }, () => {
       const ids = new Set();
       if (state.destino?.id) ids.add(state.destino.id);
       state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
       return ids;
     }, true);
-    setupCombo(el.destinoInput, el.destinoList, (m) => { state.destino = m; actualizarEstadoBotonCalcular(); if (el.hintParadas) el.hintParadas.hidden = false; }, () => {
+    setupCombo(el.destinoInput, el.destinoList, (m) => { state.destino = m; actualizarEstadoBotonCalcular(); }, () => {
       const ids = new Set();
       if (state.origen?.id) ids.add(state.origen.id);
       state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
@@ -551,6 +552,21 @@
     el.btnToggleSitios.addEventListener('click', toggleSitiosHandler);
     if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.addEventListener('click', toggleSitiosHandler);
 
+    if (el.btnFullscreen) {
+      el.btnFullscreen.addEventListener('click', () => {
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+          el.btnFullscreen.setAttribute('aria-pressed', 'false');
+        } else {
+          document.documentElement.requestFullscreen().catch(() => {});
+          el.btnFullscreen.setAttribute('aria-pressed', 'true');
+        }
+      });
+      document.addEventListener('fullscreenchange', () => {
+        el.btnFullscreen.setAttribute('aria-pressed', String(!!document.fullscreenElement));
+      });
+    }
+
     function setMobileTab(tab) {
       el.appRoot.setAttribute('data-mobile-tab', tab);
       el.btnTabDescubre.classList.toggle('mobile-tab-btn--active', tab === 'descubre');
@@ -587,6 +603,7 @@
     ];
     el.btnMostrarSitiosCercanos.addEventListener('click', () => {
       el.btnMostrarSitiosCercanos.remove();
+      if (el.hintParadas) el.hintParadas.hidden = true;
       el.checkDistancia.checked = true;
       el.filtroDistancia.disabled = false;
       el.filtroDistancia.value = '5';
@@ -722,7 +739,6 @@
 
   async function aplicarRutaCalculada(ruta) {
     state.rutaBase = ruta;
-    if (el.hintParadas) el.hintParadas.hidden = true;
     await aplicarRutaConDesvios();
   }
 

@@ -95,13 +95,13 @@ const MapModule = (() => {
   function iconoOrigen() { return _pinDivIcon('#2f7a6b'); }
   function iconoDestino() { return _pinDivIcon('#e35c2b'); }
 
-  function iconoSitio(colorHex) {
+  function iconoSitio() {
     return L.divIcon({
-      html: `<div class="site-dot" style="background:${colorHex}"></div>`,
+      html: `<svg viewBox="0 0 32 32" width="16" height="16" fill="#2f7a6b"><path d="M29.83,17.45l-2-3A1,1,0,0,0,27,14H17V12h8a1,1,0,0,0,1-1V5a1,1,0,0,0-1-1H17V3a1,1,0,0,0-2,0V4H6a1,1,0,0,0-.71.29l-3,3a1,1,0,0,0,0,1.41l3,3A1,1,0,0,0,6,12h9v2H7a1,1,0,0,0-1,1v6a1,1,0,0,0,1,1h8v6H11a1,1,0,0,0,0,2H21a1,1,0,0,0,0-2H17V22H27a1,1,0,0,0,.83-.45l2-3A1,1,0,0,0,29.83,17.45Z"/></svg>`,
       className: '',
-      iconSize: [13, 13],
-      iconAnchor: [7, 7],
-      popupAnchor: [0, -8],
+      iconSize: [16, 16],
+      iconAnchor: [8, 8],
+      popupAnchor: [0, -10],
     });
   }
 
