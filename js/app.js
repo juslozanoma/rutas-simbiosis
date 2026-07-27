@@ -117,6 +117,7 @@
     btnTabDescubre: document.getElementById('btn-tab-descubre'),
     btnTabRuta: document.getElementById('btn-tab-ruta'),
     mobileTabBar: document.getElementById('mobile-tab-bar'),
+    hintParadas: document.getElementById('hint-paradas'),
   };
 
   // -------------------------------------------------------------------
@@ -151,13 +152,13 @@
   // Combos de búsqueda (origen / destino)
   // -------------------------------------------------------------------
   function initCombos() {
-    setupCombo(el.origenInput, el.origenList, (m) => { state.origen = m; actualizarEstadoBotonCalcular(); }, () => {
+    setupCombo(el.origenInput, el.origenList, (m) => { state.origen = m; actualizarEstadoBotonCalcular(); if (el.hintParadas) el.hintParadas.hidden = false; }, () => {
       const ids = new Set();
       if (state.destino?.id) ids.add(state.destino.id);
       state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
       return ids;
     }, true);
-    setupCombo(el.destinoInput, el.destinoList, (m) => { state.destino = m; actualizarEstadoBotonCalcular(); }, () => {
+    setupCombo(el.destinoInput, el.destinoList, (m) => { state.destino = m; actualizarEstadoBotonCalcular(); if (el.hintParadas) el.hintParadas.hidden = false; }, () => {
       const ids = new Set();
       if (state.origen?.id) ids.add(state.origen.id);
       state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
@@ -202,7 +203,7 @@
           navigator.geolocation.getCurrentPosition(
             (pos) => {
               const { latitude: lat, longitude: lon } = pos.coords;
-              const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+              const nombre = 'Mi ubicación';
               const txt = trigger.querySelector('.combo__trigger-text');
               txt.textContent = nombre;
               txt.removeAttribute('data-placeholder');
@@ -212,7 +213,8 @@
             },
             () => {
               ponerEnCargaRuta(false);
-            }
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
           );
         });
         listEl.appendChild(locLi);
@@ -240,7 +242,19 @@
         li.addEventListener('click', (e) => {
           e.stopPropagation();
           deptoSeleccionado = d;
-          renderMunicipios();
+          const idsExcluidos = excluirIdsFn ? excluirIdsFn() : new Set();
+          const municipios = obtenerMunicipios(d).filter((m) => !idsExcluidos.has(m.id));
+          if (municipios.length === 1) {
+            const m = municipios[0];
+            listEl.hidden = true;
+            const txt = trigger.querySelector('.combo__trigger-text');
+            txt.textContent = m.nombre;
+            txt.removeAttribute('data-placeholder');
+            trigger.setAttribute('aria-label', m.nombre + ' — municipio de ' + m.departamento);
+            onSelect(m);
+          } else {
+            renderMunicipios();
+          }
         });
         listEl.appendChild(li);
       });
@@ -722,6 +736,7 @@
 
   async function aplicarRutaCalculada(ruta) {
     state.rutaBase = ruta;
+    if (el.hintParadas) el.hintParadas.hidden = true;
     await aplicarRutaConDesvios();
   }
 
@@ -1104,6 +1119,47 @@
   }
 
   // -------------------------------------------------------------------
+  // Re-filtrar sitios después de cambios en la ruta (invalida cachés)
+  // -------------------------------------------------------------------
+  function refiltrarSitios() {
+    if (!state.rutaActual) return;
+    if (state.sitiosFiltrados?.length === 0) return;
+    state.sitios.forEach((s) => {
+      delete s.distanciaRutaKm;
+      delete s.tiempoDesvioMin;
+      delete s.distanciaOrigenKm;
+    });
+    const opciones = {
+      usarDistancia: el.checkDistancia.checked,
+      usarTiempo: el.checkTiempo.checked,
+      distanciaMaximaKm: el.checkDistancia.checked ? Number(el.filtroDistancia.value) : 5,
+      tiempoMaximoMin: el.checkTiempo.checked ? Number(el.filtroTiempo.value) : 120,
+      origen: state.origen,
+      excluirIds: state.paradas.map((p) => p.id),
+    };
+    const rutaFiltro = state.rutaBase || state.rutaActual;
+    const sitiosBase = FiltersModule.filtrarSitiosPorRuta(state.sitios, rutaFiltro.geojson, opciones);
+    state.sitiosFiltradosBase = sitiosBase;
+    conteoCategoriasBase = new Map();
+    sitiosBase.forEach((s) => {
+      if (!s.categoria) return;
+      const c = s.categoria.trim();
+      conteoCategoriasBase.set(c, (conteoCategoriasBase.get(c) || 0) + 1);
+    });
+    let sitiosResultado = sitiosBase;
+    if (state.categoriasSeleccionadas.length > 0) {
+      const catsNorm = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase().trim()));
+      sitiosResultado = sitiosBase.filter((s) => {
+        const sc = (s.categoria || '').toLowerCase().trim();
+        return catsNorm.has(sc);
+      });
+    }
+    state.sitiosFiltrados = sitiosResultado;
+    renderizarSitios(sitiosResultado);
+    renderizarCategoriasMenu();
+  }
+
+  // -------------------------------------------------------------------
   // Agregar un sitio como desvío (calcula ruta por OSRM ida y vuelta)
   // -------------------------------------------------------------------
   async function agregarParada(sitio, boton) {
@@ -1117,11 +1173,7 @@
         renderizarParadas();
       }
       limpiarPreview();
-      const idx = state.sitiosFiltrados.findIndex((s) => s.id === sitio.id);
-      if (idx !== -1) {
-        state.sitiosFiltrados.splice(idx, 1);
-        renderizarSitios(state.sitiosFiltrados);
-      }
+      refiltrarSitios();
     } finally {
       if (boton) ponerEnCarga(boton, false);
     }
@@ -1169,6 +1221,7 @@
     await aplicarRutaConDesvios();
     sincronizarOrden();
     renderizarParadas();
+    refiltrarSitios();
   }
 
   function eliminarEscala(id) {
@@ -1177,7 +1230,7 @@
     sincronizarOrden();
     if (state.rutaActual) {
       state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
-      calcularRutaPrincipal(true);
+      calcularRutaPrincipal(true).then(() => refiltrarSitios());
     } else {
       renderizarParadas();
     }
@@ -1231,17 +1284,19 @@
       const acciones = document.createElement('div');
       acciones.className = 'parada-item__acciones';
 
-      if (idx > 0) {
-        const btnUp = btnIcono('<polyline points="18 15 12 9 6 15"/>');
-        btnUp.title = 'Subir';
-        btnUp.addEventListener('click', (evt) => { evt.stopPropagation(); reordenar(idx, idx - 1); });
-        acciones.appendChild(btnUp);
-      }
-      if (idx < total - 1) {
-        const btnDown = btnIcono('<polyline points="6 9 12 15 18 9"/>');
-        btnDown.title = 'Bajar';
-        btnDown.addEventListener('click', (evt) => { evt.stopPropagation(); reordenar(idx, idx + 1); });
-        acciones.appendChild(btnDown);
+      if (!el.checkAutoOrganizar.checked) {
+        if (idx > 0) {
+          const btnUp = btnIcono('<polyline points="18 15 12 9 6 15"/>');
+          btnUp.title = 'Subir';
+          btnUp.addEventListener('click', (evt) => { evt.stopPropagation(); reordenar(idx, idx - 1); });
+          acciones.appendChild(btnUp);
+        }
+        if (idx < total - 1) {
+          const btnDown = btnIcono('<polyline points="6 9 12 15 18 9"/>');
+          btnDown.title = 'Bajar';
+          btnDown.addEventListener('click', (evt) => { evt.stopPropagation(); reordenar(idx, idx + 1); });
+          acciones.appendChild(btnDown);
+        }
       }
 
       const btnDel = document.createElement('button');
