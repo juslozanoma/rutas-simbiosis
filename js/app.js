@@ -105,8 +105,16 @@
     btnAgregarEscala: document.getElementById('btn-agregar-escala'),
 
     btnToggleSitios: document.getElementById('btn-toggle-sitios'),
+    btnToggleSitiosFloat: document.getElementById('btn-toggle-sitios-float'),
     panelSitios: document.getElementById('panel-sites'),
     btnMostrarSitiosCercanos: document.getElementById('btn-mostrar-sitios'),
+
+    statDistanciaMobile: document.getElementById('stat-distancia-mobile'),
+    statTiempoMobile: document.getElementById('stat-tiempo-mobile'),
+    sitiosContadorTab: document.getElementById('sitios-contador-tab'),
+    btnTabDescubre: document.getElementById('btn-tab-descubre'),
+    btnTabRuta: document.getElementById('btn-tab-ruta'),
+    mobileTabBar: document.getElementById('mobile-tab-bar'),
   };
 
   // -------------------------------------------------------------------
@@ -517,10 +525,25 @@
     el.btnMobileCollapse.addEventListener('click', () => setVistaMovil('map'));
     el.btnMobileExpand.addEventListener('click', () => setVistaMovil('panel'));
 
-    el.btnToggleSitios.addEventListener('click', () => {
+    function toggleSitiosHandler() {
       const visible = MapModule.toggleSitios();
       el.btnToggleSitios.setAttribute('aria-pressed', String(visible));
-    });
+      if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.setAttribute('aria-pressed', String(visible));
+    }
+    el.btnToggleSitios.addEventListener('click', toggleSitiosHandler);
+    if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.addEventListener('click', toggleSitiosHandler);
+
+    function setMobileTab(tab) {
+      el.appRoot.setAttribute('data-mobile-tab', tab);
+      el.btnTabDescubre.classList.toggle('mobile-tab-btn--active', tab === 'descubre');
+      el.btnTabRuta.classList.toggle('mobile-tab-btn--active', tab === 'ruta');
+      if (tab === 'descubre' && el.btnMostrarSitiosCercanos && el.btnMostrarSitiosCercanos.parentNode) {
+        el.btnMostrarSitiosCercanos.click();
+      }
+      setTimeout(() => MapModule.invalidateSize(), 220);
+    }
+    el.btnTabDescubre.addEventListener('click', () => setMobileTab('descubre'));
+    el.btnTabRuta.addEventListener('click', () => setMobileTab('ruta'));
     el.btnCategorias.addEventListener('click', () => {
       const visible = !el.panelCategorias.hidden;
       el.panelCategorias.hidden = visible;
@@ -670,6 +693,8 @@
     } catch (err) {
       el.statDistancia.textContent = '—';
       el.statTiempo.textContent = '—';
+      if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = '—';
+      if (el.statTiempoMobile) el.statTiempoMobile.textContent = '—';
     } finally {
       ponerEnCargaRuta(false);
     }
@@ -842,6 +867,7 @@
     MapModule.limpiarSitios();
     el.sitiosLista.innerHTML = '';
     el.sitiosContador.textContent = String(sitios.length);
+    if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = String(sitios.length);
 
     if (sitios.length === 0) {
       el.sitiosVacio.hidden = false;
@@ -1033,14 +1059,28 @@
     MapModule.setMarcadorOrigen(state.origen.lat, state.origen.lon, state.origen.nombre);
     MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);
 
+    sincronizarOrden();
     let num = 1;
-    state.escalas.filter((e) => e.lat != null).forEach((e) => { e._numero = num++; });
-    state.paradas.forEach((p) => { p._numero = num++; });
+    state.orden.forEach((o) => {
+      if (o.tipo === 'escala') {
+        const e = state.escalas.find((e) => e.id === o.id);
+        if (e && e.lat != null) e._numero = num++;
+      } else {
+        const p = state.paradas.find((p) => p.id === o.id);
+        if (p) p._numero = num++;
+      }
+    });
     MapModule.setMarcadoresEscalas(state.escalas);
     MapModule.setMarcadoresParadas(state.paradas);
     MapModule.encuadrar(state.rutaActual.geojson);
-    el.statDistancia.textContent = Utils.formatearDistancia(state.rutaActual.distanciaMetros);
+    const distTexto = Utils.formatearDistancia(state.rutaActual.distanciaMetros);
+    el.statDistancia.textContent = distTexto;
     el.statTiempo.textContent = Utils.formatearDuracion(state.rutaActual.duracionSegundos);
+    if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = distTexto;
+    if (el.statTiempoMobile) {
+      const h = state.rutaActual.duracionSegundos / 3600;
+      el.statTiempoMobile.textContent = `${h.toFixed(1)}`;
+    }
   }
 
   // -------------------------------------------------------------------
