@@ -24,6 +24,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="assets/spinners/spinners.css">
 </head>
 <body>
 
@@ -155,7 +156,9 @@
     <button type="button" id="btn-mostrar-sitios" class="btn-mostrar-sitios-cercanos" disabled>Mostrar sitios turísticos cercanos</button>
     <div id="loading-sitios" class="loading-sitios" hidden>
       <span class="loading-sitios__msg">Cargando lugares cercanos…</span>
-      <span class="loading-spinner"></span>
+      <svg class="loader" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 10 60 A 50 50 0 1 0 110 60 A 50 50 0 1 0 10 60" />
+      </svg>
     </div>
 
   </aside>
