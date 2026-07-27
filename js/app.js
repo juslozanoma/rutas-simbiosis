@@ -621,24 +621,17 @@
     el.checkAutoOrganizar.addEventListener('change', () => {
       if (el.checkAutoOrganizar.checked) organizarAutomaticamente();
     });
-    el.btnCategorias.addEventListener('click', () => {
-      const visible = !el.panelCategorias.hidden;
-      el.panelCategorias.hidden = visible;
-      el.btnCategorias.setAttribute('aria-pressed', String(!visible));
-      if (visible) {
-        el.panelDesvios.hidden = true;
-        el.btnDesvios.setAttribute('aria-pressed', 'false');
+    function togglePanel(btn, panel, otroBtn, otroPanel) {
+      const seAbre = panel.hidden;
+      panel.hidden = !seAbre;
+      btn.setAttribute('aria-pressed', String(seAbre));
+      if (seAbre) {
+        otroPanel.hidden = true;
+        otroBtn.setAttribute('aria-pressed', 'false');
       }
-    });
-    el.btnDesvios.addEventListener('click', () => {
-      const visible = !el.panelDesvios.hidden;
-      el.panelDesvios.hidden = visible;
-      el.btnDesvios.setAttribute('aria-pressed', String(!visible));
-      if (visible) {
-        el.panelCategorias.hidden = true;
-        el.btnCategorias.setAttribute('aria-pressed', 'false');
-      }
-    });
+    }
+    el.btnCategorias.addEventListener('click', () => togglePanel(el.btnCategorias, el.panelCategorias, el.btnDesvios, el.panelDesvios));
+    el.btnDesvios.addEventListener('click', () => togglePanel(el.btnDesvios, el.panelDesvios, el.btnCategorias, el.panelCategorias));
     el.loadingSitios = document.getElementById('loading-sitios');
     el.loadingMsg = el.loadingSitios.querySelector('.loading-sitios__msg');
     el.spinnerBike = el.loadingSitios.querySelector('.spinner-bike');
@@ -736,23 +729,19 @@
 
     // Una nueva ruta principal invalida cualquier parada agregada previamente
     // (excepto cuando se reordenan escalas, que deben conservarse).
-    if (!conservarParadas) state.paradas = [];
-    state.sitios.forEach((s) => {
-      delete s._detourCoords;
-      delete s._detourDist;
-      delete s._detourDur;
-      delete s.distanciaRutaKm;
-      delete s.tiempoDesvioMin;
-      delete s.distanciaOrigenKm;
-      delete s.distanciaDestinoKm;
-      delete s._offsetLado;
-    });
-    MapModule.limpiarSitios();
-
-    // Cuando se conservan paradas (reordenar escalas, agregar parada),
-    // se preserva el panel de sitios, categorías y filtros; solo se
-    // invalidan las distancias cacheadas para que se recalculen.
     if (!conservarParadas) {
+      state.paradas = [];
+      state.sitios.forEach((s) => {
+        delete s._detourCoords;
+        delete s._detourDist;
+        delete s._detourDur;
+        delete s.distanciaRutaKm;
+        delete s.tiempoDesvioMin;
+        delete s.distanciaOrigenKm;
+        delete s.distanciaDestinoKm;
+        delete s._offsetLado;
+      });
+      MapModule.limpiarSitios();
       MapModule.limpiarParadas();
       MapModule.limpiarEscalas();
       limpiarPreview();
@@ -855,7 +844,11 @@
   }
 
   function ejecutarFiltradoProgresivo(completado) {
-    if (!state.rutaActual) return;
+    function terminar() {
+      clearInterval(intervaloMensajes);
+      if (typeof completado === 'function') completado();
+    }
+    if (!state.rutaActual) { terminar(); return; }
     const rutaFiltro = state.rutaBase || state.rutaActual;
     const TAMANO_BLOQUE = 400;
     const sitios = state.sitios.filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)));
@@ -873,53 +866,57 @@
     }, 2000);
 
     function procesarBloque() {
-      const fin = Math.min(idx + TAMANO_BLOQUE, sitios.length);
-      for (let i = idx; i < fin; i++) {
-        const s = sitios[i];
-        if (idsExcluidos.has(s.id)) continue;
-        if (FiltersModule.fueraDeBbox(s, bbox)) {
-          s.distanciaRutaKm = Infinity;
-          continue;
+      try {
+        const fin = Math.min(idx + TAMANO_BLOQUE, sitios.length);
+        for (let i = idx; i < fin; i++) {
+          const s = sitios[i];
+          if (idsExcluidos.has(s.id)) continue;
+          if (FiltersModule.fueraDeBbox(s, bbox)) {
+            s.distanciaRutaKm = Infinity;
+            continue;
+          }
+          if (s.distanciaRutaKm == null) {
+            s.distanciaRutaKm = FiltersModule.distanciaARuta(s, rutaFiltro.geojson);
+            s.tiempoDesvioMin = FiltersModule.aproximarTiempoDesvio(s.distanciaRutaKm);
+          }
+          if (!isFinite(s.distanciaRutaKm)) continue;
+          if (s.distanciaRutaKm > distanciaMax) continue;
+          if (s.distanciaOrigenKm == null) {
+            s.distanciaOrigenKm = FiltersModule.distanciaAOrigen(s, state.origen);
+          }
+          if (s.distanciaDestinoKm == null) {
+            s.distanciaDestinoKm = FiltersModule.distanciaADestino(s, state.destino);
+          }
+          resultadosBase.push(s);
+          if (catsNorm) {
+            const sc = (s.categoria || '').toLowerCase().trim();
+            if (!catsNorm.has(sc)) continue;
+          }
+          resultados.push(s);
         }
-        if (s.distanciaRutaKm == null) {
-          s.distanciaRutaKm = FiltersModule.distanciaARuta(s, rutaFiltro.geojson);
-          s.tiempoDesvioMin = FiltersModule.aproximarTiempoDesvio(s.distanciaRutaKm);
-        }
-        if (!isFinite(s.distanciaRutaKm)) continue;
-        if (s.distanciaRutaKm > distanciaMax) continue;
-        if (s.distanciaOrigenKm == null) {
-          s.distanciaOrigenKm = FiltersModule.distanciaAOrigen(s, state.origen);
-        }
-        if (s.distanciaDestinoKm == null) {
-          s.distanciaDestinoKm = FiltersModule.distanciaADestino(s, state.destino);
-        }
-        resultadosBase.push(s);
-        if (catsNorm) {
-          const sc = (s.categoria || '').toLowerCase().trim();
-          if (!catsNorm.has(sc)) continue;
-        }
-        resultados.push(s);
-      }
-      idx = fin;
+        idx = fin;
 
-      if (idx < sitios.length) {
-        setTimeout(procesarBloque, 0);
-      } else {
-        clearInterval(intervaloMensajes);
-        resultados.sort((a, b) => (a.distanciaDestinoKm ?? a.distanciaRutaKm) - (b.distanciaDestinoKm ?? b.distanciaRutaKm) || (b.distanciaOrigenKm ?? b.distanciaRutaKm) - (a.distanciaOrigenKm ?? a.distanciaRutaKm));
-        conteoCategoriasBase = new Map();
-        resultadosBase.forEach((s) => {
-          if (!s.categoria) return;
-          const c = s.categoria.trim();
-          conteoCategoriasBase.set(c, (conteoCategoriasBase.get(c) || 0) + 1);
-        });
-        state.sitiosFiltradosBase = resultadosBase;
-        state.sitiosFiltrados = resultados;
-        renderizarSitios(resultados);
-        renderizarCategoriasMenu();
-        ultimosValoresAplicados.distancia = Number(el.filtroDistancia.value);
-        actualizarEstadoBotonesRetry();
-        completado();
+        if (idx < sitios.length) {
+          setTimeout(procesarBloque, 0);
+        } else {
+          clearInterval(intervaloMensajes);
+          resultados.sort((a, b) => (a.distanciaDestinoKm ?? a.distanciaRutaKm) - (b.distanciaDestinoKm ?? b.distanciaRutaKm) || (b.distanciaOrigenKm ?? b.distanciaRutaKm) - (a.distanciaOrigenKm ?? a.distanciaRutaKm));
+          conteoCategoriasBase = new Map();
+          resultadosBase.forEach((s) => {
+            if (!s.categoria) return;
+            const c = s.categoria.trim();
+            conteoCategoriasBase.set(c, (conteoCategoriasBase.get(c) || 0) + 1);
+          });
+          state.sitiosFiltradosBase = resultadosBase;
+          state.sitiosFiltrados = resultados;
+          renderizarSitios(resultados);
+          renderizarCategoriasMenu();
+          ultimosValoresAplicados.distancia = Number(el.filtroDistancia.value);
+          actualizarEstadoBotonesRetry();
+          completado();
+        }
+      } catch (e) {
+        terminar();
       }
     }
 
@@ -1406,7 +1403,6 @@
     state.paradas.splice(0, state.paradas.length, ...nuevasParadas);
 
     if (state.rutaActual) {
-      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
       await calcularRutaPrincipal(true);
     }
     renderizarParadas();

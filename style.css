@@ -488,6 +488,9 @@ input, select{ font-family: inherit; }
   flex-direction: column;
   align-items: center;
 }
+.loading-sitios[hidden]{
+  display: none;
+}
 .loading-sitios .spinner-bike{
   width: 100px;
   margin: 0 auto;
@@ -811,7 +814,7 @@ input, select{ font-family: inherit; }
   #btn-desvios{ display: none !important; }
 
   /* Mostrar botón de sitios solo en la pestaña Ruta */
-  #btn-mostrar-sitios{ display: block !important; }
+  #btn-mostrar-sitios{ display: flex !important; align-items: center; justify-content: center; padding: 8px 18px; }
   #app[data-mobile-tab="descubre"] #btn-mostrar-sitios{ display: none !important; }
 
   /* El panel de sitios siempre visible en móvil (muestra u oculta hijos según pestaña) */
