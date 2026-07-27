@@ -22,6 +22,8 @@ const MapModule = (() => {
   let capaEscalas = null;       // L.layerGroup con marcadores de municipios intermedios
   let clusterSitios = null;     // L.markerClusterGroup con los sitios candidatos filtrados
 
+  const _sitioMarkers = new Map(); // sitioId → L.marker
+
   const CENTRO_COLOMBIA = [4.6, -74.1];
   const ZOOM_INICIAL = 6;
 
@@ -171,10 +173,18 @@ const MapModule = (() => {
       const num = sitio._numero || i + 1;
       const marker = L.marker([sitio.lat, sitio.lon], { icon: _iconoParada(num), zIndexOffset: 900 });
 
+      const distTxt = sitio.distanciaRutaKm != null
+        ? `A ${sitio.distanciaRutaKm.toFixed(1)} km del corredor · ~${Math.round(sitio.tiempoDesvioMin)} min de desvío`
+        : '';
+      const cat = sitio.categoria || '';
+
       marker.bindPopup(`
-        <div class="popup-parada">
-          <span class="popup-parada__badge">Parada ${num}</span>
-          <h3 class="popup-parada__nombre">${sitio.nombre}</h3>
+        <div class="popup-sitio">
+          <span class="popup-sitio__cat">${cat}</span>
+          <h3 class="popup-sitio__nombre">${sitio.nombre}</h3>
+          <p class="popup-sitio__ubicacion">${sitio.municipio ? `${sitio.municipio}, ` : ''}${sitio.departamento || ''}</p>
+          <p class="popup-sitio__desc">${sitio.descripcion || ''}</p>
+          <p class="popup-sitio__dist mono">${distTxt}</p>
           <button type="button" class="popup-parada__eliminar" data-parada-id="${sitio.id}">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/>
@@ -188,7 +198,16 @@ const MapModule = (() => {
       // El botón de eliminar solo existe en el DOM mientras el popup está
       // abierto, por lo que el listener se ata cada vez que se abre.
       marker.on('popupopen', (e) => {
-        const boton = e.popup.getElement().querySelector('.popup-parada__eliminar');
+        const el = e.popup.getElement();
+        const catBadge = el.querySelector('.popup-sitio__cat');
+        if (catBadge && sitio.categoria) {
+          const color = (typeof TourismModule !== 'undefined' && TourismModule.colorCategoria)
+            ? TourismModule.colorCategoria(sitio.categoria)
+            : '#6c7369';
+          catBadge.style.background = `${color}22`;
+          catBadge.style.color = color;
+        }
+        const boton = el.querySelector('.popup-parada__eliminar');
         if (boton) {
           boton.addEventListener('click', () => {
             marker.closePopup();
@@ -307,11 +326,22 @@ const MapModule = (() => {
   // ---------------------------------------------------------------------
 
   function limpiarSitios() {
+    _sitioMarkers.clear();
     clusterSitios.clearLayers();
   }
 
   function agregarMarcadorSitio(marker) {
     clusterSitios.addLayer(marker);
+    if (marker.__sitioId != null) _sitioMarkers.set(marker.__sitioId, marker);
+  }
+
+  function abrirPopupSitio(sitioId) {
+    const marker = _sitioMarkers.get(sitioId);
+    if (!marker) return;
+    const grupo = clusterSitios;
+    if (!map.hasLayer(grupo)) map.addLayer(grupo);
+    map.setView(marker.getLatLng(), Math.max(map.getZoom(), 13));
+    marker.openPopup();
   }
 
   function toggleSitios() {
@@ -359,6 +389,7 @@ const MapModule = (() => {
     limpiarSitios,
     agregarMarcadorSitio,
     toggleSitios,
+    abrirPopupSitio,
     encuadrar,
   };
 })();

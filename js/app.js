@@ -995,44 +995,16 @@
   // -------------------------------------------------------------------
   // Previsualización: ruta directa de origen a un sitio seleccionado
   // -------------------------------------------------------------------
-  async function previsualizarRutaHaciaSitio(sitio, cardEl) {
-    // Un segundo clic sobre la misma tarjeta cancela la previsualización.
+  function previsualizarRutaHaciaSitio(sitio, cardEl) {
+    // Un segundo clic sobre la misma tarjeta cierra la ficha.
     if (state.previewSitioId === sitio.id) {
       limpiarPreview();
       return;
     }
-
-    if (!state.rutaActual) return;
-
-    cardEl.classList.add('sitio-card--loading');
-
-    try {
-      // Punto sobre la ruta principal más cercano al sitio: es ahí donde
-      // realmente se produce el desvío, no en el municipio de origen.
-      const puntoDesvio = turf.nearestPointOnLine(
-        state.rutaActual.geojson,
-        turf.point([sitio.lon, sitio.lat])
-      );
-      const [lonDesvio, latDesvio] = puntoDesvio.geometry.coordinates;
-      const origenDesvio = { lat: latDesvio, lon: lonDesvio };
-
-      const ruta = await RoutingModule.calcularRuta(origenDesvio, sitio, PERFIL_FIJO);
-      MapModule.dibujarRutaPreview(ruta.geojson);
-      MapModule.encuadrar(ruta.geojson);
-
-      state.previewSitioId = sitio.id;
-      marcarTarjetaActiva(cardEl);
-
-      const preview = cardEl.querySelector('.sitio-card__preview');
-      preview.hidden = false;
-      preview.innerHTML = `Ruta desde el desvío: <span class="mono">${Utils.formatearDistancia(ruta.distanciaMetros)} · ${Utils.formatearDuracion(ruta.duracionSegundos)}</span>`;
-    } catch (err) {
-      const preview = cardEl.querySelector('.sitio-card__preview');
-      preview.hidden = false;
-      preview.textContent = 'No se pudo calcular la ruta hacia este sitio.';
-    } finally {
-      cardEl.classList.remove('sitio-card--loading');
-    }
+    limpiarPreview();
+    MapModule.abrirPopupSitio(sitio.id);
+    state.previewSitioId = sitio.id;
+    marcarTarjetaActiva(cardEl);
   }
 
   function marcarTarjetaActiva(cardActiva) {
@@ -1356,6 +1328,9 @@
       li.appendChild(num);
       li.appendChild(nombre);
       li.appendChild(acciones);
+      li.addEventListener('click', () => {
+        if (item.tipo === 'parada') MapModule.abrirPopupSitio(e.id);
+      });
       el.paradasLista.appendChild(li);
     });
   }
