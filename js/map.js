@@ -79,11 +79,12 @@ const MapModule = (() => {
   // Íconos
   // ---------------------------------------------------------------------
 
-  function _pinDivIcon(colorHex) {
+  function _pinDivIcon(colorHex, letra) {
     const svg = `
       <svg class="pin-svg" width="28" height="38" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg">
         <path d="M15 0C6.7 0 0 6.7 0 15c0 10.5 15 25 15 25s15-14.5 15-25c0-8.3-6.7-15-15-15z" fill="${colorHex}"/>
         <circle cx="15" cy="15" r="6" fill="#ffffff"/>
+        <text class="pin-letter" x="15" y="18.5" text-anchor="middle">${letra}</text>
       </svg>`;
     return L.divIcon({
       html: `<div class="pin-icon">${svg}</div>`,
@@ -94,12 +95,12 @@ const MapModule = (() => {
     });
   }
 
-  function iconoOrigen() { return _pinDivIcon('#2f7a6b'); }
-  function iconoDestino() { return _pinDivIcon('#e35c2b'); }
+  function iconoOrigen() { return _pinDivIcon('#2f7a6b', 'A'); }
+  function iconoDestino() { return _pinDivIcon('#e35c2b', 'Z'); }
 
   function iconoSitio() {
     return L.divIcon({
-      html: `<svg viewBox="0 0 32 32" width="26" height="26" fill="#2f7a6b"><path d="M29.83,17.45l-2-3A1,1,0,0,0,27,14H17V12h8a1,1,0,0,0,1-1V5a1,1,0,0,0-1-1H17V3a1,1,0,0,0-2,0V4H6a1,1,0,0,0-.71.29l-3,3a1,1,0,0,0,0,1.41l3,3A1,1,0,0,0,6,12h9v2H7a1,1,0,0,0-1,1v6a1,1,0,0,0,1,1h8v6H11a1,1,0,0,0,0,2H21a1,1,0,0,0,0-2H17V22H27a1,1,0,0,0,.83-.45l2-3A1,1,0,0,0,29.83,17.45Z"/></svg>`,
+      html: `<div class="sitio-pin"></div>`,
       className: '',
       iconSize: [26, 26],
       iconAnchor: [13, 13],

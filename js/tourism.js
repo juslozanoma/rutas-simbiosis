@@ -96,19 +96,6 @@ const TourismModule = (() => {
     marker.bindPopup(wrapper.innerHTML);
     marker.__sitioId = sitio.id;
 
-    if (sitio._offsetLado) {
-      marker.on('add', function onAdd() {
-        if (this.__offsetAplicado) return;
-        this.__offsetAplicado = true;
-        const m = this;
-        const map = m._map;
-        if (!map) return;
-        const pt = map.latLngToContainerPoint(m.getLatLng());
-        pt.x += sitio._offsetLado * 18;
-        m.setLatLng(map.containerPointToLatLng(pt));
-      });
-    }
-
     marker.on('popupopen', (e) => {
       const btn = e.popup.getElement().querySelector('.popup-sitio__add');
       if (btn && !btn.dataset._listener) {

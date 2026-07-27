@@ -53,6 +53,7 @@
     paradas: [],
     sitiosFiltrados: [],
     sitiosFiltradosBase: [],
+    ordenSitios: null,
     previewSitioId: null,
     categoriasSeleccionadas: [],
     categoriasUnicas: [],
@@ -81,6 +82,8 @@
     sitiosVacio: document.getElementById('sitios-vacio'),
     sitiosLista: document.getElementById('sitios-lista'),
     sitiosContador: document.getElementById('sitios-contador'),
+    btnOrdenAz: document.getElementById('btn-orden-az'),
+    btnOrdenZa: document.getElementById('btn-orden-za'),
 
     panelParadas: document.getElementById('panel-paradas'),
     paradasLista: document.getElementById('paradas-lista'),
@@ -119,6 +122,34 @@
     mobileTabBar: document.getElementById('mobile-tab-bar'),
     hintParadas: document.getElementById('hint-paradas'),
   };
+
+  const LETRAS_RUTA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+  function etiquetaIntermedia(idx) {
+    return LETRAS_RUTA[Math.min(idx + 1, LETRAS_RUTA.length - 2)];
+  }
+
+  function ordenarSitios(sitios) {
+    const lista = [...sitios];
+    if (state.ordenSitios === 'az') {
+      lista.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' }));
+    } else if (state.ordenSitios === 'za') {
+      lista.sort((a, b) => (b.nombre || '').localeCompare(a.nombre || '', 'es', { sensitivity: 'base' }));
+    }
+    return lista;
+  }
+
+  function actualizarBotonesOrden() {
+    if (!el.btnOrdenAz || !el.btnOrdenZa) return;
+    el.btnOrdenAz.setAttribute('aria-pressed', String(state.ordenSitios === 'az'));
+    el.btnOrdenZa.setAttribute('aria-pressed', String(state.ordenSitios === 'za'));
+  }
+
+  function aplicarOrdenSitios(orden) {
+    state.ordenSitios = orden;
+    actualizarBotonesOrden();
+    renderizarSitios(state.sitiosFiltrados);
+  }
 
   // -------------------------------------------------------------------
   // Inicialización
@@ -632,6 +663,9 @@
     }
     el.btnCategorias.addEventListener('click', () => togglePanel(el.btnCategorias, el.panelCategorias, el.btnDesvios, el.panelDesvios));
     el.btnDesvios.addEventListener('click', () => togglePanel(el.btnDesvios, el.panelDesvios, el.btnCategorias, el.panelCategorias));
+    if (el.btnOrdenAz) el.btnOrdenAz.addEventListener('click', () => aplicarOrdenSitios('az'));
+    if (el.btnOrdenZa) el.btnOrdenZa.addEventListener('click', () => aplicarOrdenSitios('za'));
+    actualizarBotonesOrden();
     el.loadingSitios = document.getElementById('loading-sitios');
     el.loadingMsg = el.loadingSitios.querySelector('.loading-sitios__msg');
     el.spinnerBike = el.loadingSitios.querySelector('.spinner-bike');
@@ -653,11 +687,18 @@
       el.loadingSitios.hidden = false;
       ejecutarFiltradoProgresivo(() => {
         el.panelSitios.hidden = false;
+        if (el.panelDesvios) {
+          el.panelDesvios.hidden = false;
+          el.btnDesvios.setAttribute('aria-pressed', 'true');
+        }
+        if (el.panelCategorias) {
+          el.panelCategorias.hidden = true;
+          el.btnCategorias.setAttribute('aria-pressed', 'false');
+        }
         actualizarEstadoBotonesRetry();
         el.loadingSitios.hidden = true;
         setTimeout(() => cargarFondoSitios(), 100);
         if (esMovil()) {
-          if (el.panelDesvios) el.panelDesvios.hidden = false;
           setMobileTab('descubre');
         }
       });
@@ -747,6 +788,9 @@
       limpiarPreview();
       el.panelSitios.hidden = true;
       if (el.panelDesvios) el.panelDesvios.hidden = true;
+      if (el.btnDesvios) el.btnDesvios.setAttribute('aria-pressed', 'false');
+      if (el.panelCategorias) el.panelCategorias.hidden = true;
+      if (el.btnCategorias) el.btnCategorias.setAttribute('aria-pressed', 'false');
       state.sitiosFiltrados = [];
       state.sitiosFiltradosBase = [];
       state.categoriasSeleccionadas = [];
@@ -973,10 +1017,11 @@
     limpiarPreview();
     MapModule.limpiarSitios();
     el.sitiosLista.innerHTML = '';
-    el.sitiosContador.textContent = String(sitios.length);
-    if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = String(sitios.length);
+    const sitiosOrdenados = ordenarSitios(sitios);
+    el.sitiosContador.textContent = String(sitiosOrdenados.length);
+    if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = String(sitiosOrdenados.length);
 
-    if (sitios.length === 0) {
+    if (sitiosOrdenados.length === 0) {
       el.sitiosVacio.hidden = false;
       el.sitiosVacio.textContent = 'Ningún sitio turístico cumple los filtros activos.';
       el.sitiosLista.hidden = true;
@@ -986,7 +1031,7 @@
     el.sitiosVacio.hidden = true;
     el.sitiosLista.hidden = false;
 
-    sitios.forEach((sitio) => {
+    sitiosOrdenados.forEach((sitio) => {
       if (sitio.lat == null || sitio.lon == null || isNaN(Number(sitio.lat)) || isNaN(Number(sitio.lon))) return;
       const marker = TourismModule.crearMarcador(sitio);
       MapModule.agregarMarcadorSitio(marker);
@@ -1139,14 +1184,15 @@
     MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);
 
     sincronizarOrden();
-    let num = 1;
+    let idxIntermedio = 0;
     state.orden.forEach((o) => {
+      const etiqueta = etiquetaIntermedia(idxIntermedio++);
       if (o.tipo === 'escala') {
         const e = state.escalas.find((e) => e.id === o.id);
-        if (e && e.lat != null) e._numero = num++;
+        if (e && e.lat != null) e._numero = etiqueta;
       } else {
         const p = state.paradas.find((p) => p.id === o.id);
-        if (p) p._numero = num++;
+        if (p) p._numero = etiqueta;
       }
     });
     MapModule.setMarcadoresEscalas(state.escalas);
@@ -1310,8 +1356,31 @@
 
     const total = items.length;
     el.paradasLista.innerHTML = '';
-    el.paradasContador.textContent = String(total);
-    el.panelParadas.hidden = total === 0;
+    const incluirExtremos = Boolean(state.rutaActual && state.origen && state.destino);
+    el.paradasContador.textContent = String(incluirExtremos ? total + 2 : total);
+    el.panelParadas.hidden = !incluirExtremos && total === 0;
+
+    function crearFilaExtremo(letra, nombre, tipo) {
+      const li = document.createElement('li');
+      li.className = 'parada-item parada-item--endpoint';
+      li.dataset.tipoParada = tipo;
+
+      const num = document.createElement('span');
+      num.className = 'parada-item__num';
+      num.textContent = letra;
+
+      const nombreEl = document.createElement('span');
+      nombreEl.className = 'parada-item__nombre';
+      nombreEl.textContent = nombre;
+
+      li.appendChild(num);
+      li.appendChild(nombreEl);
+      return li;
+    }
+
+    if (incluirExtremos) {
+      el.paradasLista.appendChild(crearFilaExtremo('A', state.origen.nombre, 'origen'));
+    }
 
     items.forEach((item, idx) => {
       const e = item.datos;
@@ -1322,7 +1391,7 @@
 
       const num = document.createElement('span');
       num.className = 'parada-item__num';
-      num.textContent = String(idx + 1);
+      num.textContent = etiquetaIntermedia(idx);
 
       const nombre = document.createElement('span');
       nombre.className = 'parada-item__nombre';
@@ -1367,6 +1436,10 @@
       });
       el.paradasLista.appendChild(li);
     });
+
+    if (incluirExtremos) {
+      el.paradasLista.appendChild(crearFilaExtremo('Z', state.destino.nombre, 'destino'));
+    }
   }
 
   async function organizarAutomaticamente() {

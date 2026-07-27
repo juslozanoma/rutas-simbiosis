@@ -313,6 +313,10 @@ input, select{ font-family: inherit; }
   border-left: 3px solid #4a6fa5;
   font-size: 0.78rem;
 }
+.parada-item--endpoint{
+  border-left-color: var(--teal-500);
+  background: #f2f6f4;
+}
 .parada-item__num{
   width: 18px;
   height: 18px;
@@ -514,6 +518,31 @@ input, select{ font-family: inherit; }
   overflow-y: auto;
   padding-right: 2px;
 }
+.sitios-sort{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.sitios-sort__btn{
+  flex: 1;
+  height: 30px;
+  border: 1px solid var(--line-300);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--text-strong);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.sitios-sort__btn:hover,
+.sitios-sort__btn[aria-pressed="true"]{
+  background: var(--teal-500);
+  border-color: var(--teal-500);
+  color: #ffffff;
+}
 .empty-state{ margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
 
 .sitios-lista{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -560,6 +589,12 @@ input, select{ font-family: inherit; }
    ========================================================================== */
 .pin-icon{ display: flex; align-items: center; justify-content: center; }
 .pin-svg{ filter: drop-shadow(0 2px 3px rgba(20,32,27,0.3)); }
+.pin-letter{
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 800;
+  fill: var(--text-strong);
+}
 .marker-cluster-custom{
   background: var(--ink-900);
   color: #ffffff;
@@ -615,6 +650,15 @@ input, select{ font-family: inherit; }
 }
 .parada-pin--parada{ background: #4a6fa5; }
 .parada-pin--escala{ background: #4a6fa5; }
+
+.sitio-pin{
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--teal-500);
+  box-shadow: 0 1px 4px rgba(20,32,27,0.4);
+}
+
 .popup-sitio{ font-family: var(--font-body); min-width: 190px; }
 .popup-sitio__cat{
   display: inline-block;
