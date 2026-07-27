@@ -480,14 +480,14 @@
       const key = c.toLowerCase();
       if (!mapa.has(key)) mapa.set(key, c);
     });
-    return [...mapa.values()].sort((a, b) => a.localeCompare(b, 'es'));
+    return [...mapa.values()].sort((a, b) => a.length - b.length || a.localeCompare(b, 'es'));
   }
 
   function categoriasDeRuta() {
     if (!conteoCategoriasBase || conteoCategoriasBase.size === 0) return [];
     return [...conteoCategoriasBase.entries()]
       .filter(([, n]) => n > 0)
-      .sort((a, b) => a[0].localeCompare(b[0], 'es'));
+      .sort((a, b) => a[0].length - b[0].length || a[0].localeCompare(b[0], 'es'));
   }
 
   function renderizarCategoriasMenu(lista) {
