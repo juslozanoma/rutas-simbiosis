@@ -98,6 +98,8 @@ const TourismModule = (() => {
 
     if (sitio._offsetLado) {
       marker.on('add', function onAdd() {
+        if (this.__offsetAplicado) return;
+        this.__offsetAplicado = true;
         const m = this;
         const map = m._map;
         if (!map) return;

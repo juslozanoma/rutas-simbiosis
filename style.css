@@ -490,11 +490,10 @@ input, select{ font-family: inherit; }
 }
 .loading-sitios .spinner-bike{
   width: 100px;
+  margin: 0 auto;
 }
-.loading-sitios .spinner-pacman-wrap{
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.loading-sitios .spinner-pacman-wrap[hidden]{
+  display: none;
 }
 .loading-sitios .spinner-pacman{
   transform: scale(0.4);
