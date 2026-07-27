@@ -481,6 +481,13 @@ input, select{ font-family: inherit; }
   text-align: center;
 }
 
+.hint-sitios-empty{
+  margin: 8px 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
 .loading-sitios{
   padding: 16px 10px;
   text-align: center;
@@ -707,9 +714,9 @@ input, select{ font-family: inherit; }
 }
 .mobile-summary strong{ color: #ffffff; font-weight: 700; }
 
-/* Botón flotante de toggle sitios en el mapa (solo móvil, debajo de la barra) */
+/* Botón flotante de toggle sitios en el mapa */
 .btn-toggle-sitios--float{
-  display: none;
+  display: flex;
   position: absolute;
   top: 36px;
   left: 12px;
@@ -773,7 +780,6 @@ input, select{ font-family: inherit; }
 @media (max-width: 860px){
   .app-body{ flex-direction: column; }
   .map-full{ flex: 1 1 50%; min-height: 30vh; }
-  .btn-toggle-sitios--float{ display: flex; }
   .btn-fullscreen{ display: flex; }
 
   .side-panel{
@@ -794,7 +800,6 @@ input, select{ font-family: inherit; }
   }
 
   /* Ocultar elementos de escritorio en móvil */
-  #btn-toggle-sitios{ display: none !important; }
   #btn-categorias{ display: none !important; }
   #btn-desvios{ display: none !important; }
 
@@ -826,9 +831,7 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="descubre"] .filter-row{ display: none; }
   #app[data-mobile-tab="descubre"] .panel-desvios{ display: none; }
 
-  /* En móvil, el panel de desvíos siempre visible en la pestaña Ruta */
-  #app[data-mobile-tab="ruta"] .panel-desvios{ display: block !important; }
-  #app[data-mobile-tab="ruta"] .panel-desvios[hidden]{ display: block !important; }
+  /* En móvil, el panel de desvíos se muestra tras calcular la ruta */
   #app[data-mobile-tab="descubre"] .panel-sites > h2{ display: none; }
 
   /* El botón Mostrar sitios solo en pestaña Ruta en móvil */

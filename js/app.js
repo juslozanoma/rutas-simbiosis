@@ -30,7 +30,7 @@
   const MEDIA_MOVIL = '(max-width: 860px)';
   const CAPITALES = {
     'Amazonas':'Leticia','Antioquia':'Medellín','Arauca':'Arauca','Atlántico':'Barranquilla',
-    'Bogotá D.C.':'Bogotá D.C.','Bolívar':'Cartagena de Indias','Boyacá':'Tunja','Caldas':'Manizales',
+    'Bogotá D.C.':'Bogotá D.C.','Bolívar':'Cartagena','Boyacá':'Tunja','Caldas':'Manizales',
     'Caquetá':'Florencia','Casanare':'Yopal','Cauca':'Popayán','Cesar':'Valledupar',
     'Chocó':'Quibdó','Córdoba':'Montería','Cundinamarca':'Bogotá D.C.','Guainía':'Puerto Inírida',
     'Guaviare':'San José del Guaviare','Huila':'Neiva','La Guajira':'Riohacha','Magdalena':'Santa Marta',
@@ -106,7 +106,6 @@
     panelEscalas: document.getElementById('panel-escalas'),
     btnAgregarEscala: document.getElementById('btn-agregar-escala'),
 
-    btnToggleSitios: document.getElementById('btn-toggle-sitios'),
     btnToggleSitiosFloat: document.getElementById('btn-toggle-sitios-float'),
     btnFullscreen: document.getElementById('btn-fullscreen'),
     panelSitios: document.getElementById('panel-sites'),
@@ -119,6 +118,7 @@
     btnTabRuta: document.getElementById('btn-tab-ruta'),
     mobileTabBar: document.getElementById('mobile-tab-bar'),
     hintParadas: document.getElementById('hint-paradas'),
+    hintSitiosEmpty: document.getElementById('hint-sitios-empty'),
   };
 
   // -------------------------------------------------------------------
@@ -172,7 +172,11 @@
     let deptoSeleccionado = null;
 
     function obtenerDepartamentos() {
-      return [...new Set(state.municipios.map((m) => m.departamento))].sort();
+      return [...new Set(state.municipios.map((m) => m.departamento))].sort((a, b) => {
+        if (a === 'Córdoba' && b === 'Cundinamarca') return -1;
+        if (a === 'Cundinamarca' && b === 'Córdoba') return 1;
+        return a.localeCompare(b, 'es');
+      });
     }
 
     function obtenerMunicipios(depto) {
@@ -259,6 +263,7 @@
         });
         listEl.appendChild(li);
       });
+      listEl.scrollTop = 0;
       listEl.hidden = false;
     }
 
@@ -289,6 +294,7 @@
         });
         listEl.appendChild(li);
       });
+      listEl.scrollTop = 0;
       listEl.hidden = false;
     }
 
@@ -395,13 +401,18 @@
         });
       });
       listEl.appendChild(pickLi);
-      const deptos = [...new Set(state.municipios.map((m) => m.departamento))].sort();
+      const deptos = [...new Set(state.municipios.map((m) => m.departamento))].sort((a, b) => {
+        if (a === 'Córdoba' && b === 'Cundinamarca') return -1;
+        if (a === 'Cundinamarca' && b === 'Córdoba') return 1;
+        return a.localeCompare(b, 'es');
+      });
       deptos.forEach((d) => {
         const li = document.createElement('li');
         li.textContent = d;
         li.addEventListener('click', (e) => { e.stopPropagation(); renderMunicipios(d); });
         listEl.appendChild(li);
       });
+      listEl.scrollTop = 0;
       listEl.hidden = false;
     }
     function renderMunicipios(depto) {
@@ -432,6 +443,7 @@
         });
         listEl.appendChild(li);
       });
+      listEl.scrollTop = 0;
       listEl.hidden = false;
     }
 
@@ -546,10 +558,8 @@
 
     function toggleSitiosHandler() {
       const visible = MapModule.toggleSitios();
-      el.btnToggleSitios.setAttribute('aria-pressed', String(visible));
       if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.setAttribute('aria-pressed', String(visible));
     }
-    el.btnToggleSitios.addEventListener('click', toggleSitiosHandler);
     if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.addEventListener('click', toggleSitiosHandler);
 
     if (el.btnFullscreen) {
@@ -612,6 +622,7 @@
       el.progressFill.classList.add('progress-bar__fill--active');
       ejecutarFiltradoProgresivo(() => {
         el.panelSitios.hidden = false;
+        if (el.hintSitiosEmpty) el.hintSitiosEmpty.hidden = false;
         actualizarEstadoBotonesRetry();
         el.loadingSitios.hidden = true;
         el.progressFill.classList.remove('progress-bar__fill--active');
@@ -716,6 +727,7 @@
       state.escalas.forEach((e) => { delete e._row; });
       renderizarParadas();
       el.btnMostrarSitiosCercanos.disabled = false;
+      if (esMovil() && el.panelDesvios) el.panelDesvios.hidden = false;
 
       el.checkDistancia.checked = true;
       el.filtroDistancia.value = '10';
@@ -1170,6 +1182,7 @@
   async function agregarParada(sitio, boton) {
     if (boton) ponerEnCarga(boton, true);
     state.paradas.push(sitio);
+    if (el.hintSitiosEmpty) el.hintSitiosEmpty.hidden = true;
     try {
       if (el.checkAutoOrganizar.checked) {
         await organizarAutomaticamente();
