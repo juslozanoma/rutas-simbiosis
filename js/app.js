@@ -111,6 +111,7 @@
 
     panelEscalas: document.getElementById('panel-escalas'),
     btnAgregarEscala: document.getElementById('btn-agregar-escala'),
+    panelLocate: document.getElementById('panel-locate'),
     btnTabPanelRuta: document.getElementById('btn-tab-panel-ruta'),
     btnTabPanelDescubre: document.getElementById('btn-tab-panel-descubre'),
     panelDescubreActions: document.getElementById('panel-descubre-actions'),
@@ -133,7 +134,6 @@
     btnCerrarAltimetria: document.getElementById('btn-cerrar-altimetria'),
     altimetriaPanel: document.getElementById('altimetria'),
     altimetriaChart: document.getElementById('altimetria-chart'),
-    panelDescubreActions: document.getElementById('panel-descubre-actions'),
   };
 
   const LETRAS_RUTA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
