@@ -53,7 +53,7 @@
     paradas: [],
     sitiosFiltrados: [],
     sitiosFiltradosBase: [],
-    ordenSitios: null,
+    ordenSitios: 'origen',
     previewSitioId: null,
     categoriasSeleccionadas: [],
     categoriasUnicas: [],
@@ -82,8 +82,8 @@
     sitiosVacio: document.getElementById('sitios-vacio'),
     sitiosLista: document.getElementById('sitios-lista'),
     sitiosContador: document.getElementById('sitios-contador'),
-    btnOrdenAz: document.getElementById('btn-orden-az'),
-    btnOrdenZa: document.getElementById('btn-orden-za'),
+    btnOrdenOrigen: document.getElementById('btn-orden-origen'),
+    btnOrdenDestino: document.getElementById('btn-orden-destino'),
 
     panelParadas: document.getElementById('panel-paradas'),
     paradasLista: document.getElementById('paradas-lista'),
@@ -131,18 +131,18 @@
 
   function ordenarSitios(sitios) {
     const lista = [...sitios];
-    if (state.ordenSitios === 'az') {
-      lista.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' }));
-    } else if (state.ordenSitios === 'za') {
-      lista.sort((a, b) => (b.nombre || '').localeCompare(a.nombre || '', 'es', { sensitivity: 'base' }));
+    if (state.ordenSitios === 'origen') {
+      lista.sort((a, b) => (a.distanciaOrigenKm ?? a.distanciaRutaKm ?? Infinity) - (b.distanciaOrigenKm ?? b.distanciaRutaKm ?? Infinity));
+    } else if (state.ordenSitios === 'destino') {
+      lista.sort((a, b) => (a.distanciaDestinoKm ?? a.distanciaRutaKm ?? Infinity) - (b.distanciaDestinoKm ?? b.distanciaRutaKm ?? Infinity));
     }
     return lista;
   }
 
   function actualizarBotonesOrden() {
-    if (!el.btnOrdenAz || !el.btnOrdenZa) return;
-    el.btnOrdenAz.setAttribute('aria-pressed', String(state.ordenSitios === 'az'));
-    el.btnOrdenZa.setAttribute('aria-pressed', String(state.ordenSitios === 'za'));
+    if (!el.btnOrdenOrigen || !el.btnOrdenDestino) return;
+    el.btnOrdenOrigen.setAttribute('aria-pressed', String(state.ordenSitios === 'origen'));
+    el.btnOrdenDestino.setAttribute('aria-pressed', String(state.ordenSitios === 'destino'));
   }
 
   function aplicarOrdenSitios(orden) {
@@ -675,8 +675,9 @@
     }
     el.btnCategorias.addEventListener('click', () => togglePanel(el.btnCategorias, el.panelCategorias, el.btnDesvios, el.panelDesvios));
     el.btnDesvios.addEventListener('click', () => togglePanel(el.btnDesvios, el.panelDesvios, el.btnCategorias, el.panelCategorias));
-    if (el.btnOrdenAz) el.btnOrdenAz.addEventListener('click', () => aplicarOrdenSitios('az'));
-    if (el.btnOrdenZa) el.btnOrdenZa.addEventListener('click', () => aplicarOrdenSitios('za'));
+    if (el.btnOrdenOrigen) el.btnOrdenOrigen.addEventListener('click', () => aplicarOrdenSitios('origen'));
+    if (el.btnOrdenDestino) el.btnOrdenDestino.addEventListener('click', () => aplicarOrdenSitios('destino'));
+    state.ordenSitios = 'origen';
     actualizarBotonesOrden();
     el.loadingSitios = document.getElementById('loading-sitios');
     el.loadingRuta = document.getElementById('loading-ruta');
@@ -701,7 +702,6 @@
         el.panelSitios.hidden = false;
         actualizarEstadoBotonesRetry();
         el.loadingSitios.hidden = true;
-        setTimeout(() => cargarFondoSitios(), 100);
         if (esMovil()) {
           setMobileTab('descubre');
         }
@@ -820,18 +820,25 @@
       let totalKm = ruta.distanciaMetros / 1000;
       const alertasIniciales = RouteWarningsModule.verificar(ruta.geojson, totalKm);
       if (alertasIniciales.length > 0) {
+        console.log('Warnings detectados en ruta principal:', alertasIniciales.length);
         try {
           const alternativas = await RoutingModule.calcularAlternativas(puntosRuta, PERFIL_FIJO);
+          console.log('Alternativas recibidas de OSRM:', alternativas.length);
+          let seleccionada = false;
           for (let i = 1; i < alternativas.length; i++) {
             const alt = alternativas[i];
             const altKm = alt.distanciaMetros / 1000;
             const altAlertas = RouteWarningsModule.verificar(alt.geojson, altKm);
+            console.log(`  Alt ${i}: ${altAlertas.length} warnings, ${altKm.toFixed(0)} km`);
             if (altAlertas.length === 0) {
               ruta = alt;
               totalKm = altKm;
+              seleccionada = true;
+              console.log(`  → Seleccionada alternativa ${i}`);
               break;
             }
           }
+          if (!seleccionada) console.log('  Ninguna alternativa limpia, se mantiene la ruta principal');
         } catch (err) {
           console.warn('No se pudieron obtener alternativas:', err);
         }
@@ -992,31 +999,6 @@
     }
 
     setTimeout(procesarBloque, 30);
-  }
-
-  function cargarFondoSitios() {
-    if (!state.rutaActual) return;
-    const rutaFiltro = state.rutaBase || state.rutaActual;
-    const pendientes = state.sitios.filter((s) => s.distanciaRutaKm == null || !isFinite(s.distanciaRutaKm));
-    const TAM = 100;
-    let i = 0;
-    function fondoBloque() {
-      const fin = Math.min(i + TAM, pendientes.length);
-      for (let j = i; j < fin; j++) {
-        const s = pendientes[j];
-        if (s.lat == null || s.lon == null || isNaN(Number(s.lat)) || isNaN(Number(s.lon))) continue;
-        s.distanciaRutaKm = FiltersModule.distanciaARuta(s, rutaFiltro.geojson);
-        s.tiempoDesvioMin = FiltersModule.aproximarTiempoDesvio(s.distanciaRutaKm);
-        s.distanciaOrigenKm = FiltersModule.distanciaAOrigen(s, state.origen);
-      }
-      i = fin;
-      if (i < pendientes.length) {
-        setTimeout(fondoBloque, 50);
-      } else {
-        renderizarCategoriasMenu();
-      }
-    }
-    if (pendientes.length > 0) fondoBloque();
   }
 
   function actualizarEstadoBotonesRetry() {
@@ -1272,47 +1254,6 @@
   // -------------------------------------------------------------------
   // Re-filtrar sitios después de cambios en la ruta (invalida cachés)
   // -------------------------------------------------------------------
-  function refiltrarSitios() {
-    if (!state.rutaActual) return;
-    state.sitios.forEach((s) => {
-      delete s.distanciaRutaKm;
-      delete s.tiempoDesvioMin;
-      delete s.distanciaOrigenKm;
-      delete s.distanciaDestinoKm;
-      delete s._offsetLado;
-    });
-    const rutaFiltro = state.rutaBase || state.rutaActual;
-    FiltersModule.precomputarSitios(state.sitios, rutaFiltro.geojson, state.origen, state.destino);
-    const opciones = {
-      usarDistancia: el.checkDistancia.checked || (state.categoriasSeleccionadas.length > 0 && !el.checkDistancia.checked && !el.checkTiempo.checked),
-      usarTiempo: el.checkTiempo.checked,
-      distanciaMaximaKm: el.checkDistancia.checked ? Number(el.filtroDistancia.value) : 5,
-      tiempoMaximoMin: el.checkTiempo.checked ? Number(el.filtroTiempo.value) : 120,
-      origen: state.origen,
-      destino: state.destino,
-      excluirIds: state.paradas.map((p) => p.id),
-    };
-    const sitiosBase = FiltersModule.filtrarSitiosPorRuta(state.sitios, rutaFiltro.geojson, opciones);
-    state.sitiosFiltradosBase = sitiosBase;
-    conteoCategoriasBase = new Map();
-    sitiosBase.forEach((s) => {
-      if (!s.categoria) return;
-      const c = s.categoria.trim();
-      conteoCategoriasBase.set(c, (conteoCategoriasBase.get(c) || 0) + 1);
-    });
-    let sitiosResultado = sitiosBase;
-    if (state.categoriasSeleccionadas.length > 0) {
-      const catsNorm = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase().trim()));
-      sitiosResultado = sitiosBase.filter((s) => {
-        const sc = (s.categoria || '').toLowerCase().trim();
-        return catsNorm.has(sc);
-      });
-    }
-    state.sitiosFiltrados = sitiosResultado;
-    renderizarSitios(sitiosResultado);
-    renderizarCategoriasMenu();
-  }
-
   // -------------------------------------------------------------------
   // Agregar un sitio como desvío (calcula ruta por OSRM ida y vuelta)
   // -------------------------------------------------------------------
@@ -1407,6 +1348,7 @@
     state.paradas.splice(idx, 1);
     sincronizarOrden();
     renderizarParadas();
+    MapModule.setMarcadoresParadas(state.paradas);
     if (state.paradas.length === 0) return;
     if (!el.btnMostrarSitiosCercanos.parentNode) {
       el.loadingSitios.parentNode.insertBefore(el.btnMostrarSitiosCercanos, el.loadingSitios);
