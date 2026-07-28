@@ -836,16 +836,24 @@
         ];
         try {
           const rutaAlt = await RoutingModule.calcularRutaConParadas(nuevosPuntos, PERFIL_FIJO);
-          const altLine = turf.lineString(rutaAlt.geojson.geometry.coordinates);
+          // Verificar con misma detección que verificar()
+          const altCoords = rutaAlt.geojson.geometry.coordinates;
+          const altLine = turf.lineString(altCoords);
           const dangerLine = turf.lineString(dangerRuta.coordenadas);
-          const buffer = turf.buffer(dangerLine, 10, { units: 'kilometers' });
-          if (buffer && !turf.booleanIntersects(buffer, altLine)) {
-            ruta = rutaAlt;
+          const dangerLen = turf.length(dangerLine, { units: 'kilometers' });
+          const numCheck = Math.max(5, Math.ceil(dangerLen / 3));
+          let evita = true;
+          for (let i = 0; i <= numCheck; i++) {
+            const pt = turf.along(dangerLine, (i / numCheck) * dangerLen, { units: 'kilometers' });
+            const nearest = turf.nearestPointOnLine(altLine, pt, { units: 'kilometers' });
+            const d = nearest.properties.dist != null ? nearest.properties.dist : nearest.properties.distance;
+            if (d != null && d < 12) { evita = false; break; }
           }
+          if (evita) ruta = rutaAlt;
         } catch {
-          // alternativa falló, continuar con ruta original
+          // alternativa falló
         }
-        break; // solo un intento de evasión por cálculo
+        break;
       }
 
       aplicarRutaCalculada(ruta);
@@ -1237,10 +1245,12 @@
     MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);
 
     // Verificar advertencias de tramos peligrosos
-    MapModule.limpiarAlertas();
-    const totalKm = state.rutaActual.distanciaMetros / 1000;
-    const alertas = RouteWarningsModule.verificar(state.rutaActual.geojson, totalKm);
-    alertas.forEach((a) => MapModule.mostrarAlertaRuta([a.lnglat[1], a.lnglat[0]], a.mensaje, a.color));
+    try { MapModule.limpiarAlertas(); } catch {}
+    try {
+      const totalKm = state.rutaActual.distanciaMetros / 1000;
+      const alertas = RouteWarningsModule.verificar(state.rutaActual.geojson, totalKm);
+      alertas.forEach((a) => MapModule.mostrarAlertaRuta([a.lnglat[1], a.lnglat[0]], a.mensaje, a.color));
+    } catch {}
 
     sincronizarOrden();
     let idxIntermedio = 0;

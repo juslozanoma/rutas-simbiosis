@@ -281,10 +281,10 @@ const MapModule = (() => {
 
   function mostrarAlertaRuta(lnglat, mensaje, color) {
     const icon = L.divIcon({
-      html: `<img src="public/warning.svg" width="30" height="30" style="filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35)); display:block;">`,
+      html: `<div style="width:28px;height:28px;background:#e5a000;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3);">⚠</div>`,
       className: '',
-      iconSize: [30, 30],
-      iconAnchor: [15, 15],
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
     });
     const marker = L.marker(lnglat, { icon, zIndexOffset: 1050 });
     marker.bindTooltip(mensaje, {

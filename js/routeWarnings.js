@@ -78,22 +78,31 @@ const RouteWarningsModule = (() => {
 
     for (const ruta of _rutas) {
       if (ruta.distanciaMinimaKm != null && totalKm < ruta.distanciaMinimaKm) continue;
+      if (!ruta.coordenadas || ruta.coordenadas.length < 2) continue;
 
       const dangerLine = turf.lineString(ruta.coordenadas);
-      const buffer = turf.buffer(dangerLine, 10, { units: 'kilometers' });
-      if (!buffer) continue;
+      const dangerLength = turf.length(dangerLine, { units: 'kilometers' });
+      const numPuntos = Math.max(5, Math.ceil(dangerLength / 3));
+      const umbralKm = 12;
 
-      if (turf.booleanIntersects(buffer, routeLine)) {
-        const mid = turf.midpoint(
-          turf.point(ruta.coordenadas[0]),
-          turf.point(ruta.coordenadas[ruta.coordenadas.length - 1]),
-        );
-        const nearest = turf.nearestPointOnLine(routeLine, mid, { units: 'kilometers' });
+      let menorDistancia = Infinity;
+      let puntoMasCercano = null;
 
+      for (let i = 0; i <= numPuntos; i++) {
+        const pt = turf.along(dangerLine, (i / numPuntos) * dangerLength, { units: 'kilometers' });
+        const nearest = turf.nearestPointOnLine(routeLine, pt, { units: 'kilometers' });
+        const dist = nearest.properties.dist != null ? nearest.properties.dist : nearest.properties.distance;
+        if (dist != null && dist < menorDistancia) {
+          menorDistancia = dist;
+          puntoMasCercano = nearest.geometry.coordinates;
+        }
+      }
+
+      if (menorDistancia < umbralKm) {
         warnings.push({
           id: ruta.id,
           ruta: ruta,
-          lnglat: nearest.geometry.coordinates,
+          lnglat: puntoMasCercano || ruta.coordenadas[0],
           mensaje: ruta.mensaje || 'Tramo peligroso',
           tipo: ruta.tipo || 'peligro',
           color: ruta.color || '#e5a000',
@@ -116,48 +125,63 @@ const RouteWarningsModule = (() => {
    */
   function generarPuntoEvasivo(geojsonLineString, rutaPeligrosa, totalKm) {
     if (rutaPeligrosa.distanciaMinimaKm != null && totalKm < rutaPeligrosa.distanciaMinimaKm) return null;
+    if (!rutaPeligrosa.coordenadas || rutaPeligrosa.coordenadas.length < 2) return null;
 
     const coords = geojsonLineString.geometry.coordinates;
     const dangerLine = turf.lineString(rutaPeligrosa.coordenadas);
-    const buffer = turf.buffer(dangerLine, 10, { units: 'kilometers' });
-    if (!buffer) return null;
+    const dangerLength = turf.length(dangerLine, { units: 'kilometers' });
+    const numPuntos = Math.max(5, Math.ceil(dangerLength / 3));
+    const umbralKm = 12;
 
+    // Verificar si la ruta pasa cerca del tramo peligroso
     const routeLine = turf.lineString(coords);
-    if (!turf.booleanIntersects(buffer, routeLine)) return null;
-
-    // Encontrar índices de entrada y salida del buffer
-    let entryIdx = -1, exitIdx = -1;
-    let inside = false;
-    for (let i = 0; i < coords.length; i++) {
-      const isInside = turf.booleanPointInPolygon(turf.point(coords[i]), buffer);
-      if (isInside && !inside) { entryIdx = i; inside = true; }
-      if (!isInside && inside) { exitIdx = i; break; }
+    let dentro = [];
+    for (let i = 0; i <= numPuntos; i++) {
+      const pt = turf.along(dangerLine, (i / numPuntos) * dangerLength, { units: 'kilometers' });
+      const nearest = turf.nearestPointOnLine(routeLine, pt, { units: 'kilometers' });
+      const dist = nearest.properties.dist != null ? nearest.properties.dist : nearest.properties.distance;
+      if (dist != null && dist < umbralKm) {
+        dentro.push(nearest.geometry.coordinates);
+      }
     }
-    if (entryIdx === -1 || exitIdx === -1) return null;
+    if (dentro.length === 0) return null;
 
-    // Punto medio del segmento que intersecta
-    const midIdx = Math.floor((entryIdx + exitIdx) / 2);
-    const midPt = coords[midIdx];
+    // Encontrar el punto medio de la zona de intersección
+    let midPt = dentro[Math.floor(dentro.length / 2)];
+    if (!midPt) midPt = rutaPeligrosa.coordenadas[0];
 
-    // Dirección de la ruta en el punto medio
-    const prevIdx = Math.max(0, midIdx - 1);
-    const nextIdx = Math.min(coords.length - 1, midIdx + 1);
+    // Buscar el índice más cercano en la ruta
+    let bestIdx = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < coords.length; i++) {
+      const d = turf.distance(turf.point(midPt), turf.point(coords[i]), { units: 'kilometers' });
+      if (d < bestDist) { bestDist = d; bestIdx = i; }
+    }
+
+    // Dirección de la ruta en ese punto
+    const prevIdx = Math.max(0, bestIdx - 3);
+    const nextIdx = Math.min(coords.length - 1, bestIdx + 3);
     const bearing = turf.bearing(turf.point(coords[prevIdx]), turf.point(coords[nextIdx]));
 
-    // Probar varias distancias de desvío en ambas direcciones perpendiculares
-    const distancias = [25, 35, 50];
+    // Probar desvíos perpendiculares
+    const distancias = [30, 50, 80];
     for (const dist of distancias) {
       for (const ang of [+90, -90]) {
-        const pt = turf.destination(
-          turf.point(midPt),
+        const dest = turf.destination(
+          turf.point(coords[bestIdx]),
           dist,
           (bearing + ang + 360) % 360,
           { units: 'kilometers' },
         );
-        const candidate = pt.geometry.coordinates;
-        if (!turf.booleanPointInPolygon(pt, buffer)) {
-          return candidate;
+        const candidate = dest.geometry.coordinates;
+        // Verificar que el punto candidato esté fuera de la zona peligrosa
+        let fuera = true;
+        for (let i = 0; i <= numPuntos; i++) {
+          const pt = turf.along(dangerLine, (i / numPuntos) * dangerLength, { units: 'kilometers' });
+          const d = turf.distance(dest, pt, { units: 'kilometers' });
+          if (d < umbralKm) { fuera = false; break; }
         }
+        if (fuera) return candidate;
       }
     }
 
