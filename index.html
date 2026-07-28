@@ -64,8 +64,8 @@
     </section>
 
     <!-- Origen / destino + escalas + botón calcular -->
-    <section class="panel-locate">
-      <div class="panel-locate__row">
+    <section class="panel-locate" id="panel-locate">
+      <div class="panel-locate__row" id="row-origen">
         <div class="combo" data-combo="origen">
           <button type="button" class="combo__trigger" id="origen-input" aria-label="Seleccionar municipio de origen">
             <span class="combo__trigger-text" data-placeholder="true">Origen</span>
@@ -78,7 +78,7 @@
         </button>
       </div>
       <div class="panel-locate__escalas" id="panel-escalas"></div>
-      <div class="panel-locate__row">
+      <div class="panel-locate__row" id="row-destino">
         <div class="combo" data-combo="destino">
           <button type="button" class="combo__trigger" id="destino-input" aria-label="Seleccionar municipio de destino">
             <span class="combo__trigger-text" data-placeholder="true">Destino</span>
@@ -91,6 +91,12 @@
         </button>
       </div>
     </section>
+
+    <!-- Barra de acciones post-cálculo (Cambiar ruta / Añadir parada) -->
+    <div class="panel-route-bar" id="panel-route-bar" hidden>
+      <button type="button" id="btn-cambiar-ruta" class="route-bar__btn">Cambiar ruta</button>
+      <button type="button" id="btn-anadir-parada" class="route-bar__btn">Añadir parada</button>
+    </div>
 
     <!-- Aviso de paradas antes de calcular -->
     <p class="hint-paradas" id="hint-paradas">No olvides añadir tus paradas antes de mostrar los sitios cercanos.</p>

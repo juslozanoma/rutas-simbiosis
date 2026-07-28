@@ -73,6 +73,7 @@ const MapModule = (() => {
 
     clusterSitios = L.markerClusterGroup({
       maxClusterRadius: 45,
+      showCoverageOnHover: false,
       clusterPane: 'clusterPane',
       iconCreateFunction: (cluster) => {
         const count = cluster.getChildCount();
@@ -115,12 +116,11 @@ const MapModule = (() => {
   // Íconos
   // ---------------------------------------------------------------------
 
-  function _pinDivIcon(colorHex, letra) {
+  function _pinDivIcon(letra) {
     const svg = `
       <svg class="pin-svg" width="28" height="38" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg">
-        <path d="M15 0C6.7 0 0 6.7 0 15c0 10.5 15 25 15 25s15-14.5 15-25c0-8.3-6.7-15-15-15z" fill="${colorHex}"/>
-        <circle cx="15" cy="15" r="6" fill="#ffffff"/>
-        <text class="pin-letter" x="15" y="18.5" text-anchor="middle">${letra}</text>
+        <path d="M15 0C6.7 0 0 6.7 0 15c0 10.5 15 25 15 25s15-14.5 15-25c0-8.3-6.7-15-15-15z" fill="#2f7a6b"/>
+        <text class="pin-letter" x="15" y="19.5" text-anchor="middle" fill="#ffffff">${letra}</text>
       </svg>`;
     return L.divIcon({
       html: `<div class="pin-icon">${svg}</div>`,
@@ -131,8 +131,8 @@ const MapModule = (() => {
     });
   }
 
-  function iconoOrigen() { return _pinDivIcon('#2f7a6b', 'A'); }
-  function iconoDestino() { return _pinDivIcon('#e35c2b', 'Z'); }
+  function iconoOrigen() { return _pinDivIcon('A'); }
+  function iconoDestino() { return _pinDivIcon('Z'); }
 
   function iconoSitio() {
     return L.divIcon({
@@ -174,14 +174,14 @@ const MapModule = (() => {
 
   function setMarcadorOrigen(lat, lon, etiqueta) {
     if (markerOrigen) map.removeLayer(markerOrigen);
-    markerOrigen = L.marker([lat, lon], { icon: iconoOrigen(), zIndexOffset: 1000 })
+    markerOrigen = L.marker([lat, lon], { icon: iconoOrigen(), zIndexOffset: 50 })
       .bindTooltip(`Origen: ${etiqueta}`, { direction: 'top' })
       .addTo(map);
   }
 
   function setMarcadorDestino(lat, lon, etiqueta) {
     if (markerDestino) map.removeLayer(markerDestino);
-    markerDestino = L.marker([lat, lon], { icon: iconoDestino(), zIndexOffset: 1000 })
+    markerDestino = L.marker([lat, lon], { icon: iconoDestino(), zIndexOffset: 50 })
       .bindTooltip(`Destino: ${etiqueta}`, { direction: 'top' })
       .addTo(map);
   }
@@ -461,6 +461,29 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       layer.on('mousedown', _onRutaMouseDown);
     });
 
+    // Direction arrows along the route
+    if (_capaFlechas) map.removeLayer(_capaFlechas);
+    _capaFlechas = L.layerGroup().addTo(map);
+    const coords = geojsonLineString.geometry.coordinates;
+    if (coords && coords.length >= 2) {
+      const line = turf.lineString(coords);
+      const routeKm = turf.length(line, { units: 'kilometers' });
+      const paso = Math.max(30, routeKm / 6);
+      for (let d = paso * 0.5; d < routeKm - 1; d += paso) {
+        const pt = turf.along(line, d, { units: 'kilometers' });
+        const prev = turf.along(line, Math.max(0, d - 0.5), { units: 'kilometers' });
+        const next = turf.along(line, Math.min(routeKm, d + 0.5), { units: 'kilometers' });
+        const bearing = turf.bearing(prev, next);
+        const arrowIcon = L.divIcon({
+          html: `<div style="transform:rotate(${bearing}deg);font-size:16px;line-height:1;color:#2f7a6b;opacity:0.7;">▶</div>`,
+          className: '',
+          iconSize: [16, 16],
+          iconAnchor: [8, 8],
+        });
+        L.marker([pt.geometry.coordinates[1], pt.geometry.coordinates[0]], { icon: arrowIcon, interactive: false }).addTo(_capaFlechas);
+      }
+    }
+
     return capaRuta;
   }
 
@@ -581,6 +604,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   function limpiarRuta() {
     if (_capaRutaVisible) { map.removeLayer(_capaRutaVisible); _capaRutaVisible = null; }
     if (_capaRutaHover) { map.removeLayer(_capaRutaHover); _capaRutaHover = null; }
+    if (_capaFlechas) { map.removeLayer(_capaFlechas); _capaFlechas = null; }
     capaRuta = null;
   }
 
@@ -611,10 +635,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   function abrirPopupSitio(sitioId) {
     const marker = _sitioMarkers.get(sitioId);
     if (!marker) return;
-    const grupo = clusterSitios;
-    if (!map.hasLayer(grupo)) map.addLayer(grupo);
-    map.setView(marker.getLatLng(), Math.max(map.getZoom(), 13));
-    marker.openPopup();
+    if (!map.hasLayer(clusterSitios)) map.addLayer(clusterSitios);
+    clusterSitios.zoomToShowLayer(marker, () => {
+      marker.openPopup();
+    });
   }
 
   function toggleSitios() {

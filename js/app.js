@@ -32,7 +32,7 @@
     'Amazonas':'Leticia','Antioquia':'Medellín','Arauca':'Arauca','Atlántico':'Barranquilla',
     'Bogotá D.C.':'Bogotá D.C.','Bolívar':'Cartagena','Boyacá':'Tunja','Caldas':'Manizales',
     'Caquetá':'Florencia','Casanare':'Yopal','Cauca':'Popayán','Cesar':'Valledupar',
-    'Chocó':'Quibdó','Córdoba':'Montería','Cundinamarca':'Bogotá D.C.','Guainía':'Puerto Inírida',
+    'Chocó':'Quibdó','Córdoba':'Montería','Cundinamarca':'Bogotá D.C.','Guainía':'Ínirida',
     'Guaviare':'San José del Guaviare','Huila':'Neiva','La Guajira':'Riohacha','Magdalena':'Santa Marta',
     'Meta':'Villavicencio','Nariño':'Pasto','Norte de Santander':'Cúcuta','Putumayo':'Mocoa',
     'Quindío':'Armenia','Risaralda':'Pereira','San Andrés y Providencia':'San Andrés',
@@ -108,6 +108,10 @@
 
     panelEscalas: document.getElementById('panel-escalas'),
     btnAgregarEscala: document.getElementById('btn-agregar-escala'),
+    panelLocate: document.getElementById('panel-locate'),
+    panelRouteBar: document.getElementById('panel-route-bar'),
+    btnCambiarRuta: document.getElementById('btn-cambiar-ruta'),
+    btnAnadirParada: document.getElementById('btn-anadir-parada'),
 
     btnToggleSitiosFloat: document.getElementById('btn-toggle-sitios-float'),
     btnFullscreen: document.getElementById('btn-fullscreen'),
@@ -679,6 +683,43 @@
     if (el.btnOrdenDestino) el.btnOrdenDestino.addEventListener('click', () => aplicarOrdenSitios('destino'));
     state.ordenSitios = 'origen';
     actualizarBotonesOrden();
+
+    // Route bar buttons
+    const rowOrigen = document.getElementById('row-origen');
+    const rowDestino = document.getElementById('row-destino');
+
+    if (el.btnCambiarRuta) {
+      el.btnCambiarRuta.addEventListener('click', () => {
+        const abrir = el.panelLocate.hidden;
+        el.panelLocate.hidden = !abrir;
+        el.btnCambiarRuta.classList.toggle('route-bar__btn--active', abrir);
+        if (abrir) {
+          if (rowOrigen) rowOrigen.style.display = '';
+          if (rowDestino) rowDestino.style.display = '';
+          el.panelEscalas.hidden = true;
+          el.btnAnadirParada.classList.remove('route-bar__btn--active');
+        }
+      });
+    }
+    if (el.btnAnadirParada) {
+      el.btnAnadirParada.addEventListener('click', () => {
+        const abrir = el.panelEscalas.hidden;
+        if (abrir) {
+          el.panelLocate.hidden = false;
+          if (rowOrigen) rowOrigen.style.display = 'none';
+          if (rowDestino) rowDestino.style.display = 'none';
+          el.panelEscalas.hidden = false;
+          el.btnAnadirParada.classList.add('route-bar__btn--active');
+          el.btnCambiarRuta.classList.remove('route-bar__btn--active');
+          if (state.escalas.length === 0) agregarEscala();
+        } else {
+          el.panelLocate.hidden = true;
+          el.panelEscalas.hidden = true;
+          el.btnAnadirParada.classList.remove('route-bar__btn--active');
+        }
+      });
+    }
+
     el.loadingSitios = document.getElementById('loading-sitios');
     el.loadingRuta = document.getElementById('loading-ruta');
     el.loadingMsg = el.loadingSitios.querySelector('.loading-sitios__msg');
@@ -697,6 +738,7 @@
       el.filtroDistancia.disabled = false;
       el.filtroDistancia.value = '5';
       el.filtroDistanciaValor.textContent = '5 km';
+      if (el.loadingRuta) el.loadingRuta.hidden = true;
       el.loadingSitios.hidden = false;
       ejecutarFiltradoProgresivo(() => {
         el.panelSitios.hidden = false;
@@ -753,6 +795,7 @@
     el.btnCalcular.disabled = cargando;
     el.btnCalcular.setAttribute('data-loading', cargando ? 'true' : 'false');
     if (el.loadingRuta) el.loadingRuta.hidden = !cargando;
+    if (cargando && el.loadingSitios) el.loadingSitios.hidden = true;
     el.btnAgregarEscala.disabled = cargando;
     el.origenInput.disabled = cargando;
     el.destinoInput.disabled = cargando;
@@ -845,11 +888,28 @@
       }
 
       aplicarRutaCalculada(ruta);
-      // Limpia las filas de escala del DOM (pasan a la lista de paradas)
+      // Clean up escala DOM rows (pasan a la lista de paradas)
       state.escalas.forEach((e) => { if (e._row && e._row.parentNode) e._row.remove(); });
       state.escalas.forEach((e) => { delete e._row; });
       renderizarParadas();
+
+      // Collapse locate panel, show route bar
+      if (el.panelLocate) el.panelLocate.hidden = true;
+      if (el.panelRouteBar) el.panelRouteBar.hidden = false;
+      if (el.btnCambiarRuta) el.btnCambiarRuta.classList.remove('route-bar__btn--active');
+      if (el.btnAnadirParada) el.btnAnadirParada.classList.remove('route-bar__btn--active');
+      if (el.panelEscalas) el.panelEscalas.hidden = true;
+      if (el.hintParadas) el.hintParadas.hidden = true;
+
+      // Show "Mostrar sitios" button and clear previous turf
+      if (!el.btnMostrarSitiosCercanos.parentNode) {
+        el.loadingSitios.parentNode.insertBefore(el.btnMostrarSitiosCercanos, el.loadingSitios);
+      }
       el.btnMostrarSitiosCercanos.disabled = false;
+      el.panelSitios.hidden = true;
+      MapModule.limpiarSitios();
+      state.sitiosFiltrados = [];
+      state.sitiosFiltradosBase = [];
 
       el.checkDistancia.checked = true;
       el.filtroDistancia.value = '5';
@@ -1260,6 +1320,9 @@
   async function agregarParada(sitio, boton) {
     if (boton) ponerEnCarga(boton, true);
     state.paradas.push(sitio);
+    const map = MapModule.getMap();
+    const center = map.getCenter();
+    const zoom = map.getZoom();
     try {
       if (el.checkAutoOrganizar.checked) {
         await organizarAutomaticamente();
@@ -1267,6 +1330,7 @@
         await aplicarRutaConDesvios();
         renderizarParadas();
       }
+      map.setView(center, zoom, { animate: false });
       limpiarPreview();
       ejecutarFiltrado();
     } finally {
@@ -1404,7 +1468,7 @@
     const total = items.length;
     el.paradasLista.innerHTML = '';
     const incluirExtremos = Boolean(state.rutaActual && state.origen && state.destino);
-    el.paradasContador.textContent = String(incluirExtremos ? total + 2 : total);
+    el.paradasContador.textContent = String(incluirExtremos ? total : total);
     el.panelParadas.hidden = !incluirExtremos && total === 0;
 
     function crearFilaExtremo(letra, nombre, tipo) {

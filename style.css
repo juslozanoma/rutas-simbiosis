@@ -128,6 +128,7 @@ input, select{ font-family: inherit; }
   gap: 6px;
   flex-shrink: 0;
 }
+.panel-locate[hidden]{ display: none; }
 .panel-locate__row{
   display: flex;
   align-items: center;
@@ -142,6 +143,32 @@ input, select{ font-family: inherit; }
   margin-left: 2px;
 }
 .panel-locate__escalas:empty{ display: none; }
+.panel-locate__escalas[hidden]{ display: none; }
+
+/* --- Barra de acciones post-cálculo (Cambiar ruta / Añadir parada) --- */
+.panel-route-bar{
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 4px 0;
+}
+.panel-route-bar[hidden]{ display: none; }
+.route-bar__btn{
+  flex: 1;
+  padding: 8px 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  border: 1.5px solid var(--line-200);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+  color: var(--text-strong);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.route-bar__btn:hover{ background: #f0ede5; border-color: var(--teal-500); }
+.route-bar__btn--active{ background: var(--teal-50); border-color: var(--teal-500); color: var(--teal-600); }
+
 .escala-row{
   display: flex;
   align-items: center;
@@ -484,7 +511,7 @@ input, select{ font-family: inherit; }
 
 .hint-paradas{
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   color: var(--text-muted);
   text-align: center;
   white-space: nowrap;
@@ -501,8 +528,8 @@ input, select{ font-family: inherit; }
   display: none;
 }
 .loading-ruta .loader{
-  width: 96px;
-  height: 96px;
+  width: 120px;
+  height: 120px;
   display: block;
   margin: 0 auto;
 }
@@ -612,9 +639,9 @@ input, select{ font-family: inherit; }
 .pin-svg{ filter: drop-shadow(0 2px 3px rgba(20,32,27,0.3)); }
 .pin-letter{
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-weight: 800;
-  fill: var(--text-strong);
+  fill: #ffffff;
 }
 .marker-cluster-custom{
   background: var(--ink-900);
