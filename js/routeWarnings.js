@@ -92,6 +92,7 @@ const RouteWarningsModule = (() => {
 
         warnings.push({
           id: ruta.id,
+          ruta: ruta,
           lnglat: nearest.geometry.coordinates,
           mensaje: ruta.mensaje || 'Tramo peligroso',
           tipo: ruta.tipo || 'peligro',
@@ -103,5 +104,65 @@ const RouteWarningsModule = (() => {
     return warnings;
   }
 
-  return { cargar, getRutas, agregarPersonalizada, eliminarPersonalizada, exportarJSON, verificar };
+  /**
+   * Genera un punto de desvío evasivo para evitar un tramo peligroso.
+   * Analiza la ruta entrante y calcula puntos alternativos (perpendiculares
+   * a la dirección de la ruta) para forzar a OSRM a buscar otro camino.
+   *
+   * @param {object} geojsonLineString - GeoJSON LineString de la ruta actual
+   * @param {object} rutaPeligrosa - definición del tramo peligroso
+   * @param {number} totalKm - distancia total de la ruta
+   * @returns {[number,number]|[null]} [lng,lat] del punto evasivo, o null
+   */
+  function generarPuntoEvasivo(geojsonLineString, rutaPeligrosa, totalKm) {
+    if (rutaPeligrosa.distanciaMinimaKm != null && totalKm < rutaPeligrosa.distanciaMinimaKm) return null;
+
+    const coords = geojsonLineString.geometry.coordinates;
+    const dangerLine = turf.lineString(rutaPeligrosa.coordenadas);
+    const buffer = turf.buffer(dangerLine, 10, { units: 'kilometers' });
+    if (!buffer) return null;
+
+    const routeLine = turf.lineString(coords);
+    if (!turf.booleanIntersects(buffer, routeLine)) return null;
+
+    // Encontrar índices de entrada y salida del buffer
+    let entryIdx = -1, exitIdx = -1;
+    let inside = false;
+    for (let i = 0; i < coords.length; i++) {
+      const isInside = turf.booleanPointInPolygon(turf.point(coords[i]), buffer);
+      if (isInside && !inside) { entryIdx = i; inside = true; }
+      if (!isInside && inside) { exitIdx = i; break; }
+    }
+    if (entryIdx === -1 || exitIdx === -1) return null;
+
+    // Punto medio del segmento que intersecta
+    const midIdx = Math.floor((entryIdx + exitIdx) / 2);
+    const midPt = coords[midIdx];
+
+    // Dirección de la ruta en el punto medio
+    const prevIdx = Math.max(0, midIdx - 1);
+    const nextIdx = Math.min(coords.length - 1, midIdx + 1);
+    const bearing = turf.bearing(turf.point(coords[prevIdx]), turf.point(coords[nextIdx]));
+
+    // Probar varias distancias de desvío en ambas direcciones perpendiculares
+    const distancias = [25, 35, 50];
+    for (const dist of distancias) {
+      for (const ang of [+90, -90]) {
+        const pt = turf.destination(
+          turf.point(midPt),
+          dist,
+          (bearing + ang + 360) % 360,
+          { units: 'kilometers' },
+        );
+        const candidate = pt.geometry.coordinates;
+        if (!turf.booleanPointInPolygon(pt, buffer)) {
+          return candidate;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  return { cargar, getRutas, agregarPersonalizada, eliminarPersonalizada, exportarJSON, verificar, generarPuntoEvasivo };
 })();

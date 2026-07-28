@@ -818,9 +818,36 @@
     try {
       const puntosRuta = [state.origen, ...state.escalas.filter((e) => e.lat != null), state.destino];
       const usarConParadas = puntosRuta.length > 2;
-      const ruta = usarConParadas
+      let ruta = usarConParadas
         ? await RoutingModule.calcularRutaConParadas(puntosRuta, PERFIL_FIJO)
         : await RoutingModule.calcularRuta(state.origen, state.destino, PERFIL_FIJO);
+
+      // Intentar evitar tramos peligrosos recalculando con puntos evasivos
+      const totalKm = ruta.distanciaMetros / 1000;
+      const rutasPeligrosas = RouteWarningsModule.getRutas();
+      for (const dangerRuta of rutasPeligrosas) {
+        const evasivePt = RouteWarningsModule.generarPuntoEvasivo(ruta.geojson, dangerRuta, totalKm);
+        if (!evasivePt) continue;
+        const nuevosPuntos = [
+          state.origen,
+          ...state.escalas.filter((e) => e.lat != null),
+          { lat: evasivePt[1], lon: evasivePt[0] },
+          state.destino,
+        ];
+        try {
+          const rutaAlt = await RoutingModule.calcularRutaConParadas(nuevosPuntos, PERFIL_FIJO);
+          const altLine = turf.lineString(rutaAlt.geojson.geometry.coordinates);
+          const dangerLine = turf.lineString(dangerRuta.coordenadas);
+          const buffer = turf.buffer(dangerLine, 10, { units: 'kilometers' });
+          if (buffer && !turf.booleanIntersects(buffer, altLine)) {
+            ruta = rutaAlt;
+          }
+        } catch {
+          // alternativa falló, continuar con ruta original
+        }
+        break; // solo un intento de evasión por cálculo
+      }
+
       aplicarRutaCalculada(ruta);
       // Limpia las filas de escala del DOM (pasan a la lista de paradas)
       state.escalas.forEach((e) => { if (e._row && e._row.parentNode) e._row.remove(); });
@@ -1636,12 +1663,9 @@
         return;
       }
       tramo.limpiar();
-      // Refrescar alertas si hay ruta visible
+      // Si hay ruta visible, recalcular para evitar el nuevo tramo
       if (state.rutaActual) {
-        MapModule.limpiarAlertas();
-        const totalKm = state.rutaActual.distanciaMetros / 1000;
-        const alertas = RouteWarningsModule.verificar(state.rutaActual.geojson, totalKm);
-        alertas.forEach((a) => MapModule.mostrarAlertaRuta([a.lnglat[1], a.lnglat[0]], a.mensaje, a.color));
+        await calcularRutaPrincipal(true);
       }
     });
 

@@ -7,7 +7,7 @@
       [-76.918, 1.203],
       [-76.648, 1.148]
     ],
-    "distanciaMinimaKm": 400,
+    "distanciaMinimaKm": 100,
     "mensaje": "Ruta destapada, transitar con precaución",
     "tipo": "destapada",
     "color": "#e5a000"
