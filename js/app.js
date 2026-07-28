@@ -1628,6 +1628,24 @@
   /** Cambia el icono del botón de filtro entre retry y check. */
 
   // -------------------------------------------------------------------
+  // Notificación toast simple, auto-descartable
+  // -------------------------------------------------------------------
+
+  function _mostrarNotificacion(texto) {
+    const el = document.createElement('div');
+    el.textContent = texto;
+    Object.assign(el.style, {
+      position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
+      background: 'var(--verde-500, #22c55e)', color: '#fff',
+      padding: '8px 20px', borderRadius: '8px', zIndex: '10000',
+      fontSize: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+      transition: 'opacity 0.3s',
+    });
+    document.body.appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 2000);
+  }
+
+  // -------------------------------------------------------------------
   // Marcación de tramos peligrosos (clic secundario → confirmación)
   // -------------------------------------------------------------------
 
@@ -1668,14 +1686,19 @@
       };
       try {
         await RouteWarningsModule.agregarPersonalizada(nuevaRuta);
+        _mostrarNotificacion('Tramo peligroso guardado');
       } catch (err) {
+        console.error('Error al guardar tramo:', err);
         tramo.limpiar();
         return;
       }
       tramo.limpiar();
-      // Si hay ruta visible, recalcular para evitar el nuevo tramo
       if (state.rutaActual) {
-        await calcularRutaPrincipal(true);
+        try {
+          await calcularRutaPrincipal(true);
+        } catch (err) {
+          console.error('Error al recalcular ruta tras marcar tramo:', err);
+        }
       }
     });
 

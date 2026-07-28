@@ -23,6 +23,7 @@ const RouteWarningsModule = (() => {
     }
     const personalizadas = _leerPersonalizadas();
     _rutas = [...desdeArchivo, ...personalizadas];
+    console.log('RouteWarnings: cargadas', _rutas.length, 'rutas (', desdeArchivo.length, 'oficiales,', personalizadas.length, 'personalizadas)');
   }
 
   function _leerPersonalizadas() {
@@ -31,10 +32,6 @@ const RouteWarningsModule = (() => {
     } catch {
       return [];
     }
-  }
-
-  function _guardarPersonalizadas(lista) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
   }
 
   function _syncAlArchivo(rutas) {
@@ -50,22 +47,43 @@ const RouteWarningsModule = (() => {
   }
 
   async function agregarPersonalizada(ruta) {
-    const personalizadas = _leerPersonalizadas();
-    personalizadas.push(ruta);
-    _guardarPersonalizadas(personalizadas);
     _rutas.push(ruta);
+    try {
+      const personalizadas = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      personalizadas.push(ruta);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(personalizadas));
+    } catch (err) {
+      console.warn('No se pudo guardar en localStorage:', err);
+    }
     _syncAlArchivo(_rutas);
   }
 
   async function eliminarPersonalizada(id) {
-    const personalizadas = _leerPersonalizadas().filter((r) => r.id !== id);
-    _guardarPersonalizadas(personalizadas);
     _rutas = _rutas.filter((r) => r.id !== id);
+    try {
+      const personalizadas = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').filter((r) => r.id !== id);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(personalizadas));
+    } catch (err) {
+      console.warn('No se pudo eliminar en localStorage:', err);
+    }
     _syncAlArchivo(_rutas);
   }
 
   function exportarJSON() {
     return JSON.stringify(_rutas, null, 2);
+  }
+
+  function debug() {
+    console.log('RouteWarningsModule state:');
+    console.log('  _rutas count:', _rutas.length);
+    console.log('  _rutas:', _rutas.map(r => ({ id: r.id, nombre: r.nombre, coordCount: r.coordenadas?.length })));
+    try {
+      const ls = localStorage.getItem(STORAGE_KEY);
+      console.log('  localStorage key:', STORAGE_KEY);
+      console.log('  localStorage data:', ls ? JSON.parse(ls).length + ' entries' : '(empty)');
+    } catch (e) {
+      console.warn('  localStorage error:', e);
+    }
   }
 
   function verificar(geojsonLineString, totalKm) {
@@ -188,5 +206,5 @@ const RouteWarningsModule = (() => {
     return null;
   }
 
-  return { cargar, getRutas, agregarPersonalizada, eliminarPersonalizada, exportarJSON, verificar, generarPuntoEvasivo };
+  return { cargar, getRutas, agregarPersonalizada, eliminarPersonalizada, exportarJSON, debug, verificar, generarPuntoEvasivo };
 })();
