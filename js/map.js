@@ -34,6 +34,18 @@ const MapModule = (() => {
   let _rutaDragStartLatLng = null;
   let _rutaDragSegIdx = -1;
 
+  // Marking dangerous road state
+  let _ctxMenu = null;
+  let _ctxMenuLngLat = null;
+  let _marcandoTramo = false;
+  let _marcandoPaso = 0; // 0=inactivo, 1=esperando punto A, 2=esperando punto B
+  let _marcandoPtoA = null;
+  let _marcandoPtoB = null;
+  let _marcandoLinea = null;
+  let _marcandoMarkerA = null;
+  let _marcandoMarkerB = null;
+  let _onTramoCompletado = null;
+
   const CENTRO_COLOMBIA = [4.6, -74.1];
   const ZOOM_INICIAL = 6;
 
@@ -83,6 +95,11 @@ const MapModule = (() => {
     // El contenedor del mapa nace con un tamaño definido por CSS (flex),
     // por lo que conviene forzar un recálculo tras el primer render.
     setTimeout(() => map.invalidateSize(), 0);
+
+    // Menú contextual (clic secundario)
+    map.on('contextmenu', _onMapContextMenu);
+    document.addEventListener('click', _cerrarCtxMenu);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cancelarMarcadoTramo(); });
 
     return map;
   }
@@ -290,6 +307,94 @@ const MapModule = (() => {
 
   function limpiarAlertas() {
     capaAlertas.clearLayers();
+  }
+
+  // ---------------------------------------------------------------------
+  // Menú contextual y marcación de tramos peligrosos
+  // ---------------------------------------------------------------------
+
+  function setOnTramoCompletado(callback) {
+    _onTramoCompletado = callback;
+  }
+
+  function _onMapContextMenu(e) {
+    if (_marcandoTramo) return;
+    _cerrarCtxMenu();
+    _ctxMenuLngLat = e.latlng;
+    const div = document.createElement('div');
+    div.className = 'ctx-menu';
+    div.innerHTML = '<div class="ctx-menu__item">Marcar tramo destapado</div>';
+    div.querySelector('.ctx-menu__item').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      _cerrarCtxMenu();
+      iniciarMarcadoTramo();
+    });
+    const container = map.getContainer();
+    const point = map.latLngToContainerPoint(e.latlng);
+    div.style.left = Math.min(point.x, container.offsetWidth - 190) + 'px';
+    div.style.top = Math.min(point.y, container.offsetHeight - 36) + 'px';
+    container.appendChild(div);
+    _ctxMenu = div;
+  }
+
+  function _cerrarCtxMenu() {
+    if (_ctxMenu) { _ctxMenu.remove(); _ctxMenu = null; }
+  }
+
+  function _limpiarMarcadoTramo() {
+    if (_marcandoMarkerA) { map.removeLayer(_marcandoMarkerA); _marcandoMarkerA = null; }
+    if (_marcandoMarkerB) { map.removeLayer(_marcandoMarkerB); _marcandoMarkerB = null; }
+    if (_marcandoLinea) { map.removeLayer(_marcandoLinea); _marcandoLinea = null; }
+    _marcandoPtoA = null;
+    _marcandoPtoB = null;
+  }
+
+  function cancelarMarcadoTramo() {
+    if (!_marcandoTramo) return;
+    _marcandoTramo = false;
+    _marcandoPaso = 0;
+    _limpiarMarcadoTramo();
+    map.getContainer().style.cursor = '';
+    map.off('click', _onMarcarClick);
+  }
+
+  function iniciarMarcadoTramo() {
+    cancelarMarcadoTramo();
+    _marcandoTramo = true;
+    _marcandoPaso = 1;
+    map.getContainer().style.cursor = 'crosshair';
+    map.on('click', _onMarcarClick);
+  }
+
+  function _onMarcarClick(e) {
+    if (!_marcandoTramo) return;
+    const latlng = e.latlng;
+    if (_marcandoPaso === 1) {
+      _marcandoPtoA = [latlng.lng, latlng.lat];
+      _marcandoMarkerA = L.marker(latlng, {
+        icon: L.divIcon({ html: '<div class="marcando-pin marcando-pin--a">A</div>', className: '', iconSize: [24, 24], iconAnchor: [12, 12] }),
+      }).bindTooltip('Punto inicial', { direction: 'top' }).addTo(map);
+      _marcandoPaso = 2;
+    } else if (_marcandoPaso === 2) {
+      _marcandoPtoB = [latlng.lng, latlng.lat];
+      _marcandoMarkerB = L.marker(latlng, {
+        icon: L.divIcon({ html: '<div class="marcando-pin marcando-pin--b">B</div>', className: '', iconSize: [24, 24], iconAnchor: [12, 12] }),
+      }).bindTooltip('Punto final', { direction: 'top' }).addTo(map);
+      _marcandoLinea = L.polyline([L.latLng(_marcandoPtoA[1], _marcandoPtoA[0]), latlng], {
+        color: '#e5a000', weight: 4, dashArray: '8 6', opacity: 0.9,
+      }).addTo(map);
+      _marcandoPaso = 0;
+      _marcandoTramo = false;
+      map.getContainer().style.cursor = '';
+      map.off('click', _onMarcarClick);
+      if (_onTramoCompletado) {
+        _onTramoCompletado({
+          inicio: _marcandoPtoA,
+          fin: _marcandoPtoB,
+          limpiar: () => _limpiarMarcadoTramo(),
+        });
+      }
+    }
   }
 
   // ---------------------------------------------------------------------
@@ -546,6 +651,8 @@ const MapModule = (() => {
     limpiarEscalas,
     mostrarAlertaRuta,
     limpiarAlertas,
+    setOnTramoCompletado,
+    cancelarMarcadoTramo,
     dibujarRuta,
     habilitarArrastreRuta,
     dibujarRutaPreview,

@@ -4,23 +4,62 @@
  * Evalúa si la ruta calculada pasa por tramos viales peligrosos o en mal
  * estado definidos en data/rutas_riesgosas.json y expone funciones para
  * consultar las advertencias y sus posiciones en el mapa.
+ *
+ * También gestiona rutas personalizadas agregadas por el usuario, que se
+ * persisten en localStorage y se combinan con las del archivo JSON.
  * ---------------------------------------------------------------------------
  */
 const RouteWarningsModule = (() => {
+  const STORAGE_KEY = 'rutas_riesgosas_personalizadas';
   let _rutas = [];
+  let _desdeArchivo = [];
 
   async function cargar() {
     try {
       const res = await fetch('data/rutas_riesgosas.json');
-      if (!res.ok) return;
-      _rutas = await res.json();
+      if (res.ok) _desdeArchivo = await res.json();
     } catch {
-      // si no existe el archivo o hay error, silencioso
+      // silencioso
+    }
+    _reconstruir();
+  }
+
+  function _reconstruir() {
+    const personalizadas = _cargarPersonalizadas();
+    _rutas = [..._desdeArchivo, ...personalizadas];
+  }
+
+  function _cargarPersonalizadas() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    } catch {
+      return [];
     }
   }
 
   function getRutas() {
     return _rutas;
+  }
+
+  function getPersonalizadas() {
+    return _cargarPersonalizadas();
+  }
+
+  function agregarPersonalizada(ruta) {
+    const list = _cargarPersonalizadas();
+    list.push(ruta);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    _reconstruir();
+  }
+
+  function eliminarPersonalizada(id) {
+    const list = _cargarPersonalizadas().filter((r) => r.id !== id);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    _reconstruir();
+  }
+
+  function exportarJSON() {
+    return JSON.stringify(_cargarPersonalizadas(), null, 2);
   }
 
   /**
@@ -72,5 +111,5 @@ const RouteWarningsModule = (() => {
     return warnings;
   }
 
-  return { cargar, getRutas, verificar };
+  return { cargar, getRutas, getPersonalizadas, agregarPersonalizada, eliminarPersonalizada, exportarJSON, verificar };
 })();
