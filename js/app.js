@@ -548,10 +548,7 @@
       state.sitiosFiltrados = [];
       state.sitiosFiltradosBase = [];
       renderizarSitios([]);
-      if (!el.btnMostrarSitiosCercanos.parentNode) {
-        el.loadingSitios.parentNode.insertBefore(el.btnMostrarSitiosCercanos, el.loadingSitios);
-      }
-      el.btnMostrarSitiosCercanos.disabled = false;
+      _habilitarMostrarSitios();
           calcularRutaPrincipal(true);
         }
       }
@@ -603,10 +600,7 @@
         }
         // Clear site list and show button for manual reload
         renderizarSitios([]);
-        if (!el.btnMostrarSitiosCercanos.parentNode) {
-          el.loadingSitios.parentNode.insertBefore(el.btnMostrarSitiosCercanos, el.loadingSitios);
-        }
-        el.btnMostrarSitiosCercanos.disabled = false;
+        _habilitarMostrarSitios();
       } finally {
         clearInterval(intervalo);
         el.loadingSitios.hidden = true;
@@ -827,8 +821,8 @@
       'Casi listo…',
     ];
     el.btnMostrarSitiosCercanos.addEventListener('click', () => {
-      el.btnMostrarSitiosCercanos.remove();
       if (el.hintParadas) el.hintParadas.hidden = true;
+      el.btnMostrarSitiosCercanos.disabled = true;
       el.checkDistancia.checked = true;
       el.filtroDistancia.disabled = false;
       el.filtroDistancia.value = '5';
@@ -898,6 +892,10 @@
     document.querySelectorAll('.sitio-card__add').forEach((b) => { b.disabled = cargando; });
   }
 
+  function _habilitarMostrarSitios() {
+    el.btnMostrarSitiosCercanos.disabled = false;
+  }
+
   function formatMunicipio(m) {
     if (!m || !m.nombre) return '';
     if (m.nombre === 'Bogotá' || !m.departamento) return m.nombre;
@@ -955,11 +953,7 @@
       state.sitiosFiltradosBase = [];
       state.categoriasSeleccionadas = [];
       conteoCategoriasBase = new Map();
-      // Re-insertar el botón "Mostrar sitios" si fue removido del DOM
-      if (!el.btnMostrarSitiosCercanos.parentNode) {
-        el.loadingSitios.parentNode.insertBefore(el.btnMostrarSitiosCercanos, el.loadingSitios);
-      }
-      el.btnMostrarSitiosCercanos.disabled = false;
+      _habilitarMostrarSitios();
     }
 
     ponerEnCargaRuta(true);
@@ -1010,11 +1004,8 @@
       if (el.hintParadas) el.hintParadas.hidden = true;
       activarPanelTab('ruta');
 
-      // Show "Mostrar sitios" button and clear previous turf
-      if (!el.btnMostrarSitiosCercanos.parentNode) {
-        el.loadingSitios.parentNode.insertBefore(el.btnMostrarSitiosCercanos, el.loadingSitios);
-      }
-      el.btnMostrarSitiosCercanos.disabled = false;
+      // Enable "Mostrar sitios" button
+      _habilitarMostrarSitios();
       el.panelSitios.hidden = true;
       MapModule.limpiarSitios();
       state.sitiosFiltrados = [];
@@ -1543,10 +1534,7 @@
     renderizarParadas();
     MapModule.setMarcadoresParadas(state.paradas);
     if (state.paradas.length === 0) return;
-    if (!el.btnMostrarSitiosCercanos.parentNode) {
-      el.loadingSitios.parentNode.insertBefore(el.btnMostrarSitiosCercanos, el.loadingSitios);
-    }
-    el.btnMostrarSitiosCercanos.disabled = false;
+    _habilitarMostrarSitios();
     el.panelSitios.hidden = true;
   }
 
@@ -1559,10 +1547,6 @@
       state.sitiosFiltrados = [];
       state.sitiosFiltradosBase = [];
       renderizarSitios([]);
-      if (!el.btnMostrarSitiosCercanos.parentNode) {
-        el.loadingSitios.parentNode.insertBefore(el.btnMostrarSitiosCercanos, el.loadingSitios);
-      }
-      el.btnMostrarSitiosCercanos.disabled = false;
       calcularRutaPrincipal(true);
     } else {
       renderizarParadas();
