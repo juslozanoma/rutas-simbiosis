@@ -923,15 +923,15 @@ input, select{ font-family: inherit; }
   font-size: 0.78rem;
   font-weight: 600;
   font-family: var(--font-body);
-  border: 1.5px solid var(--line-200);
+  border: 1.5px solid var(--teal-500);
   border-radius: var(--radius-md);
-  background: var(--bg-subtle);
-  color: var(--text-strong);
+  background: #ffffff;
+  color: var(--teal-500);
   cursor: pointer;
   transition: background 0.12s, border-color 0.12s;
 }
-.descubre-btn:hover{ background: #f0ede5; border-color: var(--teal-500); }
-.descubre-btn--active{ background: var(--teal-50); border-color: var(--teal-500); color: var(--teal-600); }
+.descubre-btn:hover{ background: var(--teal-50); border-color: var(--teal-600); }
+.descubre-btn--active{ background: var(--teal-500); border-color: var(--teal-500); color: #ffffff; }
 .descubre-dropdown{
   width: 100%;
   display: flex;
@@ -1029,6 +1029,7 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="descubre"] .panel-descubre-actions{ display: flex !important; }
   #app[data-mobile-tab="descubre"] .sitios-sort{ display: none !important; }
   .panel-tab-bar{ display: none !important; }
+  .btns-map{ display: none !important; }
   .mobile-tab-bar{
     display: flex !important;
     position: fixed;

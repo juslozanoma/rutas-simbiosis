@@ -909,12 +909,14 @@
     const active = !el.altimetriaPanel.hidden;
     if (active) { cerrarAltimetria(); return; }
     el.altimetriaPanel.hidden = false;
+    if (el.mobileTabBar) el.mobileTabBar.style.display = 'none';
     AltimetriaModule.renderizar('altimetria-chart');
   }
 
   function cerrarAltimetria() {
     if (!el.altimetriaPanel) return;
     el.altimetriaPanel.hidden = true;
+    if (el.mobileTabBar) el.mobileTabBar.style.display = '';
   }
 
   // -------------------------------------------------------------------
