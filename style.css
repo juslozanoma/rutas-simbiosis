@@ -518,11 +518,13 @@ input, select{ font-family: inherit; }
 }
 /* --- Spinner de cálculo de ruta (monalisa) --- */
 .loading-ruta{
-  padding: 16px 10px;
+  padding: 30px 10px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-height: 100px;
+  justify-content: center;
 }
 .loading-ruta[hidden]{
   display: none;
@@ -870,6 +872,7 @@ input, select{ font-family: inherit; }
 }
 .panel-tab:hover{ color: var(--text-strong); }
 .panel-tab--active{ color: var(--teal-500); border-bottom-color: var(--teal-500); }
+.panel-tab:disabled{ opacity: 0.35; cursor: default; pointer-events: none; }
 
 .panel-sites__header{
   display: none;
@@ -962,8 +965,9 @@ input, select{ font-family: inherit; }
 }
 
 /* Tab altimetría en móvil */
-.mobile-tab-btn--altimetria{ flex: 0 0 44px; }
+.mobile-tab-btn--altimetria{ flex: 0 0 36px; padding: 0 4px; }
 .mobile-tab-btn--altimetria svg{ display: block; }
+.mobile-tab-btn--altimetria img{ display: block; }
 
 /* Barra de pestañas inferior (móvil) */
 .mobile-tab-bar{

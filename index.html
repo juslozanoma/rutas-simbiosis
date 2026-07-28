@@ -58,6 +58,12 @@
         <span id="altimetria-alt"></span>
       </div>
     </div>
+    <!-- Botones flotantes del mapa -->
+    <div class="btns-map" id="btns-map">
+      <button type="button" id="btn-altimetria" class="btn-map-icon" title="Perfil de elevación" aria-label="Perfil de elevación">
+        <img src="public/bike.svg" width="22" height="22" alt="" style="filter: invert(1);">
+      </button>
+    </div>
   </main>
 
   <!-- ============ PANEL LATERAL FIJO (escritorio) / CONTENIDO MÓVIL ============ -->
@@ -78,7 +84,7 @@
     <!-- Pestañas del panel (escritorio) -->
     <div class="panel-tab-bar" id="panel-tab-bar">
       <button type="button" id="btn-tab-panel-ruta" class="panel-tab panel-tab--active">Ruta</button>
-      <button type="button" id="btn-tab-panel-descubre" class="panel-tab">Descubre Colombia</button>
+      <button type="button" id="btn-tab-panel-descubre" class="panel-tab" disabled>Descubre Colombia</button>
     </div>
 
     <!-- Ruta: origen/destino + paradas + monalisa -->
@@ -230,12 +236,6 @@
   </aside>
 
   </div><!-- /app-body -->
-
-  <div class="btns-map" id="btns-map">
-    <button type="button" id="btn-altimetria" class="btn-map-icon" title="Perfil de elevación" aria-label="Perfil de elevación">
-      <img src="public/bike.svg" width="22" height="22" alt="" style="filter: invert(1);">
-    </button>
-  </div>
 
   <!-- ============ BARRA DE PESTAÑAS INFERIOR MÓVIL ============ -->
   <nav class="mobile-tab-bar" id="mobile-tab-bar">

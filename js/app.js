@@ -833,6 +833,7 @@
       el.filtroDistancia.disabled = false;
       el.filtroDistancia.value = '5';
       el.filtroDistanciaValor.textContent = '5 km';
+      if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
       if (el.loadingRuta) el.loadingRuta.hidden = true;
       el.loadingSitios.hidden = false;
       ejecutarFiltradoProgresivo(() => {
@@ -886,7 +887,7 @@
 
   /** Habilita/deshabilita todos los controles de entrada durante el cálculo de ruta. */
   function ponerEnCargaRuta(cargando) {
-    el.btnCalcular.disabled = cargando;
+    if (cargando) el.btnCalcular.disabled = true;
     el.btnCalcular.setAttribute('data-loading', cargando ? 'true' : 'false');
     if (el.loadingRuta) el.loadingRuta.hidden = !cargando;
     if (cargando && el.loadingSitios) el.loadingSitios.hidden = true;
