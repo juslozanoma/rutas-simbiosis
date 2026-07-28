@@ -4,10 +4,35 @@
     "nombre": "Vía Sibundoy - Mocoa",
     "descripcion": "Tramo destapado entre Sibundoy y Mocoa (Putumayo)",
     "coordenadas": [
-      [-76.918, 1.203],
-      [-76.648, 1.148]
+      [
+        -76.918,
+        1.203
+      ],
+      [
+        -76.648,
+        1.148
+      ]
     ],
     "distanciaMinimaKm": 100,
+    "mensaje": "Ruta destapada, transitar con precaución",
+    "tipo": "destapada",
+    "color": "#e5a000"
+  },
+  {
+    "id": "custom_1785212424750_jlsw",
+    "nombre": "Tramo destapado",
+    "descripcion": "Ruta destapada, transitar con precaución",
+    "coordenadas": [
+      [
+        -76.31432806834144,
+        1.5634986476175023
+      ],
+      [
+        -76.35446271833261,
+        1.5063690302080437
+      ]
+    ],
+    "distanciaMinimaKm": 400,
     "mensaje": "Ruta destapada, transitar con precaución",
     "tipo": "destapada",
     "color": "#e5a000"

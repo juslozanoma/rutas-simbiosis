@@ -279,12 +279,12 @@ const MapModule = (() => {
   // Alertas de tramos peligrosos
   // ---------------------------------------------------------------------
 
-  function mostrarAlertaRuta(lnglat, mensaje, color) {
-    const icon = L.divIcon({
-      html: `<div style="width:28px;height:28px;background:#e5a000;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3);">⚠</div>`,
-      className: '',
-      iconSize: [28, 28],
-      iconAnchor: [14, 14],
+function mostrarAlertaRuta(lnglat, mensaje, color) {
+    const icon = L.icon({
+      iconUrl: 'public/warning.svg',
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -16],
     });
     const marker = L.marker(lnglat, { icon, zIndexOffset: 1050 });
     marker.bindTooltip(mensaje, {

@@ -822,38 +822,37 @@
         ? await RoutingModule.calcularRutaConParadas(puntosRuta, PERFIL_FIJO)
         : await RoutingModule.calcularRuta(state.origen, state.destino, PERFIL_FIJO);
 
-      // Intentar evitar tramos peligrosos recalculando con puntos evasivos
-      const totalKm = ruta.distanciaMetros / 1000;
-      const rutasPeligrosas = RouteWarningsModule.getRutas();
-      for (const dangerRuta of rutasPeligrosas) {
-        const evasivePt = RouteWarningsModule.generarPuntoEvasivo(ruta.geojson, dangerRuta, totalKm);
-        if (!evasivePt) continue;
-        const nuevosPuntos = [
-          state.origen,
-          ...state.escalas.filter((e) => e.lat != null),
-          { lat: evasivePt[1], lon: evasivePt[0] },
-          state.destino,
-        ];
-        try {
-          const rutaAlt = await RoutingModule.calcularRutaConParadas(nuevosPuntos, PERFIL_FIJO);
-          // Verificar con misma detección que verificar()
-          const altCoords = rutaAlt.geojson.geometry.coordinates;
-          const altLine = turf.lineString(altCoords);
-          const dangerLine = turf.lineString(dangerRuta.coordenadas);
-          const dangerLen = turf.length(dangerLine, { units: 'kilometers' });
-          const numCheck = Math.max(5, Math.ceil(dangerLen / 3));
-          let evita = true;
-          for (let i = 0; i <= numCheck; i++) {
-            const pt = turf.along(dangerLine, (i / numCheck) * dangerLen, { units: 'kilometers' });
-            const nearest = turf.nearestPointOnLine(altLine, pt, { units: 'kilometers' });
-            const d = nearest.properties.dist != null ? nearest.properties.dist : nearest.properties.distance;
-            if (d != null && d < 12) { evita = false; break; }
+      // Intentar evitar tramos peligrosos con puntos evasivos
+      let intentos = 5;
+      let totalKm = ruta.distanciaMetros / 1000;
+      while (intentos-- > 0) {
+        const peligrosas = RouteWarningsModule.getRutas();
+        let evadido = false;
+        for (const dangerRuta of peligrosas) {
+          if (dangerRuta.distanciaMinimaKm != null && totalKm < dangerRuta.distanciaMinimaKm) continue;
+          const evasivePt = RouteWarningsModule.generarPuntoEvasivo(ruta.geojson, dangerRuta, totalKm);
+          if (!evasivePt) continue;
+          const nuevosPuntos = [
+            state.origen,
+            ...state.escalas.filter((e) => e.lat != null),
+            { lat: evasivePt[1], lon: evasivePt[0] },
+            state.destino,
+          ];
+          try {
+            const rutaAlt = await RoutingModule.calcularRutaConParadas(nuevosPuntos, PERFIL_FIJO);
+            const altKm = rutaAlt.distanciaMetros / 1000;
+            const alertas = RouteWarningsModule.verificar(rutaAlt.geojson, altKm);
+            if (!alertas.some((a) => a.id === dangerRuta.id)) {
+              ruta = rutaAlt;
+              totalKm = altKm;
+              evadido = true;
+              break;
+            }
+          } catch {
+            // alternativa falló
           }
-          if (evita) ruta = rutaAlt;
-        } catch {
-          // alternativa falló
         }
-        break;
+        if (!evadido) break;
       }
 
       aplicarRutaCalculada(ruta);
