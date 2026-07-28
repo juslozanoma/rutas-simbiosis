@@ -699,14 +699,6 @@
       el.loadingSitios.hidden = false;
       ejecutarFiltradoProgresivo(() => {
         el.panelSitios.hidden = false;
-        if (el.panelDesvios) {
-          el.panelDesvios.hidden = false;
-          el.btnDesvios.setAttribute('aria-pressed', 'true');
-        }
-        if (el.panelCategorias) {
-          el.panelCategorias.hidden = true;
-          el.btnCategorias.setAttribute('aria-pressed', 'false');
-        }
         actualizarEstadoBotonesRetry();
         el.loadingSitios.hidden = true;
         setTimeout(() => cargarFondoSitios(), 100);
@@ -840,8 +832,8 @@
               break;
             }
           }
-        } catch {
-          // no se pudieron obtener alternativas, se mantiene la ruta original
+        } catch (err) {
+          console.warn('No se pudieron obtener alternativas:', err);
         }
       }
 
@@ -1238,7 +1230,18 @@
     try {
       const totalKm = state.rutaActual.distanciaMetros / 1000;
       const alertas = RouteWarningsModule.verificar(state.rutaActual.geojson, totalKm);
-      alertas.forEach((a) => MapModule.mostrarAlertaRuta([a.lnglat[1], a.lnglat[0]], a.mensaje, a.color));
+      alertas.forEach((a) => {
+        const coords = a.ruta.coordenadas;
+        let lat, lng;
+        if (coords && coords.length >= 2) {
+          lng = (coords[0][0] + coords[coords.length - 1][0]) / 2;
+          lat = (coords[0][1] + coords[coords.length - 1][1]) / 2;
+        } else {
+          lat = a.lnglat[1];
+          lng = a.lnglat[0];
+        }
+        MapModule.mostrarAlertaRuta([lat, lng], a.mensaje, a.color);
+      });
     } catch {}
 
     sincronizarOrden();
@@ -1480,8 +1483,14 @@
       return li;
     }
 
+    function formatMunicipio(m) {
+      if (!m || !m.nombre) return '';
+      if (m.nombre === 'Bogotá' || !m.departamento) return m.nombre;
+      return m.nombre + ', ' + m.departamento;
+    }
+
     if (incluirExtremos) {
-      el.paradasLista.appendChild(crearFilaExtremo('A', state.origen.nombre, 'origen'));
+      el.paradasLista.appendChild(crearFilaExtremo('A', formatMunicipio(state.origen), 'origen'));
     }
 
     items.forEach((item, idx) => {
@@ -1497,7 +1506,7 @@
 
       const nombre = document.createElement('span');
       nombre.className = 'parada-item__nombre';
-      nombre.textContent = e.nombre;
+      nombre.textContent = item.tipo === 'escala' ? formatMunicipio(e) : e.nombre;
 
       const acciones = document.createElement('div');
       acciones.className = 'parada-item__acciones';
@@ -1540,7 +1549,7 @@
     });
 
     if (incluirExtremos) {
-      el.paradasLista.appendChild(crearFilaExtremo('Z', state.destino.nombre, 'destino'));
+      el.paradasLista.appendChild(crearFilaExtremo('Z', formatMunicipio(state.destino), 'destino'));
     }
   }
 
@@ -1672,7 +1681,6 @@
         nombre: 'Tramo destapado',
         descripcion: 'Ruta destapada, transitar con precaución',
         coordenadas: tramo.segmento || [tramo.punto, tramo.punto],
-        distanciaMinimaKm: 400,
         mensaje: 'Ruta destapada, transitar con precaución',
         tipo: 'destapada',
         color: '#e5a000',

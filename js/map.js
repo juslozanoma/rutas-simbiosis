@@ -136,7 +136,9 @@ const MapModule = (() => {
 
   function iconoSitio() {
     return L.divIcon({
-      html: `<div class="sitio-pin"></div>`,
+      html: `<div class="sitio-pin">
+        <svg viewBox="0 0 32 32" width="14" height="14" fill="#2f7a6b"><path d="M29.83,17.45l-2-3A1,1,0,0,0,27,14H17V12h8a1,1,0,0,0,1-1V5a1,1,0,0,0-1-1H17V3a1,1,0,0,0-2,0V4H6a1,1,0,0,0-.71.29l-3,3a1,1,0,0,0,0,1.41l3,3A1,1,0,0,0,6,12h9v2H7a1,1,0,0,0-1,1v6a1,1,0,0,0,1,1h8v6H11a1,1,0,0,0,0,2H21a1,1,0,0,0,0-2H17V22H27a1,1,0,0,0,.83-.45l2-3A1,1,0,0,0,29.83,17.45Z"/></svg>
+      </div>`,
       className: '',
       iconSize: [26, 26],
       iconAnchor: [13, 13],

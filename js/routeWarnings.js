@@ -95,7 +95,6 @@ const RouteWarningsModule = (() => {
     const warnings = [];
 
     for (const ruta of _rutas) {
-      if (ruta.distanciaMinimaKm != null && totalKm < ruta.distanciaMinimaKm) continue;
       if (!ruta.coordenadas || ruta.coordenadas.length < 2) continue;
 
       const dangerLine = turf.lineString(ruta.coordenadas);
