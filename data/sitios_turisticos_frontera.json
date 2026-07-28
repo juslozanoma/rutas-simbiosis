@@ -1,0 +1,572 @@
+[
+  {
+    "id": 1,
+    "ciudad_origen": "Cúcuta",
+    "departamento": "Norte de Santander",
+    "pais_fronterizo": "Venezuela",
+    "latitud": 7.8939,
+    "longitud": -72.5078,
+    "sitios_turisticos_fuera_colombia": [
+      "San Antonio del Táchira (Venezuela) - Ciudad fronteriza, comercio y gastronomía",
+      "Ureña (Venezuela) - Ciudad fronteriza, mercados tradicionales",
+      "San Cristóbal (Venezuela) - Capital del Táchira, centro histórico, parques",
+      "Mérida (Venezuela) - Ciudad de los caballeros, teleférico más alto del mundo, páramos andinos",
+      "Páramo de la Culata (Venezuela) - Trekking, frailejones, lagunas",
+      "Laguna Mucubají (Venezuela) - Páramo andino, senderismo",
+      "Pico Bolívar (Venezuela) - Ascenso al pico más alto de Venezuela (5.007 m)",
+      "Barinas (Venezuela) - Llanos venezolanos, safari de fauna",
+      "Boconó (Venezuela) - Pueblo andino, artesanías, café"
+    ],
+    "total_sitios": 9,
+    "descripcion_como_llegar": "Desde Cúcuta se cruza la frontera por el Puente Internacional Simón Bolívar hacia San Antonio del Táchira (5 minutos a pie) o el Puente Francisco de Paula Santander hacia Ureña (10 minutos en vehículo). Hacia San Cristóbal: 45 minutos en carro. Hacia Mérida: 3-4 horas por carretera andina desde San Cristóbal."
+  },
+  {
+    "id": 2,
+    "ciudad_origen": "Villa del Rosario",
+    "departamento": "Norte de Santander",
+    "pais_fronterizo": "Venezuela",
+    "latitud": 7.8358,
+    "longitud": -72.4739,
+    "sitios_turisticos_fuera_colombia": [
+      "Ureña (Venezuela) - Ciudad fronteriza, mercados, comercio",
+      "San Antonio del Táchira (Venezuela) - Centro histórico, gastronomía local",
+      "San Cristóbal (Venezuela) - Capital del Táchira, catedral, parque La Concordia",
+      "Mérida (Venezuela) - Teleférico Mukumbarí, universidades, clima de montaña"
+    ],
+    "total_sitios": 4,
+    "descripcion_como_llegar": "Cruce por el Puente Internacional Atanasio Girardot (Tienditas) hacia Ureña, Venezuela. A 5 minutos de Ureña y 40 minutos de San Cristóbal en vehículo."
+  },
+  {
+    "id": 3,
+    "ciudad_origen": "Puerto Santander",
+    "departamento": "Norte de Santander",
+    "pais_fronterizo": "Venezuela",
+    "latitud": 8.3636,
+    "longitud": -72.4075,
+    "sitios_turisticos_fuera_colombia": [
+      "Ureña (Venezuela) - Mercados fronterizos, comercio",
+      "San Cristóbal (Venezuela) - Capital del Táchira, vida nocturna",
+      "Mérida (Venezuela) - Andes venezolanos, teleférico"
+    ],
+    "total_sitios": 3,
+    "descripcion_como_llegar": "Cruce por el Puente Internacional Unión hacia Ureña, Venezuela. A 30 minutos de Ureña y 1 hora de San Cristóbal en vehículo por carretera rural."
+  },
+  {
+    "id": 4,
+    "ciudad_origen": "Maicao",
+    "departamento": "La Guajira",
+    "pais_fronterizo": "Venezuela",
+    "latitud": 11.3778,
+    "longitud": -72.2394,
+    "sitios_turisticos_fuera_colombia": [
+      "Paraguaipoa (Venezuela) - Pueblo wayúu fronterizo, artesanías",
+      "Sinamaica (Venezuela) - Laguna, pueblos palafíticos, cultura wayúu",
+      "Maracaibo (Venezuela) - Segunda ciudad de Venezuela, Puente Sobre el Lago, centro histórico",
+      "Cabimas (Venezuela) - Ciudad petrolera, Lago de Maracaibo",
+      "Coro (Venezuela) - Patrimonio de la Humanidad UNESCO, casco colonial, médanos"
+    ],
+    "total_sitios": 5,
+    "descripcion_como_llegar": "Cruce fronterizo por Paraguachón (paso terrestre). A 15 minutos de Paraguaipoa y 2 horas de Maracaibo en carro. A 4 horas de Coro por carretera."
+  },
+  {
+    "id": 5,
+    "ciudad_origen": "Uribia",
+    "departamento": "La Guajira",
+    "pais_fronterizo": "Venezuela",
+    "latitud": 11.7139,
+    "longitud": -72.2661,
+    "sitios_turisticos_fuera_colombia": [
+      "Paraguaipoa (Venezuela) - Comunidad wayúu, artesanías",
+      "Sinamaica (Venezuela) - Laguna sinamaica, pueblos sobre el agua",
+      "Maracaibo (Venezuela) - Lago de Maracaibo, cultura zuliana"
+    ],
+    "total_sitios": 3,
+    "descripcion_como_llegar": "Acceso por carretera desde Uribia hacia Paraguachón (30 minutos), cruce fronterizo a pie o en vehículo hacia Paraguaipoa, Venezuela."
+  },
+  {
+    "id": 6,
+    "ciudad_origen": "Arauca",
+    "departamento": "Arauca",
+    "pais_fronterizo": "Venezuela",
+    "latitud": 7.0847,
+    "longitud": -70.7591,
+    "sitios_turisticos_fuera_colombia": [
+      "El Amparo (Venezuela) - Pueblo fronterizo, puente sobre el río Arauca",
+      "Guasdualito (Venezuela) - Capital del municipio Páez, llanos apureños",
+      "San Juan de Payara (Venezuela) - Río Arauca, pesca deportiva",
+      "Barinas (Venezuela) - Llanos occidentales, safari de fauna, hatos turísticos",
+      "Mérida (Venezuela) - Andes venezolanos, páramos (vía Barinas, 6 horas)"
+    ],
+    "total_sitios": 5,
+    "descripcion_como_llegar": "Cruce por el Puente Internacional José Antonio Páez hacia El Amparo, Venezuela. Guasdualito a 1 hora. Barinas a 3 horas por carretera de los llanos."
+  },
+  {
+    "id": 7,
+    "ciudad_origen": "Saravena",
+    "departamento": "Arauca",
+    "pais_fronterizo": "Venezuela",
+    "latitud": 6.9553,
+    "longitud": -71.8778,
+    "sitios_turisticos_fuera_colombia": [
+      "Guasdualito (Venezuela) - Llanos apureños, cultura llanera",
+      "Barinas (Venezuela) - Hatos turísticos, música llanera, gastronomía",
+      "San Fernando de Apure (Venezuela) - Río Apure, pesca, fauna de los llanos"
+    ],
+    "total_sitios": 3,
+    "descripcion_como_llegar": "Acceso por carretera rural hacia la frontera con Venezuela (1.5 horas), cruce por pasos secundarios hacia Guasdualito."
+  },
+  {
+    "id": 8,
+    "ciudad_origen": "Tibú",
+    "departamento": "Norte de Santander",
+    "pais_fronterizo": "Venezuela",
+    "latitud": 8.6314,
+    "longitud": -72.7319,
+    "sitios_turisticos_fuera_colombia": [
+      "San Cristóbal (Venezuela) - Capital del Táchira, parques, gastronomía",
+      "Mérida (Venezuela) - Andes, teleférico, clima frío",
+      "Rubio (Venezuela) - Pueblo andino, flores, clima templado"
+    ],
+    "total_sitios": 3,
+    "descripcion_como_llegar": "Cruce fronterizo terrestre hacia Venezuela (30 minutos en vehículo por carretera rural), conexión hacia San Cristóbal por carretera andina (1.5 horas)."
+  },
+  {
+    "id": 9,
+    "ciudad_origen": "Puerto Carreño",
+    "departamento": "Vichada",
+    "pais_fronterizo": "Venezuela",
+    "latitud": 6.1851,
+    "longitud": -67.4827,
+    "sitios_turisticos_fuera_colombia": [
+      "Puerto Ayacucho (Venezuela) - Capital del Amazonas venezolano, río Orinoco, cultura indígena",
+      "San Fernando de Atabapo (Venezuela) - Río Atabapo, comunidades indígenas",
+      "Maroa (Venezuela) - Pueblo amazónico, frontera triple Colombia-Brasil-Venezuela",
+      "Parque Nacional Duida-Marahuaca (Venezuela) - Tepuyes, selva amazónica",
+      "Ciudad Bolívar (Venezuela) - Ciudad histórica, río Orinoco, puente Angostura (vía aérea desde Puerto Ayacucho)"
+    ],
+    "total_sitios": 5,
+    "descripcion_como_llegar": "Cruce fluvial por el río Orinoco hacia Puerto Ayacucho, Venezuela (4 horas en lancha). Maroa accesible por vía fluvial (6 horas). San Fernando de Atabapo por río (8 horas)."
+  },
+  {
+    "id": 10,
+    "ciudad_origen": "Inírida",
+    "departamento": "Guainía",
+    "pais_fronterizo": "Venezuela",
+    "latitud": 3.868,
+    "longitud": -67.9265,
+    "sitios_turisticos_fuera_colombia": [
+      "Puerto Ayacucho (Venezuela) - Capital del Amazonas venezolano, río Orinoco",
+      "San Fernando de Atabapo (Venezuela) - Confluencia ríos Orinoco, Atabapo y Guaviare",
+      "Maroa (Venezuela) - Frontera amazónica, comunidades indígenas",
+      "Isla Ratón (Venezuela) - Isla en el río Negro, frontera con Brasil"
+    ],
+    "total_sitios": 4,
+    "descripcion_como_llegar": "Cruce fluvial por el río Inírida y Orinoco hacia Puerto Ayacucho (1-2 días en lancha). Acceso principalmente por vía fluvial o aérea."
+  },
+  {
+    "id": 11,
+    "ciudad_origen": "La Primavera",
+    "departamento": "Vichada",
+    "pais_fronterizo": "Venezuela",
+    "latitud": 5.49,
+    "longitud": -70.41,
+    "sitios_turisticos_fuera_colombia": [
+      "Puerto Ayacucho (Venezuela) - Río Orinoco, capital del Amazonas venezolano",
+      "San Fernando de Atabapo (Venezuela) - Ríos Orinoco y Atabapo"
+    ],
+    "total_sitios": 2,
+    "descripcion_como_llegar": "Acceso por vía fluvial desde el río Meta hacia el Orinoco (2-3 días en lancha) o por carretera desde Puerto Carreño (3 horas) y luego fluvial."
+  },
+  {
+    "id": 12,
+    "ciudad_origen": "Cumaribo",
+    "departamento": "Vichada",
+    "pais_fronterizo": "Venezuela",
+    "latitud": 4.45,
+    "longitud": -69.8,
+    "sitios_turisticos_fuera_colombia": [
+      "Puerto Ayacucho (Venezuela) - Amazonas venezolano",
+      "San Fernando de Atabapo (Venezuela) - Confluencia de ríos amazónicos"
+    ],
+    "total_sitios": 2,
+    "descripcion_como_llegar": "Acceso por vía fluvial desde el río Orinoco o aérea. Zona de difícil acceso terrestre."
+  },
+  {
+    "id": 13,
+    "ciudad_origen": "Ipiales",
+    "departamento": "Nariño",
+    "pais_fronterizo": "Ecuador",
+    "latitud": 0.825,
+    "longitud": -77.6408,
+    "sitios_turisticos_fuera_colombia": [
+      "Tulcán (Ecuador) - Cementerio de Cipreses (arte topiario, Patrimonio Cultural del Ecuador)",
+      "Otavalo (Ecuador) - Mercado indígena más grande de Sudamérica, artesanías, textiles",
+      "Quito (Ecuador) - Capital del Ecuador, centro histórico Patrimonio de la Humanidad UNESCO, Mitad del Mundo",
+      "Cotopaxi (Ecuador) - Volcán activo más alto del mundo (5.897 m), Parque Nacional",
+      "Laguna de Cuicocha (Ecuador) - Laguna volcánica en crater, Reserva Cotacachi-Cayapas",
+      "Baños de Agua Santa (Ecuador) - Termas, cascadas, aventura, puerta del Amazonas",
+      "Cuenca (Ecuador) - Ciudad colonial Patrimonio de la Humanidad UNESCO, catedral",
+      "Islas Galápagos (Ecuador) - Patrimonio Natural de la Humanidad, fauna única (vía vuelo desde Quito)"
+    ],
+    "total_sitios": 8,
+    "descripcion_como_llegar": "Cruce por el Puente Internacional Rumichaca hacia Tulcán, Ecuador (5 minutos a pie). Otavalo a 2 horas en carro. Quito a 4-5 horas por la Panamericana. Baños a 6 horas. Galápagos requiere vuelo desde Quito o Guayaquil (2 horas)."
+  },
+  {
+    "id": 14,
+    "ciudad_origen": "Pasto",
+    "departamento": "Nariño",
+    "pais_fronterizo": "Ecuador",
+    "latitud": 1.2136,
+    "longitud": -77.2811,
+    "sitios_turisticos_fuera_colombia": [
+      "Tulcán (Ecuador) - Cementerio de Cipreses, arte topiario",
+      "Otavalo (Ecuador) - Mercado indígena, lago San Pablo",
+      "Quito (Ecuador) - Centro histórico, Mitad del Mundo, teleférico",
+      "Cotopaxi (Ecuador) - Volcán, trekking, páramo",
+      "Laguna Quilotoa (Ecuador) - Laguna volcánica turquesa, senderismo",
+      "Baños de Agua Santa (Ecuador) - Cascada Pailón del Diablo, termas, canopy"
+    ],
+    "total_sitios": 6,
+    "descripcion_como_llegar": "Desde Pasto hacia Ipiales (2 horas en carro), cruce por Rumichaca hacia Tulcán. Quito a 5 horas desde Tulcán. Baños a 7 horas desde Pasto vía Tulcán."
+  },
+  {
+    "id": 15,
+    "ciudad_origen": "Túquerres",
+    "departamento": "Nariño",
+    "pais_fronterizo": "Ecuador",
+    "latitud": 1.0833,
+    "longitud": -77.6167,
+    "sitios_turisticos_fuera_colombia": [
+      "Tulcán (Ecuador) - Cementerio de Cipreses",
+      "Otavalo (Ecuador) - Mercado indígena",
+      "Quito (Ecuador) - Centro histórico"
+    ],
+    "total_sitios": 3,
+    "descripcion_como_llegar": "A 1 hora de Ipiales por carretera, luego cruce por Rumichaca hacia Tulcán (30 minutos desde Ipiales)."
+  },
+  {
+    "id": 16,
+    "ciudad_origen": "Cumbal",
+    "departamento": "Nariño",
+    "pais_fronterizo": "Ecuador",
+    "latitud": 0.9,
+    "longitud": -77.7833,
+    "sitios_turisticos_fuera_colombia": [
+      "Tulcán (Ecuador) - Cementerio de Cipreses",
+      "Otavalo (Ecuador) - Mercado indígena",
+      "Quito (Ecuador) - Centro histórico",
+      "Laguna de la Bolsa (Ecuador) - En las faldas del Volcán Cumbal, pesca de trucha"
+    ],
+    "total_sitios": 4,
+    "descripcion_como_llegar": "Acceso por carretera hacia Ipiales (1.5 horas), cruce por Rumichaca. La Laguna de la Bolsa está en la frontera misma, accesible desde Cumbal (30 minutos)."
+  },
+  {
+    "id": 17,
+    "ciudad_origen": "Mocoa",
+    "departamento": "Putumayo",
+    "pais_fronterizo": "Ecuador",
+    "latitud": 1.15,
+    "longitud": -76.65,
+    "sitios_turisticos_fuera_colombia": [
+      "Nueva Loja (Ecuador) - Capital de Sucumbíos, puerta del norte amazónico ecuatoriano",
+      "Cascadas de Latas (Ecuador) - Cerca de la frontera, selva húmeda",
+      "Quito (Ecuador) - Centro histórico, Mitad del Mundo (vía Lago Agrio, 8 horas)"
+    ],
+    "total_sitios": 3,
+    "descripcion_como_llegar": "Cruce por el paso fronterizo de San Miguel (río San Miguel) hacia Nueva Loja, Ecuador. Acceso por carretera rural (2 horas) o vía fluvial. Quito a 8 horas desde Nueva Loja."
+  },
+  {
+    "id": 18,
+    "ciudad_origen": "Puerto Asís",
+    "departamento": "Putumayo",
+    "pais_fronterizo": "Ecuador",
+    "latitud": 0.5,
+    "longitud": -76.5,
+    "sitios_turisticos_fuera_colombia": [
+      "Nueva Loja (Ecuador) - Capital de Sucumbíos, comercio petrolero",
+      "Santa Rosa de Sucumbíos (Ecuador) - Pueblo fronterizo, río Putumayo",
+      "Quito (Ecuador) - Centro histórico (vía Nueva Loja, 7 horas)"
+    ],
+    "total_sitios": 3,
+    "descripcion_como_llegar": "Cruce por el paso fronterizo de San Miguel hacia Nueva Loja, Ecuador (3 horas en carro por carretera rural)."
+  },
+  {
+    "id": 19,
+    "ciudad_origen": "Tumaco",
+    "departamento": "Nariño",
+    "pais_fronterizo": "Ecuador",
+    "latitud": 1.8,
+    "longitud": -78.7667,
+    "sitios_turisticos_fuera_colombia": [
+      "San Lorenzo (Ecuador) - Puerto pesquero ecuatoriano, playas del Pacífico",
+      "Esmeraldas (Ecuador) - Playas, cultura afroecuatoriana, gastronomía",
+      "Atacames (Ecuador) - Playa turística, surf, vida nocturna",
+      "Guayaquil (Ecuador) - Principal puerto del Ecuador, malecón, parque histórico (vía Esmeraldas, 6 horas)"
+    ],
+    "total_sitios": 4,
+    "descripcion_como_llegar": "Cruce marítimo desde Tumaco hacia San Lorenzo, Ecuador (2 horas en lancha por el océano Pacífico). Esmeraldas a 3 horas en carro desde San Lorenzo."
+  },
+  {
+    "id": 20,
+    "ciudad_origen": "Ricaurte",
+    "departamento": "Nariño",
+    "pais_fronterizo": "Ecuador",
+    "latitud": 1.2,
+    "longitud": -78.0833,
+    "sitios_turisticos_fuera_colombia": [
+      "San Lorenzo (Ecuador) - Puerto pesquero, playas",
+      "Esmeraldas (Ecuador) - Playas del Pacífico"
+    ],
+    "total_sitios": 2,
+    "descripcion_como_llegar": "Cruce marítimo desde la costa de Ricaurte hacia San Lorenzo, Ecuador (1.5 horas en lancha)."
+  },
+  {
+    "id": 21,
+    "ciudad_origen": "Leticia",
+    "departamento": "Amazonas",
+    "pais_fronterizo": "Brasil",
+    "latitud": -4.2153,
+    "longitud": -69.9406,
+    "sitios_turisticos_fuera_colombia": [
+      "Tabatinga (Brasil) - Ciudad gemela de Leticia, mercado brasileño, gastronomía",
+      "Manaos (Brasil) - Capital del Amazonas, Teatro Amazonas, encuentro de aguas Negro y Solimões",
+      "Río de Janeiro (Brasil) - Cristo Redentor, Pan de Azúcar, playas de Copacabana e Ipanema (vía vuelo)",
+      "Cataratas del Iguazú (Brasil) - Una de las 7 maravillas naturales (vía vuelo desde Manaos o Leticia)",
+      "Parque Nacional de Anavilhanas (Brasil) - Archipiélago fluvial en el Negro, cerca de Manaos",
+      "Praia da Ponta Negra (Brasil) - Playa de Manaos, atardeceres amazónicos"
+    ],
+    "total_sitios": 6,
+    "descripcion_como_llegar": "Cruce peatonal libre por la Avenida Internacional entre Leticia y Tabatinga (10 minutos a pie). Manaos a 1.5 horas en vuelo desde Leticia o 3 días en lancha por el Amazonas. Río de Janeiro y Cataratas requieren vuelo desde Manaos."
+  },
+  {
+    "id": 22,
+    "ciudad_origen": "Puerto Nariño",
+    "departamento": "Amazonas",
+    "pais_fronterizo": "Brasil",
+    "latitud": -3.7703,
+    "longitud": -70.3831,
+    "sitios_turisticos_fuera_colombia": [
+      "Tabatinga (Brasil) - Mercado brasileño, productos amazónicos",
+      "Manaos (Brasil) - Teatro Amazonas, encuentro de aguas",
+      "Benjamin Constant (Brasil) - Pueblo brasileño en el Amazonas, frontera con Colombia"
+    ],
+    "total_sitios": 3,
+    "descripcion_como_llegar": "Acceso por vía fluvial desde Puerto Nariño hacia Tabatinga (1 hora en lancha por el Loretoyacú/Amazonas) o hacia Benjamin Constant (30 minutos)."
+  },
+  {
+    "id": 23,
+    "ciudad_origen": "Mitú",
+    "departamento": "Vaupés",
+    "pais_fronterizo": "Brasil",
+    "latitud": 1.2514,
+    "longitud": -70.2342,
+    "sitios_turisticos_fuera_colombia": [
+      "São Gabriel da Cachoeira (Brasil) - Pueblo fronterizo en el río Negro, comunidades indígenas",
+      "Manaos (Brasil) - Capital del Amazonas (vía vuelo o río Negro, varios días)"
+    ],
+    "total_sitios": 2,
+    "descripcion_como_llegar": "Acceso por vía aérea desde Mitú hacia São Gabriel da Cachoeira (vuelos esporádicos) o por río Negro en expedición (varios días)."
+  },
+  {
+    "id": 24,
+    "ciudad_origen": "Inírida",
+    "departamento": "Guainía",
+    "pais_fronterizo": "Brasil",
+    "latitud": 3.868,
+    "longitud": -67.9265,
+    "sitios_turisticos_fuera_colombia": [
+      "São Gabriel da Cachoeira (Brasil) - Río Negro, frontera amazónica",
+      "Barcelos (Brasil) - Río Negro, pesca deportiva de tucunaré",
+      "Manaos (Brasil) - Capital del Amazonas (vía vuelo desde São Gabriel)"
+    ],
+    "total_sitios": 3,
+    "descripcion_como_llegar": "Acceso por vía fluvial desde el río Inírida hacia el Negro y São Gabriel da Cachoeira (3-5 días en lancha) o vía aérea."
+  },
+  {
+    "id": 25,
+    "ciudad_origen": "Cumaribo",
+    "departamento": "Vichada",
+    "pais_fronterizo": "Brasil",
+    "latitud": 4.45,
+    "longitud": -69.8,
+    "sitios_turisticos_fuera_colombia": [
+      "São Gabriel da Cachoeira (Brasil) - Frontera amazónica",
+      "Manaos (Brasil) - Amazonas brasileño"
+    ],
+    "total_sitios": 2,
+    "descripcion_como_llegar": "Acceso por vía fluvial desde el río Negro o aérea. Zona de difícil acceso."
+  },
+  {
+    "id": 26,
+    "ciudad_origen": "Leticia",
+    "departamento": "Amazonas",
+    "pais_fronterizo": "Perú",
+    "latitud": -4.2153,
+    "longitud": -69.9406,
+    "sitios_turisticos_fuera_colombia": [
+      "Santa Rosa (Perú) - Isla en el Amazonas, pueblito flotante, pisco peruano, Inca Kola",
+      "Iquitos (Perú) - Ciudad más grande del mundo sin carreteras, Belén (barrio flotante), río Amazonas",
+      "Lima (Perú) - Capital del Perú, centro histórico, Miraflores, gastronomía (vía vuelo desde Iquitos)",
+      "Machu Picchu (Perú) - Ciudadela inca, Patrimonio de la Humanidad (vía vuelo Lima-Cusco)",
+      "Cusco (Perú) - Capital del Imperio Inca, Sacsayhuamán, Valle Sagrado (vía vuelo desde Lima)",
+      "Lago Titicaca (Perú) - Lago navegable más alto del mundo, islas Uros (vía Cusco)"
+    ],
+    "total_sitios": 6,
+    "descripcion_como_llegar": "Cruce fluvial desde Leticia hacia Santa Rosa (10 minutos en lancha por el Amazonas). Iquitos a 2-3 horas en lancha rápida o vuelo desde Leticia. Lima requiere vuelo desde Iquitos (1.5 horas). Machu Picchu requiere vuelo Lima-Cusco y tren."
+  },
+  {
+    "id": 27,
+    "ciudad_origen": "Puerto Nariño",
+    "departamento": "Amazonas",
+    "pais_fronterizo": "Perú",
+    "latitud": -3.7703,
+    "longitud": -70.3831,
+    "sitios_turisticos_fuera_colombia": [
+      "Santa Rosa (Perú) - Isla amazónica, pueblito flotante",
+      "Iquitos (Perú) - Ciudad amazónica, barrio Belén, río Amazonas",
+      "Reserva Nacional Pacaya-Samiria (Perú) - Selva amazónica, fauna, delfines rosados"
+    ],
+    "total_sitios": 3,
+    "descripcion_como_llegar": "Cruce fluvial desde Puerto Nariño hacia Santa Rosa (1.5 horas por el Amazonas). Iquitos a 3 horas en lancha rápida."
+  },
+  {
+    "id": 28,
+    "ciudad_origen": "Puerto Leguizamo",
+    "departamento": "Putumayo",
+    "pais_fronterizo": "Perú",
+    "latitud": -0.1811,
+    "longitud": -74.777,
+    "sitios_turisticos_fuera_colombia": [
+      "Santa Clara (Perú) - Pueblo fronterizo en el río Putumayo",
+      "Iquitos (Perú) - Ciudad amazónica (vía río Putumayo-Amazonas, varios días)",
+      "Pucallpa (Perú) - Ciudad amazónica peruana, río Ucayali (vía vuelo)"
+    ],
+    "total_sitios": 3,
+    "descripcion_como_llegar": "Cruce fluvial por el río Putumayo hacia Santa Clara, Perú (2 horas en lancha). Iquitos accesible por vía fluvial (varios días) o vuelo desde Puerto Asís."
+  },
+  {
+    "id": 29,
+    "ciudad_origen": "Puerto Asís",
+    "departamento": "Putumayo",
+    "pais_fronterizo": "Perú",
+    "latitud": 0.5,
+    "longitud": -76.5,
+    "sitios_turisticos_fuera_colombia": [
+      "Santa Clara (Perú) - Frontera Putumayo-Perú",
+      "Iquitos (Perú) - Amazonas peruano (vía vuelo)",
+      "Pucallpa (Perú) - Amazonía peruana"
+    ],
+    "total_sitios": 3,
+    "descripcion_como_llegar": "Cruce por paso fronterizo terrestre/fluvial hacia Santa Clara, Perú (3 horas en carro/lancha). Iquitos requiere vuelo (1 hora)."
+  },
+  {
+    "id": 30,
+    "ciudad_origen": "Solano",
+    "departamento": "Caquetá",
+    "pais_fronterizo": "Perú",
+    "latitud": -0.7,
+    "longitud": -72.18,
+    "sitios_turisticos_fuera_colombia": [
+      "Araracuara (Perú) - Comunidad indígena en el Amazonas",
+      "Iquitos (Perú) - Ciudad amazónica (vía río Caquetá-Amazonas, varios días)"
+    ],
+    "total_sitios": 2,
+    "descripcion_como_llegar": "Acceso por vía fluvial desde el río Caquetá hacia el Amazonas peruano (varios días en lancha). Principalmente por vía aérea."
+  },
+  {
+    "id": 31,
+    "ciudad_origen": "Turbo",
+    "departamento": "Antioquia",
+    "pais_fronterizo": "Panamá",
+    "latitud": 8.0931,
+    "longitud": -76.7283,
+    "sitios_turisticos_fuera_colombia": [
+      "Yaviza (Panamá) - Pueblo del Darién, fin de la Carretera Panamericana",
+      "Ciudad de Panamá (Panamá) - Canal de Panamá, Casco Viejo, skyline moderno (vía vuelo)",
+      "Bocas del Toro (Panamá) - Islas caribeñas, playas, surf, arrecifes de coral (vía vuelo desde Ciudad de Panamá)",
+      "San Blas (Panamá) - Archipiélago Guna Yala, islas paradisíacas, cultura indígena Guna",
+      "Darién (Panamá) - Parque Nacional Darién, selva tropical, biodiversidad",
+      "El Real (Panamá) - Pueblo del Darién, acceso al Parque Nacional"
+    ],
+    "total_sitios": 6,
+    "descripcion_como_llegar": "Desde Turbo no hay carretera hacia Panamá (Tapón del Darién). Acceso marítimo en lancha hacia Puerto Obaldía, Panamá (4-6 horas por el Golfo de Urabá) o vuelo desde Medellín hacia Ciudad de Panamá (1.5 horas). San Blas accesible por vuelo o carretera desde Ciudad de Panamá."
+  },
+  {
+    "id": 32,
+    "ciudad_origen": "Necoclí",
+    "departamento": "Antioquia",
+    "pais_fronterizo": "Panamá",
+    "latitud": 8.4236,
+    "longitud": -76.7811,
+    "sitios_turisticos_fuera_colombia": [
+      "Puerto Obaldía (Panamá) - Pueblo fronterizo en el Caribe panameño",
+      "San Blas (Panamá) - Islas Guna Yala, turismo comunitario",
+      "Ciudad de Panamá (Panamá) - Canal, Casco Viejo (vía vuelo desde Apartadó o Medellín)",
+      "Bocas del Toro (Panamá) - Islas caribeñas (vía vuelo)"
+    ],
+    "total_sitios": 4,
+    "descripcion_como_llegar": "Lancha desde Necoclí hacia Puerto Obaldía, Panamá (6-8 horas por el Caribe). Vuelos desde el aeropuerto de Apartadó hacia Ciudad de Panamá (1 hora)."
+  },
+  {
+    "id": 33,
+    "ciudad_origen": "Acandí",
+    "departamento": "Chocó",
+    "pais_fronterizo": "Panamá",
+    "latitud": 8.4981,
+    "longitud": -77.2739,
+    "sitios_turisticos_fuera_colombia": [
+      "Puerto Obaldía (Panamá) - Pueblo fronterizo caribeño, aduana",
+      "La Miel (Panamá) - Playa fronteriza, acceso desde Capurganá",
+      "San Blas (Panamá) - Islas Guna Yala (vía lancha desde Puerto Obaldía, 4 horas)",
+      "Bocas del Toro (Panamá) - Islas caribeñas (vía vuelo desde Puerto Obaldía)"
+    ],
+    "total_sitios": 4,
+    "descripcion_como_llegar": "Lancha desde Acandí/Capurganá hacia La Miel, Panamá (30 minutos) o Puerto Obaldía (2 horas). San Blas a 4 horas en lancha desde Puerto Obaldía."
+  },
+  {
+    "id": 34,
+    "ciudad_origen": "Unguía",
+    "departamento": "Chocó",
+    "pais_fronterizo": "Panamá",
+    "latitud": 8.04,
+    "longitud": -77.09,
+    "sitios_turisticos_fuera_colombia": [
+      "Yaviza (Panamá) - Fin de la Panamericana, Darién",
+      "Metetí (Panamá) - Pueblo del Darién, acceso a la selva",
+      "Ciudad de Panamá (Panamá) - Canal, Casco Viejo (vía vuelo)"
+    ],
+    "total_sitios": 3,
+    "descripcion_como_llegar": "Acceso por vía fluvial desde Unguía hacia Yaviza/Metetí por el río Atrato y Darién (varios días en lancha). No hay carretera (Tapón del Darién)."
+  },
+  {
+    "id": 35,
+    "ciudad_origen": "Carmen del Darién",
+    "departamento": "Chocó",
+    "pais_fronterizo": "Panamá",
+    "latitud": 7.37,
+    "longitud": -77.0,
+    "sitios_turisticos_fuera_colombia": [
+      "Yaviza (Panamá) - Darién, fin de la carretera panamericana",
+      "Parque Nacional Darién (Panamá) - Selva tropical, biodiversidad, avistamiento de aves",
+      "El Real (Panamá) - Pueblo del Darién"
+    ],
+    "total_sitios": 3,
+    "descripcion_como_llegar": "Acceso por vía fluvial desde el río Atrato hacia el Darién panameño (varios días en lancha). Zona de selva densa sin carreteras."
+  },
+  {
+    "id": 36,
+    "ciudad_origen": "Capurganá",
+    "departamento": "Chocó",
+    "pais_fronterizo": "Panamá",
+    "latitud": 8.6307,
+    "longitud": -77.3504,
+    "sitios_turisticos_fuera_colombia": [
+      "La Miel (Panamá) - Playa fronteriza panameña, a 30 minutos caminando",
+      "Puerto Obaldía (Panamá) - Pueblo caribeño panameño, aduana (2 horas en lancha)",
+      "San Blas (Panamá) - Islas Guna Yala (4 horas en lancha desde Puerto Obaldía)",
+      "Sapzurro (Panamá) - Pueblo pesquero fronterizo, playas tranquilas (30 minutos caminando desde Capurganá)"
+    ],
+    "total_sitios": 4,
+    "descripcion_como_llegar": "Caminata 30 minutos por sendero costero hacia La Miel/Sapzurro, Panamá. Lancha 2 horas hacia Puerto Obaldía. No hay carretera."
+  }
+]

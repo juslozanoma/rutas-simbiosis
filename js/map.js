@@ -44,6 +44,10 @@ const MapModule = (() => {
       maxZoom: 18,
     }).setView(CENTRO_COLOMBIA, ZOOM_INICIAL);
 
+    // Desactivar boxZoom (evita rectángulo al hacer clic en la ruta)
+    map.boxZoom.disable();
+    map.doubleClickZoom.disable();
+
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -51,9 +55,12 @@ const MapModule = (() => {
       attribution: '&copy; OpenStreetMap',
     }).addTo(map);
 
+    // Elevar marcadores (clusters, paradas, origen/destino) sobre tooltips (v. 650)
+    map.getPane('markerPane').style.zIndex = 700;
+
     clusterSitios = L.markerClusterGroup({
       maxClusterRadius: 45,
-      zIndexOffset: 1100,
+      zIndexOffset: 10000000,
       iconCreateFunction: (cluster) => {
         const count = cluster.getChildCount();
         return L.divIcon({
@@ -323,33 +330,43 @@ const MapModule = (() => {
     if (!_rutaDragCallback || !_rutaDragWaypoints || _rutaDragWaypoints.length < 2 || !_rutaGeojson) return;
     if (_rutaDragActive) return;
 
+    // Detener propagación para que no llegue al contenedor del mapa
+    if (e.originalEvent) {
+      L.DomEvent.stopPropagation(e.originalEvent);
+      L.DomEvent.preventDefault(e.originalEvent);
+    }
+
     _rutaDragActive = true;
     _rutaDragStartLatLng = e.latlng;
     _rutaDragSegIdx = -1;
 
     map.dragging.disable();
 
-    // Find which segment (between which two waypoints) was clicked
-    const clickPt = turf.point([e.latlng.lng, e.latlng.lat]);
-    const nearest = turf.nearestPointOnLine(_rutaGeojson, clickPt, { units: 'kilometers' });
-    const clickLocation = nearest.properties.location;
+    try {
+      const clickPt = turf.point([e.latlng.lng, e.latlng.lat]);
+      const nearest = turf.nearestPointOnLine(_rutaGeojson, clickPt, { units: 'kilometers' });
+      const clickLocation = nearest.properties.location;
 
-    const wpLocations = _rutaDragWaypoints.map((wp) => {
-      const wpPt = turf.point(wp);
-      const nearestWp = turf.nearestPointOnLine(_rutaGeojson, wpPt, { units: 'kilometers' });
-      return nearestWp.properties.location || 0;
-    });
+      const wpLocations = _rutaDragWaypoints.map((wp) => {
+        const wpPt = turf.point(wp);
+        const nearestWp = turf.nearestPointOnLine(_rutaGeojson, wpPt, { units: 'kilometers' });
+        return nearestWp.properties.location || 0;
+      });
 
-    for (let i = 0; i < wpLocations.length - 1; i++) {
-      const min = Math.min(wpLocations[i], wpLocations[i + 1]);
-      const max = Math.max(wpLocations[i], wpLocations[i + 1]);
-      if (clickLocation >= min && clickLocation <= max) {
-        _rutaDragSegIdx = i;
-        break;
+      for (let i = 0; i < wpLocations.length - 1; i++) {
+        const min = Math.min(wpLocations[i], wpLocations[i + 1]);
+        const max = Math.max(wpLocations[i], wpLocations[i + 1]);
+        if (clickLocation >= min && clickLocation <= max) {
+          _rutaDragSegIdx = i;
+          break;
+        }
       }
+    } catch (err) {
+      _rutaDragActive = false;
+      map.dragging.enable();
+      return;
     }
 
-    // Create drag handle marker
     _rutaDragMarker = L.marker(e.latlng, {
       icon: L.divIcon({
         html: '<div class="ruta-drag-handle"></div>',
@@ -361,18 +378,24 @@ const MapModule = (() => {
       interactive: false,
     }).addTo(map);
 
-    map.on('mousemove', _onRutaDragMove);
-    map.on('mouseup', _onRutaDragEnd);
+    document.addEventListener('mousemove', _onRutaDragMoveDoc);
+    document.addEventListener('mouseup', _onRutaDragEndDoc);
   }
 
-  function _onRutaDragMove(e) {
+  function _latlngFromMouseEvent(domEvent) {
+    const containerPoint = map.mouseEventToContainerPoint(domEvent);
+    return map.containerPointToLatLng(containerPoint);
+  }
+
+  function _onRutaDragMoveDoc(domEvent) {
     if (!_rutaDragMarker) return;
-    _rutaDragMarker.setLatLng(e.latlng);
+    const latlng = _latlngFromMouseEvent(domEvent);
+    _rutaDragMarker.setLatLng(latlng);
   }
 
-  function _onRutaDragEnd(e) {
-    map.off('mousemove', _onRutaDragMove);
-    map.off('mouseup', _onRutaDragEnd);
+  function _onRutaDragEndDoc(domEvent) {
+    document.removeEventListener('mousemove', _onRutaDragMoveDoc);
+    document.removeEventListener('mouseup', _onRutaDragEndDoc);
 
     if (_rutaDragMarker) {
       map.removeLayer(_rutaDragMarker);
@@ -386,11 +409,12 @@ const MapModule = (() => {
 
     if (!_rutaDragStartLatLng) return;
 
-    const dist = _rutaDragStartLatLng.distanceTo(e.latlng);
+    const finalLatLng = _latlngFromMouseEvent(domEvent);
+    const dist = _rutaDragStartLatLng.distanceTo(finalLatLng);
     if (dist < 10 || _rutaDragSegIdx < 0) return;
 
     if (_rutaDragCallback) {
-      _rutaDragCallback([e.latlng.lng, e.latlng.lat], _rutaDragSegIdx);
+      _rutaDragCallback([finalLatLng.lng, finalLatLng.lat], _rutaDragSegIdx);
     }
   }
 
