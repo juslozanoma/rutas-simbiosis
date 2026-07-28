@@ -970,3 +970,24 @@ input, select{ font-family: inherit; }
 @media (prefers-reduced-motion: reduce){
   .icon-btn__spinner{ animation: none; }
 }
+
+/* Alerta de tramo peligroso en la ruta */
+.alerta-ruta-icon{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
+}
+.alerta-ruta-tooltip{
+  background: #e5a000;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  white-space: nowrap;
+}
+.alerta-ruta-tooltip::before{ display: none; }

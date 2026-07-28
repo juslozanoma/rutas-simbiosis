@@ -163,6 +163,7 @@
       const [municipios, sitios] = await Promise.all([
         TourismModule.cargarMunicipios(),
         TourismModule.cargarSitios(),
+        RouteWarningsModule.cargar(),
       ]);
       state.municipios = municipios;
       state.sitios = sitios;
@@ -1206,6 +1207,12 @@
     MapModule.habilitarArrastreRuta(waypointsCoords, onRutaDragEnd);
     MapModule.setMarcadorOrigen(state.origen.lat, state.origen.lon, state.origen.nombre);
     MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);
+
+    // Verificar advertencias de tramos peligrosos
+    MapModule.limpiarAlertas();
+    const totalKm = state.rutaActual.distanciaMetros / 1000;
+    const alertas = RouteWarningsModule.verificar(state.rutaActual.geojson, totalKm);
+    alertas.forEach((a) => MapModule.mostrarAlertaRuta([a.lnglat[1], a.lnglat[0]], a.mensaje, a.color));
 
     sincronizarOrden();
     let idxIntermedio = 0;

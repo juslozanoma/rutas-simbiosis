@@ -20,6 +20,7 @@ const MapModule = (() => {
   let markerDestino = null;
   let capaParadas = null;       // L.layerGroup con las paradas (escalas + sitios agregados)
   let capaEscalas = null;       // L.layerGroup con marcadores de municipios intermedios
+  let capaAlertas = null;       // L.layerGroup con advertencias de tramos peligrosos
   let clusterSitios = null;     // L.markerClusterGroup con los sitios candidatos filtrados
 
   const _sitioMarkers = new Map(); // sitioId → L.marker
@@ -77,6 +78,7 @@ const MapModule = (() => {
 
     capaParadas = L.layerGroup().addTo(map);
     capaEscalas = L.layerGroup().addTo(map);
+    capaAlertas = L.layerGroup().addTo(map);
 
     // El contenedor del mapa nace con un tamaño definido por CSS (flex),
     // por lo que conviene forzar un recálculo tras el primer render.
@@ -257,6 +259,37 @@ const MapModule = (() => {
 
   function limpiarEscalas() {
     capaEscalas.clearLayers();
+  }
+
+  // ---------------------------------------------------------------------
+  // Alertas de tramos peligrosos
+  // ---------------------------------------------------------------------
+
+  function mostrarAlertaRuta(lnglat, mensaje, color) {
+    const icon = L.divIcon({
+      html: `<div class="alerta-ruta-icon" style="color:${color || '#e5a000'}">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2L1 21h22L12 2z"/>
+          <path d="M12 9v4"/>
+          <path d="M12 17h.01"/>
+        </svg>
+      </div>`,
+      className: '',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+    });
+    const marker = L.marker(lnglat, { icon, zIndexOffset: 1050 });
+    marker.bindTooltip(mensaje, {
+      direction: 'top',
+      className: 'alerta-ruta-tooltip',
+      offset: [0, -16],
+    });
+    marker.addTo(capaAlertas);
+    return marker;
+  }
+
+  function limpiarAlertas() {
+    capaAlertas.clearLayers();
   }
 
   // ---------------------------------------------------------------------
@@ -446,6 +479,8 @@ const MapModule = (() => {
     limpiarRutaPreview();
     limpiarMarcadoresRuta();
     limpiarParadas();
+    limpiarEscalas();
+    limpiarAlertas();
     clusterSitios.clearLayers();
   }
 
@@ -509,6 +544,8 @@ const MapModule = (() => {
     limpiarParadas,
     setMarcadoresEscalas,
     limpiarEscalas,
+    mostrarAlertaRuta,
+    limpiarAlertas,
     dibujarRuta,
     habilitarArrastreRuta,
     dibujarRutaPreview,
