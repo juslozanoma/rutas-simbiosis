@@ -36,14 +36,11 @@ const MapModule = (() => {
 
   // Marking dangerous road state
   let _ctxMenu = null;
-  let _ctxMenuLngLat = null;
   let _marcandoTramo = false;
-  let _marcandoPaso = 0; // 0=inactivo, 1=esperando punto A, 2=esperando punto B
   let _marcandoPtoA = null;
-  let _marcandoPtoB = null;
+  let _marcandoSegmento = null;
   let _marcandoLinea = null;
   let _marcandoMarkerA = null;
-  let _marcandoMarkerB = null;
   let _onTramoCompletado = null;
 
   const CENTRO_COLOMBIA = [4.6, -74.1];
@@ -320,7 +317,6 @@ const MapModule = (() => {
   function _onMapContextMenu(e) {
     if (_marcandoTramo) return;
     _cerrarCtxMenu();
-    _ctxMenuLngLat = e.latlng;
     const div = document.createElement('div');
     div.className = 'ctx-menu';
     div.innerHTML = '<div class="ctx-menu__item">Marcar tramo destapado</div>';
@@ -343,16 +339,14 @@ const MapModule = (() => {
 
   function _limpiarMarcadoTramo() {
     if (_marcandoMarkerA) { map.removeLayer(_marcandoMarkerA); _marcandoMarkerA = null; }
-    if (_marcandoMarkerB) { map.removeLayer(_marcandoMarkerB); _marcandoMarkerB = null; }
     if (_marcandoLinea) { map.removeLayer(_marcandoLinea); _marcandoLinea = null; }
     _marcandoPtoA = null;
-    _marcandoPtoB = null;
+    _marcandoSegmento = null;
   }
 
   function cancelarMarcadoTramo() {
     if (!_marcandoTramo) return;
     _marcandoTramo = false;
-    _marcandoPaso = 0;
     _limpiarMarcadoTramo();
     map.getContainer().style.cursor = '';
     map.off('click', _onMarcarClick);
@@ -361,39 +355,54 @@ const MapModule = (() => {
   function iniciarMarcadoTramo() {
     cancelarMarcadoTramo();
     _marcandoTramo = true;
-    _marcandoPaso = 1;
     map.getContainer().style.cursor = 'crosshair';
     map.on('click', _onMarcarClick);
   }
 
   function _onMarcarClick(e) {
     if (!_marcandoTramo) return;
-    const latlng = e.latlng;
-    if (_marcandoPaso === 1) {
-      _marcandoPtoA = [latlng.lng, latlng.lat];
-      _marcandoMarkerA = L.marker(latlng, {
-        icon: L.divIcon({ html: '<div class="marcando-pin marcando-pin--a">A</div>', className: '', iconSize: [24, 24], iconAnchor: [12, 12] }),
-      }).bindTooltip('Punto inicial', { direction: 'top' }).addTo(map);
-      _marcandoPaso = 2;
-    } else if (_marcandoPaso === 2) {
-      _marcandoPtoB = [latlng.lng, latlng.lat];
-      _marcandoMarkerB = L.marker(latlng, {
-        icon: L.divIcon({ html: '<div class="marcando-pin marcando-pin--b">B</div>', className: '', iconSize: [24, 24], iconAnchor: [12, 12] }),
-      }).bindTooltip('Punto final', { direction: 'top' }).addTo(map);
-      _marcandoLinea = L.polyline([L.latLng(_marcandoPtoA[1], _marcandoPtoA[0]), latlng], {
-        color: '#e5a000', weight: 4, dashArray: '8 6', opacity: 0.9,
-      }).addTo(map);
-      _marcandoPaso = 0;
-      _marcandoTramo = false;
-      map.getContainer().style.cursor = '';
-      map.off('click', _onMarcarClick);
-      if (_onTramoCompletado) {
-        _onTramoCompletado({
-          inicio: _marcandoPtoA,
-          fin: _marcandoPtoB,
-          limpiar: () => _limpiarMarcadoTramo(),
-        });
-      }
+    _marcandoTramo = false;
+    map.getContainer().style.cursor = '';
+    map.off('click', _onMarcarClick);
+
+    const lnglat = [e.latlng.lng, e.latlng.lat];
+    let segmento = null;
+    let puntoSobreRuta = lnglat;
+
+    // Si hay ruta dibujada, se ajusta el punto y se genera el segmento de 10km
+    if (_rutaGeojson && _rutaGeojson.geometry && _rutaGeojson.geometry.coordinates.length >= 2) {
+      const routeLine = turf.lineString(_rutaGeojson.geometry.coordinates);
+      const nearest = turf.nearestPointOnLine(routeLine, turf.point(lnglat), { units: 'kilometers' });
+      puntoSobreRuta = nearest.geometry.coordinates;
+      const distAlong = nearest.properties.location || 0;
+      const totalKm = turf.length(routeLine, { units: 'kilometers' });
+      const startDist = Math.max(0, distAlong - 5);
+      const endDist = Math.min(totalKm, distAlong + 5);
+      const startPt = turf.along(routeLine, startDist, { units: 'kilometers' });
+      const endPt = turf.along(routeLine, endDist, { units: 'kilometers' });
+      segmento = [startPt.geometry.coordinates, endPt.geometry.coordinates];
+
+      // Dibujar línea temporal del segmento
+      _marcandoLinea = L.polyline(
+        [L.latLng(startPt.geometry.coordinates[1], startPt.geometry.coordinates[0]),
+         L.latLng(endPt.geometry.coordinates[1], endPt.geometry.coordinates[0])],
+        { color: '#e5a000', weight: 4, dashArray: '8 6', opacity: 0.9 },
+      ).addTo(map);
+    }
+
+    // Marcador en el punto clickeado (sobre la ruta si existe)
+    _marcandoPtoA = puntoSobreRuta;
+    _marcandoSegmento = segmento;
+    _marcandoMarkerA = L.marker([puntoSobreRuta[1], puntoSobreRuta[0]], {
+      icon: L.divIcon({ html: '<div class="marcando-pin marcando-pin--a"></div>', className: '', iconSize: [24, 24], iconAnchor: [12, 12] }),
+    }).bindTooltip('Tramo a marcar', { direction: 'top' }).addTo(map);
+
+    if (_onTramoCompletado) {
+      _onTramoCompletado({
+        punto: puntoSobreRuta,
+        segmento: segmento,
+        limpiar: () => _limpiarMarcadoTramo(),
+      });
     }
   }
 

@@ -1591,34 +1591,22 @@
   /** Cambia el icono del botón de filtro entre retry y check. */
 
   // -------------------------------------------------------------------
-  // Marcación de tramos peligrosos (clic secundario → formulario)
+  // Marcación de tramos peligrosos (clic secundario → confirmación)
   // -------------------------------------------------------------------
 
   function onTramoMarcado(tramo) {
-    _mostrarFormularioTramo(tramo);
+    _mostrarConfirmacionTramo(tramo);
   }
 
-  function _mostrarFormularioTramo(tramo) {
+  function _mostrarConfirmacionTramo(tramo) {
     const overlay = document.createElement('div');
     overlay.className = 'dialog-overlay';
     overlay.innerHTML = `
-      <div class="dialog">
-        <h3 class="dialog__title">Nuevo tramo destapado</h3>
-        <label class="dialog__field">
-          <span>Nombre del tramo</span>
-          <input type="text" class="dialog__input" id="dialog-tramo-nombre" value="Tramo destapado">
-        </label>
-        <label class="dialog__field">
-          <span>Mensaje de advertencia</span>
-          <input type="text" class="dialog__input" id="dialog-tramo-msg" value="Ruta destapada, transitar con precaución">
-        </label>
-        <label class="dialog__field">
-          <span>Distancia mínima (km) para activar</span>
-          <input type="number" class="dialog__input" id="dialog-tramo-dist" value="0" min="0">
-        </label>
+      <div class="dialog dialog--confirm">
+        <p class="dialog__text">Estás a punto de marcar esta carretera como una vía destapada. ¿Estás seguro?</p>
         <div class="dialog__actions">
           <button type="button" class="dialog__btn dialog__btn--cancel" id="dialog-tramo-cancel">Cancelar</button>
-          <button type="button" class="dialog__btn dialog__btn--save" id="dialog-tramo-save">Guardar</button>
+          <button type="button" class="dialog__btn dialog__btn--save" id="dialog-tramo-confirm">Aceptar</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);
@@ -1627,22 +1615,26 @@
       tramo.limpiar();
       overlay.remove();
     });
-    overlay.querySelector('#dialog-tramo-save').addEventListener('click', () => {
-      const nombre = overlay.querySelector('#dialog-tramo-nombre').value.trim() || 'Tramo destapado';
-      const mensaje = overlay.querySelector('#dialog-tramo-msg').value.trim() || 'Ruta destapada, transitar con precaución';
-      const distMin = Math.max(0, Number(overlay.querySelector('#dialog-tramo-dist').value) || 0);
+
+    overlay.querySelector('#dialog-tramo-confirm').addEventListener('click', async () => {
+      overlay.remove();
       const id = 'custom_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-      RouteWarningsModule.agregarPersonalizada({
+      const nuevaRuta = {
         id,
-        nombre,
-        descripcion: mensaje,
-        coordenadas: [tramo.inicio, tramo.fin],
-        distanciaMinimaKm: distMin,
-        mensaje,
+        nombre: 'Tramo destapado',
+        descripcion: 'Ruta destapada, transitar con precaución',
+        coordenadas: tramo.segmento || [tramo.punto, tramo.punto],
+        distanciaMinimaKm: 400,
+        mensaje: 'Ruta destapada, transitar con precaución',
         tipo: 'destapada',
         color: '#e5a000',
-      });
-      overlay.remove();
+      };
+      try {
+        await RouteWarningsModule.agregarPersonalizada(nuevaRuta);
+      } catch (err) {
+        tramo.limpiar();
+        return;
+      }
       tramo.limpiar();
       // Refrescar alertas si hay ruta visible
       if (state.rutaActual) {
@@ -1652,7 +1644,7 @@
         alertas.forEach((a) => MapModule.mostrarAlertaRuta([a.lnglat[1], a.lnglat[0]], a.mensaje, a.color));
       }
     });
-    // Cerrar con Escape
+
     function onKey(e) {
       if (e.key === 'Escape') { overlay.querySelector('#dialog-tramo-cancel').click(); document.removeEventListener('keydown', onKey); }
     }

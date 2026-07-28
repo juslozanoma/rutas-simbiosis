@@ -1028,10 +1028,9 @@ input, select{ font-family: inherit; }
   color: #ffffff;
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
-.marcando-pin--a{ background: #2f7a6b; }
-.marcando-pin--b{ background: #e35c2b; }
+.marcando-pin--a{ background: #e5a000; }
 
-/* Diálogo modal para agregar tramo */
+/* Diálogo modal de confirmación */
 .dialog-overlay{
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.35);
@@ -1043,40 +1042,20 @@ input, select{ font-family: inherit; }
   border-radius: var(--radius-lg);
   box-shadow: 0 8px 32px rgba(20,32,27,0.25);
   padding: 22px 26px;
-  min-width: 320px;
-  max-width: 420px;
+  min-width: 300px;
+  max-width: 400px;
 }
-.dialog__title{
-  margin: 0 0 16px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-strong);
+.dialog--confirm{ text-align: center; }
+.dialog__text{
+  margin: 4px 0 8px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-body);
 }
-.dialog__field{
-  display: flex; flex-direction: column;
-  gap: 4px;
-  margin-bottom: 12px;
-}
-.dialog__field span{
-  font-size: 0.72rem;
-  color: var(--text-soft);
-  font-weight: 500;
-}
-.dialog__input{
-  padding: 7px 10px;
-  border: 1px solid var(--line-300);
-  border-radius: var(--radius-sm);
-  font-size: 0.82rem;
-  font-family: var(--font-body);
-  color: var(--text-strong);
-  outline: none;
-  transition: border-color 0.12s ease;
-}
-.dialog__input:focus{ border-color: var(--teal-500); }
 .dialog__actions{
-  display: flex; gap: 8px;
-  justify-content: flex-end;
-  margin-top: 18px;
+  display: flex; gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
 }
 .dialog__btn{
   padding: 7px 16px;
