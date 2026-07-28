@@ -55,12 +55,15 @@ const MapModule = (() => {
       attribution: '&copy; OpenStreetMap',
     }).addTo(map);
 
-    // Elevar marcadores (clusters, paradas, origen/destino) sobre tooltips (v. 650)
+    // Pane custom para clusters (z-index alto para quedar sobre tooltips y marcadores)
+    const clusterPane = map.createPane('clusterPane');
+    clusterPane.style.zIndex = 800;
+
     map.getPane('markerPane').style.zIndex = 700;
 
     clusterSitios = L.markerClusterGroup({
       maxClusterRadius: 45,
-      zIndexOffset: 10000000,
+      clusterPane: 'clusterPane',
       iconCreateFunction: (cluster) => {
         const count = cluster.getChildCount();
         return L.divIcon({
@@ -332,7 +335,7 @@ const MapModule = (() => {
 
     // Detener propagación para que no llegue al contenedor del mapa
     if (e.originalEvent) {
-      L.DomEvent.stopPropagation(e.originalEvent);
+      e.originalEvent.stopImmediatePropagation();
       L.DomEvent.preventDefault(e.originalEvent);
     }
 

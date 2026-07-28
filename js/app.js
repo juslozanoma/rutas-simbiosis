@@ -1182,15 +1182,18 @@
     });
 
     // Enable drag-to-reroute with current waypoints
-    const waypointsCoords = state.orden.map(o => {
+    const waypointsCoords = [];
+    if (state.origen) waypointsCoords.push([state.origen.lon, state.origen.lat]);
+    state.orden.forEach(o => {
       if (o.tipo === 'escala') {
         const e = state.escalas.find(e => e.id === o.id);
-        return e && e.lat != null ? [e.lon, e.lat] : null;
+        if (e && e.lat != null) waypointsCoords.push([e.lon, e.lat]);
       } else {
         const p = state.paradas.find(p => p.id === o.id);
-        return p ? [p.lon, p.lat] : null;
+        if (p) waypointsCoords.push([p.lon, p.lat]);
       }
-    }).filter(Boolean);
+    });
+    if (state.destino) waypointsCoords.push([state.destino.lon, state.destino.lat]);
     MapModule.habilitarArrastreRuta(waypointsCoords, onRutaDragEnd);
     MapModule.setMarcadorOrigen(state.origen.lat, state.origen.lon, state.origen.nombre);
     MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);

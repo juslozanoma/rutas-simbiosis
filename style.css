@@ -607,6 +607,9 @@ input, select{ font-family: inherit; }
 
 .leaflet-popup-content-wrapper{ border-radius: var(--radius-md); }
 
+.leaflet-overlay-pane path{ outline: none !important; }
+.leaflet-overlay-pane path:focus{ outline: none !important; }
+
 /* Etiqueta permanente de nombre de sitio turístico (visible al individualizarse) */
 .site-label{
   background: rgba(255,255,255,0.88);
