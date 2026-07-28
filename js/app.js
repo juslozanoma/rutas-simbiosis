@@ -764,7 +764,8 @@
         el.panelDescubreActions.hidden = true;
         el.panelSitios.hidden = true;
         el.panelSitios.scrollTop = 0;
-        // Show paradas if exists, hide locate by default
+        el.panelLocate.hidden = false;
+        el.panelEscalas.hidden = true;
         if (state.rutaActual) {
           el.panelParadas.hidden = false;
         }
@@ -788,45 +789,9 @@
     // Init Ruta tab
     activarPanelTab('ruta');
 
-    // Expand/collapse for locate panel (Cambiar ruta / Añadir parada in Ruta tab)
-    const rowOrigen = document.getElementById('row-origen');
-    const rowDestino = document.getElementById('row-destino');
-    const btnCambiarRuta = document.createElement('button');
-    const btnAnadirParada = document.createElement('button');
-    // Simple inline toggles in the Ruta tab
-    const rutaHead = document.createElement('div');
-    rutaHead.className = 'panel-ruta-actions';
-    rutaHead.innerHTML = `<button type="button" id="btn-ruta-cambiar" class="route-bar__btn">Cambiar ruta</button><button type="button" id="btn-ruta-anadir" class="route-bar__btn">Añadir parada</button>`;
-    el.panelParadas.parentNode.insertBefore(rutaHead, el.panelParadas);
-    const btnRutaCambiar = rutaHead.querySelector('#btn-ruta-cambiar');
-    const btnRutaAnadir = rutaHead.querySelector('#btn-ruta-anadir');
-    btnRutaCambiar.addEventListener('click', () => {
-      const abrir = el.panelLocate.hidden;
-      el.panelLocate.hidden = !abrir;
-      btnRutaCambiar.classList.toggle('route-bar__btn--active', abrir);
-      if (abrir) {
-        if (rowOrigen) rowOrigen.style.display = '';
-        if (rowDestino) rowDestino.style.display = '';
-        el.panelEscalas.hidden = true;
-        btnRutaAnadir.classList.remove('route-bar__btn--active');
-      }
-    });
-    btnRutaAnadir.addEventListener('click', () => {
-      const abrir = el.panelEscalas.hidden;
-      if (abrir) {
-        el.panelLocate.hidden = false;
-        if (rowOrigen) rowOrigen.style.display = 'none';
-        if (rowDestino) rowDestino.style.display = 'none';
-        el.panelEscalas.hidden = false;
-        btnRutaAnadir.classList.add('route-bar__btn--active');
-        btnRutaCambiar.classList.remove('route-bar__btn--active');
-        if (state.escalas.length === 0) agregarEscala();
-      } else {
-        el.panelLocate.hidden = true;
-        el.panelEscalas.hidden = true;
-        btnRutaAnadir.classList.remove('route-bar__btn--active');
-      }
-    });
+    // Ruta tab: locate panel visible by default
+    el.panelLocate.hidden = false;
+    el.panelEscalas.hidden = true;
 
     // Altimetría - desktop button
     if (el.btnAltimetria) {
@@ -874,9 +839,8 @@
         el.panelSitios.hidden = false;
         actualizarEstadoBotonesRetry();
         el.loadingSitios.hidden = true;
-        if (esMovil()) {
-          setMobileTab('descubre');
-        }
+        activarPanelTab('descubre');
+        if (esMovil()) setMobileTab('descubre');
       });
     });
     el.btnAplicarDistancia.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarDistancia));
@@ -1038,9 +1002,8 @@
       state.escalas.forEach((e) => { delete e._row; });
       renderizarParadas();
 
-      // Activar pestaña Ruta y colapsar locate
-      if (el.panelLocate) el.panelLocate.hidden = true;
-      if (el.panelEscalas) el.panelEscalas.hidden = true;
+      // Activar pestaña Ruta
+      el.panelEscalas.hidden = true;
       if (el.hintParadas) el.hintParadas.hidden = true;
       activarPanelTab('ruta');
 

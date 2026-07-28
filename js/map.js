@@ -176,14 +176,14 @@ const MapModule = (() => {
   function setMarcadorOrigen(lat, lon, etiqueta) {
     if (markerOrigen) map.removeLayer(markerOrigen);
     markerOrigen = L.marker([lat, lon], { icon: iconoOrigen(), zIndexOffset: 50 })
-      .bindTooltip(`Origen: ${etiqueta}`, { direction: 'top' })
+      .bindTooltip(`Origen: ${etiqueta}`, { direction: 'top', offset: [0, -10] })
       .addTo(map);
   }
 
   function setMarcadorDestino(lat, lon, etiqueta) {
     if (markerDestino) map.removeLayer(markerDestino);
     markerDestino = L.marker([lat, lon], { icon: iconoDestino(), zIndexOffset: 50 })
-      .bindTooltip(`Destino: ${etiqueta}`, { direction: 'top' })
+      .bindTooltip(`Destino: ${etiqueta}`, { direction: 'top', offset: [0, -10] })
       .addTo(map);
   }
 
