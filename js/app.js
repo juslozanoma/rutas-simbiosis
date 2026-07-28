@@ -100,19 +100,21 @@
     filtroTiempoValor: document.getElementById('filtro-tiempo-valor'),
     btnAplicarTiempo: document.getElementById('btn-aplicar-tiempo'),
 
-    btnCategorias: document.getElementById('btn-categorias'),
-    panelCategorias: document.getElementById('panel-categorias'),
-    btnDesvios: document.getElementById('btn-desvios'),
-    panelDesvios: document.getElementById('panel-desvios'),
+    btnDescubreCategorias: document.getElementById('btn-descubre-categorias'),
+    btnDescubreDesvios: document.getElementById('btn-descubre-desvios'),
+    btnDescubreOrdenar: document.getElementById('btn-descubre-ordenar'),
+    descubreDropdownCategorias: document.getElementById('descubre-dropdown-categorias'),
+    descubreDropdownDesvios: document.getElementById('descubre-dropdown-desvios'),
+    descubreDropdownOrdenar: document.getElementById('descubre-dropdown-ordenar'),
     categoriasGrid: document.getElementById('categorias-grid'),
 
 
     panelEscalas: document.getElementById('panel-escalas'),
     btnAgregarEscala: document.getElementById('btn-agregar-escala'),
-    panelLocate: document.getElementById('panel-locate'),
-    panelRouteBar: document.getElementById('panel-route-bar'),
-    btnCambiarRuta: document.getElementById('btn-cambiar-ruta'),
-    btnAnadirParada: document.getElementById('btn-anadir-parada'),
+    btnTabPanelRuta: document.getElementById('btn-tab-panel-ruta'),
+    btnTabPanelDescubre: document.getElementById('btn-tab-panel-descubre'),
+    panelDescubreActions: document.getElementById('panel-descubre-actions'),
+    sitiosFronteraContador: document.getElementById('sitios-frontera-contador'),
 
     btnToggleSitiosFloat: document.getElementById('btn-toggle-sitios-float'),
     btnFullscreen: document.getElementById('btn-fullscreen'),
@@ -131,9 +133,6 @@
     btnCerrarAltimetria: document.getElementById('btn-cerrar-altimetria'),
     altimetriaPanel: document.getElementById('altimetria'),
     altimetriaChart: document.getElementById('altimetria-chart'),
-    btnDescubreCategorias: document.getElementById('btn-descubre-categorias'),
-    btnDescubreOrdenar: document.getElementById('btn-descubre-ordenar'),
-    descubreDropdownOrdenar: document.getElementById('descubre-dropdown-ordenar'),
     panelDescubreActions: document.getElementById('panel-descubre-actions'),
   };
 
@@ -182,6 +181,38 @@
       ]);
       state.municipios = municipios;
       state.sitios = sitios;
+
+      // Cargar sitios de frontera
+      try {
+        const res = await fetch('data/sitios_turisticos_frontera.json');
+        if (res.ok) {
+          const frontera = await res.json();
+          for (const f of frontera) {
+            if (!f.sitios_turisticos_fuera_colombia) continue;
+            for (let i = 0; i < f.sitios_turisticos_fuera_colombia.length; i++) {
+              const raw = f.sitios_turisticos_fuera_colombia[i];
+              const sep = raw.indexOf(' - ');
+              const nombre = sep > 0 ? raw.substring(0, sep).trim() : raw.trim();
+              const desc = sep > 0 ? raw.substring(sep + 3).trim() : '';
+              state.sitios.push({
+                id: 'frontera_' + f.id + '_' + i,
+                nombre,
+                categoria: 'Frontera',
+                municipio: f.ciudad_origen,
+                departamento: f.departamento,
+                lat: f.latitud,
+                lon: f.longitud,
+                descripcion: desc,
+                ubicacion: f.pais_fronterizo + ' (frontera)',
+                frontera: true,
+              });
+            }
+          }
+        }
+      } catch {}
+      if (el.sitiosFronteraContador) {
+        el.sitiosFronteraContador.textContent = 'Frontera: ' + state.sitios.filter(s => s.frontera).length;
+      }
     } catch (err) {
       el.sitiosVacio.textContent = 'Error cargando los datos base: ' + err.message;
       return;
@@ -680,57 +711,122 @@
     el.checkAutoOrganizar.addEventListener('change', () => {
       if (el.checkAutoOrganizar.checked) organizarAutomaticamente();
     });
-    function togglePanel(btn, panel, otroBtn, otroPanel) {
-      const seAbre = panel.hidden;
-      panel.hidden = !seAbre;
-      btn.setAttribute('aria-pressed', String(seAbre));
-      if (seAbre) {
-        otroPanel.hidden = true;
-        otroBtn.setAttribute('aria-pressed', 'false');
-      }
+    // Descubre Colombia buttons handlers
+    let desplegandoDescubre = null; // 'categorias' | 'desvios' | 'ordenar'
+    if (el.btnDescubreCategorias) {
+      el.btnDescubreCategorias.addEventListener('click', () => {
+        const abrir = desplegandoDescubre !== 'categorias';
+        _cerrarDesplegadosDescubre();
+        if (abrir) {
+          el.btnDescubreCategorias.classList.add('descubre-btn--active');
+          el.descubreDropdownCategorias.hidden = false;
+          desplegandoDescubre = 'categorias';
+        }
+      });
     }
-    el.btnCategorias.addEventListener('click', () => togglePanel(el.btnCategorias, el.panelCategorias, el.btnDesvios, el.panelDesvios));
-    el.btnDesvios.addEventListener('click', () => togglePanel(el.btnDesvios, el.panelDesvios, el.btnCategorias, el.panelCategorias));
+    if (el.btnDescubreDesvios) {
+      el.btnDescubreDesvios.addEventListener('click', () => {
+        const abrir = desplegandoDescubre !== 'desvios';
+        _cerrarDesplegadosDescubre();
+        if (abrir) {
+          el.btnDescubreDesvios.classList.add('descubre-btn--active');
+          el.descubreDropdownDesvios.hidden = false;
+          desplegandoDescubre = 'desvios';
+        }
+      });
+    }
+    if (el.btnDescubreOrdenar) {
+      el.btnDescubreOrdenar.addEventListener('click', () => {
+        const abrir = desplegandoDescubre !== 'ordenar';
+        _cerrarDesplegadosDescubre();
+        if (abrir) {
+          el.btnDescubreOrdenar.classList.add('descubre-btn--active');
+          el.descubreDropdownOrdenar.hidden = false;
+          desplegandoDescubre = 'ordenar';
+        }
+      });
+    }
+    function _cerrarDesplegadosDescubre() {
+      desplegandoDescubre = null;
+      [el.btnDescubreCategorias, el.btnDescubreDesvios, el.btnDescubreOrdenar].forEach(b => { if (b) b.classList.remove('descubre-btn--active'); });
+      [el.descubreDropdownCategorias, el.descubreDropdownDesvios, el.descubreDropdownOrdenar].forEach(d => { if (d) d.hidden = true; });
+    }
     if (el.btnOrdenOrigen) el.btnOrdenOrigen.addEventListener('click', () => aplicarOrdenSitios('origen'));
     if (el.btnOrdenDestino) el.btnOrdenDestino.addEventListener('click', () => aplicarOrdenSitios('destino'));
     state.ordenSitios = 'origen';
     actualizarBotonesOrden();
 
-    // Route bar buttons
+    // Tab switching (panel tabs - desktop)
+    function activarPanelTab(tab) {
+      document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('panel-tab--active'));
+      if (tab === 'ruta') {
+        el.btnTabPanelRuta.classList.add('panel-tab--active');
+        el.panelDescubreActions.hidden = true;
+        el.panelSitios.hidden = true;
+        el.panelSitios.scrollTop = 0;
+        // Show paradas if exists, hide locate by default
+        if (state.rutaActual) {
+          el.panelParadas.hidden = false;
+        }
+      } else {
+        el.btnTabPanelDescubre.classList.add('panel-tab--active');
+        el.panelLocate.hidden = true;
+        el.panelEscalas.hidden = true;
+        el.panelParadas.hidden = true;
+        el.panelDescubreActions.hidden = false;
+        el.panelSitios.hidden = false;
+      }
+    }
+
+    if (el.btnTabPanelRuta) {
+      el.btnTabPanelRuta.addEventListener('click', () => activarPanelTab('ruta'));
+    }
+    if (el.btnTabPanelDescubre) {
+      el.btnTabPanelDescubre.addEventListener('click', () => activarPanelTab('descubre'));
+    }
+
+    // Init Ruta tab
+    activarPanelTab('ruta');
+
+    // Expand/collapse for locate panel (Cambiar ruta / Añadir parada in Ruta tab)
     const rowOrigen = document.getElementById('row-origen');
     const rowDestino = document.getElementById('row-destino');
-
-    if (el.btnCambiarRuta) {
-      el.btnCambiarRuta.addEventListener('click', () => {
-        const abrir = el.panelLocate.hidden;
-        el.panelLocate.hidden = !abrir;
-        el.btnCambiarRuta.classList.toggle('route-bar__btn--active', abrir);
-        if (abrir) {
-          if (rowOrigen) rowOrigen.style.display = '';
-          if (rowDestino) rowDestino.style.display = '';
-          el.panelEscalas.hidden = true;
-          el.btnAnadirParada.classList.remove('route-bar__btn--active');
-        }
-      });
-    }
-    if (el.btnAnadirParada) {
-      el.btnAnadirParada.addEventListener('click', () => {
-        const abrir = el.panelEscalas.hidden;
-        if (abrir) {
-          el.panelLocate.hidden = false;
-          if (rowOrigen) rowOrigen.style.display = 'none';
-          if (rowDestino) rowDestino.style.display = 'none';
-          el.panelEscalas.hidden = false;
-          el.btnAnadirParada.classList.add('route-bar__btn--active');
-          el.btnCambiarRuta.classList.remove('route-bar__btn--active');
-          if (state.escalas.length === 0) agregarEscala();
-        } else {
-          el.panelLocate.hidden = true;
-          el.panelEscalas.hidden = true;
-          el.btnAnadirParada.classList.remove('route-bar__btn--active');
-        }
-      });
-    }
+    const btnCambiarRuta = document.createElement('button');
+    const btnAnadirParada = document.createElement('button');
+    // Simple inline toggles in the Ruta tab
+    const rutaHead = document.createElement('div');
+    rutaHead.className = 'panel-ruta-actions';
+    rutaHead.innerHTML = `<button type="button" id="btn-ruta-cambiar" class="route-bar__btn">Cambiar ruta</button><button type="button" id="btn-ruta-anadir" class="route-bar__btn">Añadir parada</button>`;
+    el.panelParadas.parentNode.insertBefore(rutaHead, el.panelParadas);
+    const btnRutaCambiar = rutaHead.querySelector('#btn-ruta-cambiar');
+    const btnRutaAnadir = rutaHead.querySelector('#btn-ruta-anadir');
+    btnRutaCambiar.addEventListener('click', () => {
+      const abrir = el.panelLocate.hidden;
+      el.panelLocate.hidden = !abrir;
+      btnRutaCambiar.classList.toggle('route-bar__btn--active', abrir);
+      if (abrir) {
+        if (rowOrigen) rowOrigen.style.display = '';
+        if (rowDestino) rowDestino.style.display = '';
+        el.panelEscalas.hidden = true;
+        btnRutaAnadir.classList.remove('route-bar__btn--active');
+      }
+    });
+    btnRutaAnadir.addEventListener('click', () => {
+      const abrir = el.panelEscalas.hidden;
+      if (abrir) {
+        el.panelLocate.hidden = false;
+        if (rowOrigen) rowOrigen.style.display = 'none';
+        if (rowDestino) rowDestino.style.display = 'none';
+        el.panelEscalas.hidden = false;
+        btnRutaAnadir.classList.add('route-bar__btn--active');
+        btnRutaCambiar.classList.remove('route-bar__btn--active');
+        if (state.escalas.length === 0) agregarEscala();
+      } else {
+        el.panelLocate.hidden = true;
+        el.panelEscalas.hidden = true;
+        btnRutaAnadir.classList.remove('route-bar__btn--active');
+      }
+    });
 
     // Altimetría - desktop button
     if (el.btnAltimetria) {
@@ -744,39 +840,7 @@
       el.btnCerrarAltimetria.addEventListener('click', () => cerrarAltimetria());
     }
 
-    // Descubre Colombia buttons (móvil)
-    let desplegando = null; // 'categorias' | 'ordenar'
-    if (el.btnDescubreCategorias) {
-      el.btnDescubreCategorias.addEventListener('click', () => {
-        if (desplegando === 'categorias') {
-          el.btnDescubreCategorias.classList.remove('descubre-btn--active');
-          document.getElementById('panel-categorias').hidden = true;
-          desplegando = null;
-        } else {
-          el.btnDescubreCategorias.classList.add('descubre-btn--active');
-          document.getElementById('panel-categorias').hidden = false;
-          el.btnDescubreOrdenar.classList.remove('descubre-btn--active');
-          el.descubreDropdownOrdenar.hidden = true;
-          desplegando = 'categorias';
-        }
-      });
-    }
-    if (el.btnDescubreOrdenar) {
-      el.btnDescubreOrdenar.addEventListener('click', () => {
-        if (desplegando === 'ordenar') {
-          el.btnDescubreOrdenar.classList.remove('descubre-btn--active');
-          el.descubreDropdownOrdenar.hidden = true;
-          desplegando = null;
-        } else {
-          el.btnDescubreOrdenar.classList.add('descubre-btn--active');
-          el.descubreDropdownOrdenar.hidden = false;
-          el.btnDescubreCategorias.classList.remove('descubre-btn--active');
-          document.getElementById('panel-categorias').hidden = true;
-          desplegando = 'ordenar';
-        }
-      });
-    }
-    // Mobile order buttons in dropdown
+    // Sort buttons in descubre dropdown
     const btnOrdenOrigenDes = document.getElementById('btn-descubre-orden-origen');
     const btnOrdenDestinoDes = document.getElementById('btn-descubre-orden-destino');
     if (btnOrdenOrigenDes) {
@@ -931,10 +995,6 @@
       MapModule.limpiarEscalas();
       limpiarPreview();
       el.panelSitios.hidden = true;
-      if (el.panelDesvios) el.panelDesvios.hidden = true;
-      if (el.btnDesvios) el.btnDesvios.setAttribute('aria-pressed', 'false');
-      if (el.panelCategorias) el.panelCategorias.hidden = true;
-      if (el.btnCategorias) el.btnCategorias.setAttribute('aria-pressed', 'false');
       state.sitiosFiltrados = [];
       state.sitiosFiltradosBase = [];
       state.categoriasSeleccionadas = [];
@@ -989,13 +1049,11 @@
       state.escalas.forEach((e) => { delete e._row; });
       renderizarParadas();
 
-      // Collapse locate panel, show route bar
+      // Activar pestaña Ruta y colapsar locate
       if (el.panelLocate) el.panelLocate.hidden = true;
-      if (el.panelRouteBar) el.panelRouteBar.hidden = false;
-      if (el.btnCambiarRuta) el.btnCambiarRuta.classList.remove('route-bar__btn--active');
-      if (el.btnAnadirParada) el.btnAnadirParada.classList.remove('route-bar__btn--active');
       if (el.panelEscalas) el.panelEscalas.hidden = true;
       if (el.hintParadas) el.hintParadas.hidden = true;
+      activarPanelTab('ruta');
 
       // Show "Mostrar sitios" button and clear previous turf
       if (!el.btnMostrarSitiosCercanos.parentNode) {

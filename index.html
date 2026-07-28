@@ -92,10 +92,10 @@
       </div>
     </section>
 
-    <!-- Barra de acciones post-cálculo (Cambiar ruta / Añadir parada) -->
-    <div class="panel-route-bar" id="panel-route-bar" hidden>
-      <button type="button" id="btn-cambiar-ruta" class="route-bar__btn">Cambiar ruta</button>
-      <button type="button" id="btn-anadir-parada" class="route-bar__btn">Añadir parada</button>
+    <!-- Pestañas del panel (escritorio) -->
+    <div class="panel-tab-bar" id="panel-tab-bar">
+      <button type="button" id="btn-tab-panel-ruta" class="panel-tab panel-tab--active">Ruta</button>
+      <button type="button" id="btn-tab-panel-descubre" class="panel-tab">Descubre Colombia</button>
     </div>
 
     <!-- Aviso de paradas antes de calcular -->
@@ -113,35 +113,15 @@
       <ul class="paradas-lista" id="paradas-lista"></ul>
     </section>
 
-    <!-- Panel de Descubre Colombia: botones categorías y ordenar en móvil -->
+    <!-- Panel de Descubre Colombia: botones categorías y ordenar -->
     <div class="panel-descubre-actions" id="panel-descubre-actions" hidden>
       <button type="button" id="btn-descubre-categorias" class="descubre-btn">Categorías</button>
+      <button type="button" id="btn-descubre-desvios" class="descubre-btn">Desvíos</button>
       <button type="button" id="btn-descubre-ordenar" class="descubre-btn">Ordenar</button>
-      <div class="descubre-dropdown" id="descubre-dropdown-ordenar" hidden>
-        <button type="button" id="btn-orden-origen" class="descubre-dropdown__item">Desde Origen</button>
-        <button type="button" id="btn-orden-destino" class="descubre-dropdown__item">Desde Destino</button>
-      </div>
-    </div>
-    <!-- Panel de Descubre Colombia: botones categorías y ordenar en móvil -->
-    <div class="panel-descubre-actions" id="panel-descubre-actions" hidden>
-      <button type="button" id="btn-descubre-categorias" class="descubre-btn">Categorías</button>
-      <button type="button" id="btn-descubre-ordenar" class="descubre-btn">Ordenar</button>
-      <div class="descubre-dropdown" id="descubre-dropdown-ordenar" hidden>
-        <button type="button" id="btn-descubre-orden-origen" class="descubre-dropdown__item">Desde Origen</button>
-        <button type="button" id="btn-descubre-orden-destino" class="descubre-dropdown__item">Desde Destino</button>
-      </div>
-    </div>
-    <section class="panel-sites" id="panel-sites" hidden>
-      <h2 class="panel-sites__title">
-        Sitios turísticos
-        <span class="badge-count mono" id="sitios-contador">0</span>
-        <button type="button" id="btn-categorias" class="btn-toggle-pill" title="Filtrar por categorías" aria-pressed="false">Categorías</button>
-        <button type="button" id="btn-desvios" class="btn-toggle-pill" title="Filtrar por distancia y desvío" aria-pressed="false">Desvíos</button>
-      </h2>
-      <div class="panel-categorias" id="panel-categorias" hidden>
+      <div class="descubre-dropdown" id="descubre-dropdown-categorias" hidden>
         <div class="panel-categorias__grid" id="categorias-grid"></div>
       </div>
-      <div class="panel-desvios" id="panel-desvios" hidden>
+      <div class="descubre-dropdown" id="descubre-dropdown-desvios" hidden>
       <div class="filter-row">
         <input type="checkbox" id="check-distancia" class="filter-row__check">
         <div class="filter-row__field">
@@ -171,15 +151,18 @@
         </button>
       </div>
       </div>
-      <div class="panel-sites__scroll">
-        <div class="sitios-sort" aria-label="Ordenar sitios turisticos">
-          <button type="button" id="btn-orden-origen" class="sitios-sort__btn">Desde Origen</button>
-          <button type="button" id="btn-orden-destino" class="sitios-sort__btn">Desde Destino</button>
-        </div>
-        <p class="empty-state" id="sitios-vacio">Activa un filtro y pulsa el botón de aplicar para ver los sitios turísticos cercanos.</p>
-        <ul class="sitios-lista" id="sitios-lista" hidden></ul>
+      <div class="descubre-dropdown" id="descubre-dropdown-ordenar" hidden>
+        <button type="button" id="btn-descubre-orden-origen" class="descubre-dropdown__item">Desde Origen</button>
+        <button type="button" id="btn-descubre-orden-destino" class="descubre-dropdown__item">Desde Destino</button>
       </div>
-    </section>
+    </div>
+
+    <section class="panel-sites" id="panel-sites" hidden>
+      <div class="panel-sites__header">
+        <span class="badge-count mono" id="sitios-contador">0</span>
+        <span class="badge-count mono" id="sitios-frontera-contador">0</span>
+      </div>
+      <div class="panel-sites__scroll">
 
     <button type="button" id="btn-mostrar-sitios" class="btn-mostrar-sitios-cercanos" disabled>Mostrar sitios turísticos cercanos</button>
     <div id="loading-ruta" class="loading-ruta" hidden>

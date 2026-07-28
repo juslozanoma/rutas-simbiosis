@@ -848,7 +848,36 @@ input, select{ font-family: inherit; }
 }
 .btn-fullscreen .btn-toggle-sitios__icon{ width: 20px; height: 20px; }
 
-/* Botones flotantes en el mapa (escritorio) */
+/* Pestañas del panel (escritorio) */
+.panel-tab-bar{
+  display: flex;
+  gap: 0;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--line-200);
+}
+.panel-tab{
+  flex: 1;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: color 0.1s, border-color 0.1s;
+}
+.panel-tab:hover{ color: var(--text-strong); }
+.panel-tab--active{ color: var(--teal-500); border-bottom-color: var(--teal-500); }
+
+.panel-sites__header{
+  display: none;
+  gap: 4px;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 2px 0;
+}
 .btns-map{
   position: absolute;
   bottom: 30px;
@@ -995,6 +1024,7 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="descubre"] .panel-desvios{ display: none !important; }
   #app[data-mobile-tab="descubre"] .panel-descubre-actions{ display: flex !important; }
   #app[data-mobile-tab="descubre"] .sitios-sort{ display: none !important; }
+  .panel-tab-bar{ display: none !important; }
   .mobile-tab-bar{
     display: flex !important;
     position: fixed;
