@@ -57,6 +57,7 @@
     previewSitioId: null,
     categoriasSeleccionadas: [],
     categoriasUnicas: [],
+    elevacion: null,
   };
 
   // -------------------------------------------------------------------
@@ -125,6 +126,15 @@
     btnTabRuta: document.getElementById('btn-tab-ruta'),
     mobileTabBar: document.getElementById('mobile-tab-bar'),
     hintParadas: document.getElementById('hint-paradas'),
+    btnAltimetria: document.getElementById('btn-altimetria'),
+    btnTabAltimetria: document.getElementById('btn-tab-altimetria'),
+    btnCerrarAltimetria: document.getElementById('btn-cerrar-altimetria'),
+    altimetriaPanel: document.getElementById('altimetria'),
+    altimetriaChart: document.getElementById('altimetria-chart'),
+    btnDescubreCategorias: document.getElementById('btn-descubre-categorias'),
+    btnDescubreOrdenar: document.getElementById('btn-descubre-ordenar'),
+    descubreDropdownOrdenar: document.getElementById('descubre-dropdown-ordenar'),
+    panelDescubreActions: document.getElementById('panel-descubre-actions'),
   };
 
   const LETRAS_RUTA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -240,7 +250,9 @@
         locLi.addEventListener('click', (e) => {
           e.stopPropagation();
           listEl.hidden = true;
-          ponerEnCargaRuta(true);
+    ponerEnCargaRuta(true);
+    cerrarAltimetria();
+    AltimetriaModule.limpiar();
           navigator.geolocation.getCurrentPosition(
             (pos) => {
               const { latitude: lat, longitude: lon } = pos.coords;
@@ -720,6 +732,60 @@
       });
     }
 
+    // Altimetría - desktop button
+    if (el.btnAltimetria) {
+      el.btnAltimetria.addEventListener('click', () => toggleAltimetria());
+    }
+    // Altimetría - mobile tab
+    if (el.btnTabAltimetria) {
+      el.btnTabAltimetria.addEventListener('click', () => toggleAltimetria());
+    }
+    if (el.btnCerrarAltimetria) {
+      el.btnCerrarAltimetria.addEventListener('click', () => cerrarAltimetria());
+    }
+
+    // Descubre Colombia buttons (móvil)
+    let desplegando = null; // 'categorias' | 'ordenar'
+    if (el.btnDescubreCategorias) {
+      el.btnDescubreCategorias.addEventListener('click', () => {
+        if (desplegando === 'categorias') {
+          el.btnDescubreCategorias.classList.remove('descubre-btn--active');
+          document.getElementById('panel-categorias').hidden = true;
+          desplegando = null;
+        } else {
+          el.btnDescubreCategorias.classList.add('descubre-btn--active');
+          document.getElementById('panel-categorias').hidden = false;
+          el.btnDescubreOrdenar.classList.remove('descubre-btn--active');
+          el.descubreDropdownOrdenar.hidden = true;
+          desplegando = 'categorias';
+        }
+      });
+    }
+    if (el.btnDescubreOrdenar) {
+      el.btnDescubreOrdenar.addEventListener('click', () => {
+        if (desplegando === 'ordenar') {
+          el.btnDescubreOrdenar.classList.remove('descubre-btn--active');
+          el.descubreDropdownOrdenar.hidden = true;
+          desplegando = null;
+        } else {
+          el.btnDescubreOrdenar.classList.add('descubre-btn--active');
+          el.descubreDropdownOrdenar.hidden = false;
+          el.btnDescubreCategorias.classList.remove('descubre-btn--active');
+          document.getElementById('panel-categorias').hidden = true;
+          desplegando = 'ordenar';
+        }
+      });
+    }
+    // Mobile order buttons in dropdown
+    const btnOrdenOrigenDes = document.getElementById('btn-descubre-orden-origen');
+    const btnOrdenDestinoDes = document.getElementById('btn-descubre-orden-destino');
+    if (btnOrdenOrigenDes) {
+      btnOrdenOrigenDes.addEventListener('click', () => { aplicarOrdenSitios('origen'); actualizarBotonesOrden(); });
+    }
+    if (btnOrdenDestinoDes) {
+      btnOrdenDestinoDes.addEventListener('click', () => { aplicarOrdenSitios('destino'); actualizarBotonesOrden(); });
+    }
+
     el.loadingSitios = document.getElementById('loading-sitios');
     el.loadingRuta = document.getElementById('loading-ruta');
     el.loadingMsg = el.loadingSitios.querySelector('.loading-sitios__msg');
@@ -801,6 +867,36 @@
     el.destinoInput.disabled = cargando;
     document.querySelectorAll('.combo__trigger.escala-trigger').forEach((b) => { b.disabled = cargando; });
     document.querySelectorAll('.sitio-card__add').forEach((b) => { b.disabled = cargando; });
+  }
+
+  function formatMunicipio(m) {
+    if (!m || !m.nombre) return '';
+    if (m.nombre === 'Bogotá' || !m.departamento) return m.nombre;
+    return m.nombre + ', ' + m.departamento;
+  }
+
+  function toggleAltimetria() {
+    if (!el.altimetriaPanel) return;
+    const active = !el.altimetriaPanel.hidden;
+    if (active) { cerrarAltimetria(); return; }
+    el.altimetriaPanel.hidden = false;
+    document.getElementById('app').setAttribute('data-mobile-tab', 'altimetria');
+    if (document.querySelector('.mobile-tab-btn--active')) {
+      document.querySelector('.mobile-tab-btn--active').classList.remove('mobile-tab-btn--active');
+    }
+    if (el.btnTabAltimetria) el.btnTabAltimetria.classList.add('mobile-tab-btn--active');
+    AltimetriaModule.renderizar('altimetria-chart');
+  }
+
+  function cerrarAltimetria() {
+    if (!el.altimetriaPanel) return;
+    el.altimetriaPanel.hidden = true;
+    if (document.querySelector('.mobile-tab-btn--active')) {
+      document.querySelector('.mobile-tab-btn--active').classList.remove('mobile-tab-btn--active');
+    }
+    document.getElementById('app').setAttribute('data-mobile-tab', 'ruta');
+    const rutaTab = document.getElementById('btn-tab-ruta');
+    if (rutaTab) rutaTab.classList.add('mobile-tab-btn--active');
   }
 
   // -------------------------------------------------------------------
@@ -1286,6 +1382,25 @@
       });
     } catch {}
 
+    // Alimentar módulo de altimetría (usamos rutaBase para tener elevación)
+    state.elevacion = (state.rutaBase && state.rutaBase.elevacion) || null;
+    const totalKm = state.rutaBase ? state.rutaBase.distanciaMetros / 1000 : 0;
+    const geoPerfil = state.rutaBase ? state.rutaBase.geojson : state.rutaActual.geojson;
+    AltimetriaModule.setDatos(geoPerfil, state.elevacion, totalKm);
+    if (geoPerfil) {
+      const routeLine = turf.lineString(geoPerfil.geometry.coordinates);
+      state.escalas.filter(e => e.lat != null).forEach(e => {
+        const nearest = turf.nearestPointOnLine(routeLine, turf.point([e.lon, e.lat]), { units: 'kilometers' });
+        e._distKm = nearest.properties.location || 0;
+        AltimetriaModule.agregarParada(e.lat, e.lon, formatMunicipio(e), e._distKm);
+      });
+      state.paradas.forEach(p => {
+        const nearest = turf.nearestPointOnLine(routeLine, turf.point([p.lon, p.lat]), { units: 'kilometers' });
+        p._distKm = nearest.properties.location || 0;
+        AltimetriaModule.agregarParada(p.lat, p.lon, p.nombre, p._distKm);
+      });
+    }
+
     sincronizarOrden();
     let idxIntermedio = 0;
     state.orden.forEach((o) => {
@@ -1489,12 +1604,6 @@
       return li;
     }
 
-    function formatMunicipio(m) {
-      if (!m || !m.nombre) return '';
-      if (m.nombre === 'Bogotá' || !m.departamento) return m.nombre;
-      return m.nombre + ', ' + m.departamento;
-    }
-
     if (incluirExtremos) {
       el.paradasLista.appendChild(crearFilaExtremo('A', formatMunicipio(state.origen), 'origen'));
     }
@@ -1512,7 +1621,13 @@
 
       const nombre = document.createElement('span');
       nombre.className = 'parada-item__nombre';
-      nombre.textContent = item.tipo === 'escala' ? formatMunicipio(e) : e.nombre;
+      const distEl = document.createElement('span');
+      distEl.className = 'parada-item__dist';
+      if (e._distKm != null) {
+        distEl.textContent = e._distKm.toFixed(1) + ' km — ';
+      }
+      nombre.appendChild(distEl);
+      nombre.appendChild(document.createTextNode(item.tipo === 'escala' ? formatMunicipio(e) : e.nombre));
 
       const acciones = document.createElement('div');
       acciones.className = 'parada-item__acciones';

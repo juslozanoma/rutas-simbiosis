@@ -848,6 +848,94 @@ input, select{ font-family: inherit; }
 }
 .btn-fullscreen .btn-toggle-sitios__icon{ width: 20px; height: 20px; }
 
+/* Botones flotantes en el mapa (escritorio) */
+.btns-map{
+  position: absolute;
+  bottom: 30px;
+  left: 12px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+.btns-map > *{ pointer-events: auto; }
+.btn-map-icon{
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: var(--teal-500);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.btn-map-icon:hover{ background: #256b5e; }
+
+
+/* Panel acciones Descubre Colombia (móvil) */
+.panel-descubre-actions{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 0;
+  flex-shrink: 0;
+}
+.panel-descubre-actions[hidden]{ display: none; }
+.descubre-btn{
+  flex: 1;
+  padding: 7px 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  border: 1.5px solid var(--line-200);
+  border-radius: var(--radius-md);
+  background: var(--bg-subtle);
+  color: var(--text-strong);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.descubre-btn:hover{ background: #f0ede5; border-color: var(--teal-500); }
+.descubre-btn--active{ background: var(--teal-50); border-color: var(--teal-500); color: var(--teal-600); }
+.descubre-dropdown{
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.descubre-dropdown[hidden]{ display: none; }
+.descubre-dropdown__item{
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: var(--font-body);
+  border: none;
+  background: transparent;
+  color: var(--text-strong);
+  cursor: pointer;
+  text-align: left;
+  border-radius: var(--radius-sm);
+}
+.descubre-dropdown__item:hover{ background: var(--teal-50); }
+
+/* Distancia en paradas */
+.parada-item__dist{
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.parada-item__nombre .parada-item__dist{
+  display: block;
+  font-weight: 400;
+}
+
+/* Tab altimetría en móvil */
+.mobile-tab-btn--altimetria{ flex: 0 0 44px; }
+.mobile-tab-btn--altimetria svg{ display: block; }
+
 /* Barra de pestañas inferior (móvil) */
 .mobile-tab-bar{
   display: none;
@@ -905,6 +993,8 @@ input, select{ font-family: inherit; }
   /* En Descubre: panel-sites llena el panel, hint y desvíos ocultos */
   #app[data-mobile-tab="descubre"] .panel-sites{ flex: 1; min-height: 0; }
   #app[data-mobile-tab="descubre"] .panel-desvios{ display: none !important; }
+  #app[data-mobile-tab="descubre"] .panel-descubre-actions{ display: flex !important; }
+  #app[data-mobile-tab="descubre"] .sitios-sort{ display: none !important; }
   .mobile-tab-bar{
     display: flex !important;
     position: fixed;
@@ -960,7 +1050,44 @@ input, select{ font-family: inherit; }
   /* Filtros más compactos en móvil */
   .filter-row{ gap: 6px; }
   .filter-row__field input[type="range"]{ height: 14px; }
+
+  /* Altimetría en móvil: ocupa toda la pantalla sobre las pestañas */
+  #app[data-mobile-tab="altimetria"] .side-panel > :not(.altimetria){ display: none !important; }
+  #app[data-mobile-tab="altimetria"] .side-panel{ padding-bottom: 56px; }
 }
+
+.altimetria{
+  flex-shrink: 0;
+  border-top: 1px solid var(--line-200);
+  background: #ffffff;
+  padding: 8px 10px 10px;
+}
+.altimetria[hidden]{ display: none; }
+.altimetria__header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.altimetria__title{ font-size: 0.78rem; font-weight: 600; color: var(--text-strong); }
+.altimetria__close{
+  width: 26px; height: 26px;
+  border: none; background: transparent;
+  font-size: 1.2rem; line-height: 1;
+  cursor: pointer; color: var(--text-muted);
+}
+.altimetria__close:hover{ color: var(--text-strong); }
+.altimetria__chart{ width: 100%; height: 140px; position: relative; }
+.altimetria__chart svg{ width: 100%; height: 100%; display: block; }
+.altimetria__info{
+  display: flex;
+  gap: 16px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  justify-content: center;
+}
+.altimetria__info[hidden]{ display: none; }
 
 /* ==========================================================================
    BOTÓN DE CATEGORÍAS
