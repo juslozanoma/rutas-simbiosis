@@ -496,6 +496,13 @@
         state.escalas.splice(idx, 1);
     if (state.rutaActual) {
       state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
+      state.sitiosFiltrados = [];
+      state.sitiosFiltradosBase = [];
+      renderizarSitios([]);
+      if (!el.btnMostrarSitiosCercanos.parentNode) {
+        el.loadingSitios.parentNode.insertBefore(el.btnMostrarSitiosCercanos, el.loadingSitios);
+      }
+      el.btnMostrarSitiosCercanos.disabled = false;
           calcularRutaPrincipal(true);
         }
       }
@@ -532,7 +539,6 @@
       renderizarCategoriasMenu();
       el.loadingMsg.textContent = 'Calculando nueva ruta…';
       if (el.spinnerBike) el.spinnerBike.hidden = true;
-      if (el.spinnerPacmanWrap) el.spinnerPacmanWrap.hidden = false;
       el.loadingSitios.hidden = false;
       let idxMsg = 0;
       const msgs = ['Calculando nueva ruta…', 'Espera un poco más, estamos ajustando detalles…'];
@@ -546,12 +552,16 @@
         } else {
           await calcularRutaPrincipal(true);
         }
-        refiltrarSitios();
+        // Clear site list and show button for manual reload
+        renderizarSitios([]);
+        if (!el.btnMostrarSitiosCercanos.parentNode) {
+          el.loadingSitios.parentNode.insertBefore(el.btnMostrarSitiosCercanos, el.loadingSitios);
+        }
+        el.btnMostrarSitiosCercanos.disabled = false;
       } finally {
         clearInterval(intervalo);
         el.loadingSitios.hidden = true;
         if (el.spinnerBike) el.spinnerBike.hidden = false;
-        if (el.spinnerPacmanWrap) el.spinnerPacmanWrap.hidden = true;
       }
     }
   }
@@ -669,7 +679,6 @@
     el.loadingSitios = document.getElementById('loading-sitios');
     el.loadingMsg = el.loadingSitios.querySelector('.loading-sitios__msg');
     el.spinnerBike = el.loadingSitios.querySelector('.spinner-bike');
-    el.spinnerPacmanWrap = el.loadingSitios.querySelector('.spinner-pacman-wrap');
     el.mensajesCarga = [
       'Cargando lugares cercanos…',
       'Buscando sitios turísticos…',
@@ -1371,7 +1380,14 @@
     sincronizarOrden();
     if (state.rutaActual) {
       state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
-      calcularRutaPrincipal(true).then(() => refiltrarSitios());
+      state.sitiosFiltrados = [];
+      state.sitiosFiltradosBase = [];
+      renderizarSitios([]);
+      if (!el.btnMostrarSitiosCercanos.parentNode) {
+        el.loadingSitios.parentNode.insertBefore(el.btnMostrarSitiosCercanos, el.loadingSitios);
+      }
+      el.btnMostrarSitiosCercanos.disabled = false;
+      calcularRutaPrincipal(true);
     } else {
       renderizarParadas();
     }

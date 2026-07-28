@@ -499,13 +499,6 @@ input, select{ font-family: inherit; }
   width: 100px;
   margin: 0 auto;
 }
-.loading-sitios .spinner-pacman-wrap[hidden]{
-  display: none;
-}
-.loading-sitios .spinner-pacman{
-  transform: scale(0.4);
-  transform-origin: center center;
-}
 .loading-sitios__msg{
   display: block;
   font-size: 0.78rem;
