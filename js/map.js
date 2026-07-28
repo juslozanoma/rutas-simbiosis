@@ -247,6 +247,7 @@ const MapModule = (() => {
     capaEscalas.clearLayers();
     escalas.forEach((e, i) => {
       if (e.lat == null || e.lon == null) return;
+      if (e._dragGenerated) return;
       const num = e._numero || i + 1;
       const marker = L.marker([e.lat, e.lon], { icon: _iconoEscala(num), zIndexOffset: 950 });
       marker.bindTooltip(e.nombre, { direction: 'top' });

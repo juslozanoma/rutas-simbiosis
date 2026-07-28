@@ -1294,21 +1294,30 @@
   async function onRutaDragEnd(lnglat, segIdx) {
     const [lng, lat] = lnglat;
     const id = 'drag_' + Date.now();
-    const parada = { id, lat, lon: lng, nombre: 'Punto intermedio' };
+    const escala = { id, lat, lon: lng, nombre: 'Punto intermedio', _dragGenerated: true };
 
-    // Count how many paradas exist up to segIdx in state.orden
-    let paradaCount = 0;
-    for (let i = 0; i <= segIdx && i < state.orden.length; i++) {
-      if (state.orden[i]?.tipo === 'parada') paradaCount++;
+    // Count how many escalas exist up to segIdx in state.orden
+    let escalaCount = 0;
+    for (let i = 0; i < segIdx && i < state.orden.length; i++) {
+      if (state.orden[i]?.tipo === 'escala') escalaCount++;
     }
 
-    // Pre-insert at the correct position so sincronizarOrden respects the order
-    state.paradas.splice(paradaCount, 0, parada);
-    state.orden.splice(segIdx + 1, 0, { tipo: 'parada', id });
+    // Insert as a waypoint (escala) so OSRM recalculates the route through it
+    state.escalas.splice(escalaCount, 0, escala);
+    state.orden.splice(segIdx, 0, { tipo: 'escala', id });
 
-    await aplicarRutaConDesvios();
+    // Invalidate cached distances so sites refilter on next request
+    state.sitios.forEach((s) => {
+      delete s.distanciaRutaKm;
+      delete s.tiempoDesvioMin;
+      delete s.distanciaOrigenKm;
+      delete s.distanciaDestinoKm;
+      delete s._offsetLado;
+    });
+    MapModule.limpiarSitios();
+
+    await calcularRutaPrincipal(true);
     renderizarParadas();
-    refiltrarSitios();
   }
 
   // -------------------------------------------------------------------
@@ -1391,7 +1400,7 @@
       const p = state.paradas.find((p) => p.id === o.id);
       if (!p) return null;
       return { tipo: 'parada', datos: p };
-    }).filter(Boolean);
+    }).filter(Boolean).filter((item) => !item.datos._dragGenerated);
 
     const total = items.length;
     el.paradasLista.innerHTML = '';
