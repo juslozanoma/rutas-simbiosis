@@ -944,23 +944,12 @@
     const active = !el.altimetriaPanel.hidden;
     if (active) { cerrarAltimetria(); return; }
     el.altimetriaPanel.hidden = false;
-    document.getElementById('app').setAttribute('data-mobile-tab', 'altimetria');
-    if (document.querySelector('.mobile-tab-btn--active')) {
-      document.querySelector('.mobile-tab-btn--active').classList.remove('mobile-tab-btn--active');
-    }
-    if (el.btnTabAltimetria) el.btnTabAltimetria.classList.add('mobile-tab-btn--active');
     AltimetriaModule.renderizar('altimetria-chart');
   }
 
   function cerrarAltimetria() {
     if (!el.altimetriaPanel) return;
     el.altimetriaPanel.hidden = true;
-    if (document.querySelector('.mobile-tab-btn--active')) {
-      document.querySelector('.mobile-tab-btn--active').classList.remove('mobile-tab-btn--active');
-    }
-    document.getElementById('app').setAttribute('data-mobile-tab', 'ruta');
-    const rutaTab = document.getElementById('btn-tab-ruta');
-    if (rutaTab) rutaTab.classList.add('mobile-tab-btn--active');
   }
 
   // -------------------------------------------------------------------

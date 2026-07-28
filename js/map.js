@@ -22,6 +22,7 @@ const MapModule = (() => {
   let capaEscalas = null;       // L.layerGroup con marcadores de municipios intermedios
   let capaAlertas = null;       // L.layerGroup con advertencias de tramos peligrosos
   let clusterSitios = null;     // L.markerClusterGroup con los sitios candidatos filtrados
+  let _capaFlechas = null;      // L.layerGroup con flechas de dirección sobre la ruta
 
   const _sitioMarkers = new Map(); // sitioId → L.marker
 

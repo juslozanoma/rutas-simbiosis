@@ -551,7 +551,7 @@ input, select{ font-family: inherit; }
   display: none;
 }
 .loading-sitios .spinner-bike{
-  width: 100px;
+  width: 140px;
   margin: 0 auto;
 }
 .loading-sitios__msg{
@@ -1081,16 +1081,18 @@ input, select{ font-family: inherit; }
   .filter-row{ gap: 6px; }
   .filter-row__field input[type="range"]{ height: 14px; }
 
-  /* Altimetría en móvil: ocupa toda la pantalla sobre las pestañas */
-  #app[data-mobile-tab="altimetria"] .side-panel > :not(.altimetria){ display: none !important; }
-  #app[data-mobile-tab="altimetria"] .side-panel{ padding-bottom: 56px; }
 }
 
 .altimetria{
-  flex-shrink: 0;
-  border-top: 1px solid var(--line-200);
-  background: #ffffff;
-  padding: 8px 10px 10px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255,255,255,0.97);
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.12);
+  padding: 8px 16px 12px;
+  z-index: 950;
 }
 .altimetria[hidden]{ display: none; }
 .altimetria__header{
