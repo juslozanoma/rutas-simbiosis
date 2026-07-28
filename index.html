@@ -215,9 +215,28 @@
       </svg>
     </div>
 
+  <!-- Altimetría panel (PC: abajo del mapa, Móvil: tapa panel) -->
+  <div id="altimetria" class="altimetria" hidden>
+    <div class="altimetria__header">
+      <span class="altimetria__title">Perfil de elevación</span>
+      <button type="button" id="btn-cerrar-altimetria" class="altimetria__close">&times;</button>
+    </div>
+    <div class="altimetria__chart" id="altimetria-chart"></div>
+    <div class="altimetria__info" id="altimetria-info" hidden>
+      <span id="altimetria-dist"></span>
+      <span id="altimetria-alt"></span>
+    </div>
+  </div>
+
   </aside>
 
-  </div><!-- /app-body -->
+  <div class="app-body-end"></div>
+
+  <div class="btns-map" id="btns-map">
+    <button type="button" id="btn-altimetria" class="btn-map-icon" title="Perfil de elevación" aria-label="Perfil de elevación">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20l4-7 5 4 6-9 3 5"/></svg>
+    </button>
+  </div>
 
   <!-- ============ BARRA DE PESTAÑAS INFERIOR MÓVIL ============ -->
   <nav class="mobile-tab-bar" id="mobile-tab-bar">

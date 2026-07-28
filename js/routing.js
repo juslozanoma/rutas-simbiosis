@@ -52,7 +52,7 @@ const RoutingModule = (() => {
 
     const base = ENDPOINTS[perfil] || ENDPOINTS.driving;
     const coords = puntos.map((p) => `${p.lon},${p.lat}`).join(';');
-    const url = `${base}/${coords}?overview=full&geometries=geojson&steps=false&alternatives=false`;
+    const url = `${base}/${coords}?overview=full&geometries=geojson&steps=false&alternatives=false&annotations=true`;
 
     const respuesta = await fetch(url);
     if (!respuesta.ok) {
@@ -65,12 +65,14 @@ const RoutingModule = (() => {
     }
 
     const ruta = data.routes[0];
+    const elevacion = ruta.legs && ruta.legs[0] && ruta.legs[0].annotation ? ruta.legs[0].annotation.elevation : null;
     const geojson = {
       type: 'Feature',
       properties: {
         distancia_m: ruta.distance,
         duracion_s: ruta.duration,
         perfil,
+        elevacion,
       },
       geometry: ruta.geometry, // LineString
     };
@@ -81,6 +83,7 @@ const RoutingModule = (() => {
       duracionSegundos: ruta.duration,
       vertices: ruta.geometry.coordinates.length,
       perfil,
+      elevacion,
     };
   }
 
@@ -119,7 +122,7 @@ const RoutingModule = (() => {
     }
     const base = ENDPOINTS[perfil] || ENDPOINTS.driving;
     const coords = puntos.map((p) => `${p.lon},${p.lat}`).join(';');
-    const url = `${base}/${coords}?overview=full&geometries=geojson&steps=false&alternatives=true`;
+    const url = `${base}/${coords}?overview=full&geometries=geojson&steps=false&alternatives=true&annotations=true`;
     const respuesta = await fetch(url);
     if (!respuesta.ok) {
       throw new Error(`El servicio de ruteo respondió con error ${respuesta.status}`);
@@ -129,12 +132,14 @@ const RoutingModule = (() => {
       throw new Error('No fue posible calcular una ruta con los puntos seleccionados.');
     }
     return data.routes.map((ruta) => {
+      const elevacion = ruta.legs && ruta.legs[0] && ruta.legs[0].annotation ? ruta.legs[0].annotation.elevation : null;
       const geojson = {
         type: 'Feature',
         properties: {
           distancia_m: ruta.distance,
           duracion_s: ruta.duration,
           perfil,
+          elevacion,
         },
         geometry: ruta.geometry,
       };
@@ -144,6 +149,7 @@ const RoutingModule = (() => {
         duracionSegundos: ruta.duration,
         vertices: ruta.geometry.coordinates.length,
         perfil,
+        elevacion,
       };
     });
   }
