@@ -679,6 +679,7 @@
     if (el.btnOrdenZa) el.btnOrdenZa.addEventListener('click', () => aplicarOrdenSitios('za'));
     actualizarBotonesOrden();
     el.loadingSitios = document.getElementById('loading-sitios');
+    el.loadingRuta = document.getElementById('loading-ruta');
     el.loadingMsg = el.loadingSitios.querySelector('.loading-sitios__msg');
     el.spinnerBike = el.loadingSitios.querySelector('.spinner-bike');
     el.mensajesCarga = [
@@ -757,8 +758,9 @@
 
   /** Habilita/deshabilita todos los controles de entrada durante el cálculo de ruta. */
   function ponerEnCargaRuta(cargando) {
-    if (cargando) el.btnCalcular.disabled = true;
+    el.btnCalcular.disabled = cargando;
     el.btnCalcular.setAttribute('data-loading', cargando ? 'true' : 'false');
+    if (el.loadingRuta) el.loadingRuta.hidden = !cargando;
     el.btnAgregarEscala.disabled = cargando;
     el.origenInput.disabled = cargando;
     el.destinoInput.disabled = cargando;
@@ -822,37 +824,25 @@
         ? await RoutingModule.calcularRutaConParadas(puntosRuta, PERFIL_FIJO)
         : await RoutingModule.calcularRuta(state.origen, state.destino, PERFIL_FIJO);
 
-      // Intentar evitar tramos peligrosos con puntos evasivos
-      let intentos = 5;
+      // Verificar si la ruta pasa por tramos peligrosos y buscar alternativa
       let totalKm = ruta.distanciaMetros / 1000;
-      while (intentos-- > 0) {
-        const peligrosas = RouteWarningsModule.getRutas();
-        let evadido = false;
-        for (const dangerRuta of peligrosas) {
-          if (dangerRuta.distanciaMinimaKm != null && totalKm < dangerRuta.distanciaMinimaKm) continue;
-          const evasivePt = RouteWarningsModule.generarPuntoEvasivo(ruta.geojson, dangerRuta, totalKm);
-          if (!evasivePt) continue;
-          const nuevosPuntos = [
-            state.origen,
-            ...state.escalas.filter((e) => e.lat != null),
-            { lat: evasivePt[1], lon: evasivePt[0] },
-            state.destino,
-          ];
-          try {
-            const rutaAlt = await RoutingModule.calcularRutaConParadas(nuevosPuntos, PERFIL_FIJO);
-            const altKm = rutaAlt.distanciaMetros / 1000;
-            const alertas = RouteWarningsModule.verificar(rutaAlt.geojson, altKm);
-            if (!alertas.some((a) => a.id === dangerRuta.id)) {
-              ruta = rutaAlt;
+      const alertasIniciales = RouteWarningsModule.verificar(ruta.geojson, totalKm);
+      if (alertasIniciales.length > 0) {
+        try {
+          const alternativas = await RoutingModule.calcularAlternativas(puntosRuta, PERFIL_FIJO);
+          for (let i = 1; i < alternativas.length; i++) {
+            const alt = alternativas[i];
+            const altKm = alt.distanciaMetros / 1000;
+            const altAlertas = RouteWarningsModule.verificar(alt.geojson, altKm);
+            if (altAlertas.length === 0) {
+              ruta = alt;
               totalKm = altKm;
-              evadido = true;
               break;
             }
-          } catch {
-            // alternativa falló
           }
+        } catch {
+          // no se pudieron obtener alternativas, se mantiene la ruta original
         }
-        if (!evadido) break;
       }
 
       aplicarRutaCalculada(ruta);
@@ -1412,10 +1402,14 @@
     const idx = state.paradas.findIndex((p) => p.id === sitioId);
     if (idx === -1) return;
     state.paradas.splice(idx, 1);
-    await aplicarRutaConDesvios();
     sincronizarOrden();
     renderizarParadas();
-    refiltrarSitios();
+    if (state.paradas.length === 0) return;
+    if (!el.btnMostrarSitiosCercanos.parentNode) {
+      el.loadingSitios.parentNode.insertBefore(el.btnMostrarSitiosCercanos, el.loadingSitios);
+    }
+    el.btnMostrarSitiosCercanos.disabled = false;
+    el.panelSitios.hidden = true;
   }
 
   function eliminarEscala(id) {

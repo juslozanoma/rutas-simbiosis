@@ -106,9 +106,52 @@ const RoutingModule = (() => {
     return data.routes[0].duration * 2; // ida y vuelta
   }
 
+  /**
+   * Calcula la ruta normal y obtiene hasta 5 alternativas de OSRM,
+   * para elegir una que evite tramos peligrosos.
+   * @param {Array<{lat:number, lon:number}>} puntos
+   * @param {string} perfil
+   * @returns {Promise<Array<object>>} array de rutas normalizadas (misma forma que calcularRutaConParadas)
+   */
+  async function calcularAlternativas(puntos, perfil = 'driving') {
+    if (!Array.isArray(puntos) || puntos.length < 2) {
+      throw new Error('Se requieren al menos dos puntos para calcular una ruta.');
+    }
+    const base = ENDPOINTS[perfil] || ENDPOINTS.driving;
+    const coords = puntos.map((p) => `${p.lon},${p.lat}`).join(';');
+    const url = `${base}/${coords}?overview=full&geometries=geojson&steps=false&alternatives=true&alternatives_number=5`;
+    const respuesta = await fetch(url);
+    if (!respuesta.ok) {
+      throw new Error(`El servicio de ruteo respondió con error ${respuesta.status}`);
+    }
+    const data = await respuesta.json();
+    if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+      throw new Error('No fue posible calcular una ruta con los puntos seleccionados.');
+    }
+    return data.routes.map((ruta) => {
+      const geojson = {
+        type: 'Feature',
+        properties: {
+          distancia_m: ruta.distance,
+          duracion_s: ruta.duration,
+          perfil,
+        },
+        geometry: ruta.geometry,
+      };
+      return {
+        geojson,
+        distanciaMetros: ruta.distance,
+        duracionSegundos: ruta.duration,
+        vertices: ruta.geometry.coordinates.length,
+        perfil,
+      };
+    });
+  }
+
   return {
     calcularRuta,
     calcularRutaConParadas,
+    calcularAlternativas,
     calcularTiempoDesvioPreciso,
   };
 })();
