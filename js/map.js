@@ -24,6 +24,15 @@ const MapModule = (() => {
 
   const _sitioMarkers = new Map(); // sitioId → L.marker
 
+  // Route drag-to-reroute state
+  let _rutaGeojson = null;
+  let _rutaDragCallback = null;
+  let _rutaDragWaypoints = null;
+  let _rutaDragActive = false;
+  let _rutaDragMarker = null;
+  let _rutaDragStartLatLng = null;
+  let _rutaDragSegIdx = -1;
+
   const CENTRO_COLOMBIA = [4.6, -74.1];
   const ZOOM_INICIAL = 6;
 
@@ -44,6 +53,7 @@ const MapModule = (() => {
 
     clusterSitios = L.markerClusterGroup({
       maxClusterRadius: 45,
+      zIndexOffset: 1100,
       iconCreateFunction: (cluster) => {
         const count = cluster.getChildCount();
         return L.divIcon({
@@ -252,6 +262,7 @@ const MapModule = (() => {
    */
   function dibujarRuta(geojsonLineString, meta = {}) {
     limpiarRuta();
+    _rutaGeojson = geojsonLineString;
 
     _capaRutaVisible = L.geoJSON(geojsonLineString, {
       style: { color: '#2f7a6b', weight: 4, opacity: 0.85, lineCap: 'round' },
@@ -276,6 +287,7 @@ const MapModule = (() => {
       _capaRutaHover.eachLayer((layer) => {
         layer.bindTooltip('', { sticky: true, className: 'route-tooltip', opacity: 0.97 });
         layer.on('mousemove', (e) => {
+          if (_rutaDragActive) return;
           const snapped = turf.nearestPointOnLine(
             geojsonLineString,
             turf.point([e.latlng.lng, e.latlng.lat]),
@@ -290,7 +302,96 @@ const MapModule = (() => {
       });
     }
 
+    // Always add drag handler (even without tooltip)
+    _capaRutaHover.eachLayer((layer) => {
+      layer.on('mousedown', _onRutaMouseDown);
+    });
+
     return capaRuta;
+  }
+
+  // ---------------------------------------------------------------------
+  // Arrastre de tramo para reruteo
+  // ---------------------------------------------------------------------
+
+  function habilitarArrastreRuta(waypointsCoords, callback) {
+    _rutaDragWaypoints = waypointsCoords;
+    _rutaDragCallback = callback;
+  }
+
+  function _onRutaMouseDown(e) {
+    if (!_rutaDragCallback || !_rutaDragWaypoints || _rutaDragWaypoints.length < 2 || !_rutaGeojson) return;
+    if (_rutaDragActive) return;
+
+    _rutaDragActive = true;
+    _rutaDragStartLatLng = e.latlng;
+    _rutaDragSegIdx = -1;
+
+    map.dragging.disable();
+
+    // Find which segment (between which two waypoints) was clicked
+    const clickPt = turf.point([e.latlng.lng, e.latlng.lat]);
+    const nearest = turf.nearestPointOnLine(_rutaGeojson, clickPt, { units: 'kilometers' });
+    const clickLocation = nearest.properties.location;
+
+    const wpLocations = _rutaDragWaypoints.map((wp) => {
+      const wpPt = turf.point(wp);
+      const nearestWp = turf.nearestPointOnLine(_rutaGeojson, wpPt, { units: 'kilometers' });
+      return nearestWp.properties.location || 0;
+    });
+
+    for (let i = 0; i < wpLocations.length - 1; i++) {
+      const min = Math.min(wpLocations[i], wpLocations[i + 1]);
+      const max = Math.max(wpLocations[i], wpLocations[i + 1]);
+      if (clickLocation >= min && clickLocation <= max) {
+        _rutaDragSegIdx = i;
+        break;
+      }
+    }
+
+    // Create drag handle marker
+    _rutaDragMarker = L.marker(e.latlng, {
+      icon: L.divIcon({
+        html: '<div class="ruta-drag-handle"></div>',
+        className: '',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+      }),
+      zIndexOffset: 1300,
+      interactive: false,
+    }).addTo(map);
+
+    map.on('mousemove', _onRutaDragMove);
+    map.on('mouseup', _onRutaDragEnd);
+  }
+
+  function _onRutaDragMove(e) {
+    if (!_rutaDragMarker) return;
+    _rutaDragMarker.setLatLng(e.latlng);
+  }
+
+  function _onRutaDragEnd(e) {
+    map.off('mousemove', _onRutaDragMove);
+    map.off('mouseup', _onRutaDragEnd);
+
+    if (_rutaDragMarker) {
+      map.removeLayer(_rutaDragMarker);
+      _rutaDragMarker = null;
+    }
+
+    map.dragging.enable();
+
+    if (!_rutaDragActive) return;
+    _rutaDragActive = false;
+
+    if (!_rutaDragStartLatLng) return;
+
+    const dist = _rutaDragStartLatLng.distanceTo(e.latlng);
+    if (dist < 10 || _rutaDragSegIdx < 0) return;
+
+    if (_rutaDragCallback) {
+      _rutaDragCallback([e.latlng.lng, e.latlng.lat], _rutaDragSegIdx);
+    }
   }
 
   /** Dibuja una ruta de previsualización (desde el punto de desvío sobre la ruta hasta un sitio) en azul continuo, sin afectar la ruta principal. */
@@ -381,6 +482,7 @@ const MapModule = (() => {
     setMarcadoresEscalas,
     limpiarEscalas,
     dibujarRuta,
+    habilitarArrastreRuta,
     dibujarRutaPreview,
     limpiarRutaPreview,
     limpiarRuta,

@@ -1180,6 +1180,18 @@
       duracionSegundos: state.rutaActual.duracionSegundos,
       origenNombre: state.origen?.nombre || 'el origen',
     });
+
+    // Enable drag-to-reroute with current waypoints
+    const waypointsCoords = state.orden.map(o => {
+      if (o.tipo === 'escala') {
+        const e = state.escalas.find(e => e.id === o.id);
+        return e && e.lat != null ? [e.lon, e.lat] : null;
+      } else {
+        const p = state.paradas.find(p => p.id === o.id);
+        return p ? [p.lon, p.lat] : null;
+      }
+    }).filter(Boolean);
+    MapModule.habilitarArrastreRuta(waypointsCoords, onRutaDragEnd);
     MapModule.setMarcadorOrigen(state.origen.lat, state.origen.lon, state.origen.nombre);
     MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);
 
@@ -1270,6 +1282,30 @@
     } finally {
       if (boton) ponerEnCarga(boton, false);
     }
+  }
+
+  // -------------------------------------------------------------------
+  // Arrastre de tramo en el mapa (reruteo)
+  // -------------------------------------------------------------------
+
+  async function onRutaDragEnd(lnglat, segIdx) {
+    const [lng, lat] = lnglat;
+    const id = 'drag_' + Date.now();
+    const parada = { id, lat, lon: lng, nombre: 'Punto intermedio' };
+
+    // Count how many paradas exist up to segIdx in state.orden
+    let paradaCount = 0;
+    for (let i = 0; i <= segIdx && i < state.orden.length; i++) {
+      if (state.orden[i]?.tipo === 'parada') paradaCount++;
+    }
+
+    // Pre-insert at the correct position so sincronizarOrden respects the order
+    state.paradas.splice(paradaCount, 0, parada);
+    state.orden.splice(segIdx + 1, 0, { tipo: 'parada', id });
+
+    await aplicarRutaConDesvios();
+    renderizarParadas();
+    refiltrarSitios();
   }
 
   // -------------------------------------------------------------------

@@ -603,7 +603,6 @@ input, select{ font-family: inherit; }
   font-family: var(--font-mono);
   font-size: 0.7rem;
   font-weight: 600;
-  border: 2px solid #ffffff;
 }
 
 .leaflet-popup-content-wrapper{ border-radius: var(--radius-md); }
@@ -636,6 +635,14 @@ input, select{ font-family: inherit; }
   box-shadow: 0 4px 14px rgba(20,32,27,0.25);
 }
 .route-tooltip::before{ display: none; }
+
+.ruta-drag-handle{
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #2f7a6b;
+  box-shadow: 0 2px 6px rgba(20,32,27,0.4);
+}
 
 /* Pin numerado para un sitio agregado como parada de la ruta */
 .parada-pin{

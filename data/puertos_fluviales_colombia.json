@@ -1,0 +1,869 @@
+[
+  {
+    "id": 1,
+    "puerto_fluvial": "Malecón de Barrancabermeja",
+    "latitud": 7.0675,
+    "longitud": -73.8472,
+    "ciudad_origen": "Barrancabermeja",
+    "departamento": "Santander",
+    "rio": "Río Magdalena",
+    "destinos": [
+      "Bocas de Ceniza (Atlántico)",
+      "El Banco (Magdalena)",
+      "Magangué (Bolívar)",
+      "Mompox (Bolívar)",
+      "La Dorada (Caldas)",
+      "Honda (Tolima)",
+      "Puerto Berrío (Antioquia)",
+      "Gamarra (Cesar)"
+    ],
+    "total_destinos": 8,
+    "descripcion_ubicacion": "Principal puerto fluvial del Magdalena Medio. Ubicado en la margen izquierda del río Magdalena, a 76 msnm. Conecta con el puerto de Barranquilla vía Bocas de Ceniza. Acceso por vía terrestre desde Bucaramanga (73 km) o por el aeropuerto Yariguíes."
+  },
+  {
+    "id": 2,
+    "puerto_fluvial": "Puerto de Honda",
+    "latitud": 5.2069,
+    "longitud": -74.7367,
+    "ciudad_origen": "Honda",
+    "departamento": "Tolima",
+    "rio": "Río Magdalena",
+    "destinos": [
+      "La Dorada (Caldas)",
+      "Puerto Salgar (Cundinamarca)",
+      "Puerto Berrío (Antioquia)",
+      "Barrancabermeja (Santander)",
+      "El Banco (Magdalena)",
+      "Magangué (Bolívar)",
+      "Mompox (Bolívar)",
+      "Barranquilla (Atlántico)"
+    ],
+    "total_destinos": 8,
+    "descripcion_ubicacion": "Histórico puerto colonial en el Alto Magdalena. Ciudad de los Puentes y Patrimonio de Colombia. Navegación limitada por los rápidos de Honda (Salto de Honda). Acceso por carretera desde Bogotá (3.5 horas) o Ibagué (2.5 horas)."
+  },
+  {
+    "id": 3,
+    "puerto_fluvial": "Puerto de La Dorada",
+    "latitud": 5.45,
+    "longitud": -74.66,
+    "ciudad_origen": "La Dorada",
+    "departamento": "Caldas",
+    "rio": "Río Magdalena",
+    "destinos": [
+      "Honda (Tolima)",
+      "Puerto Salgar (Cundinamarca)",
+      "Puerto Berrío (Antioquia)",
+      "Barrancabermeja (Santander)",
+      "El Banco (Magdalena)",
+      "Magangué (Bolívar)",
+      "Mompox (Bolívar)",
+      "Barranquilla (Atlántico)"
+    ],
+    "total_destinos": 8,
+    "descripcion_ubicacion": "Puerto estratégico en el inicio del Magdalena Medio. Conexión ferroviaria y fluvial. Acceso por carretera desde Manizales (2 horas) o Bogotá (4 horas)."
+  },
+  {
+    "id": 4,
+    "puerto_fluvial": "Puerto de Magangué",
+    "latitud": 9.242,
+    "longitud": -74.7547,
+    "ciudad_origen": "Magangué",
+    "departamento": "Bolívar",
+    "rio": "Río Magdalena",
+    "destinos": [
+      "Mompox (Bolívar)",
+      "El Banco (Magdalena)",
+      "Barrancabermeja (Santander)",
+      "La Dorada (Caldas)",
+      "Honda (Tolima)",
+      "Calamar (Bolívar)",
+      "Barranquilla (Atlántico)",
+      "Bocas de Ceniza (Atlántico)"
+    ],
+    "total_destinos": 8,
+    "descripcion_ubicacion": "Conocida como la Ciudad de los Ríos. Ubicada en la confluencia del río Magdalena con el Canal del Dique. Puerto importante para carga y pasajeros en el Bajo Magdalena. Acceso por carretera desde Cartagena (2 horas) o Sincelejo (1.5 horas)."
+  },
+  {
+    "id": 5,
+    "puerto_fluvial": "Puerto de Mompox",
+    "latitud": 9.237,
+    "longitud": -74.426,
+    "ciudad_origen": "Santa Cruz de Mompox",
+    "departamento": "Bolívar",
+    "rio": "Río Magdalena (Brazo de Loba)",
+    "destinos": [
+      "Magangué (Bolívar)",
+      "El Banco (Magdalena)",
+      "Barrancabermeja (Santander)",
+      "La Dorada (Caldas)",
+      "Honda (Tolima)",
+      "Barranquilla (Atlántico)",
+      "Bocas de Ceniza (Atlántico)"
+    ],
+    "total_destinos": 7,
+    "descripcion_ubicacion": "Ciudad Patrimonio de la Humanidad por la UNESCO. Puerto histórico colonial en una isla fluvial del Magdalena. Acceso principalmente fluvial desde Magangué (1.5 horas en lancha) o por carretera desde El Banco (1 hora) y Sincelejo (3 horas)."
+  },
+  {
+    "id": 6,
+    "puerto_fluvial": "Puerto de El Banco",
+    "latitud": 9.0,
+    "longitud": -73.97,
+    "ciudad_origen": "El Banco",
+    "departamento": "Magdalena",
+    "rio": "Río Magdalena",
+    "destinos": [
+      "Mompox (Bolívar)",
+      "Magangué (Bolívar)",
+      "Barrancabermeja (Santander)",
+      "La Dorada (Caldas)",
+      "Honda (Tolima)",
+      "Plato (Magdalena)",
+      "Barranquilla (Atlántico)"
+    ],
+    "total_destinos": 7,
+    "descripcion_ubicacion": "Punto de transición entre el Magdalena Medio y el Bajo Magdalena. Inicio de la Depresión Mompoxina. Acceso por carretera desde Barrancabermeja (3 horas) o Sincelejo (2 horas)."
+  },
+  {
+    "id": 7,
+    "puerto_fluvial": "Puerto de Puerto Berrío",
+    "latitud": 6.49,
+    "longitud": -74.4,
+    "ciudad_origen": "Puerto Berrío",
+    "departamento": "Antioquia",
+    "rio": "Río Magdalena",
+    "destinos": [
+      "La Dorada (Caldas)",
+      "Honda (Tolima)",
+      "Barrancabermeja (Santander)",
+      "El Banco (Magdalena)",
+      "Magangué (Bolívar)",
+      "Mompox (Bolívar)",
+      "Barranquilla (Atlántico)"
+    ],
+    "total_destinos": 7,
+    "descripcion_ubicacion": "Puerto histórico en el Magdalena Medio. Conexión ferroviaria importante. Acceso por carretera desde Medellín (4 horas) o por vía fluvial desde La Dorada."
+  },
+  {
+    "id": 8,
+    "puerto_fluvial": "Puerto de Gamarra",
+    "latitud": 8.32,
+    "longitud": -73.74,
+    "ciudad_origen": "Gamarra",
+    "departamento": "Cesar",
+    "rio": "Río Magdalena",
+    "destinos": [
+      "Barrancabermeja (Santander)",
+      "El Banco (Magdalena)",
+      "Magangué (Bolívar)",
+      "Mompox (Bolívar)",
+      "Barranquilla (Atlántico)"
+    ],
+    "total_destinos": 5,
+    "descripcion_ubicacion": "Último puerto importante antes de la Depresión Mompoxina. Acceso por carretera desde Aguachica (1 hora) o vía fluvial desde Barrancabermeja."
+  },
+  {
+    "id": 9,
+    "puerto_fluvial": "Puerto de Neiva",
+    "latitud": 2.93,
+    "longitud": -75.28,
+    "ciudad_origen": "Neiva",
+    "departamento": "Huila",
+    "rio": "Río Magdalena",
+    "destinos": [
+      "Girardot (Cundinamarca)",
+      "Honda (Tolima)",
+      "La Dorada (Caldas)",
+      "Barrancabermeja (Santander)",
+      "Magangué (Bolívar)",
+      "Barranquilla (Atlántico)"
+    ],
+    "total_destinos": 6,
+    "descripcion_ubicacion": "Primera capital departamental que atraviesa el río Magdalena. Navegación limitada por rápidos aguas arriba. Acceso por carretera desde Bogotá (5 horas) o aeropuerto Benito Salas."
+  },
+  {
+    "id": 10,
+    "puerto_fluvial": "Puerto de Girardot",
+    "latitud": 4.3,
+    "longitud": -74.8,
+    "ciudad_origen": "Girardot",
+    "departamento": "Cundinamarca",
+    "rio": "Río Magdalena",
+    "destinos": [
+      "Neiva (Huila)",
+      "Honda (Tolima)",
+      "La Dorada (Caldas)",
+      "Barrancabermeja (Santander)",
+      "Magangué (Bolívar)",
+      "Barranquilla (Atlántico)"
+    ],
+    "total_destinos": 6,
+    "descripcion_ubicacion": "Puerto turístico en el Alto Magdalena. Conocido como la Ciudad de las Acacias. Acceso por carretera desde Bogotá (2 horas)."
+  },
+  {
+    "id": 11,
+    "puerto_fluvial": "Puerto de Plato",
+    "latitud": 9.79,
+    "longitud": -74.78,
+    "ciudad_origen": "Plato",
+    "departamento": "Magdalena",
+    "rio": "Río Magdalena",
+    "destinos": [
+      "El Banco (Magdalena)",
+      "Magangué (Bolívar)",
+      "Mompox (Bolívar)",
+      "Barranquilla (Atlántico)",
+      "Bocas de Ceniza (Atlántico)"
+    ],
+    "total_destinos": 5,
+    "descripcion_ubicacion": "Puerto en el Bajo Magdalena. Acceso por carretera desde Sincelejo (1 hora) o Barranquilla (2.5 horas)."
+  },
+  {
+    "id": 12,
+    "puerto_fluvial": "Muelle de Bocas de Ceniza",
+    "latitud": 10.95,
+    "longitud": -74.95,
+    "ciudad_origen": "Bocas de Ceniza",
+    "departamento": "Atlántico",
+    "rio": "Río Magdalena",
+    "destinos": [
+      "Barranquilla (Atlántico)",
+      "Sabanagrande (Atlántico)",
+      "Magangué (Bolívar)",
+      "Mompox (Bolívar)",
+      "El Banco (Magdalena)",
+      "Barrancabermeja (Santander)"
+    ],
+    "total_destinos": 6,
+    "descripcion_ubicacion": "Desembocadura del río Magdalena en el Mar Caribe. Punto final de la navegación fluvial. Acceso por carretera desde Barranquilla (30 minutos) o por vía marítima/fluvial."
+  },
+  {
+    "id": 13,
+    "puerto_fluvial": "Malecón de Barranquilla",
+    "latitud": 10.99,
+    "longitud": -74.78,
+    "ciudad_origen": "Barranquilla",
+    "departamento": "Atlántico",
+    "rio": "Río Magdalena (Canal del Dique)",
+    "destinos": [
+      "Bocas de Ceniza (Atlántico)",
+      "Magangué (Bolívar)",
+      "Mompox (Bolívar)",
+      "El Banco (Magdalena)",
+      "Barrancabermeja (Santander)",
+      "La Dorada (Caldas)",
+      "Honda (Tolima)"
+    ],
+    "total_destinos": 7,
+    "descripcion_ubicacion": "Principal puerto marítimo y fluvial del Caribe colombiano. Conexión con el río Magdalena vía Canal del Dique. Acceso por aeropuerto Ernesto Cortissoz, carretera o vía marítima."
+  },
+  {
+    "id": 14,
+    "puerto_fluvial": "Embarcadero El Fogón",
+    "latitud": 10.63,
+    "longitud": -74.92,
+    "ciudad_origen": "Ponedera",
+    "departamento": "Atlántico",
+    "rio": "Río Magdalena",
+    "destinos": [
+      "Sabanagrande (Atlántico)",
+      "Sitionuevo (Magdalena)",
+      "Remolino (Magdalena)",
+      "Salamina (Magdalena)"
+    ],
+    "total_destinos": 4,
+    "descripcion_ubicacion": "Embarcadero informal ubicado en el corregimiento de Puerto Giraldo, Ponedera. Transporte de pasajeros en canoas motorizadas (peque-peque) hacia municipios del Magdalena. Acceso por carretera desde Barranquilla (1 hora)."
+  },
+  {
+    "id": 15,
+    "puerto_fluvial": "Puerto de Sabanagrande",
+    "latitud": 10.63,
+    "longitud": -74.92,
+    "ciudad_origen": "Sabanagrande",
+    "departamento": "Atlántico",
+    "rio": "Río Magdalena",
+    "destinos": [
+      "Bocas de Ceniza (Atlántico)",
+      "Remolino (Magdalena)",
+      "Sitionuevo (Magdalena)",
+      "Barrio Las Flores (Atlántico)"
+    ],
+    "total_destinos": 4,
+    "descripcion_ubicacion": "Puerto fluvial en el Bajo Magdalena. Moviliza aproximadamente 65 pasajeros diarios. Acceso por carretera desde Barranquilla (45 minutos)."
+  },
+  {
+    "id": 16,
+    "puerto_fluvial": "Malecón de Quibdó",
+    "latitud": 5.6923,
+    "longitud": -76.6584,
+    "ciudad_origen": "Quibdó",
+    "departamento": "Chocó",
+    "rio": "Río Atrato",
+    "destinos": [
+      "Medio Atrato/Beté (Chocó)",
+      "Bojayá/Bellavista (Chocó)",
+      "Vigía del Fuerte (Chocó)",
+      "Carmen del Darién (Chocó)",
+      "Riosucio (Chocó)",
+      "Unguía (Chocó)",
+      "Turbo (Antioquia)",
+      "Medio Baudó/Puerto Meluk (Chocó)",
+      "Bajo Baudó/Pizarro (Chocó)"
+    ],
+    "total_destinos": 9,
+    "descripcion_ubicacion": "Mayor embarcadero de pasajeros y carga del Chocó. Ubicado en el malecón de Quibdó, margen derecha del río Atrato. Capital del Chocó. Acceso principalmente por vía aérea (aeropuerto El Caraño) o fluvial."
+  },
+  {
+    "id": 17,
+    "puerto_fluvial": "Embarcadero de Medio Atrato",
+    "latitud": 5.98,
+    "longitud": -76.5,
+    "ciudad_origen": "Beté",
+    "departamento": "Chocó",
+    "rio": "Río Atrato",
+    "destinos": [
+      "Quibdó (Chocó)",
+      "Bojayá/Bellavista (Chocó)",
+      "Vigía del Fuerte (Chocó)",
+      "Unguía (Chocó)",
+      "Turbo (Antioquia)"
+    ],
+    "total_destinos": 5,
+    "descripcion_ubicacion": "Cabecera municipal de Medio Atrato. Puerto en el río Atrato a 40 km de Quibdó. Acceso únicamente por vía fluvial desde Quibdó (1.5 horas en lancha)."
+  },
+  {
+    "id": 18,
+    "puerto_fluvial": "Embarcadero de Bojayá",
+    "latitud": 6.53,
+    "longitud": -76.98,
+    "ciudad_origen": "Bellavista",
+    "departamento": "Chocó",
+    "rio": "Río Atrato",
+    "destinos": [
+      "Quibdó (Chocó)",
+      "Medio Atrato/Beté (Chocó)",
+      "Vigía del Fuerte (Chocó)",
+      "Riosucio (Chocó)",
+      "Unguía (Chocó)"
+    ],
+    "total_destinos": 5,
+    "descripcion_ubicacion": "Cabecera municipal de Bojayá. Puerto en el río Atrato a 81.7 km de Quibdó. Acceso únicamente por vía fluvial desde Quibdó (3 horas en lancha)."
+  },
+  {
+    "id": 19,
+    "puerto_fluvial": "Embarcadero de Vigía del Fuerte",
+    "latitud": 6.59,
+    "longitud": -76.7,
+    "ciudad_origen": "Vigía del Fuerte",
+    "departamento": "Chocó",
+    "rio": "Río Atrato",
+    "destinos": [
+      "Quibdó (Chocó)",
+      "Medio Atrato/Beté (Chocó)",
+      "Bojayá/Bellavista (Chocó)",
+      "Riosucio (Chocó)",
+      "Unguía (Chocó)",
+      "Turbo (Antioquia)"
+    ],
+    "total_destinos": 6,
+    "descripcion_ubicacion": "Municipio en el río Atrato. Puerto fluvial a 539 km de Quibdó en navegación completa. Acceso únicamente por vía fluvial."
+  },
+  {
+    "id": 20,
+    "puerto_fluvial": "Embarcadero de Carmen del Darién",
+    "latitud": 7.37,
+    "longitud": -77.0,
+    "ciudad_origen": "Carmen del Darién",
+    "departamento": "Chocó",
+    "rio": "Río Atrato",
+    "destinos": [
+      "Quibdó (Chocó)",
+      "Unguía (Chocó)",
+      "Turbo (Antioquia)",
+      "Riosucio (Chocó)"
+    ],
+    "total_destinos": 4,
+    "descripcion_ubicacion": "Municipio en la cuenca del Atrato, cerca del Darién. Puerto fluvial a 369 km de Quibdó. Acceso principalmente fluvial."
+  },
+  {
+    "id": 21,
+    "puerto_fluvial": "Muelle Bocachico de Riosucio",
+    "latitud": 7.31,
+    "longitud": -77.17,
+    "ciudad_origen": "Riosucio",
+    "departamento": "Chocó",
+    "rio": "Río Atrato",
+    "destinos": [
+      "Quibdó (Chocó)",
+      "Carmen del Darién (Chocó)",
+      "Unguía (Chocó)",
+      "Bojayá/Bellavista (Chocó)",
+      "Medio Atrato/Beté (Chocó)"
+    ],
+    "total_destinos": 5,
+    "descripcion_ubicacion": "Municipio en el río Atrato a 415 km de Quibdó. Muelle flotante en madera de 13 metros. Acceso únicamente por vía fluvial."
+  },
+  {
+    "id": 22,
+    "puerto_fluvial": "Muelle de Pasajeros Unguía",
+    "latitud": 8.04,
+    "longitud": -77.09,
+    "ciudad_origen": "Unguía",
+    "departamento": "Chocó",
+    "rio": "Río Atrato (Caño Unguía)",
+    "destinos": [
+      "Quibdó (Chocó)",
+      "Turbo (Antioquia)",
+      "Carmen del Darién (Chocó)",
+      "Riosucio (Chocó)",
+      "Tanela (Chocó)",
+      "Santa María (Chocó)"
+    ],
+    "total_destinos": 6,
+    "descripcion_ubicacion": "Puerto en el caño Unguía, desembocadura del Atrato. A 2 km del casco urbano. Acceso por vía fluvial desde Turbo (2 horas) o Quibdó (8 horas)."
+  },
+  {
+    "id": 23,
+    "puerto_fluvial": "Puerto de Turbo",
+    "latitud": 8.0931,
+    "longitud": -76.7283,
+    "ciudad_origen": "Turbo",
+    "departamento": "Antioquia",
+    "rio": "Río Atrato (Bocas del Atrato)",
+    "destinos": [
+      "Quibdó (Chocó)",
+      "Unguía (Chocó)",
+      "Carmen del Darién (Chocó)",
+      "Riosucio (Chocó)",
+      "Medio Atrato/Beté (Chocó)",
+      "Bojayá/Bellavista (Chocó)",
+      "Necoclí (Antioquia)"
+    ],
+    "total_destinos": 7,
+    "descripcion_ubicacion": "Puerto marítimo y fluvial en el Golfo de Urabá. Conexión entre el mar Caribe y el río Atrato. Acceso por carretera desde Medellín (7 horas) o por vía marítima desde Cartagena."
+  },
+  {
+    "id": 24,
+    "puerto_fluvial": "Embarcadero Municipal de Istmina",
+    "latitud": 5.16,
+    "longitud": -76.68,
+    "ciudad_origen": "Istmina",
+    "departamento": "Chocó",
+    "rio": "Río San Juan",
+    "destinos": [
+      "Tadó (Chocó)",
+      "Andagoya (Chocó)",
+      "Medio San Juan (Chocó)",
+      "Negría (Chocó)",
+      "Sardina (Chocó)",
+      "Litoral de San Juan (Chocó)",
+      "Sipí (Chocó)",
+      "Quibdó (Chocó)"
+    ],
+    "total_destinos": 8,
+    "descripcion_ubicacion": "Principal puerto del río San Juan. Municipio histórico del Chocó. Acceso únicamente por vía fluvial desde Buenaventura (8 horas) o Quibdó (conexión por Atrato)."
+  },
+  {
+    "id": 25,
+    "puerto_fluvial": "Embarcadero de Tadó",
+    "latitud": 5.26,
+    "longitud": -76.56,
+    "ciudad_origen": "Tadó",
+    "departamento": "Chocó",
+    "rio": "Río San Juan",
+    "destinos": [
+      "Istmina (Chocó)",
+      "Andagoya (Chocó)",
+      "Medio San Juan (Chocó)",
+      "Negría (Chocó)",
+      "Sardina (Chocó)",
+      "Litoral de San Juan (Chocó)"
+    ],
+    "total_destinos": 6,
+    "descripcion_ubicacion": "Municipio en la cuenca del río San Juan. Puerto fluvial para carga y pasajeros. Acceso únicamente por vía fluvial."
+  },
+  {
+    "id": 26,
+    "puerto_fluvial": "Embarcadero de Pizarro",
+    "latitud": 4.95,
+    "longitud": -77.37,
+    "ciudad_origen": "Pizarro",
+    "departamento": "Chocó",
+    "rio": "Río San Juan / Río Baudó",
+    "destinos": [
+      "Istmina (Chocó)",
+      "Litoral de San Juan (Chocó)",
+      "Sipí (Chocó)",
+      "Quibdó (Chocó)",
+      "Medio Baudó/Puerto Meluk (Chocó)"
+    ],
+    "total_destinos": 5,
+    "descripcion_ubicacion": "Municipio en la confluencia de los ríos San Juan y Baudó. Puerto fluvial en el Pacífico colombiano. Acceso por vía fluvial desde Buenaventura o Quibdó."
+  },
+  {
+    "id": 27,
+    "puerto_fluvial": "Embarcadero de Litoral de San Juan",
+    "latitud": 4.26,
+    "longitud": -77.37,
+    "ciudad_origen": "Litoral de San Juan",
+    "departamento": "Chocó",
+    "rio": "Río San Juan",
+    "destinos": [
+      "Istmina (Chocó)",
+      "Pizarro (Chocó)",
+      "Sipí (Chocó)",
+      "Negría (Chocó)",
+      "Andagoya (Chocó)"
+    ],
+    "total_destinos": 5,
+    "descripcion_ubicacion": "Municipio costero en el Pacífico. Puerto fluvial y marítimo. Acceso por vía marítima desde Buenaventura (4 horas) o fluvial por el río San Juan."
+  },
+  {
+    "id": 28,
+    "puerto_fluvial": "Puerto Meluk",
+    "latitud": 4.9,
+    "longitud": -77.1,
+    "ciudad_origen": "Medio Baudó",
+    "departamento": "Chocó",
+    "rio": "Río Baudó",
+    "destinos": [
+      "Pie de Pato/Alto Baudó (Chocó)",
+      "Pizarro/Bajo Baudó (Chocó)",
+      "Quibdó (Chocó)",
+      "Istmina (Chocó)"
+    ],
+    "total_destinos": 4,
+    "descripcion_ubicacion": "Cabecera municipal de Medio Baudó. Puerto en el río Baudó a 71.5 km de Pie de Pato. Acceso únicamente por vía fluvial."
+  },
+  {
+    "id": 29,
+    "puerto_fluvial": "Embarcadero de Pie de Pato",
+    "latitud": 5.2,
+    "longitud": -77.0,
+    "ciudad_origen": "Pie de Pato",
+    "departamento": "Chocó",
+    "rio": "Río Baudó",
+    "destinos": [
+      "Puerto Meluk/Medio Baudó (Chocó)",
+      "Pizarro/Bajo Baudó (Chocó)",
+      "Quibdó (Chocó)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "Cabecera municipal de Alto Baudó. Puerto en el alto Baudó. Acceso únicamente por vía fluvial desde Quibdó o Medio Baudó."
+  },
+  {
+    "id": 30,
+    "puerto_fluvial": "Malecón Turístico de Leticia",
+    "latitud": 4.21,
+    "longitud": -69.94,
+    "ciudad_origen": "Leticia",
+    "departamento": "Amazonas",
+    "rio": "Río Amazonas",
+    "destinos": [
+      "Puerto Nariño (Amazonas)",
+      "Isla de los Micos (Amazonas)",
+      "Lagos de Boiauazu (Amazonas)",
+      "Lago Tarapoto (Amazonas)",
+      "San Antonio de los Lagos (Amazonas)",
+      "Victoria Regia (Amazonas)",
+      "Isla Santa Rosa (Amazonas)",
+      "Sacambu (Amazonas)",
+      "Tabatinga (Brasil)",
+      "Santa Rosa (Perú)"
+    ],
+    "total_destinos": 10,
+    "descripcion_ubicacion": "Principal puerto fluvial del Amazonas colombiano. Malecón turístico de 179.8 m de largo. Conexión internacional con Brasil (Tabatinga) y Perú (Santa Rosa). Acceso por aeropuerto Alfredo Vásquez Cobo o vía fluvial desde Iquitos (Perú) o Manaus (Brasil)."
+  },
+  {
+    "id": 31,
+    "puerto_fluvial": "Muelle Flotante de Puerto Nariño",
+    "latitud": -3.7806,
+    "longitud": -70.3625,
+    "ciudad_origen": "Puerto Nariño",
+    "departamento": "Amazonas",
+    "rio": "Río Amazonas (Loretoyacú)",
+    "destinos": [
+      "Leticia (Amazonas)",
+      "Isla de los Micos (Amazonas)",
+      "Lagos de Boiauazu (Amazonas)",
+      "Lago Tarapoto (Amazonas)",
+      "San Antonio de los Lagos (Amazonas)",
+      "Yaguas (Amazonas)",
+      "Comunidad de San Francisco (Amazonas)"
+    ],
+    "total_destinos": 7,
+    "descripcion_ubicacion": "Municipio indígena en el Trapecio Amazónico. Muelle flotante de pasajeros. A 75 km de Leticia por el río Amazonas (1.5 horas en lancha rápida). Acceso únicamente por vía fluvial o aérea."
+  },
+  {
+    "id": 32,
+    "puerto_fluvial": "Embarcadero de Isla de los Micos",
+    "latitud": -3.8,
+    "longitud": -70.35,
+    "ciudad_origen": "Isla de los Micos",
+    "departamento": "Amazonas",
+    "rio": "Río Amazonas",
+    "destinos": [
+      "Leticia (Amazonas)",
+      "Puerto Nariño (Amazonas)",
+      "Lagos de Boiauazu (Amazonas)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "Reserva natural en el río Amazonas. Destino turístico. Acceso únicamente por vía fluvial desde Leticia (30 minutos en lancha)."
+  },
+  {
+    "id": 33,
+    "puerto_fluvial": "Embarcadero Lago Tarapoto",
+    "latitud": -3.8,
+    "longitud": -70.05,
+    "ciudad_origen": "Lago Tarapoto",
+    "departamento": "Amazonas",
+    "rio": "Río Amazonas (Lago Tarapoto)",
+    "destinos": [
+      "Leticia (Amazonas)",
+      "Puerto Nariño (Amazonas)",
+      "San Antonio de los Lagos (Amazonas)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "Lago amazónico cerca de Puerto Nariño. Destino turístico para avistamiento de delfines rosados. Acceso por vía fluvial desde Puerto Nariño (20 minutos)."
+  },
+  {
+    "id": 34,
+    "puerto_fluvial": "Punto de Carga Puerto Carreño",
+    "latitud": 6.1851,
+    "longitud": -67.4827,
+    "ciudad_origen": "Puerto Carreño",
+    "departamento": "Vichada",
+    "rio": "Río Orinoco / Río Meta",
+    "destinos": [
+      "Casuarito (Vichada)",
+      "La Primavera (Vichada)",
+      "Parque Nacional El Tuparro (Vichada)",
+      "Los Raudales Garcitas (Vichada)",
+      "Dagua (Vichada)",
+      "Hormiga (Vichada)",
+      "Isla Santa Helena (Vichada)",
+      "Río Vita (Vichada)",
+      "Raudales de Atures (Venezuela)",
+      "Puerto Ayacucho (Venezuela)"
+    ],
+    "total_destinos": 10,
+    "descripcion_ubicacion": "Capital del Vichada en la confluencia del Meta y el Orinoco. Principal puerto fluvial de la Orinoquía. Rampa en acero para carga. Acceso por aeropuerto Germán Olano o vía fluvial desde Puerto López (2 días) o Puerto Ayacucho, Venezuela (4 horas)."
+  },
+  {
+    "id": 35,
+    "puerto_fluvial": "Embarcadero Casa Flotante Casuarito",
+    "latitud": 6.25,
+    "longitud": -67.45,
+    "ciudad_origen": "Casuarito",
+    "departamento": "Vichada",
+    "rio": "Río Orinoco",
+    "destinos": [
+      "Puerto Carreño (Vichada)",
+      "Parque Nacional El Tuparro (Vichada)",
+      "Los Raudales Garcitas (Vichada)",
+      "Dagua (Vichada)",
+      "Hormiga (Vichada)",
+      "Puerto Ayacucho (Venezuela)"
+    ],
+    "total_destinos": 6,
+    "descripcion_ubicacion": "Corregimiento de Puerto Carreño en la frontera con Venezuela. Casa flotante como embarcadero. Acceso por vía fluvial desde Puerto Carreño (1 hora) o por vía terrestre desde Puerto Carreño (30 minutos)."
+  },
+  {
+    "id": 36,
+    "puerto_fluvial": "Muelle de La Primavera",
+    "latitud": 5.49,
+    "longitud": -70.41,
+    "ciudad_origen": "La Primavera",
+    "departamento": "Vichada",
+    "rio": "Río Meta",
+    "destinos": [
+      "Puerto Carreño (Vichada)",
+      "Puerto López (Meta)",
+      "Cabuyaro (Meta)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "Municipio en el Alto Orinoco. Muelle en concreto en el río Meta. Flujo de 50 pasajeros diarios. Acceso por vía fluvial desde Puerto López (1 día) o por carretera desde Puerto Carreño (3 horas)."
+  },
+  {
+    "id": 37,
+    "puerto_fluvial": "Puerto La Banqueta",
+    "latitud": 4.88,
+    "longitud": -72.96,
+    "ciudad_origen": "Puerto López",
+    "departamento": "Meta",
+    "rio": "Río Meta",
+    "destinos": [
+      "Cabuyaro (Meta)",
+      "La Primavera (Vichada)",
+      "Puerto Carreño (Vichada)",
+      "San José del Guaviare (Guaviare)",
+      "Villavicencio (Meta)"
+    ],
+    "total_destinos": 5,
+    "descripcion_ubicacion": "Puerto en el Alto río Meta, navegable desde aquí. Planchón para cruce de vehículos. Proyecto de muelle internacional fluvial. Acceso por carretera desde Villavicencio (3 horas)."
+  },
+  {
+    "id": 38,
+    "puerto_fluvial": "Embarcadero de Cabuyaro",
+    "latitud": 4.28,
+    "longitud": -72.8,
+    "ciudad_origen": "Cabuyaro",
+    "departamento": "Meta",
+    "rio": "Río Meta",
+    "destinos": [
+      "Puerto López (Meta)",
+      "La Primavera (Vichada)",
+      "Puerto Carreño (Vichada)",
+      "Villavicencio (Meta)"
+    ],
+    "total_destinos": 4,
+    "descripcion_ubicacion": "Municipio en la Orinoquía sobre el río Meta. Puerto fluvial para pasajeros y carga. Acceso por carretera desde Villavicencio (2.5 horas) o vía fluvial desde Puerto López."
+  },
+  {
+    "id": 39,
+    "puerto_fluvial": "Embarcadero Coco Nuevo",
+    "latitud": 3.868,
+    "longitud": -67.9265,
+    "ciudad_origen": "Inírida",
+    "departamento": "Guainía",
+    "rio": "Río Inírida",
+    "destinos": [
+      "Barrancominas (Guainía)",
+      "San José del Guaviare (Guaviare)",
+      "El Retorno (Guaviare)",
+      "Puerto Carreño (Vichada)",
+      "Morichal (Guainía)",
+      "Venado (Guainía)",
+      "Remanso (Guainía)"
+    ],
+    "total_destinos": 7,
+    "descripcion_ubicacion": "Capital de Guainía. Embarcadero principal en el río Inírida. Estructura flotante artesanal. 90-130 pasajeros diarios. 4,500-6,000 toneladas de carga mensual. Acceso por aeropuerto César Gaviria Trujillo o vía fluvial desde San José del Guaviare (2 días)."
+  },
+  {
+    "id": 40,
+    "puerto_fluvial": "Puerto de los Curas",
+    "latitud": 3.55,
+    "longitud": -69.8,
+    "ciudad_origen": "Barrancominas",
+    "departamento": "Guainía",
+    "rio": "Río Inírida",
+    "destinos": [
+      "Inírida (Guainía)",
+      "San José del Guaviare (Guaviare)",
+      "El Retorno (Guaviare)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "Municipio en el río Inírida. Puerto con rampa para vehículos y maquinaria. Acceso únicamente por vía fluvial desde Inírida (6 horas) o San José del Guaviare (8 horas)."
+  },
+  {
+    "id": 41,
+    "puerto_fluvial": "Embarcadero de San José del Guaviare",
+    "latitud": 2.57,
+    "longitud": -72.64,
+    "ciudad_origen": "San José del Guaviare",
+    "departamento": "Guaviare",
+    "rio": "Río Guaviare",
+    "destinos": [
+      "Inírida (Guainía)",
+      "Barrancominas (Guainía)",
+      "El Retorno (Guaviare)",
+      "Puerto Carreño (Vichada)",
+      "Villavicencio (Meta)"
+    ],
+    "total_destinos": 5,
+    "descripcion_ubicacion": "Capital del Guaviare. Puerto en el río Guaviare. Conexión fluvial hacia el Orinoco. Acceso por aeropuerto Jorge Enrique González o vía fluvial desde Inírida (2 días) o Villavicencio (3 días)."
+  },
+  {
+    "id": 42,
+    "puerto_fluvial": "Puerto de Puerto Asís",
+    "latitud": 0.5,
+    "longitud": -76.5,
+    "ciudad_origen": "Puerto Asís",
+    "departamento": "Putumayo",
+    "rio": "Río Putumayo",
+    "destinos": [
+      "Puerto Leguizamo (Putumayo)",
+      "Villagarzón (Putumayo)",
+      "Mocoa (Putumayo)",
+      "Ipiales (Nariño)",
+      "San Miguel (Ecuador)",
+      "Santa Clara (Perú)"
+    ],
+    "total_destinos": 6,
+    "descripcion_ubicacion": "Principal puerto fluvial del Putumayo. Conexión internacional con Ecuador y Perú. Acceso por aeropuerto Tres de Mayo o por carretera desde Pasto (5 horas)."
+  },
+  {
+    "id": 43,
+    "puerto_fluvial": "Puerto de Puerto Leguizamo",
+    "latitud": -0.18,
+    "longitud": -74.78,
+    "ciudad_origen": "Puerto Leguizamo",
+    "departamento": "Putumayo",
+    "rio": "Río Putumayo",
+    "destinos": [
+      "Puerto Asís (Putumayo)",
+      "Villagarzón (Putumayo)",
+      "Mocoa (Putumayo)",
+      "Florencia (Caquetá)",
+      "Solano (Caquetá)",
+      "Araracuara (Amazonas)"
+    ],
+    "total_destinos": 6,
+    "descripcion_ubicacion": "Municipio en la frontera con Caquetá y Amazonas. Puerto en el río Putumayo. Acceso por aeropuerto Caucaya o vía fluvial desde Puerto Asís (4 horas)."
+  },
+  {
+    "id": 44,
+    "puerto_fluvial": "Puerto de Solano",
+    "latitud": -0.7,
+    "longitud": -72.18,
+    "ciudad_origen": "Solano",
+    "departamento": "Caquetá",
+    "rio": "Río Caquetá / Río Orteguaza",
+    "destinos": [
+      "Florencia (Caquetá)",
+      "Puerto Leguizamo (Putumayo)",
+      "Araracuara (Amazonas)",
+      "La Chorrera (Amazonas)",
+      "Leticia (Amazonas)"
+    ],
+    "total_destinos": 5,
+    "descripcion_ubicacion": "Municipio en la selva amazónica. Puerto en el río Caquetá. Acceso principalmente por vía aérea (aeropuerto La Araracuara) o fluvial desde Florencia (3 días)."
+  },
+  {
+    "id": 45,
+    "puerto_fluvial": "Puerto de Cali",
+    "latitud": 3.42,
+    "longitud": -76.52,
+    "ciudad_origen": "Cali",
+    "departamento": "Valle del Cauca",
+    "rio": "Río Cauca",
+    "destinos": [
+      "Cartago (Valle del Cauca)",
+      "Palmira (Valle del Cauca)",
+      "Buga (Valle del Cauca)",
+      "Tuluá (Valle del Cauca)",
+      "La Paila (Valle del Cauca)",
+      "La Virginia (Risaralda)",
+      "Pereira (Risaralda)"
+    ],
+    "total_destinos": 7,
+    "descripcion_ubicacion": "Navegación limitada en el río Cauca por represas. Puerto principal en el tramo Cali-Cartago. Acceso por carretera o aeropuerto Alfonso Bonilla Aragón."
+  },
+  {
+    "id": 46,
+    "puerto_fluvial": "Puerto de Cartago",
+    "latitud": 4.75,
+    "longitud": -75.91,
+    "ciudad_origen": "Cartago",
+    "departamento": "Valle del Cauca",
+    "rio": "Río Cauca",
+    "destinos": [
+      "Cali (Valle del Cauca)",
+      "Palmira (Valle del Cauca)",
+      "Buga (Valle del Cauca)",
+      "Tuluá (Valle del Cauca)",
+      "La Paila (Valle del Cauca)"
+    ],
+    "total_destinos": 5,
+    "descripcion_ubicacion": "Histórico puerto en el Valle del Cauca. Navegación recreativa y de carga limitada. Acceso por carretera desde Cali (2 horas) o Pereira (1 hora)."
+  }
+]

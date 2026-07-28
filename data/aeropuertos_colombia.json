@@ -1,0 +1,1128 @@
+[
+  {
+    "id": 1,
+    "aeropuerto": "Internacional General Alfredo Vásquez Cobo",
+    "latitud": -4.19595117239541,
+    "longitud": -69.9410343937171,
+    "ciudad_origen": "Leticia",
+    "destinos": [
+      "Bogotá",
+      "La Chorrera (Amazonas)",
+      "La Pedrera (Amazonas)",
+      "Tarapacá (Amazonas)"
+    ],
+    "total_destinos": 4,
+    "descripcion_ubicacion": "Está en las afueras de la ciudad tiempo de tardanza entre 5 a 10 minutos 2.1 km de distancia"
+  },
+  {
+    "id": 2,
+    "aeropuerto": "Olaya Herrera",
+    "latitud": 6.21885165384616,
+    "longitud": -75.586521310829,
+    "ciudad_origen": "Medellín",
+    "destinos": [
+      "Bogotá",
+      "Apartadó (Antioquia)",
+      "Armenia (Quindío)",
+      "Bahía Solano (Chocó)",
+      "Barrancabermeja (Santander)",
+      "Bucaramanga (Santander)",
+      "Cali (Valle del Cauca)",
+      "Cartagena (Bolívar)",
+      "Corozal (Sucre)",
+      "Cúcuta (Norte de Santander)",
+      "Ibagué (Tolima)",
+      "La Macarena (Meta)",
+      "Manizales (Caldas)",
+      "Montería (Córdoba)",
+      "Nuquí (Chocó)",
+      "Pasto (Nariño)",
+      "Pereira (Risaralda)",
+      "Popayán (Cauca)",
+      "Neiva (Huila)",
+      "Quibdó (Chocó)",
+      "Tolú (Sucre)",
+      "Villavicencio (Meta)"
+    ],
+    "total_destinos": 22,
+    "descripcion_ubicacion": "La ruta más cercana es para llegar al aeropuerto es por la autopista sur tiempo de llegada de 15 minutos 6.1 km"
+  },
+  {
+    "id": 3,
+    "aeropuerto": "Internacional José María Córdoba",
+    "latitud": 6.1707133652055,
+    "longitud": -75.4276368890591,
+    "ciudad_origen": "Rionegro",
+    "destinos": [
+      "Bogotá",
+      "Barranquilla (Atlántico)",
+      "Bucaramanga (Santander)",
+      "Cali (Valle del Cauca)",
+      "Cartagena (Bolívar)",
+      "Cúcuta (Norte de Santander)",
+      "Montería (Córdoba)",
+      "Pereira (Risaralda)",
+      "San Andrés (San Andrés)",
+      "Santa Marta (Magdalena)",
+      "Armenia (Quindío)",
+      "Buenos Aires (Argentina)",
+      "Cancún (México)",
+      "Ciudad de México (México)",
+      "Fort Lauderdale (EE.UU.)",
+      "Madrid (España)",
+      "Miami (EE.UU.)",
+      "Nueva York (EE.UU.)",
+      "Punta Cana (Rep. Dominicana)",
+      "San Juan (Puerto Rico)",
+      "Santiago de Chile (Chile)"
+    ],
+    "total_destinos": 21,
+    "descripcion_ubicacion": "Desde Medellin al aeropuerto de Río negro hay 35 minutos de distancia 25 km"
+  },
+  {
+    "id": 4,
+    "aeropuerto": "Gabriel Vargas Santos",
+    "latitud": 6.45002575381831,
+    "longitud": -71.7599879773311,
+    "ciudad_origen": "Tame",
+    "destinos": [
+      "Bogotá",
+      "Saravena (Arauca)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Se encuentra a 10 minutos de distancia 3.5 km de la ciudad"
+  },
+  {
+    "id": 5,
+    "aeropuerto": "Ernesto Cortissoz",
+    "latitud": 10.8865829374603,
+    "longitud": -74.7765938131214,
+    "ciudad_origen": "Barranquilla",
+    "destinos": [
+      "Bogotá",
+      "Bucaramanga (Santander)",
+      "Cali (Valle del Cauca)",
+      "Isla de San Andrés (San Andrés)",
+      "Medellín (Antioquía)",
+      "Montería (Córdoba)",
+      "Valledupar (Cesar)",
+      "Aguachica (Cesar)",
+      "Cúcuta (Norte de Santander)",
+      "Riohacha (La Guajira)",
+      "Miami (EE.UU.)",
+      "Fort Lauderdale (EE.UU.)",
+      "Ciudad de Panamá (Panamá)",
+      "Bonaire",
+      "Curazao",
+      "Oranjestad-Aruba (estacional)"
+    ],
+    "total_destinos": 16,
+    "descripcion_ubicacion": "Se encuentra a 30 minutos del centro de la ciudad"
+  },
+  {
+    "id": 6,
+    "aeropuerto": "Internacional Rafael Núñez",
+    "latitud": 10.4463255435536,
+    "longitud": -75.5164110875159,
+    "ciudad_origen": "Cartagena",
+    "destinos": [
+      "Bogotá",
+      "Bucaramanga (Santander)",
+      "Cali (Valle del Cauca)",
+      "Medellín (Antioquía)",
+      "Pereira (Risaralda)",
+      "San Andrés (San Andrés)",
+      "San José (Costa Rica)",
+      "Miami (EE.UU.)",
+      "Nueva York (EE.UU.)",
+      "Fort Lauderdale (EE.UU.)",
+      "Orlando (EE.UU.)",
+      "Atlanta (EE.UU.)",
+      "Ciudad de Panamá (Panamá)",
+      "Lima (Perú)",
+      "Madrid (España)",
+      "Ámsterdam (Países Bajos)",
+      "Zúrich (Suiza)",
+      "Milán (Italia)",
+      "Montreal (Canadá)",
+      "Toronto (Canadá)",
+      "Ciudad de Guatemala (Guatemala)",
+      "Ciudad de México (México)"
+    ],
+    "total_destinos": 22,
+    "descripcion_ubicacion": "Hay tres rutas para llegar al aeropuerto, la ruta por la vi Cr de la cordialidad, vía Cr. De la cordialidad y Av. Pedro de Heredia y la vía Perimetral la tuta más cercana es la vía Cr de la Cordialidad a 33 minutos la ruta más lejana 40 min"
+  },
+  {
+    "id": 7,
+    "aeropuerto": "Alfonso López Pumarejo",
+    "latitud": 10.4338199698236,
+    "longitud": -73.2475843549778,
+    "ciudad_origen": "Valledupar",
+    "destinos": [
+      "Bogotá"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "está a 16 minutos de la ciudad por cualquier ruta que vaya, Av. Salguero, Vía Cerrera 18D, Vía Av. Simón Bolívar 6.2 km"
+  },
+  {
+    "id": 8,
+    "aeropuerto": "El Caraño",
+    "latitud": 5.69089415873201,
+    "longitud": -76.6443344341642,
+    "ciudad_origen": "Quibdó",
+    "destinos": [
+      "Bogotá",
+      "Medellín (Antioquia)",
+      "Cali (Valle del Cauca)",
+      "Apartadó (Antioquia)",
+      "Nuquí (Chocó)",
+      "Bahía Solano (Chocó)",
+      "Pereira (Risaralda)",
+      "Condoto (Chocó)",
+      "Bajo Baudó (Chocó)",
+      "Cartago (Valle del Cauca)"
+    ],
+    "total_destinos": 10,
+    "descripcion_ubicacion": "Hay dos rutas la más cercana es por la Vía and Cl 24 13 minutos y la vía Cra 9 and Cl 24 16 minutos "
+  },
+  {
+    "id": 9,
+    "aeropuerto": "El Dorado",
+    "latitud": 4.70104906309851,
+    "longitud": -74.1456061965394,
+    "ciudad_origen": "Bogotá",
+    "destinos": [
+      "Aguachica (Casanare)",
+      "Apartadó (Antioquia)",
+      "Arauca (Arauca)",
+      "Armenia (Quindío)",
+      "Barrancabermeja (Santander)",
+      "Barranquilla (Atlántico)",
+      "Bucaramanga (Santander)",
+      "Buenaventura (Valle del Cauca)",
+      "Cali (Valle del Cauca)",
+      "Cartagena (Bolívar)",
+      "Corozal (Sucre)",
+      "Cúcuta (Norte de Santander)",
+      "Florencia (Caquetá)",
+      "Girardot/Flandes (Cundinamarca)",
+      "Ibagué (Tolima)",
+      "Inírida (Guainía)",
+      "Ipiales (Nariño)",
+      "La Macarena (Meta)",
+      "Leticia (Amazonas)",
+      "Manizales (Caldas)",
+      "Medellín (Antioquía)",
+      "Mitú (Vaupés)",
+      "Montería (Córdoba)",
+      "Neiva (Huila)",
+      "Pasto (Nariño)",
+      "Pereira (Risaralda)",
+      "Pitalito (Huila)",
+      "Popayán (Cauca)",
+      "Puerto Asís (Putumayo)",
+      "Puerto Carreño (Vichada)",
+      "Puerto Gaitán (Meta)",
+      "Puerto Inírida (Guainía)",
+      "Puerto Leguizamo (Putumayo)",
+      "Quibdó (Chocó)",
+      "Riohacha (La Guajira)",
+      "San José del Guaviare (Guaviare)",
+      "San Vicente del Caguán (Caquetá)",
+      "San Andrés Islas (San Andrés)",
+      "Santa Marta (Magdalena)",
+      "Saravena (Arauca)",
+      "Tame (Arauca)",
+      "Tolú (Sucre)",
+      "Tumaco (Nariño)",
+      "Valencia (Venezuela)",
+      "Valledupar (Cesar)",
+      "Villagarzón (Putumayo)",
+      "Villavicencio (Meta)",
+      "Yopal (Casanare)"
+    ],
+    "total_destinos": 48,
+    "descripcion_ubicacion": "Dentro de Bogotá"
+  },
+  {
+    "id": 10,
+    "aeropuerto": "Internacional Simón Bolívar",
+    "latitud": 11.1173429596833,
+    "longitud": -74.2327183758685,
+    "ciudad_origen": "Santa Marta",
+    "destinos": [
+      "Bogotá",
+      "Bucaramanga (Santander)",
+      "Medellín (Antioquía)",
+      "Pereira (Risaralda)",
+      "Cali (Valle del Cauca)"
+    ],
+    "total_destinos": 5,
+    "descripcion_ubicacion": "La ruta más cercana es por la Vía Hernández Pardo y Av. troncal del Caribe a 28 minutos 16.o km"
+  },
+  {
+    "id": 11,
+    "aeropuerto": "Vanguardia",
+    "latitud": 4.16861536527645,
+    "longitud": -73.6124220778131,
+    "ciudad_origen": "Villavicencio",
+    "destinos": [
+      "Bogotá",
+      "Bucaramanga (Santander)",
+      "Cali (Valle del Cauca)",
+      "Medellín (Antioquía)",
+      "Mitú (Vaupés)",
+      "Puerto Carreño (Vichada)",
+      "Puerto Inírida (Guainía)",
+      "Arauca (Arauca)",
+      "La Macarena (Meta)",
+      "San José del Guaviare (Guaviare)"
+    ],
+    "total_destinos": 10,
+    "descripcion_ubicacion": "Única ruta 65 a 12 minutos de la ciudad 3.0 Kilómetros"
+  },
+  {
+    "id": 12,
+    "aeropuerto": "Gustavo Rojas Pinilla",
+    "latitud": 12.5863013627128,
+    "longitud": -81.7024855416606,
+    "ciudad_origen": "San Andrés",
+    "destinos": [
+      "Bogotá",
+      "Barranquilla (Atlántico)",
+      "Bucaramanga (Santander)",
+      "Cali (Valle del Cauca)",
+      "Cartagena (Bolívar)",
+      "Medellín (Antioquía)",
+      "Pereira (Risaralda)",
+      "Providencia (San Andrés)"
+    ],
+    "total_destinos": 8,
+    "descripcion_ubicacion": "Única ruta por la vía Av. Juan XXIII a 10 minutos del casco urbano de la ciudad a 1.4 km "
+  },
+  {
+    "id": 13,
+    "aeropuerto": "Internacional Palonegro",
+    "latitud": 7.12845120805262,
+    "longitud": -73.1813212383447,
+    "ciudad_origen": "Bucaramanga",
+    "destinos": [
+      "Bogotá",
+      "Arauca (Arauca)",
+      "Barranquilla (Atlántico)",
+      "Cali (Valle del Cauca)",
+      "Cartagena (Bolívar)",
+      "Cúcuta (Norte de Santander)",
+      "Medellín (Antioquía)",
+      "San Andrés (San Andrés)",
+      "Santa Marta (Magdalena)",
+      "Saravena (Arauca)",
+      "Yopal (Casanare)",
+      "Ciudad de Panamá (Panamá)",
+      "Aruba (estacional)"
+    ],
+    "total_destinos": 13,
+    "descripcion_ubicacion": "Se ubica en la vía Barrancabermeja a 35 minutos de la ciudad 20.6 km"
+  },
+  {
+    "id": 14,
+    "aeropuerto": "Perales",
+    "latitud": 4.42464042504764,
+    "longitud": -75.1393088912575,
+    "ciudad_origen": "Ibagué",
+    "destinos": [
+      "Bogotá",
+      "Medellín (Antioquía)",
+      "Cartagena (Bolívar)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "Hay tres rutas de llegada la vía Cra 5 y vía Aeropuerto Perales 35 minutos 12.8km, Vía Aeropuerto Perales 38 minutos 13.0km y la vía Bogotá Av. Mirolindo y vía aeropuerto a 40 minutos 13.7 km "
+  },
+  {
+    "id": 15,
+    "aeropuerto": "Santiago Pérez Quiroz",
+    "latitud": 7.06883469082735,
+    "longitud": -70.7353656248444,
+    "ciudad_origen": "Arauca",
+    "destinos": [
+      "Bogotá",
+      "Bucaramanga (Santander)",
+      "Cúcuta (Norte de Santander)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "Queda a la salida Sur de la ciudad de Arauca a 4,2 Km del casco urbano."
+  },
+  {
+    "id": 16,
+    "aeropuerto": "General Gustavo Rojas Pinilla",
+    "latitud": 5.53959412816759,
+    "longitud": -73.3457039140936,
+    "ciudad_origen": "Tunja",
+    "destinos": [
+      "No opera vuelos comerciales regulares actualmente"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Queda dentro de la ciudad de Tunja a 3,5 Km del centro de la ciudad"
+  },
+  {
+    "id": 17,
+    "aeropuerto": "La Nubia",
+    "latitud": 5.02927170932341,
+    "longitud": -75.4692080317319,
+    "ciudad_origen": "Manizales",
+    "destinos": [
+      "Bogotá",
+      "Medellín (Antioquía)",
+      "Cartagena (Bolívar)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "está ubicado sobre la vía panamericana a 8,7 Km del centro de Manizales al sur oriente."
+  },
+  {
+    "id": 18,
+    "aeropuerto": "Gustavo Artunduaga",
+    "latitud": 1.58975495279072,
+    "longitud": -75.5606626492405,
+    "ciudad_origen": "Florencia",
+    "destinos": [
+      "Bogotá",
+      "Cali (Valle del Cauca)",
+      "Puerto Leguizamo (Putumayo)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "está ubicado sobre la vía que conduce al municipio de montañita a 7,3 Km del centro al sur oriente."
+  },
+  {
+    "id": 19,
+    "aeropuerto": "El Alcaraván",
+    "latitud": 5.32452494390523,
+    "longitud": -72.3830768872727,
+    "ciudad_origen": "Yopal",
+    "destinos": [
+      "Bogotá",
+      "Bucaramanga (Santander)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Se encuentra en la ciudad de Yopal a 2,8 km del centro de la ciudad "
+  },
+  {
+    "id": 20,
+    "aeropuerto": "Guillermo León Valencia",
+    "latitud": 2.45245784943816,
+    "longitud": -76.609553004576,
+    "ciudad_origen": "Popayán",
+    "destinos": [
+      "Bogotá",
+      "Medellín (Antioquía)",
+      "Cali (Valle del Cauca)",
+      "Guapi (Cauca)",
+      "López de Micay (Cauca)",
+      "Timbiquí (Cauca)"
+    ],
+    "total_destinos": 6,
+    "descripcion_ubicacion": "Se encuentra dentro de la ciudad a 1,7 km del centro"
+  },
+  {
+    "id": 21,
+    "aeropuerto": "Internacional Los Garzones",
+    "latitud": 8.82519676071301,
+    "longitud": -75.8239514176695,
+    "ciudad_origen": "Montería",
+    "destinos": [
+      "Bogotá",
+      "Barranquilla (Atlántico)",
+      "Medellín (Antioquía)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "Se encuentra a la salida nororiente de la ciudad a 10,7km del centro"
+  },
+  {
+    "id": 22,
+    "aeropuerto": "César Gaviria Trujillo",
+    "latitud": 3.85292122013327,
+    "longitud": -67.9065092145419,
+    "ciudad_origen": "Inírida",
+    "destinos": [
+      "Bogotá",
+      "Villavicencio (Meta)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Se encuentra en la salida sur oriente de la ciudad a 3,1 km del centro "
+  },
+  {
+    "id": 23,
+    "aeropuerto": "Jorge Enrique González",
+    "latitud": 2.57140150061117,
+    "longitud": -72.6383237745788,
+    "ciudad_origen": "San José del Guaviare",
+    "destinos": [
+      "Bogotá"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Se encuentra en la salida nororiente de la ciudad a 1,5 km del centro de la ciudad"
+  },
+  {
+    "id": 24,
+    "aeropuerto": "Benito Salas Vargas",
+    "latitud": 2.94713612211049,
+    "longitud": -75.2926859280368,
+    "ciudad_origen": "Neiva",
+    "destinos": [
+      "Bogotá",
+      "Cali (Valle del Cauca)",
+      "Medellín (Antioquia)",
+      "San Vicente del Caguán (Caquetá)"
+    ],
+    "total_destinos": 4,
+    "descripcion_ubicacion": "está ubicado dentro de la capital, sobre la carrera 26 a 4,8 km del centro de la ciudad."
+  },
+  {
+    "id": 25,
+    "aeropuerto": "Internacional Almirante Padilla",
+    "latitud": 11.5286829908598,
+    "longitud": -72.919268162372,
+    "ciudad_origen": "Riohacha",
+    "destinos": [
+      "Bogotá",
+      "Medellín (Antioquia)",
+      "Barranquilla (Atlántico)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "Se encuentra ubicado dentro de la ciudad a 2,0 km del centro de la ciudad"
+  },
+  {
+    "id": 26,
+    "aeropuerto": "Antonio Nariño",
+    "latitud": 1.39720150007504,
+    "longitud": -77.2904286035504,
+    "ciudad_origen": "Pasto",
+    "destinos": [
+      "Bogotá",
+      "Cali (Valle del Cauca)",
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "Se encuentra ubicado en  Chachagüí un municipio al norte del departamento, se encuentra a 55 Km de la capital (Pasto),  tiempo aproximado de distancia 50 minutos."
+  },
+  {
+    "id": 27,
+    "aeropuerto": "Internacional Camilo Daza",
+    "latitud": 7.92728353740366,
+    "longitud": -72.5082074929541,
+    "ciudad_origen": "San José de Cúcuta",
+    "destinos": [
+      "Bogotá",
+      "Arauca (Arauca)",
+      "Barranquilla (Atlántico)",
+      "Bucaramanga (Santander)",
+      "Cali (Valle del Cauca)",
+      "Cartagena (Bolívar)",
+      "Medellín (Antioquia)",
+      "Ocaña (Norte de Santander)",
+      "Pereira (Risaralda)",
+      "Santa Marta (Magdalena)",
+      "Tibú (Norte de Santander)",
+      "Ciudad de Panamá (Panamá)"
+    ],
+    "total_destinos": 12,
+    "descripcion_ubicacion": "Se encuentra ubicado dentro de la ciudad a 5km del centro, tiempo estimado de distancia 16 minutos"
+  },
+  {
+    "id": 28,
+    "aeropuerto": "Aeropuerto de Villagarzón",
+    "latitud": 0.981412535594455,
+    "longitud": -76.6043902298913,
+    "ciudad_origen": "Villagarzón- Mocoa",
+    "destinos": [
+      "Bogotá",
+      "Puerto Leguizamo (Putumayo)",
+      "Cali (Valle del Cauca)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "Se encuentra ubicado en el municipio de Villagarzón le presta servicio a la ciudad de Mocoa (Putumayo) a 21 Km de la capital tiempo estimado 35 minutos."
+  },
+  {
+    "id": 29,
+    "aeropuerto": "Internacional El Edén",
+    "latitud": 4.45294667546771,
+    "longitud": -75.7667273563339,
+    "ciudad_origen": "Armenia",
+    "destinos": [
+      "Bogotá",
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Se encuentra ubicado a 15 minutos del centro de la ciudad 15,5 Km de Armenia en el suroccidente de la ciudad."
+  },
+  {
+    "id": 30,
+    "aeropuerto": "Internacional Matecaña",
+    "latitud": 4.81655404831605,
+    "longitud": -75.7358267494614,
+    "ciudad_origen": "Pereira",
+    "destinos": [
+      "Bogotá",
+      "Cartagena (Bolívar)",
+      "Medellín (Antioquia)",
+      "Santa Marta (Magdalena)",
+      "San Andrés (San Andrés)",
+      "Tolú (Sucre",
+      "estacional)",
+      "Ciudad de Panamá (Panamá)",
+      "Nueva York (EE.UU.",
+      "estacional)"
+    ],
+    "total_destinos": 10,
+    "descripcion_ubicacion": "Se encuentra ubicado dentro de la ciudad de Pereira a 6 Km de centro de la ciudad tiempo estimado de distancia 20 minutos."
+  },
+  {
+    "id": 31,
+    "aeropuerto": "Las Brujas",
+    "latitud": 9.33239255136099,
+    "longitud": -75.2833318108078,
+    "ciudad_origen": "Corozal",
+    "destinos": [
+      "Bogotá",
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Está ubicado a 20 minutos de Sincelejo la capital en Corozal, la distancia del aeropuerto al centro son de 2,5 km aproximadamente a 10 minutos de la ciudad."
+  },
+  {
+    "id": 32,
+    "aeropuerto": "Internacional Alfonso Bonilla Aragón",
+    "latitud": 3.54366736417665,
+    "longitud": -76.3837643202611,
+    "ciudad_origen": "Cali-Palmira ",
+    "destinos": [
+      "Bogotá",
+      "Barranquilla (Atlántico)",
+      "Bucaramanga (Santander)",
+      "Cartagena (Bolívar)",
+      "Cúcuta (Norte de Santander)",
+      "Florencia (Caquetá)",
+      "Guapi (Cauca)",
+      "Ipiales (Nariño)",
+      "Medellín (Antioquia)",
+      "Pasto (Nariño)",
+      "Popayán (Cauca)",
+      "Quibdó (Chocó)",
+      "San Andrés (San Andrés)",
+      "Santa Marta (Magdalena)",
+      "Tumaco (Nariño)",
+      "Condoto (Chocó)",
+      "Neiva (Huila)",
+      "Nuquí (Chocó)",
+      "Pizarro (Chocó)",
+      "Puerto Asís (Putumayo)",
+      "Villavicencio (Meta)",
+      "Madrid (España)",
+      "Miami (EE.UU.)",
+      "Fort Lauderdale (EE.UU.)",
+      "Ciudad de México (México)",
+      "Ciudad de Panamá (Panamá)",
+      "Santiago de Chile (Chile)",
+      "Antofagasta (Chile)",
+      "Aruba (estacional)"
+    ],
+    "total_destinos": 29,
+    "descripcion_ubicacion": "Está ubicado en el corregimiento de Palmaseca del municipio de Palmira Vella del Cauca Sirve a la capital Cali (Valle del Cauca) a 15,5 Km tiempo estimado de distancia 20 minutos del centro de palmira."
+  },
+  {
+    "id": 33,
+    "aeropuerto": "Fabio Alberto León Bentley",
+    "latitud": 1.25332320934301,
+    "longitud": -70.2337149594973,
+    "ciudad_origen": "Mitú",
+    "destinos": [
+      "Bogotá",
+      "Villavicencio (Meta)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Se encuentra ubicado al Oriente de la ciudad de Mitú dentro del aérea urbana."
+  },
+  {
+    "id": 34,
+    "aeropuerto": "Germán Olano",
+    "latitud": 6.18522112743002,
+    "longitud": -67.4914108433674,
+    "ciudad_origen": "Puerto Carreño",
+    "destinos": [
+      "Bogotá",
+      "Villavicencio (Meta)",
+      "Cumaribo (Vichada)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "Está ubicado al nororiente en la frontera con Venezuela a 1,5 km del centro de la ciudad"
+  },
+  {
+    "id": 35,
+    "aeropuerto": "Hacaritama",
+    "latitud": 8.2477357834093,
+    "longitud": -73.579501061083,
+    "ciudad_origen": "Aguachica",
+    "destinos": [
+      "Bogotá",
+      "Cúcuta (Norte de Santander)",
+      "Bucaramanga (Santander)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "Se encuentra al nororiente de Aguachica a 11 Km del centro de la ciudad a 20 minutos aproximadamente"
+  },
+  {
+    "id": 36,
+    "aeropuerto": "San Luis",
+    "latitud": 0.858644245423321,
+    "longitud": -77.6755991858631,
+    "ciudad_origen": "Ipiales",
+    "destinos": [
+      "Bogotá",
+      "Cali (Valle del Cauca)",
+      "Puerto Asís (Putumayo)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "El Aeropuerto está ubicado al norte de la ciudad hace parte de la jurisdicción del municipio de Aldana (Nariño), a 7,8 Km de Ipiales un tiempo estimado de 25 minutos"
+  },
+  {
+    "id": 37,
+    "aeropuerto": "Aeropuerto de La Macarena",
+    "latitud": 2.17790928613995,
+    "longitud": -73.7875684286622,
+    "ciudad_origen": "La Macarena",
+    "destinos": [
+      "Bogotá",
+      "Villavicencio (Meta)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Está ubicado al sur en el área urbana del municipio"
+  },
+  {
+    "id": 38,
+    "aeropuerto": "Contador",
+    "latitud": 1.85716793063246,
+    "longitud": -76.0904068047258,
+    "ciudad_origen": "Pitalito",
+    "destinos": [
+      "Bogotá",
+      "Cali (Valle del Cauca)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Está ubicado al occidente a 8Km de la ciudad tiempo aproximado 15 minutos."
+  },
+  {
+    "id": 39,
+    "aeropuerto": "Tres de Mayo",
+    "latitud": 0.501996468476022,
+    "longitud": -76.502248824153,
+    "ciudad_origen": "Puerto Asís",
+    "destinos": [
+      "Bogotá",
+      "Cali (Valle del Cauca)",
+      "Ipiales (Nariño)",
+      "Puerto Leguizamo (Putumayo)",
+      "Neiva (Huila)"
+    ],
+    "total_destinos": 5,
+    "descripcion_ubicacion": "Está situado dentro de la ciudad a 2,6 Km del centro tiempo estimado de distancia 10 minutos"
+  },
+  {
+    "id": 40,
+    "aeropuerto": "Eduardo Falla Solano",
+    "latitud": 2.15160716224752,
+    "longitud": -74.7661438875615,
+    "ciudad_origen": "San Vicente del Caguán",
+    "destinos": [
+      "Bogotá",
+      "Araracuara (Amazonas)",
+      "Florencia (Caquetá)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "Está ubicado al norte a 4,1 Km del centro de la ciudad tiempo aproximado 15 minutos"
+  },
+  {
+    "id": 41,
+    "aeropuerto": "Los Colonizadores",
+    "latitud": 6.95452410384177,
+    "longitud": -71.8572871907887,
+    "ciudad_origen": "Saravena",
+    "destinos": [
+      "Bogotá",
+      "Bucaramanga (Santander)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Está ubicado al oriente de la ciudad a 2,3 Km de distancia del centro distancia aproximada 7 minutos"
+  },
+  {
+    "id": 42,
+    "aeropuerto": "La Florida",
+    "latitud": 1.813059702827,
+    "longitud": -78.7525206825316,
+    "ciudad_origen": "Tumaco",
+    "destinos": [
+      "Bogotá",
+      "Cali (Valle del Cauca)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Está ubicado al occidente de la ciudad a 4 km del centro."
+  },
+  {
+    "id": 43,
+    "aeropuerto": "Reyes Murillo",
+    "latitud": 5.70820968097218,
+    "longitud": -77.2661862355783,
+    "ciudad_origen": "Nuquí",
+    "destinos": [
+      "Quibdó (Chocó)",
+      "Pereira (Risaralda)",
+      "Medellín (Antioquia)",
+      "Buenaventura (Valle del Cauca)",
+      "Cartago (Valle del Cauca)"
+    ],
+    "total_destinos": 5,
+    "descripcion_ubicacion": "Está ubicado en el centro costero de Nuquí departamento de Chocó"
+  },
+  {
+    "id": 44,
+    "aeropuerto": "José Celestino Mutis",
+    "latitud": 6.20263549134765,
+    "longitud": -77.3946648728646,
+    "ciudad_origen": "Bahía Solano",
+    "destinos": [
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Está situado a 3 Km de la cabecera municipal de Bahía Solano (Chocó) tiempo aproximado 14 minuto del centro"
+  },
+  {
+    "id": 45,
+    "aeropuerto": "Golfo de Morrosquillo",
+    "latitud": 9.51254837235518,
+    "longitud": -75.5866674244855,
+    "ciudad_origen": "Tolú",
+    "destinos": [
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Está ubicado al sur, en el municipio de Tolú a 1,5 Km del centro tiempo estimado 5 minutos"
+  },
+  {
+    "id": 46,
+    "aeropuerto": "Caucaya",
+    "latitud": -0.18111893589756,
+    "longitud": -74.7769932939236,
+    "ciudad_origen": "Puerto Leguizamo",
+    "destinos": [
+      "Bogotá",
+      "Villagarzón (Putumayo)",
+      "Puerto Asís (Putumayo)",
+      "Florencia (Caquetá)"
+    ],
+    "total_destinos": 4,
+    "descripcion_ubicacion": "Está ubicado al Nororiente a 2,7 Km del centro de la ciudad  "
+  },
+  {
+    "id": 47,
+    "aeropuerto": "Aeropuerto de la Chorrera",
+    "latitud": -1.45830925277552,
+    "longitud": -72.8025159845713,
+    "ciudad_origen": "La Chorrera",
+    "destinos": [
+      "Araracuara (Amazonas)",
+      "Leticia (Amazonas)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Está ubicado al Suroccidente."
+  },
+  {
+    "id": 48,
+    "aeropuerto": "Narciza Navas de Capurganá",
+    "latitud": 8.63074566467448,
+    "longitud": -77.3503837645604,
+    "ciudad_origen": "Capurganá",
+    "destinos": [
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Está ubicado en el corregimiento de Capurganá municipio de Acandí en el departamento de Chocó"
+  },
+  {
+    "id": 49,
+    "aeropuerto": "Aeropuerto de La Araracuara",
+    "latitud": -0.601377447308083,
+    "longitud": -72.3962903541035,
+    "ciudad_origen": "Solano",
+    "destinos": [
+      "Florencia (Caquetá)",
+      "La Chorrera (Amazonas)",
+      "Leticia (Amazonas)"
+    ],
+    "total_destinos": 3,
+    "descripcion_ubicacion": "El aeropuerto está ubicado en el municipio de Solano en el departamento del Caquetá"
+  },
+  {
+    "id": 50,
+    "aeropuerto": "Aeropuerto El Embrujo",
+    "latitud": 13.3597190725285,
+    "longitud": -81.3591394193716,
+    "ciudad_origen": "Providencia",
+    "destinos": [
+      "San Andrés (San Andrés)",
+      "Medellín (Antioquía)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Se encuentra ubicado al Oriente de la Isla, Se encuentra a 6 Km del centro de providencia"
+  },
+  {
+    "id": 51,
+    "aeropuerto": "Antonio Roldán Betancourt",
+    "latitud": 7.81117,
+    "longitud": -76.71341,
+    "ciudad_origen": "Apartadó",
+    "destinos": [
+      "Bogotá",
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Ubicado en el municipio de Carepa, sirve a Apartadó. Se encuentra a 15 minutos del centro de Apartadó, a 6 km de distancia."
+  },
+  {
+    "id": 52,
+    "aeropuerto": "Gerardo Tovar López",
+    "latitud": 3.819722,
+    "longitud": -76.989722,
+    "ciudad_origen": "Buenaventura",
+    "destinos": [
+      "Bogotá"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Ubicado en el Puerto de Buenaventura, Valle del Cauca. Se encuentra a 10 minutos del centro de la ciudad, a 3 km de distancia."
+  },
+  {
+    "id": 53,
+    "aeropuerto": "Santa Ana",
+    "latitud": 4.758333,
+    "longitud": -75.955833,
+    "ciudad_origen": "Cartago",
+    "destinos": [
+      "Bahía Solano (Chocó)",
+      "Nuquí (Chocó)",
+      "Quibdó (Chocó)",
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 4,
+    "descripcion_ubicacion": "Ubicado en Cartago, Valle del Cauca. Se encuentra a 5 minutos del centro de la ciudad, a 1.5 km de distancia. Actualmente opera principalmente vuelos privados y de academias de aviación."
+  },
+  {
+    "id": 54,
+    "aeropuerto": "Yariguíes",
+    "latitud": 7.0244444444444,
+    "longitud": -73.806666666667,
+    "ciudad_origen": "Barrancabermeja",
+    "destinos": [
+      "Bogotá"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Ubicado a 10 km de la ciudad de Barrancabermeja, Santander. Concesionado a Aeropuertos de Oriente SAS. Cuenta con torre de control propia."
+  },
+  {
+    "id": 55,
+    "aeropuerto": "Juan Casiano",
+    "latitud": 2.57083,
+    "longitud": -77.89778,
+    "ciudad_origen": "Guapi",
+    "destinos": [
+      "Bogotá",
+      "Cali (Valle del Cauca)",
+      "Medellín (Antioquia)",
+      "Timbiquí (Cauca)"
+    ],
+    "total_destinos": 4,
+    "descripcion_ubicacion": "Ubicado en el municipio de Guapi, Cauca, a 1 km al oeste del centro de la ciudad, en la costa pacífica colombiana."
+  },
+  {
+    "id": 56,
+    "aeropuerto": "Morelia",
+    "latitud": 3.75,
+    "longitud": -71.45611,
+    "ciudad_origen": "Puerto Gaitán",
+    "destinos": [
+      "Bogotá (estacional)"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Ubicado en el campo petrolero de Morelía, a 93 km al sureste de Puerto Gaitán, Meta. Opera vuelos estacionales de trabajadores petroleros."
+  },
+  {
+    "id": 57,
+    "aeropuerto": "Juan José Rondón",
+    "latitud": 5.7644166666667,
+    "longitud": -73.105708333333,
+    "ciudad_origen": "Paipa",
+    "destinos": [
+      "Medellín (Antioquia)",
+      "Yopal (Casanare)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Ubicado en el municipio de Paipa, Boyacá, a 2 km al sur de la ciudad, cerca del Lago Sochagota. Sirve al Altiplano Cundiboyacense."
+  },
+  {
+    "id": 58,
+    "aeropuerto": "El Tomin",
+    "latitud": 7.59638889,
+    "longitud": -74.80888889,
+    "ciudad_origen": "El Bagre",
+    "destinos": [
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Ubicado en el municipio de El Bagre, Antioquia, en la región del Bajo Cauca."
+  },
+  {
+    "id": 59,
+    "aeropuerto": "El Pindo",
+    "latitud": 7.9733333333333,
+    "longitud": -75.441277777778,
+    "ciudad_origen": "Montelíbano",
+    "destinos": [
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Ubicado en Montelíbano, Córdoba, a 1 km al oeste de la ciudad, cerca del río San Jorge."
+  },
+  {
+    "id": 60,
+    "aeropuerto": "Mandinga",
+    "latitud": 5.08333333,
+    "longitud": -76.68333333,
+    "ciudad_origen": "Condoto",
+    "destinos": [
+      "Cali (Valle del Cauca)",
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Ubicado en el municipio de Condoto, Chocó. Pista corta, solo permite arribo de aviones de hasta 19 pasajeros. También sirve al municipio de Istmina."
+  },
+  {
+    "id": 61,
+    "aeropuerto": "Timbiquí",
+    "latitud": 2.77777778,
+    "longitud": -77.66805556,
+    "ciudad_origen": "Timbiquí",
+    "destinos": [
+      "Cali (Valle del Cauca)",
+      "Popayán (Cauca)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Ubicado en Timbiquí, Cauca, en la orilla derecha del río Timbiquí, a 8 km tierra adentro desde el océano Pacífico. Vuelos estacionales."
+  },
+  {
+    "id": 62,
+    "aeropuerto": "Juan H. White",
+    "latitud": 7.968022222,
+    "longitud": -75.19815278,
+    "ciudad_origen": "Caucasia",
+    "destinos": [
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Ubicado en Caucasia, Antioquia, en el borde sur de la ciudad, en la orilla oeste del río Cauca."
+  },
+  {
+    "id": 63,
+    "aeropuerto": "La Pedrera",
+    "latitud": -1.32639,
+    "longitud": -69.58056,
+    "ciudad_origen": "La Pedrera",
+    "destinos": [
+      "Leticia (Amazonas)"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Aeropuerto ubicado en el municipio de La Pedrera, Amazonas, en la rivera del río Caquetá. Sirve a la comunidad indígena y a operaciones de vigilancia fronteriza. Pista corta, operado por SATENA con aeronaves de 19 pasajeros."
+  },
+  {
+    "id": 64,
+    "aeropuerto": "Ipiranga (Tarapacá)",
+    "latitud": -2.89472,
+    "longitud": -69.74722,
+    "ciudad_origen": "Tarapacá",
+    "destinos": [
+      "Leticia (Amazonas)"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Aeropuerto ubicado en Tarapacá, Amazonas, en la orilla oeste del río Putumayo, a 4 km de la frontera con Brasil. Operado por SATENA. Pista de 1.200 m."
+  },
+  {
+    "id": 65,
+    "aeropuerto": "Alcides Fernández",
+    "latitud": 8.498055556,
+    "longitud": -77.27388889,
+    "ciudad_origen": "Acandí",
+    "destinos": [
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Aeropuerto comercial en la costa Caribe de Colombia, departamento del Chocó. Sirve al municipio de Acandí, cerca de la frontera con Panamá. Reabierto en 2003 tras renovación con fondos del Plan Colombia. Operado por SATENA y vuelos chárter de Searca y TAC Colombia."
+  },
+  {
+    "id": 66,
+    "aeropuerto": "San Bernardo",
+    "latitud": 9.25972,
+    "longitud": -74.43778,
+    "ciudad_origen": "Santa Cruz de Mompox",
+    "destinos": [
+      "Cartagena (Bolívar)",
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Aeropuerto ubicado a 2 km al noroeste de Santa Cruz de Mompox, Bolívar, cerca del Brazo de Mompós (rama del río Magdalena). Ciudad Patrimonio de la Humanidad por la UNESCO. Operado por SATENA."
+  },
+  {
+    "id": 67,
+    "aeropuerto": "Los Pozos",
+    "latitud": 6.59027778,
+    "longitud": -73.12888889,
+    "ciudad_origen": "San Gil",
+    "destinos": [
+      "Bucaramanga (Santander)",
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Aeropuerto ubicado al norte de San Gil, Santander, a 1.750 msnm. Capital Turística de Santander. Reabierto en 2019 tras remodelación. Recibe vuelos chárter y comerciales en temporada turística. Operaciones manejadas desde Palonegro."
+  },
+  {
+    "id": 68,
+    "aeropuerto": "Aguas Claras",
+    "latitud": 8.31528,
+    "longitud": -73.35833,
+    "ciudad_origen": "Ocaña",
+    "destinos": [
+      "Cúcuta (Norte de Santander)",
+      "Medellín (Antioquia)"
+    ],
+    "total_destinos": 2,
+    "descripcion_ubicacion": "Aeropuerto ubicado a 6 km al norte de Ocaña, Norte de Santander. Pista de 1.200 m de asfalto. Operado por SATENA. Históricamente importante para la región del Catatumbo."
+  },
+  {
+    "id": 69,
+    "aeropuerto": "Tibú",
+    "latitud": 8.63139,
+    "longitud": -72.73194,
+    "ciudad_origen": "Tibú",
+    "destinos": [
+      "Cúcuta (Norte de Santander)"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Aeropuerto ubicado en el borde sur de Tibú, Norte de Santander, junto al río Caño Campo Cinco. A 7 km de la frontera con Venezuela. Pista de 1.500 m. Operado por Clic Air (anteriormente SATENA)."
+  },
+  {
+    "id": 70,
+    "aeropuerto": "El Charco",
+    "latitud": 2.44968,
+    "longitud": -78.09443,
+    "ciudad_origen": "El Charco",
+    "destinos": [
+      "Cali (Valle del Cauca)"
+    ],
+    "total_destinos": 1,
+    "descripcion_ubicacion": "Aeropuerto ubicado en El Charco, Nariño, en la orilla del río Tapaje, a 3 km río arriba de la ciudad. En la región del Pacífico nariñense. SATENA inauguró ruta Cali-El Charco en abril 2026. También opera TAC Colombia con vuelos chárter/estacionales."
+  }
+]
