@@ -1,77 +1,73 @@
 /**
  * routeWarnings.js
  * ---------------------------------------------------------------------------
- * Evalúa si la ruta calculada pasa por tramos viales peligrosos o en mal
- * estado definidos en data/rutas_riesgosas.json y expone funciones para
- * consultar las advertencias y sus posiciones en el mapa.
+ * Evalúa si la ruta calculada pasa por tramos viales peligrosos definidos
+ * en data/rutas_riesgosas.json (oficiales) más los que el usuario agregue.
  *
- * Las rutas personalizadas agregadas por el usuario se persisten en el
- * propio archivo JSON a través del endpoint POST /guardar-rutas del
- * servidor local (server.py).
+ * Las rutas personalizadas se persisten en localStorage (funciona siempre,
+ * incluso en GitHub Pages). Si además hay un servidor local (server.py),
+ * también se envían por POST para actualizar el archivo JSON.
  * ---------------------------------------------------------------------------
  */
 const RouteWarningsModule = (() => {
+  const STORAGE_KEY = 'rutas_riesgosas_personalizadas';
   let _rutas = [];
 
   async function cargar() {
+    const desdeArchivo = [];
     try {
       const res = await fetch('data/rutas_riesgosas.json');
-      if (res.ok) _rutas = await res.json();
+      if (res.ok) desdeArchivo.push(...(await res.json()));
     } catch {
-      _rutas = [];
+      // silencioso
     }
+    const personalizadas = _leerPersonalizadas();
+    _rutas = [...desdeArchivo, ...personalizadas];
+  }
+
+  function _leerPersonalizadas() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    } catch {
+      return [];
+    }
+  }
+
+  function _guardarPersonalizadas(lista) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
+  }
+
+  function _syncAlArchivo(rutas) {
+    fetch('/guardar-rutas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rutas),
+    }).catch(() => {});
   }
 
   function getRutas() {
     return _rutas;
   }
 
-  /**
-   * Envía el array completo de rutas al servidor para que lo persista
-   * en data/rutas_riesgosas.json.
-   */
-  async function guardarEnArchivo(rutas) {
-    const res = await fetch('/guardar-rutas', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(rutas),
-    });
-    if (!res.ok) throw new Error('Error al guardar: ' + res.status);
-    _rutas = rutas;
-  }
-
-  /**
-   * Agrega una ruta personalizada y la persiste en el archivo JSON.
-   */
   async function agregarPersonalizada(ruta) {
-    const nuevas = [..._rutas, ruta];
-    await guardarEnArchivo(nuevas);
+    const personalizadas = _leerPersonalizadas();
+    personalizadas.push(ruta);
+    _guardarPersonalizadas(personalizadas);
+    _rutas.push(ruta);
+    _syncAlArchivo(_rutas);
   }
 
-  /**
-   * Elimina una ruta personalizada por id y persiste el cambio.
-   */
   async function eliminarPersonalizada(id) {
-    const filtradas = _rutas.filter((r) => r.id !== id);
-    await guardarEnArchivo(filtradas);
+    const personalizadas = _leerPersonalizadas().filter((r) => r.id !== id);
+    _guardarPersonalizadas(personalizadas);
+    _rutas = _rutas.filter((r) => r.id !== id);
+    _syncAlArchivo(_rutas);
   }
 
-  /**
-   * Devuelve el JSON actual como string (para exportar/descargar).
-   */
   function exportarJSON() {
     return JSON.stringify(_rutas, null, 2);
   }
 
-  /**
-   * Verifica si la ruta pasa cerca de algún tramo peligroso usando
-   * buffer geográfico: se crea un polígono de 10 km alrededor de cada
-   * segmento peligroso y se comprueba si la ruta lo interseca.
-   *
-   * @param {object} geojsonLineString - GeoJSON Feature con geometry LineString
-   * @param {number} totalKm - distancia total de la ruta
-   * @returns {Array<{id:string, lnglat:[number,number], mensaje:string, tipo:string, color:string}>}
-   */
   function verificar(geojsonLineString, totalKm) {
     if (!geojsonLineString || !geojsonLineString.geometry) return [];
     const coords = geojsonLineString.geometry.coordinates;
@@ -88,7 +84,6 @@ const RouteWarningsModule = (() => {
       if (!buffer) continue;
 
       if (turf.booleanIntersects(buffer, routeLine)) {
-        // Encontrar el punto de la ruta más cercano al centro del segmento peligroso
         const mid = turf.midpoint(
           turf.point(ruta.coordenadas[0]),
           turf.point(ruta.coordenadas[ruta.coordenadas.length - 1]),
