@@ -87,7 +87,7 @@ input, select{ font-family: inherit; }
   flex-direction: column;
   padding: 20px;
   gap: 20px;
-  overflow: hidden; /* solo la lista de sitios tiene scroll propio */
+  overflow-y: auto;
 }
 
 /* --- Resumen de ruta --- */
@@ -889,9 +889,7 @@ input, select{ font-family: inherit; }
   display: flex;
   flex-direction: column;
   gap: 6px;
-  pointer-events: none;
 }
-.btns-map > *{ pointer-events: auto; }
 .btn-map-icon{
   width: 34px;
   height: 34px;

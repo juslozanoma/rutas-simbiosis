@@ -71,6 +71,7 @@ const MapModule = (() => {
     clusterPane.style.zIndex = 800;
 
     map.getPane('markerPane').style.zIndex = 700;
+    map.getPane('tooltipPane').style.zIndex = 780;
 
     clusterSitios = L.markerClusterGroup({
       maxClusterRadius: 45,

@@ -999,7 +999,7 @@
         }
       }
 
-      aplicarRutaCalculada(ruta);
+      await aplicarRutaCalculada(ruta);
       // Clean up escala DOM rows (pasan a la lista de paradas)
       state.escalas.forEach((e) => { if (e._row && e._row.parentNode) e._row.remove(); });
       state.escalas.forEach((e) => { delete e._row; });
@@ -1437,6 +1437,7 @@
       const h = state.rutaActual.duracionSegundos / 3600;
       el.statTiempoMobile.textContent = `${h.toFixed(1)}`;
     }
+    renderizarParadas();
   }
 
   // -------------------------------------------------------------------
