@@ -584,6 +584,7 @@
           listEl.hidden = true;
           trigger.querySelector('.combo__trigger-text').textContent = formatMunicipio(m);
           trigger.querySelector('.combo__trigger-text').removeAttribute('data-placeholder');
+          trigger.dataset.rawName = m.nombre;
           seleccion = m;
           actualizarEscalas();
         });
@@ -630,8 +631,9 @@
     state.escalas.forEach((e) => {
       if (!e._row) return;
       const txt = e._row.querySelector('.combo__trigger-text');
+      const triggerEl = e._row.querySelector('.combo__trigger');
       if (!txt || txt.hasAttribute('data-placeholder')) return;
-      const nombre = txt.textContent;
+      const nombre = triggerEl?.dataset.rawName || txt.textContent;
       const m = state.municipios.find((mun) => mun.nombre === nombre);
       if (m) {
         Object.assign(e, m);
@@ -965,6 +967,16 @@
       el.filtroTiempoValor.textContent = `${el.filtroTiempo.value} min`;
       actualizarEstadoBotonesRetry();
     });
+
+    // Re-filtrar sitios visibles al mover/zoom del mapa
+    const _map = MapModule.getMap();
+    if (_map) {
+      _map.on('moveend', () => {
+        if (state.modoVisibilidad === 'visibles' && state.sitiosFiltrados.length > 0) {
+          renderizarSitios(_filtrarVisibles(state.sitiosFiltrados));
+        }
+      });
+    }
 
   }
   // -------------------------------------------------------------------
