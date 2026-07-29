@@ -66,9 +66,6 @@
   const el = {
     appRoot: document.getElementById('app'),
 
-    statDistancia: document.getElementById('stat-distancia'),
-    statTiempo: document.getElementById('stat-tiempo'),
-
     origenInput: document.getElementById('origen-input'),
     destinoInput: document.getElementById('destino-input'),
     origenList: document.getElementById('origen-list'),
@@ -714,6 +711,41 @@
   // -------------------------------------------------------------------
   // Eventos generales
   // -------------------------------------------------------------------
+
+  // Mobile tab switching (needed from both initEventos and calcularRutaPrincipal)
+  function setMobileTab(tab) {
+    el.appRoot.setAttribute('data-mobile-tab', tab);
+    el.appRoot.setAttribute('data-mobile-panel', 'expanded');
+    el.btnTabDescubre.classList.toggle('mobile-tab-btn--active', tab === 'descubre');
+    el.btnTabRuta.classList.toggle('mobile-tab-btn--active', tab === 'ruta');
+    if (el.btnTabAltimetria) {
+      el.btnTabAltimetria.classList.toggle('mobile-tab-btn--active', tab === 'altimetria');
+    }
+    if (tab === 'altimetria') {
+      if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = false;
+      requestAnimationFrame(() => AltimetriaModule.renderizar('altimetria-chart-panel'));
+    } else {
+      if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = true;
+    }
+    setTimeout(() => MapModule.invalidateSize(), 220);
+  }
+
+  function toggleMobileTab(tab) {
+    if (tab === 'descubre' && el.btnTabDescubre && el.btnTabDescubre.disabled) return;
+    const currentTab = el.appRoot.getAttribute('data-mobile-tab');
+    const isCollapsed = el.appRoot.getAttribute('data-mobile-panel') === 'collapsed';
+    if (currentTab === tab && !isCollapsed) {
+      el.appRoot.setAttribute('data-mobile-panel', 'collapsed');
+      el.btnTabDescubre.classList.remove('mobile-tab-btn--active');
+      el.btnTabRuta.classList.remove('mobile-tab-btn--active');
+      if (el.btnTabAltimetria) el.btnTabAltimetria.classList.remove('mobile-tab-btn--active');
+      if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = true;
+      setTimeout(() => MapModule.invalidateSize(), 220);
+    } else {
+      setMobileTab(tab);
+    }
+  }
+
   function initEventos() {
     el.btnCalcular.addEventListener('click', () => calcularRutaPrincipal());
 
@@ -738,37 +770,6 @@
       });
     }
 
-    function setMobileTab(tab) {
-      el.appRoot.setAttribute('data-mobile-tab', tab);
-      el.appRoot.setAttribute('data-mobile-panel', 'expanded');
-      el.btnTabDescubre.classList.toggle('mobile-tab-btn--active', tab === 'descubre');
-      el.btnTabRuta.classList.toggle('mobile-tab-btn--active', tab === 'ruta');
-      if (el.btnTabAltimetria) {
-        el.btnTabAltimetria.classList.toggle('mobile-tab-btn--active', tab === 'altimetria');
-      }
-      if (tab === 'altimetria') {
-        if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = false;
-        requestAnimationFrame(() => AltimetriaModule.renderizar('altimetria-chart-panel'));
-      } else {
-        if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = true;
-      }
-      setTimeout(() => MapModule.invalidateSize(), 220);
-    }
-    function toggleMobileTab(tab) {
-      if (tab === 'descubre' && el.btnTabDescubre && el.btnTabDescubre.disabled) return;
-      const currentTab = el.appRoot.getAttribute('data-mobile-tab');
-      const isCollapsed = el.appRoot.getAttribute('data-mobile-panel') === 'collapsed';
-      if (currentTab === tab && !isCollapsed) {
-        el.appRoot.setAttribute('data-mobile-panel', 'collapsed');
-        el.btnTabDescubre.classList.remove('mobile-tab-btn--active');
-        el.btnTabRuta.classList.remove('mobile-tab-btn--active');
-        if (el.btnTabAltimetria) el.btnTabAltimetria.classList.remove('mobile-tab-btn--active');
-        if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = true;
-        setTimeout(() => MapModule.invalidateSize(), 220);
-      } else {
-        setMobileTab(tab);
-      }
-    }
     el.btnTabDescubre.addEventListener('click', () => toggleMobileTab('descubre'));
     el.btnTabRuta.addEventListener('click', () => toggleMobileTab('ruta'));
     el.checkAutoOrganizar.addEventListener('change', () => {
@@ -1097,8 +1098,6 @@
       if (esMovil()) setMobileTab('ruta');
 
     } catch (err) {
-      el.statDistancia.textContent = '—';
-      el.statTiempo.textContent = '—';
       if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = '—';
       if (el.statTiempoMobile) el.statTiempoMobile.textContent = '—';
       console.warn('Error al calcular ruta', err);
@@ -1496,8 +1495,6 @@
     MapModule.encuadrar(state.rutaActual.geojson);
     const distTexto = Utils.formatearDistancia(state.rutaActual.distanciaMetros);
     const durTexto = Utils.formatearDuracion(state.rutaActual.duracionSegundos);
-    el.statDistancia.textContent = distTexto;
-    el.statTiempo.textContent = durTexto;
     if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = distTexto;
     if (el.statTiempoMobile) el.statTiempoMobile.textContent = durTexto;
     renderizarParadas();

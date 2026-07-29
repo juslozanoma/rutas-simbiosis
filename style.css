@@ -89,24 +89,7 @@ input, select{ font-family: inherit; }
   overflow: clip;
 }
 
-/* --- Resumen de ruta --- */
-.panel-summary{
-  display: none;
-  align-items: flex-end;
-  gap: 20px;
-  flex-shrink: 0;
-}
-.stat{ display: flex; flex-direction: column; gap: 3px; }
-.stat__label{ font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; }
-.stat__value{ font-size: 1.15rem; color: var(--text-strong); font-weight: 600; }
-
 /* Alternador de vista en móvil: solo visible bajo el breakpoint móvil (ver media query) */
-.panel-summary__toggle{
-  display: none;
-  gap: 6px;
-  margin-left: auto;
-  flex-shrink: 0;
-}
 .mobile-toggle-btn{
   width: 32px; height: 32px;
   border-radius: 8px;
