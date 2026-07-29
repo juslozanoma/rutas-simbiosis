@@ -668,7 +668,7 @@
   // Eventos generales
   // -------------------------------------------------------------------
   function initEventos() {
-    el.btnCalcular.addEventListener('click', calcularRutaPrincipal);
+    el.btnCalcular.addEventListener('click', () => calcularRutaPrincipal());
 
     function toggleSitiosHandler() {
       const visible = MapModule.toggleSitios();
@@ -836,6 +836,7 @@
         el.loadingSitios.hidden = true;
         activarPanelTab('descubre');
         if (esMovil()) setMobileTab('descubre');
+        el.btnMostrarSitiosCercanos.disabled = false;
       });
     });
     el.btnAplicarDistancia.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarDistancia));
