@@ -727,6 +727,12 @@
     } else {
       if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = true;
     }
+    // Sync panel hidden states with mobile tab
+    if (tab === 'ruta') {
+      activarPanelTab('ruta');
+    } else if (tab === 'descubre') {
+      activarPanelTab('descubre');
+    }
     setTimeout(() => MapModule.invalidateSize(), 220);
   }
 
@@ -843,8 +849,9 @@
     ];
 
     // Cerrar menús de Descubre al desplazar la lista o interactuar con el mapa
-    if (el.sitiosLista) {
-      el.sitiosLista.addEventListener('scroll', () => {
+    const sitiosScroll = document.querySelector('.panel-sites__scroll');
+    if (sitiosScroll) {
+      sitiosScroll.addEventListener('scroll', () => {
         if (desplegandoDescubre) _cerrarDesplegadosDescubre();
       }, { passive: true });
     }
