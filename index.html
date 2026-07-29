@@ -31,7 +31,7 @@
 </head>
 <body>
 
-<div id="app" class="app-shell" data-mobile-tab="ruta">
+<div id="app" class="app-shell" data-mobile-tab="ruta" data-mobile-panel="expanded">
 
   <div class="app-body">
 
@@ -250,6 +250,18 @@
         <ul class="sitios-lista" id="sitios-lista" hidden></ul>
       </div>
     </section>
+
+    <!-- Altimetría como pestaña del panel -->
+    <div id="altimetria-panel" class="altimetria-panel" hidden>
+      <div class="altimetria__header">
+        <span class="altimetria__title">Perfil de elevación</span>
+      </div>
+      <div class="altimetria__chart" id="altimetria-chart-panel"></div>
+      <div class="altimetria__info" id="altimetria-info-panel" hidden>
+        <span id="altimetria-dist-panel"></span>
+        <span id="altimetria-alt-panel"></span>
+      </div>
+    </div>
 
   </aside>
 
