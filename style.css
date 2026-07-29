@@ -1238,7 +1238,7 @@ input, select{ font-family: inherit; }
   .app-shell{ overflow: hidden; height: 100dvh; }
 
   /* Ajuste de padding del panel en móvil */
-  .side-panel{ padding: 12px 12px 56px; gap: 12px; }
+  .side-panel{ padding: 12px 12px 56px; gap: 0px; }
 
   /* Filtros más compactos en móvil */
   .filter-row{ gap: 6px; }

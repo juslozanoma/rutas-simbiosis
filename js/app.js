@@ -218,8 +218,8 @@
       if (state.rutaActual) {
         el.panelParadas.hidden = false;
       }
-      el.btnMostrarSitiosCercanos.hidden = false;
-      el.btnMostrarSitiosCercanos.disabled = false;
+      el.btnMostrarSitiosCercanos.hidden = state.sitiosFiltrados.length > 0;
+      el.btnMostrarSitiosCercanos.disabled = state.sitiosFiltrados.length > 0;
       el.hintParadas.hidden = false;
     } else {
       el.btnTabPanelDescubre.classList.add('panel-tab--active');
@@ -922,6 +922,7 @@
     }
 
     el.btnMostrarSitiosCercanos.addEventListener('click', () => {
+      el.btnMostrarSitiosCercanos.hidden = true;
       el.btnMostrarSitiosCercanos.disabled = true;
       el.checkDistancia.checked = true;
       el.filtroDistancia.disabled = false;
@@ -1116,6 +1117,10 @@
       state.escalas.forEach((e) => { delete e._row; });
       renderizarParadas();
 
+      // Limpiar sitios cargados antes de activar la pestaña
+      state.sitiosFiltrados = [];
+      state.sitiosFiltradosBase = [];
+
       // Activar pestaña Ruta
       el.panelEscalas.hidden = true;
       activarPanelTab('ruta');
@@ -1125,8 +1130,6 @@
       _actualizarTextoBotonesOrden();
       el.panelSitios.hidden = true;
       MapModule.limpiarSitios();
-      state.sitiosFiltrados = [];
-      state.sitiosFiltradosBase = [];
 
       el.checkDistancia.checked = true;
       el.filtroDistancia.value = '5';
