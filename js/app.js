@@ -652,21 +652,22 @@
       conteoCategoriasBase = new Map();
       renderizarSitios([]);
       renderizarCategoriasMenu();
-      el.loadingMsg.textContent = 'Calculando nueva ruta…';
-      if (el.spinnerBike) el.spinnerBike.hidden = true;
-      el.loadingSitios.hidden = false;
-      let idxMsg = 0;
-      const msgs = ['Calculando nueva ruta…', 'Espera un poco más, estamos ajustando detalles…'];
-      const intervalo = setInterval(() => {
-        idxMsg = (idxMsg + 1) % msgs.length;
-        el.loadingMsg.textContent = msgs[idxMsg];
-      }, 2000);
-      try {
-        if (el.checkAutoOrganizar.checked) {
-          await organizarAutomaticamente();
-        } else {
-          await calcularRutaPrincipal(true);
-        }
+      if (!esMovil()) {
+        el.loadingMsg.textContent = 'Calculando nueva ruta…';
+        if (el.spinnerBike) el.spinnerBike.hidden = true;
+        el.loadingSitios.hidden = false;
+        let idxMsg = 0;
+        const msgs = ['Calculando nueva ruta…', 'Espera un poco más, estamos ajustando detalles…'];
+        const intervalo = setInterval(() => {
+          idxMsg = (idxMsg + 1) % msgs.length;
+          el.loadingMsg.textContent = msgs[idxMsg];
+        }, 2000);
+        try {
+          if (el.checkAutoOrganizar.checked) {
+            await organizarAutomaticamente();
+          } else {
+            await calcularRutaPrincipal(true);
+          }
         // Clear site list and show button for manual reload
         renderizarSitios([]);
         _habilitarMostrarSitios();
@@ -674,6 +675,7 @@
         clearInterval(intervalo);
         el.loadingSitios.hidden = true;
         if (el.spinnerBike) el.spinnerBike.hidden = false;
+      }
       }
     }
   }
@@ -1009,6 +1011,9 @@
     el.destinoInput.disabled = cargando;
     document.querySelectorAll('.combo__trigger.escala-trigger').forEach((b) => { b.disabled = cargando; });
     document.querySelectorAll('.sitio-card__add').forEach((b) => { b.disabled = cargando; });
+    // Bloquear pestaña Descubre durante el cálculo
+    if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = cargando;
+    if (el.btnTabDescubre) el.btnTabDescubre.disabled = cargando;
     if (esMovil()) {
       el.panelLocate.hidden = cargando;
       el.btnMostrarSitiosCercanos.hidden = cargando;
@@ -1714,6 +1719,7 @@
     el.paradasLista.innerHTML = '';
     const incluirExtremos = Boolean(state.rutaActual && state.origen && state.destino);
     el.paradasContador.textContent = String(incluirExtremos ? total : total);
+    el.paradasContador.hidden = total === 0;
     el.panelParadas.hidden = !incluirExtremos && total === 0;
 
     function crearFilaExtremo(letra, nombre, tipo) {
