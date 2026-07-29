@@ -1273,8 +1273,7 @@
       return;
     }
     limpiarPreview();
-    MapModule.centrarEn(sitio.lat, sitio.lon);
-    TourismModule.mostrarPopupSitio(sitio);
+    MapModule.abrirPopupSitio(sitio.id);
     state.previewSitioId = sitio.id;
     marcarTarjetaActiva(cardEl);
   }

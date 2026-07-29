@@ -81,6 +81,9 @@ const TourismModule = (() => {
     marker.__sitioId = sitio.id;
 
     marker.on('click', () => {
+      if (typeof MapModule !== 'undefined' && MapModule.centrarEn) {
+        MapModule.centrarEn(sitio.lat, sitio.lon);
+      }
       mostrarPopupSitio(sitio);
     });
 
@@ -88,16 +91,28 @@ const TourismModule = (() => {
   }
 
   let _popupOverlay = null;
+  let _popupSitioId = null;
 
   function ocultarPopupSitio() {
     if (_popupOverlay) {
       _popupOverlay.remove();
       _popupOverlay = null;
     }
+    if (_popupSitioId != null) {
+      if (typeof MapModule !== 'undefined' && MapModule.mostrarTooltipSitio) {
+        MapModule.mostrarTooltipSitio(_popupSitioId);
+      }
+      _popupSitioId = null;
+    }
   }
 
   function mostrarPopupSitio(sitio) {
     ocultarPopupSitio();
+
+    if (typeof MapModule !== 'undefined' && MapModule.ocultarTooltipSitio) {
+      MapModule.ocultarTooltipSitio(sitio.id);
+    }
+    _popupSitioId = sitio.id;
 
     const tpl = document.getElementById('tpl-popup-sitio');
     const nodo = tpl.content.cloneNode(true);
@@ -119,9 +134,27 @@ const TourismModule = (() => {
       if (onAgregarParadaCallback) onAgregarParadaCallback(sitio, btn);
     });
 
+    const btnClose = nodo.querySelector('.popup-sitio__close');
+    if (btnClose) {
+      btnClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        ocultarPopupSitio();
+      });
+    }
+
     const overlay = document.createElement('div');
     overlay.className = 'sitio-overlay';
-    overlay.appendChild(nodo);
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'sitio-overlay-wrapper';
+
+    wrapper.appendChild(nodo);
+
+    const arrow = document.createElement('div');
+    arrow.className = 'sitio-arrow';
+    wrapper.appendChild(arrow);
+
+    overlay.appendChild(wrapper);
     document.body.appendChild(overlay);
     _popupOverlay = overlay;
 

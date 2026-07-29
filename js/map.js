@@ -646,6 +646,22 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     });
   }
 
+  function ocultarTooltipSitio(sitioId) {
+    const marker = _sitioMarkers.get(sitioId);
+    if (marker && marker.getTooltip()) {
+      const el = marker.getTooltip()._container;
+      if (el) el.style.display = 'none';
+    }
+  }
+
+  function mostrarTooltipSitio(sitioId) {
+    const marker = _sitioMarkers.get(sitioId);
+    if (marker && marker.getTooltip()) {
+      const el = marker.getTooltip()._container;
+      if (el) el.style.display = '';
+    }
+  }
+
   function toggleSitios() {
     if (map.hasLayer(clusterSitios)) {
       map.removeLayer(clusterSitios);
@@ -701,6 +717,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     agregarMarcadorSitio,
     toggleSitios,
     abrirPopupSitio,
+    ocultarTooltipSitio,
+    mostrarTooltipSitio,
     encuadrar,
     centrarEn,
   };
