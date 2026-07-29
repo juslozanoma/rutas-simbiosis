@@ -504,6 +504,7 @@ input, select{ font-family: inherit; }
 }
 .btn-mostrar-sitios-cercanos{
   display: block;
+  width: 100%;
   margin: 0px auto 0;
   padding: 0 18px;
   height: 40px;
@@ -523,7 +524,7 @@ input, select{ font-family: inherit; }
 .btn-mostrar-sitios-cercanos[hidden]{ display: none; }
 
 .hint-paradas{
-  margin: 8px 0 0;
+  margin: 8px 0 8px 0;
   font-size: 11.3px;
   color: var(--text-muted);
   text-align: center;
@@ -1057,7 +1058,8 @@ input, select{ font-family: inherit; }
 }
 #descubre-dropdown-ordenar{
   flex-direction: row;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 5px;
   margin: 0px 7px 3px 9px;
 }
 .descubre-dropdown__item{
@@ -1074,7 +1076,7 @@ input, select{ font-family: inherit; }
 }
 .descubre-dropdown__item:hover{ background: var(--teal-50); }
 #descubre-dropdown-ordenar .descubre-dropdown__item{
-  flex: 1;
+  flex: 0 0 calc(50% - 2.5px);
   text-align: center;
   padding: 7px 6px;
   font-size: 0.72rem;
@@ -1216,7 +1218,6 @@ input, select{ font-family: inherit; }
   .side-panel > .panel-locate{ order: 1; }
   .side-panel > .panel-paradas{ order: 2; }
   .side-panel > .panel-sites{ order: 3; }
-  .side-panel > #btn-mostrar-sitios{ order: 4; }
   .side-panel > #loading-sitios{ order: 2; }
   .side-panel > #loading-ruta{ order: 2; }
   .side-panel > .altimetria-panel{ order: 5; }

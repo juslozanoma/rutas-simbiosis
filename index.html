@@ -74,8 +74,8 @@
 
     <!-- Pestañas del panel (escritorio) -->
     <div class="panel-tab-bar" id="panel-tab-bar">
-      <button type="button" id="btn-tab-panel-ruta" class="panel-tab panel-tab--active">Ruta <img src="public/airplane.svg" alt="" width="14" height="14" style="filter: brightness(0) invert(0.5);"></button>
-      <button type="button" id="btn-tab-panel-descubre" class="panel-tab" disabled>Descubre Colombia <img src="public/colombia.svg" alt="" width="13" height="13" class="tab-descubre-icon" id="ico-descubre-tab-desktop"><span class="badge-count mono" id="sitios-contador-tab-desktop" hidden>0</span></button>
+      <button type="button" id="btn-tab-panel-ruta" class="panel-tab panel-tab--active">Ruta <img src="public/airplane.svg" alt="" width="16" height="16" style="filter: brightness(0) invert(0.5);"></button>
+      <button type="button" id="btn-tab-panel-descubre" class="panel-tab" disabled>Descubre Colombia <img src="public/colombia.svg" alt="" width="18" height="18" class="tab-descubre-icon" id="ico-descubre-tab-desktop"><span class="badge-count mono" id="sitios-contador-tab-desktop" hidden>0</span></button>
     </div>
 
     <!-- Ruta: origen/destino + paradas + monalisa -->
@@ -118,9 +118,9 @@
         </button>
       </div>
       <p class="hint-paradas" id="hint-paradas">No olvides añadir tus paradas antes de mostrar los sitios cercanos</p>
+      <button type="button" id="btn-mostrar-sitios" class="btn-mostrar-sitios-cercanos" disabled>Mostrar sitios turísticos cercanos</button>
     </section>
 
-    <button type="button" id="btn-mostrar-sitios" class="btn-mostrar-sitios-cercanos" disabled>Mostrar sitios turísticos cercanos</button>
     <div id="loading-ruta" class="loading-ruta" hidden>
       <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="loader">
         <path pathLength="360" d="M 56.3752 2 H 7.6248 C 7.2797 2 6.9999 2.268 6.9999 2.5985 V 61.4015 C 6.9999 61.7321 7.2797 62 7.6248 62 H 56.3752 C 56.7203 62 57.0001 61.7321 57.0001 61.4015 V 2.5985 C 57.0001 2.268 56.7203 2 56.3752 2 Z"/>
@@ -163,6 +163,8 @@
       <div class="descubre-dropdown" id="descubre-dropdown-ordenar" hidden>
         <button type="button" id="btn-descubre-orden-origen" class="descubre-dropdown__item">Desde Origen</button>
         <button type="button" id="btn-descubre-orden-destino" class="descubre-dropdown__item">Desde Destino</button>
+        <button type="button" id="btn-descubre-lista-completa" class="descubre-dropdown__item">Lista completa</button>
+        <button type="button" id="btn-descubre-visibles" class="descubre-dropdown__item">Sitios visibles</button>
       </div>
       <div class="descubre-dropdown" id="descubre-dropdown-desvios" hidden>
       <div class="filter-row">
@@ -264,7 +266,7 @@
     </button>
     <button type="button" class="mobile-tab-btn" data-tab="descubre" id="btn-tab-descubre" disabled>
       <span>Descubre Colombia</span>
-      <img src="public/colombia.svg" alt="" width="13" height="13" class="tab-descubre-icon" id="ico-descubre-tab">
+      <img src="public/colombia.svg" alt="" width="18" height="18" class="tab-descubre-icon" id="ico-descubre-tab">
       <span class="badge-count mono" id="sitios-contador-tab" hidden>0</span>
     </button>
   </nav>

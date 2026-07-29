@@ -54,6 +54,7 @@
     sitiosFiltrados: [],
     sitiosFiltradosBase: [],
     ordenSitios: 'origen',
+    modoVisibilidad: 'completa',
     previewSitioId: null,
     categoriasSeleccionadas: [],
     categoriasUnicas: [],
@@ -105,6 +106,8 @@
     descubreDropdownOrdenar: document.getElementById('descubre-dropdown-ordenar'),
     btnOrdenOrigenDes: document.getElementById('btn-descubre-orden-origen'),
     btnOrdenDestinoDes: document.getElementById('btn-descubre-orden-destino'),
+    btnListaCompleta: document.getElementById('btn-descubre-lista-completa'),
+    btnSitiosVisibles: document.getElementById('btn-descubre-visibles'),
     categoriasGrid: document.getElementById('categorias-grid'),
 
 
@@ -170,13 +173,36 @@
   function _actualizarEstadoBotonesDescubre() {
     if (el.btnOrdenOrigenDes) el.btnOrdenOrigenDes.classList.toggle('descubre-dropdown__item--active', state.ordenSitios === 'origen');
     if (el.btnOrdenDestinoDes) el.btnOrdenDestinoDes.classList.toggle('descubre-dropdown__item--active', state.ordenSitios === 'destino');
+    if (el.btnListaCompleta) el.btnListaCompleta.classList.toggle('descubre-dropdown__item--active', state.modoVisibilidad === 'completa');
+    if (el.btnSitiosVisibles) el.btnSitiosVisibles.classList.toggle('descubre-dropdown__item--active', state.modoVisibilidad === 'visibles');
   }
 
   function aplicarOrdenSitios(orden) {
     state.ordenSitios = orden;
     actualizarBotonesOrden();
     _actualizarEstadoBotonesDescubre();
-    renderizarSitios(state.sitiosFiltrados);
+    renderizarSitios(state.modoVisibilidad === 'visibles' ? _filtrarVisibles(state.sitiosFiltrados) : state.sitiosFiltrados);
+  }
+
+  function aplicarModoVisibilidad(modo) {
+    state.modoVisibilidad = modo;
+    _actualizarEstadoBotonesDescubre();
+    if (modo === 'visibles') {
+      renderizarSitios(_filtrarVisibles(state.sitiosFiltrados));
+    } else {
+      renderizarSitios(state.sitiosFiltrados);
+    }
+  }
+
+  function _filtrarVisibles(sitios) {
+    const map = MapModule.getMap();
+    if (!map) return sitios;
+    const bounds = map.getBounds();
+    return sitios.filter((s) => {
+      const lat = Number(s.lat), lon = Number(s.lon);
+      if (isNaN(lat) || isNaN(lon)) return false;
+      return bounds.contains([lat, lon]);
+    });
   }
 
   function activarPanelTab(tab) {
@@ -888,6 +914,12 @@
     if (el.btnOrdenDestinoDes) {
       el.btnOrdenDestinoDes.addEventListener('click', () => { aplicarOrdenSitios('destino'); actualizarBotonesOrden(); });
     }
+    if (el.btnListaCompleta) {
+      el.btnListaCompleta.addEventListener('click', () => aplicarModoVisibilidad('completa'));
+    }
+    if (el.btnSitiosVisibles) {
+      el.btnSitiosVisibles.addEventListener('click', () => aplicarModoVisibilidad('visibles'));
+    }
 
     el.btnMostrarSitiosCercanos.addEventListener('click', () => {
       el.btnMostrarSitiosCercanos.disabled = true;
@@ -1155,7 +1187,11 @@
       });
     }
     state.sitiosFiltrados = sitiosResultado;
-    renderizarSitios(sitiosResultado);
+    if (state.modoVisibilidad === 'visibles') {
+      renderizarSitios(_filtrarVisibles(sitiosResultado));
+    } else {
+      renderizarSitios(sitiosResultado);
+    }
     renderizarCategoriasMenu();
   }
 
@@ -1225,7 +1261,11 @@
           });
           state.sitiosFiltradosBase = resultadosBase;
           state.sitiosFiltrados = resultados;
-          renderizarSitios(resultados);
+          if (state.modoVisibilidad === 'visibles') {
+            renderizarSitios(_filtrarVisibles(resultados));
+          } else {
+            renderizarSitios(resultados);
+          }
           renderizarCategoriasMenu();
           ultimosValoresAplicados.distancia = Number(el.filtroDistancia.value);
           actualizarEstadoBotonesRetry();
