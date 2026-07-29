@@ -617,7 +617,6 @@
       state.sitiosFiltradosBase = [];
       renderizarSitios([]);
       _habilitarMostrarSitios();
-          calcularRutaPrincipal(true);
         }
       }
       row.remove();
@@ -645,39 +644,6 @@
       }
     });
     actualizarEstadoBotonCalcular();
-    if (state.origen && state.destino && state.escalas.some((e) => e._row && e.id != null)) {
-      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
-      state.sitiosFiltrados = [];
-      state.sitiosFiltradosBase = [];
-      conteoCategoriasBase = new Map();
-      renderizarSitios([]);
-      renderizarCategoriasMenu();
-      if (!esMovil()) {
-        el.loadingMsg.textContent = 'Calculando nueva ruta…';
-        if (el.spinnerBike) el.spinnerBike.hidden = true;
-        el.loadingSitios.hidden = false;
-        let idxMsg = 0;
-        const msgs = ['Calculando nueva ruta…', 'Espera un poco más, estamos ajustando detalles…'];
-        const intervalo = setInterval(() => {
-          idxMsg = (idxMsg + 1) % msgs.length;
-          el.loadingMsg.textContent = msgs[idxMsg];
-        }, 2000);
-        try {
-          if (el.checkAutoOrganizar.checked) {
-            await organizarAutomaticamente();
-          } else {
-            await calcularRutaPrincipal(true);
-          }
-        // Clear site list and show button for manual reload
-        renderizarSitios([]);
-        _habilitarMostrarSitios();
-      } finally {
-        clearInterval(intervalo);
-        el.loadingSitios.hidden = true;
-        if (el.spinnerBike) el.spinnerBike.hidden = false;
-      }
-      }
-    }
   }
 
   // -------------------------------------------------------------------
@@ -1085,7 +1051,6 @@
       state.sitiosFiltradosBase = [];
       state.categoriasSeleccionadas = [];
       conteoCategoriasBase = new Map();
-      _habilitarMostrarSitios();
     }
 
     ponerEnCargaRuta(true);
