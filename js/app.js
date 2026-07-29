@@ -161,6 +161,7 @@
   function aplicarOrdenSitios(orden) {
     state.ordenSitios = orden;
     actualizarBotonesOrden();
+    if (typeof _actualizarEstadoBotonesDescubre === 'function') _actualizarEstadoBotonesDescubre();
     renderizarSitios(state.sitiosFiltrados);
   }
 
@@ -460,6 +461,7 @@
     row.appendChild(combo);
     row.appendChild(removeBtn);
     el.panelEscalas.appendChild(row);
+    el.panelEscalas.hidden = false;
 
     let seleccion = null;
 
@@ -661,6 +663,7 @@
     } else {
       state.categoriasSeleccionadas.push(cat);
     }
+    if (typeof _actualizarEstadoBotonesDescubre === 'function') _actualizarEstadoBotonesDescubre();
     if (state.rutaActual) ejecutarFiltrado();
   }
 
@@ -742,13 +745,19 @@
     }
     function _cerrarDesplegadosDescubre() {
       desplegandoDescubre = null;
-      [el.btnDescubreCategorias, el.btnDescubreDesvios, el.btnDescubreOrdenar].forEach(b => { if (b) b.classList.remove('descubre-btn--active'); });
       [el.descubreDropdownCategorias, el.descubreDropdownDesvios, el.descubreDropdownOrdenar].forEach(d => { if (d) d.hidden = true; });
+      _actualizarEstadoBotonesDescubre();
+    }
+    function _actualizarEstadoBotonesDescubre() {
+      if (el.btnDescubreCategorias) el.btnDescubreCategorias.classList.toggle('descubre-btn--active', state.categoriasSeleccionadas.length > 0);
+      if (el.btnDescubreDesvios) el.btnDescubreDesvios.classList.toggle('descubre-btn--active', el.checkDistancia.checked || el.checkTiempo.checked);
+      if (el.btnDescubreOrdenar) el.btnDescubreOrdenar.classList.toggle('descubre-btn--active', !!state.ordenSitios);
     }
     if (el.btnOrdenOrigen) el.btnOrdenOrigen.addEventListener('click', () => aplicarOrdenSitios('origen'));
     if (el.btnOrdenDestino) el.btnOrdenDestino.addEventListener('click', () => aplicarOrdenSitios('destino'));
     state.ordenSitios = 'origen';
     actualizarBotonesOrden();
+    _actualizarEstadoBotonesDescubre();
 
     // Tab switching (panel tabs - desktop)
     function activarPanelTab(tab) {
@@ -763,6 +772,7 @@
         if (state.rutaActual) {
           el.panelParadas.hidden = false;
         }
+        el.btnMostrarSitiosCercanos.hidden = false;
       } else {
         el.btnTabPanelDescubre.classList.add('panel-tab--active');
         el.panelLocate.hidden = true;
@@ -770,6 +780,7 @@
         el.panelParadas.hidden = true;
         el.panelDescubreActions.hidden = false;
         el.panelSitios.hidden = false;
+        el.btnMostrarSitiosCercanos.hidden = true;
       }
     }
 
@@ -829,13 +840,14 @@
       el.filtroDistanciaValor.textContent = '5 km';
       if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
       if (el.loadingRuta) el.loadingRuta.hidden = true;
+      activarPanelTab('descubre');
+      el.panelSitios.hidden = true;
+      if (esMovil()) setMobileTab('descubre');
       el.loadingSitios.hidden = false;
       ejecutarFiltradoProgresivo(() => {
         el.panelSitios.hidden = false;
         actualizarEstadoBotonesRetry();
         el.loadingSitios.hidden = true;
-        activarPanelTab('descubre');
-        if (esMovil()) setMobileTab('descubre');
         el.btnMostrarSitiosCercanos.disabled = false;
       });
     });
@@ -845,10 +857,12 @@
     el.checkDistancia.addEventListener('change', () => {
       el.filtroDistancia.disabled = !el.checkDistancia.checked;
       actualizarEstadoBotonesRetry();
+      _actualizarEstadoBotonesDescubre();
     });
     el.checkTiempo.addEventListener('change', () => {
       el.filtroTiempo.disabled = !el.checkTiempo.checked;
       actualizarEstadoBotonesRetry();
+      _actualizarEstadoBotonesDescubre();
     });
     el.filtroDistancia.addEventListener('input', () => {
       el.filtroDistanciaValor.textContent = `${el.filtroDistancia.value} km`;

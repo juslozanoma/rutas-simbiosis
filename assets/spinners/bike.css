@@ -3,6 +3,7 @@
   display: block;
   width: 150px;
   height: auto;
+  color: var(--teal-500);
 }
 
 .spinner-bike_body,

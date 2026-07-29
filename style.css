@@ -288,6 +288,27 @@ input, select{ font-family: inherit; }
 @keyframes spin{ to{ transform: rotate(360deg); } }
 @keyframes spin{ to{ transform: rotate(360deg); } }
 
+/* Worm spinner dentro de btn-calcular */
+#btn-calcular .icon-btn__spinner{
+  width: 28px; height: 28px;
+  border: none;
+  border-radius: 0;
+  animation: none;
+  align-items: center;
+  justify-content: center;
+}
+#btn-calcular:not([data-loading="true"]) .icon-btn__spinner{
+  display: none;
+}
+#btn-calcular[data-loading="true"] .icon-btn__spinner{
+  display: flex;
+}
+#btn-calcular .icon-btn__spinner .pl{
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
 /* --- Paradas agregadas a la ruta --- */
 .panel-paradas{
   flex-shrink: 0;
@@ -508,6 +529,7 @@ input, select{ font-family: inherit; }
 }
 .btn-mostrar-sitios-cercanos:hover:not(:disabled){ background: var(--teal-600); border-color: var(--teal-600); }
 .btn-mostrar-sitios-cercanos:disabled{ opacity: 0.45; cursor: default; }
+.btn-mostrar-sitios-cercanos[hidden]{ display: none; }
 
 .hint-paradas{
   margin: 0;
@@ -712,14 +734,13 @@ input, select{ font-family: inherit; }
 .parada-pin--escala{ background: #4a6fa5; }
 
 .sitio-pin{
-  width: 24px; height: 24px;
+  width: 34px; height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #ffffff;
-  border: 2px solid var(--teal-500);
-  box-shadow: 0 1px 4px rgba(20,32,27,0.4);
+  background: var(--teal-500);
+  box-shadow: 0 2px 6px rgba(20,32,27,0.35);
 }
 
 .popup-sitio{ font-family: var(--font-body); min-width: 190px; }
