@@ -7,6 +7,8 @@ const AltimetriaModule = (() => {
   let _onSetInicio = null;
   let _onSetFin = null;
   let _onVerMapa = null;
+  let _onHoverMapa = null;
+  let _onLeaveMapa = null;
 
   function _acumular(coords, elev) {
     const total = [];
@@ -20,11 +22,11 @@ const AltimetriaModule = (() => {
     return total;
   }
 
-  function setDatos(rutaGeojson, elevacion, totalKm) {
+  function setDatos(rutaGeojson, elevacion, totalKm, limpiarParadas = true) {
     _rutaGeojson = rutaGeojson;
     _elevacion = elevacion;
     _totalKm = totalKm;
-    _paradas = [];
+    if (limpiarParadas) _paradas = [];
     _puntoHover = null;
   }
 
@@ -35,6 +37,8 @@ const AltimetriaModule = (() => {
   function setOnSetInicio(fn) { _onSetInicio = fn; }
   function setOnSetFin(fn) { _onSetFin = fn; }
   function setOnVerMapa(fn) { _onVerMapa = fn; }
+  function setOnHover(fn) { _onHoverMapa = fn; }
+  function setOnLeave(fn) { _onLeaveMapa = fn; }
 
   function renderizar(containerId) {
     const cont = document.getElementById(containerId);
@@ -49,14 +53,25 @@ const AltimetriaModule = (() => {
     const minAlt = Math.min(...alturas);
     const maxAlt = Math.max(...alturas);
     const rangoAlt = Math.max(maxAlt - minAlt, 10);
-    const pad = 10;
-    const ancho = cont.clientWidth || 300;
-    const alto = cont.clientHeight || 140;
-    const w = ancho - pad * 2;
-    const h = alto - pad * 2;
 
-    function x(d) { return pad + (d / maxD) * w; }
-    function y(e) { return pad + h - ((e - minAlt) / rangoAlt) * h; }
+    // Asymmetric padding for axes
+    const padTop = 6;
+    const padRight = 10;
+    const padBottom = 22;
+    const padLeft = 44;
+    const ancho = cont.clientWidth || 300;
+    const alto = cont.clientHeight || 180;
+    const plotW = ancho - padLeft - padRight;
+    const plotH = alto - padTop - padBottom;
+
+    function x(d) { return padLeft + (d / maxD) * plotW; }
+    function y(e) { return padTop + plotH - ((e - minAlt) / rangoAlt) * plotH; }
+
+    // Nice intervals
+    const pasoD = _intervaloBonito(maxD, 6);
+    const pasoA = _intervaloBonito(maxAlt - minAlt, 5);
+    const altBase = Math.floor(minAlt / pasoA) * pasoA;
+    const distBase = Math.floor(0 / pasoD) * pasoD; // 0
 
     let dLine = '';
     for (let i = 0; i < puntos.length; i++) {
@@ -70,6 +85,88 @@ const AltimetriaModule = (() => {
     svg.setAttribute('viewBox', `0 0 ${ancho} ${alto}`);
     svg.setAttribute('preserveAspectRatio', 'none');
 
+    // Y-axis grid lines + labels (elevation)
+    for (let alt = altBase; alt <= maxAlt + pasoA * 0.5; alt += pasoA) {
+      if (alt < minAlt - pasoA * 0.5) continue;
+      const gy = y(alt);
+      const gridLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      gridLine.setAttribute('x1', padLeft);
+      gridLine.setAttribute('x2', padLeft + plotW);
+      gridLine.setAttribute('y1', gy);
+      gridLine.setAttribute('y2', gy);
+      gridLine.setAttribute('stroke', '#e0e0e0');
+      gridLine.setAttribute('stroke-width', '0.5');
+      gridLine.setAttribute('stroke-dasharray', '3 3');
+      svg.appendChild(gridLine);
+
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('x', padLeft - 5);
+      label.setAttribute('y', gy + 3);
+      label.setAttribute('text-anchor', 'end');
+      label.setAttribute('fill', '#888');
+      label.setAttribute('font-size', '9');
+      label.setAttribute('font-family', 'inherit');
+      label.textContent = alt.toFixed(0);
+      svg.appendChild(label);
+    }
+
+    // X-axis grid lines + labels (distance)
+    for (let d = distBase; d <= maxD + pasoD * 0.5; d += pasoD) {
+      const gx = x(d);
+      const gridLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      gridLine.setAttribute('x1', gx);
+      gridLine.setAttribute('x2', gx);
+      gridLine.setAttribute('y1', padTop);
+      gridLine.setAttribute('y2', padTop + plotH);
+      gridLine.setAttribute('stroke', '#e0e0e0');
+      gridLine.setAttribute('stroke-width', '0.5');
+      gridLine.setAttribute('stroke-dasharray', '3 3');
+      svg.appendChild(gridLine);
+
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('x', gx);
+      label.setAttribute('y', alto - 5);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('fill', '#888');
+      label.setAttribute('font-size', '9');
+      label.setAttribute('font-family', 'inherit');
+      label.textContent = d.toFixed(0);
+      svg.appendChild(label);
+    }
+
+    // Y-axis unit label
+    const yUnit = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    yUnit.setAttribute('x', 8);
+    yUnit.setAttribute('y', padTop + 8);
+    yUnit.setAttribute('fill', '#888');
+    yUnit.setAttribute('font-size', '9');
+    yUnit.setAttribute('font-family', 'inherit');
+    yUnit.textContent = 'm';
+    svg.appendChild(yUnit);
+
+    // X-axis unit label
+    const xUnit = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    xUnit.setAttribute('x', ancho - padRight);
+    xUnit.setAttribute('y', alto - 5);
+    xUnit.setAttribute('text-anchor', 'end');
+    xUnit.setAttribute('fill', '#888');
+    xUnit.setAttribute('font-size', '9');
+    xUnit.setAttribute('font-family', 'inherit');
+    xUnit.textContent = 'km';
+    svg.appendChild(xUnit);
+
+    // Border for plot area
+    const border = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    border.setAttribute('x', padLeft);
+    border.setAttribute('y', padTop);
+    border.setAttribute('width', plotW);
+    border.setAttribute('height', plotH);
+    border.setAttribute('fill', 'none');
+    border.setAttribute('stroke', '#ccc');
+    border.setAttribute('stroke-width', '1');
+    svg.appendChild(border);
+
+    // Elevation path
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('d', dLine);
     path.setAttribute('fill', 'none');
@@ -79,15 +176,17 @@ const AltimetriaModule = (() => {
     path.setAttribute('stroke-linecap', 'round');
     svg.appendChild(path);
 
+    // Hover line
     const hoverLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    hoverLine.setAttribute('y1', pad);
-    hoverLine.setAttribute('y2', pad + h);
-    hoverLine.setAttribute('stroke', '#888');
+    hoverLine.setAttribute('y1', padTop);
+    hoverLine.setAttribute('y2', padTop + plotH);
+    hoverLine.setAttribute('stroke', '#666');
     hoverLine.setAttribute('stroke-width', '1');
     hoverLine.setAttribute('stroke-dasharray', '4 3');
     hoverLine.style.display = 'none';
     svg.appendChild(hoverLine);
 
+    // Hover circle
     const hoverCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     hoverCircle.setAttribute('r', '4');
     hoverCircle.setAttribute('fill', '#246054');
@@ -96,39 +195,39 @@ const AltimetriaModule = (() => {
 
     // Hit area for hover
     const hit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    hit.setAttribute('x', pad);
-    hit.setAttribute('y', pad);
-    hit.setAttribute('width', w);
-    hit.setAttribute('height', h);
+    hit.setAttribute('x', padLeft);
+    hit.setAttribute('y', padTop);
+    hit.setAttribute('width', plotW);
+    hit.setAttribute('height', plotH);
     hit.setAttribute('fill', 'transparent');
     svg.appendChild(hit);
 
     cont.appendChild(svg);
+
+    // Store metadata on container
     cont._svg = svg;
     cont._puntos = puntos;
     cont._hoverLine = hoverLine;
     cont._hoverCircle = hoverCircle;
-    cont._w = w;
-    cont._h = h;
-    cont._pad = pad;
+    cont._plotW = plotW;
+    cont._plotH = plotH;
+    cont._padLeft = padLeft;
+    cont._padTop = padTop;
     cont._maxD = maxD;
     cont._minAlt = minAlt;
     cont._rangoAlt = rangoAlt;
-    cont._paradas = _paradas;
-    cont._ancho = ancho;
-    cont._alto = alto;
     cont._coords = coords;
+    cont._infoId = containerId.replace('-chart', '-info');
 
     // Parada markers
     for (const p of _paradas) {
       const dist = p.distKm != null ? p.distKm : turf.distance(turf.point([p.lon, p.lat]), turf.point(coords[0]), { units: 'kilometers' });
       const rat = dist / maxD;
-      const px = pad + rat * w;
-      // Find elevation at that distance
+      const px = padLeft + rat * plotW;
       let ei = 0;
       while (ei < puntos.length - 1 && puntos[ei + 1].d < dist) ei++;
       const alt = puntos[ei] && puntos[ei].e != null ? puntos[ei].e : (minAlt + rangoAlt * 0.5);
-      const py = pad + h - ((alt - minAlt) / rangoAlt) * h;
+      const py = padTop + plotH - ((alt - minAlt) / rangoAlt) * plotH;
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       circle.setAttribute('cx', px);
       circle.setAttribute('cy', py);
@@ -144,17 +243,49 @@ const AltimetriaModule = (() => {
       svg.appendChild(circle);
     }
 
-    // Hover
+    // A (origen) y Z (destino) markers
+    _agregarMarcadorExtremo(svg, puntos, 0, 'A', padLeft, padTop, plotW, plotH, minAlt, rangoAlt, maxD);
+    _agregarMarcadorExtremo(svg, puntos, puntos.length - 1, 'Z', padLeft, padTop, plotW, plotH, minAlt, rangoAlt, maxD);
+
+    // Hover listeners
     hit.addEventListener('mousemove', (ev) => { _onHover(cont, ev); });
     hit.addEventListener('mouseleave', () => { _onLeave(cont); });
     hit.addEventListener('click', (ev) => { if (_puntoHover) { _mostrarTooltip(cont, null); } });
+  }
+
+  function _agregarMarcadorExtremo(svg, puntos, idx, letra, padLeft, padTop, plotW, plotH, minAlt, rangoAlt, maxD) {
+    const pt = puntos[idx];
+    if (!pt) return;
+    const px = padLeft + (pt.d / maxD) * plotW;
+    const alt = pt.e != null ? pt.e : (minAlt + rangoAlt * 0.5);
+    const py = padTop + plotH - ((alt - minAlt) / rangoAlt) * plotH;
+
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', px);
+    circle.setAttribute('cy', py);
+    circle.setAttribute('r', '11');
+    circle.setAttribute('fill', '#4a6fa5');
+    circle.setAttribute('stroke', '#fff');
+    circle.setAttribute('stroke-width', '2');
+    svg.appendChild(circle);
+
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', px);
+    text.setAttribute('y', py + 4.5);
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('fill', '#fff');
+    text.setAttribute('font-size', '10');
+    text.setAttribute('font-weight', '700');
+    text.setAttribute('font-family', 'inherit');
+    text.textContent = letra;
+    svg.appendChild(text);
   }
 
   function _onHover(cont, ev) {
     const rect = cont._svg.getBoundingClientRect();
     const mx = ev.clientX - rect.left;
     const my = ev.clientY - rect.top;
-    const rat = Math.max(0, Math.min(1, (mx - cont._pad) / cont._w));
+    const rat = Math.max(0, Math.min(1, (mx - cont._padLeft) / cont._plotW));
     const dist = rat * cont._maxD;
     let idx = Math.round(rat * (cont._puntos.length - 1));
     idx = Math.max(0, Math.min(idx, cont._puntos.length - 1));
@@ -165,22 +296,39 @@ const AltimetriaModule = (() => {
     cont._hoverLine.style.display = '';
     cont._hoverCircle.setAttribute('cx', mx);
     const alt = pt.e != null ? pt.e : (cont._minAlt + cont._rangoAlt * 0.5);
-    cont._hoverCircle.setAttribute('cy', cont._pad + cont._h - ((alt - cont._minAlt) / cont._rangoAlt) * cont._h);
+    cont._hoverCircle.setAttribute('cy', cont._padTop + cont._plotH - ((alt - cont._minAlt) / cont._rangoAlt) * cont._plotH);
     cont._hoverCircle.style.display = '';
     _puntoHover = { lat: pt.coord[1], lon: pt.coord[0], dist: dist.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A' };
-    const info = document.getElementById('altimetria-info');
-    if (info) {
-      info.hidden = false;
-      info.innerHTML = `<span>${dist.toFixed(1)} km</span><span>${alt != null ? alt.toFixed(0) + ' m' : 'N/A'}</span>`;
-    }
+    if (_onHoverMapa) _onHoverMapa(_puntoHover);
+    const suffix = cont.id.includes('-panel') ? '-panel' : '';
+    const distEl = document.getElementById('altimetria-dist' + suffix);
+    const altEl = document.getElementById('altimetria-alt' + suffix);
+    if (distEl) distEl.textContent = `${dist.toFixed(1)} km`;
+    if (altEl) altEl.textContent = alt != null ? alt.toFixed(0) + ' m' : '';
+  }
+
+  function _intervaloBonito(rango, divisiones = 5) {
+    const bruto = rango / divisiones;
+    const magnitud = Math.pow(10, Math.floor(Math.log10(bruto)));
+    const residuo = bruto / magnitud;
+    let paso;
+    if (residuo <= 1.5) paso = magnitud;
+    else if (residuo <= 3) paso = 2 * magnitud;
+    else if (residuo <= 7) paso = 5 * magnitud;
+    else paso = 10 * magnitud;
+    return paso || 1;
   }
 
   function _onLeave(cont) {
     cont._hoverLine.style.display = 'none';
     cont._hoverCircle.style.display = 'none';
     _puntoHover = null;
-    const info = document.getElementById('altimetria-info');
-    if (info) info.hidden = true;
+    if (_onLeaveMapa) _onLeaveMapa();
+    const suffix = cont.id.includes('-panel') ? '-panel' : '';
+    const distEl = document.getElementById('altimetria-dist' + suffix);
+    const altEl = document.getElementById('altimetria-alt' + suffix);
+    if (distEl) distEl.textContent = '';
+    if (altEl) altEl.textContent = '';
   }
 
   function _mostrarTooltip(cont, ev) {
@@ -193,9 +341,45 @@ const AltimetriaModule = (() => {
     _paradas = [];
     _totalKm = 0;
     _puntoHover = null;
-    const info = document.getElementById('altimetria-info');
+    ['', '-panel'].forEach((suffix) => {
+      const d = document.getElementById('altimetria-dist' + suffix);
+      const a = document.getElementById('altimetria-alt' + suffix);
+      if (d) d.textContent = '';
+      if (a) a.textContent = '';
+    });
+  }
+
+  function mostrarHoverEn(distKm) {
+    const cont = document.getElementById('altimetria-chart') || document.getElementById('altimetria-chart-panel');
+    if (!cont || !cont._svg || !cont._puntos || !cont._plotW) return;
+    const rat = distKm / cont._maxD;
+    const mx = cont._padLeft + rat * cont._plotW;
+    cont._hoverLine.setAttribute('x1', mx);
+    cont._hoverLine.setAttribute('x2', mx);
+    cont._hoverLine.style.display = '';
+    let ei = 0;
+    while (ei < cont._puntos.length - 1 && cont._puntos[ei + 1].d < distKm) ei++;
+    const alt = cont._puntos[ei] && cont._puntos[ei].e != null ? cont._puntos[ei].e : null;
+    if (alt != null) {
+      cont._hoverCircle.setAttribute('cx', mx);
+      cont._hoverCircle.setAttribute('cy', cont._padTop + cont._plotH - ((alt - cont._minAlt) / cont._rangoAlt) * cont._plotH);
+      cont._hoverCircle.style.display = '';
+    }
+    const info = document.getElementById(cont._infoId);
+    if (info) {
+      info.hidden = false;
+      info.innerHTML = `<span>${distKm.toFixed(1)} km</span><span>${alt != null ? alt.toFixed(0) + ' m' : 'N/A'}</span>`;
+    }
+  }
+
+  function ocultarHover() {
+    const cont = document.getElementById('altimetria-chart') || document.getElementById('altimetria-chart-panel');
+    if (!cont || !cont._hoverLine) return;
+    cont._hoverLine.style.display = 'none';
+    cont._hoverCircle.style.display = 'none';
+    const info = document.getElementById(cont._infoId);
     if (info) info.hidden = true;
   }
 
-  return { setDatos, agregarParada, renderizar, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa };
+  return { setDatos, agregarParada, renderizar, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa, setOnHover, setOnLeave, mostrarHoverEn, ocultarHover };
 })();

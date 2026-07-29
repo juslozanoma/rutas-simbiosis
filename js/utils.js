@@ -93,6 +93,83 @@ const Utils = (() => {
     return div.firstElementChild;
   }
 
+  // -------------------------------------------------------------------
+  // Elevación desde API externa (Open-Meteo / SRTM)
+  // -------------------------------------------------------------------
+  const _cacheElevacion = new Map();
+
+  /**
+   * Obtiene la elevación (msnm) para una coordenada dada.
+   * Usa la API gratuita de Open-Meteo (sin key, basada en SRTM/ASTER).
+   * @param {number} lat
+   * @param {number} lon
+   * @returns {Promise<number|null>} elevación en metros o null si falla
+   */
+  async function obtenerElevacion(lat, lon) {
+    const key = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+    if (_cacheElevacion.has(key)) return _cacheElevacion.get(key);
+    try {
+      const res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const alt = data?.elevation?.[0];
+      if (alt != null) {
+        _cacheElevacion.set(key, alt);
+        return alt;
+      }
+      return null;
+    } catch (err) {
+      console.warn('[ELEV] Error al obtener elevación:', err.message);
+      return null;
+    }
+  }
+
+  /**
+   * Obtiene elevación por lote usando requests individuales en paralelo.
+   * Usa Open-Meteo (gratis, sin key, SRTM/ASTER, permite CORS).
+   * @param {Array<[number,number]>} coords - [[lat, lon], ...]
+   * @returns {Promise<Array<number|null>>} elevaciones en mismo orden
+   */
+  async function obtenerElevacionBatch(coords) {
+    if (!coords || coords.length === 0) return [];
+
+    const resultados = new Array(coords.length).fill(null);
+    const pendientes = [];
+
+    coords.forEach((c, i) => {
+      const key = `${c[0].toFixed(4)},${c[1].toFixed(4)}`;
+      if (_cacheElevacion.has(key)) {
+        resultados[i] = _cacheElevacion.get(key);
+      } else {
+        pendientes.push({ idx: i, lat: c[0], lon: c[1] });
+      }
+    });
+
+    if (pendientes.length === 0) return resultados;
+
+    const CONCURRENCY = 5;
+    for (let i = 0; i < pendientes.length; i += CONCURRENCY) {
+      const chunk = pendientes.slice(i, i + CONCURRENCY);
+      await Promise.all(chunk.map(async (p) => {
+        try {
+          const res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${p.lat}&longitude=${p.lon}`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          const alt = data?.elevation?.[0];
+          if (alt != null) {
+            const key = `${p.lat.toFixed(4)},${p.lon.toFixed(4)}`;
+            _cacheElevacion.set(key, alt);
+            resultados[p.idx] = alt;
+          }
+        } catch (err) {
+          console.warn('[ELEV] Error individual:', err.message);
+        }
+      }));
+    }
+
+    return resultados;
+  }
+
   return {
     debounce,
     normalizar,
@@ -103,5 +180,7 @@ const Utils = (() => {
     colorDesdeTexto,
     descargarArchivo,
     crearElemento,
+    obtenerElevacion,
+    obtenerElevacionBatch,
   };
 })();

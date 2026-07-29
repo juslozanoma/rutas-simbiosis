@@ -59,6 +59,8 @@
     categoriasSeleccionadas: [],
     categoriasUnicas: [],
     elevacion: null,
+    altimetriaGeo: null,
+    altimetriaTotalKm: 0,
   };
 
   // -------------------------------------------------------------------
@@ -202,6 +204,50 @@
       if (isNaN(lat) || isNaN(lon)) return false;
       return bounds.contains([lat, lon]);
     });
+  }
+
+  function _prepararCoordenadasParaElevacion(coords, maxPuntos = 50) {
+    const total = coords.length;
+    if (total <= maxPuntos) {
+      return {
+        coordenadas: coords.map((c) => [c[1], c[0]]),
+        indices: coords.map((_, i) => i),
+      };
+    }
+    const step = Math.ceil(total / maxPuntos);
+    const coordenadas = [];
+    const indices = [];
+    for (let i = 0; i < total; i += step) {
+      coordenadas.push([coords[i][1], coords[i][0]]);
+      indices.push(i);
+    }
+    if (indices[indices.length - 1] !== total - 1) {
+      coordenadas.push([coords[total - 1][1], coords[total - 1][0]]);
+      indices.push(total - 1);
+    }
+    return { coordenadas, indices };
+  }
+
+  function _reconstruirElevacion(elevaciones, indices, totalCoords) {
+    const result = new Array(totalCoords).fill(null);
+    for (let i = 0; i < indices.length; i++) {
+      result[indices[i]] = elevaciones[i];
+    }
+    let lastKnown = -1;
+    for (let i = 0; i < result.length; i++) {
+      if (result[i] != null) {
+        if (lastKnown >= 0 && i > lastKnown + 1) {
+          const start = result[lastKnown];
+          const end = result[i];
+          const span = i - lastKnown;
+          for (let j = lastKnown + 1; j < i; j++) {
+            result[j] = start + (end - start) * ((j - lastKnown) / span);
+          }
+        }
+        lastKnown = i;
+      }
+    }
+    return result;
   }
 
   function activarPanelTab(tab) {
@@ -944,6 +990,30 @@
           renderizarSitios(_filtrarVisibles(state.sitiosFiltrados));
         }
       });
+
+      // Marcador temporal para hover del perfil de altimetría
+      let _hoverMarker = null;
+      AltimetriaModule.setOnHover((p) => {
+        if (!_hoverMarker) {
+          _hoverMarker = L.circleMarker([p.lat, p.lon], {
+            radius: 6, fillColor: '#246054', color: '#fff', weight: 2,
+            fillOpacity: 1, pane: 'tooltipPane',
+          }).addTo(_map);
+        } else {
+          _hoverMarker.setLatLng([p.lat, p.lon]);
+        }
+        _hoverMarker.bindTooltip(`${p.alt} m · ${p.dist} km`, {
+          permanent: true, direction: 'top', className: 'altimetria-map-tooltip',
+        }).openTooltip();
+      });
+
+      AltimetriaModule.setOnLeave(() => {
+        if (_hoverMarker) { _hoverMarker.remove(); _hoverMarker = null; }
+      });
+
+      document.getElementById('btn-cerrar-altimetria')?.addEventListener('click', () => {
+        if (_hoverMarker) { _hoverMarker.remove(); _hoverMarker = null; }
+      });
     }
 
   }
@@ -977,9 +1047,11 @@
     el.destinoInput.disabled = cargando;
     document.querySelectorAll('.combo__trigger.escala-trigger').forEach((b) => { b.disabled = cargando; });
     document.querySelectorAll('.sitio-card__add').forEach((b) => { b.disabled = cargando; });
-    // Bloquear pestaña Descubre durante el cálculo
-    if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = cargando;
-    if (el.btnTabDescubre) el.btnTabDescubre.disabled = cargando;
+    // Bloquear pestaña Descubre durante el cálculo (solo se bloquea, no se desbloquea aquí)
+    if (cargando) {
+      if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = true;
+      if (el.btnTabDescubre) el.btnTabDescubre.disabled = true;
+    }
     if (esMovil()) {
       el.panelLocate.hidden = cargando;
       el.btnMostrarSitiosCercanos.hidden = cargando;
@@ -997,17 +1069,39 @@
     return m.nombre + ', ' + m.departamento;
   }
 
-  function toggleAltimetria() {
+  async function toggleAltimetria() {
     if (!el.altimetriaPanel) return;
     const active = !el.altimetriaPanel.hidden;
     if (active) { cerrarAltimetria(); return; }
     el.altimetriaPanel.hidden = false;
+    if (el.btnAltimetria) el.btnAltimetria.hidden = true;
+    const chart = document.getElementById('altimetria-chart');
+    if (chart) chart.innerHTML = '<p style="font-size:0.78rem;color:var(--text-muted);text-align:center;padding:20px 0;">Cargando datos de elevación…</p>';
+
+    // Cargar elevación bajo demanda si no se ha hecho aún
+    if (!state.elevacion || !state.elevacion.some(e => e != null)) {
+      const geo = state.altimetriaGeo;
+      if (geo && geo.geometry && geo.geometry.coordinates) {
+        try {
+          const coords = geo.geometry.coordinates;
+          const { coordenadas, indices } = _prepararCoordenadasParaElevacion(coords);
+          const elevBatch = await Utils.obtenerElevacionBatch(coordenadas);
+          if (elevBatch.some(e => e != null)) {
+            state.elevacion = _reconstruirElevacion(elevBatch, indices, coords.length);
+            AltimetriaModule.setDatos(geo, state.elevacion, state.altimetriaTotalKm, false);
+          }
+        } catch (err) {
+          console.warn('[ALT] Error al cargar elevación:', err.message);
+        }
+      }
+    }
     AltimetriaModule.renderizar('altimetria-chart');
   }
 
   function cerrarAltimetria() {
     if (!el.altimetriaPanel) return;
     el.altimetriaPanel.hidden = true;
+    if (el.btnAltimetria) el.btnAltimetria.hidden = false;
   }
 
   // -------------------------------------------------------------------
@@ -1304,6 +1398,11 @@
     sitiosOrdenados.forEach((sitio) => {
       if (sitio.lat == null || sitio.lon == null || isNaN(Number(sitio.lat)) || isNaN(Number(sitio.lon))) return;
       const marker = TourismModule.crearMarcador(sitio);
+      // Viceversa: hover en marcador del mapa → destacar en perfil
+      if (sitio._distKm != null) {
+        marker.on('mouseover', () => { AltimetriaModule.mostrarHoverEn(sitio._distKm); });
+        marker.on('mouseout', () => { AltimetriaModule.ocultarHover(); });
+      }
       MapModule.agregarMarcadorSitio(marker);
       el.sitiosLista.appendChild(crearTarjetaSitio(sitio));
     });
@@ -1488,10 +1587,12 @@
       });
     } catch {}
 
-    // Alimentar módulo de altimetría (usamos rutaBase para tener elevación)
-    state.elevacion = (state.rutaBase && state.rutaBase.elevacion) || null;
+    // Almacenar datos para altimetría (elevación se carga bajo demanda)
     const totalKm = state.rutaBase ? state.rutaBase.distanciaMetros / 1000 : 0;
     const geoPerfil = state.rutaBase ? state.rutaBase.geojson : state.rutaActual.geojson;
+    state.elevacion = (state.rutaBase && state.rutaBase.elevacion) || null;
+    state.altimetriaGeo = geoPerfil;
+    state.altimetriaTotalKm = totalKm;
     AltimetriaModule.setDatos(geoPerfil, state.elevacion, totalKm);
     if (geoPerfil) {
       const routeLine = turf.lineString(geoPerfil.geometry.coordinates);
