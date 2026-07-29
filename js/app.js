@@ -192,6 +192,7 @@
         el.panelParadas.hidden = false;
       }
       el.btnMostrarSitiosCercanos.hidden = false;
+      el.btnMostrarSitiosCercanos.disabled = false;
       el.hintParadas.hidden = false;
     } else {
       el.btnTabPanelDescubre.classList.add('panel-tab--active');
@@ -856,7 +857,6 @@
         el.panelSitios.hidden = false;
         actualizarEstadoBotonesRetry();
         el.loadingSitios.hidden = true;
-        el.btnMostrarSitiosCercanos.disabled = false;
       });
     });
     el.btnAplicarDistancia.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarDistancia));
