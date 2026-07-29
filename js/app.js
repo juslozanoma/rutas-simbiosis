@@ -133,7 +133,6 @@
     btnTabDescubre: document.getElementById('btn-tab-descubre'),
     btnTabRuta: document.getElementById('btn-tab-ruta'),
     mobileTabBar: document.getElementById('mobile-tab-bar'),
-    hintParadas: document.getElementById('hint-paradas'),
     btnAltimetria: document.getElementById('btn-altimetria'),
     btnTabAltimetria: document.getElementById('btn-tab-altimetria'),
     btnCerrarAltimetria: document.getElementById('btn-cerrar-altimetria'),
@@ -220,7 +219,6 @@
       }
       el.btnMostrarSitiosCercanos.hidden = state.sitiosFiltrados.length > 0;
       el.btnMostrarSitiosCercanos.disabled = state.sitiosFiltrados.length > 0;
-      el.hintParadas.hidden = false;
     } else {
       el.btnTabPanelDescubre.classList.add('panel-tab--active');
       el.panelLocate.hidden = true;
@@ -229,7 +227,6 @@
       el.panelDescubreActions.hidden = false;
       el.panelSitios.hidden = false;
       el.btnMostrarSitiosCercanos.hidden = true;
-      el.hintParadas.hidden = true;
     }
   }
 
@@ -1745,10 +1742,10 @@
       const distEl = document.createElement('span');
       distEl.className = 'parada-item__dist';
       if (e._distKm != null) {
-        distEl.textContent = e._distKm.toFixed(1) + ' km — ';
+        distEl.textContent = ' — ' + e._distKm.toFixed(1) + ' km';
       }
-      nombre.appendChild(distEl);
       nombre.appendChild(document.createTextNode(item.tipo === 'escala' ? formatMunicipio(e) : e.nombre));
+      nombre.appendChild(distEl);
 
       const acciones = document.createElement('div');
       acciones.className = 'parada-item__acciones';
