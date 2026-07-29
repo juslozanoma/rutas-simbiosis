@@ -160,6 +160,11 @@
     el.btnOrdenDestino.setAttribute('aria-pressed', String(state.ordenSitios === 'destino'));
   }
 
+  function _actualizarTextoBotonesOrden() {
+    if (el.btnOrdenOrigenDes) el.btnOrdenOrigenDes.textContent = state.origen?.nombre ? `Desde ${state.origen.nombre}` : 'Desde Origen';
+    if (el.btnOrdenDestinoDes) el.btnOrdenDestinoDes.textContent = state.destino?.nombre ? `Desde ${state.destino.nombre}` : 'Desde Destino';
+  }
+
   function aplicarOrdenSitios(orden) {
     state.ordenSitios = orden;
     actualizarBotonesOrden();
@@ -754,10 +759,6 @@
       if (el.btnOrdenOrigenDes) el.btnOrdenOrigenDes.classList.toggle('descubre-dropdown__item--active', state.ordenSitios === 'origen');
       if (el.btnOrdenDestinoDes) el.btnOrdenDestinoDes.classList.toggle('descubre-dropdown__item--active', state.ordenSitios === 'destino');
     }
-    function _actualizarTextoBotonesOrden() {
-      if (el.btnOrdenOrigenDes) el.btnOrdenOrigenDes.textContent = state.origen?.nombre ? `Desde ${state.origen.nombre}` : 'Desde Origen';
-      if (el.btnOrdenDestinoDes) el.btnOrdenDestinoDes.textContent = state.destino?.nombre ? `Desde ${state.destino.nombre}` : 'Desde Destino';
-    }
     if (el.btnOrdenOrigen) el.btnOrdenOrigen.addEventListener('click', () => aplicarOrdenSitios('origen'));
     if (el.btnOrdenDestino) el.btnOrdenDestino.addEventListener('click', () => aplicarOrdenSitios('destino'));
     state.ordenSitios = 'origen';
@@ -799,6 +800,18 @@
       el.btnTabPanelDescubre.addEventListener('click', () => activarPanelTab('descubre'));
     }
 
+    el.loadingSitios = document.getElementById('loading-sitios');
+    el.loadingRuta = document.getElementById('loading-ruta');
+    el.loadingMsg = el.loadingSitios.querySelector('.loading-sitios__msg');
+    el.spinnerBike = el.loadingSitios.querySelector('.spinner-bike');
+    el.mensajesCarga = [
+      'Cargando lugares cercanos…',
+      'Buscando sitios turísticos…',
+      'Calculando distancias…',
+      'Preparando resultados…',
+      'Casi listo…',
+    ];
+
     // Init Ruta tab
     activarPanelTab('ruta');
 
@@ -826,17 +839,6 @@
       el.btnOrdenDestinoDes.addEventListener('click', () => { aplicarOrdenSitios('destino'); actualizarBotonesOrden(); });
     }
 
-    el.loadingSitios = document.getElementById('loading-sitios');
-    el.loadingRuta = document.getElementById('loading-ruta');
-    el.loadingMsg = el.loadingSitios.querySelector('.loading-sitios__msg');
-    el.spinnerBike = el.loadingSitios.querySelector('.spinner-bike');
-    el.mensajesCarga = [
-      'Cargando lugares cercanos…',
-      'Buscando sitios turísticos…',
-      'Calculando distancias…',
-      'Preparando resultados…',
-      'Casi listo…',
-    ];
     el.btnMostrarSitiosCercanos.addEventListener('click', () => {
       el.btnMostrarSitiosCercanos.disabled = true;
       el.checkDistancia.checked = true;
@@ -1105,7 +1107,7 @@
     }
     if (!state.rutaActual) { terminar(); return; }
     const rutaFiltro = state.rutaBase || state.rutaActual;
-    const TAMANO_BLOQUE = 400;
+    const TAMANO_BLOQUE = 150;
     const sitios = state.sitios.filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)));
     const idsExcluidos = new Set(state.paradas.map((p) => p.id));
     const distanciaMax = Number(el.filtroDistancia.value);

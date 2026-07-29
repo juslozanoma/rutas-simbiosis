@@ -85,8 +85,8 @@ input, select{ font-family: inherit; }
   border-left: 1px solid var(--line-200);
   display: flex;
   flex-direction: column;
-  padding: 20px;
-  gap: 20px;
+  padding: 0 20px 20px;
+  gap: 12px;
   overflow-y: auto;
 }
 
@@ -532,11 +532,14 @@ input, select{ font-family: inherit; }
 .btn-mostrar-sitios-cercanos[hidden]{ display: none; }
 
 .hint-paradas{
-  margin: 0;
-  font-size: 0.62rem;
+  margin: 8px 0 0;
+  font-size: clamp(0.6rem, 1.8vw, 0.72rem);
   color: var(--text-muted);
   text-align: center;
+  width: 100%;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* --- Spinner de cálculo de ruta (monalisa) --- */
 .loading-ruta{
@@ -730,8 +733,8 @@ input, select{ font-family: inherit; }
   font-size: 0.8rem;
   font-weight: 700;
 }
-.parada-pin--parada{ background: #4a6fa5; }
-.parada-pin--escala{ background: #4a6fa5; }
+.parada-pin--parada{ background: #3b7ebd; }
+.parada-pin--escala{ background: #3b7ebd; }
 
 .sitio-pin{
   width: 34px; height: 34px;
@@ -877,6 +880,7 @@ input, select{ font-family: inherit; }
   gap: 0;
   flex-shrink: 0;
   border-bottom: 1px solid var(--line-200);
+  margin: 0 -20px;
 }
 .panel-tab{
   flex: 1;
@@ -989,17 +993,17 @@ input, select{ font-family: inherit; }
   padding: 7px 6px;
   font-size: 0.72rem;
   font-weight: 600;
-  border: 1.5px solid var(--teal-500);
+  border: 1.5px solid #4a6fa5;
   border-radius: var(--radius-md);
   background: #ffffff;
-  color: var(--teal-500);
+  color: #4a6fa5;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
-#descubre-dropdown-ordenar .descubre-dropdown__item:hover{ background: var(--teal-50); border-color: var(--teal-600); }
-#descubre-dropdown-ordenar .descubre-dropdown__item--active{ background: var(--teal-500); border-color: var(--teal-500); color: #ffffff; }
+#descubre-dropdown-ordenar .descubre-dropdown__item:hover{ background: #eef2f8; border-color: #3b5e8a; }
+#descubre-dropdown-ordenar .descubre-dropdown__item--active{ background: #4a6fa5; border-color: #4a6fa5; color: #ffffff; }
 
 /* Distancia en paradas */
 .parada-item__dist{
