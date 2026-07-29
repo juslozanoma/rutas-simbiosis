@@ -85,8 +85,7 @@ input, select{ font-family: inherit; }
   border-left: 1px solid var(--line-200);
   display: flex;
   flex-direction: column;
-  padding: 0 20px 20px;
-  gap: 12px;
+  gap: 5px;
   overflow-y: auto;
 }
 
@@ -518,7 +517,7 @@ input, select{ font-family: inherit; }
 }
 .btn-mostrar-sitios-cercanos{
   display: block;
-  margin: 10px auto 0;
+  margin: 0px auto 0;
   padding: 0 18px;
   height: 40px;
   border-radius: var(--radius-md);
@@ -538,7 +537,7 @@ input, select{ font-family: inherit; }
 
 .hint-paradas{
   margin: 8px 0 0;
-  font-size: clamp(0.5rem, 2vw, 0.6rem);
+  font-size: 10.6;
   color: var(--text-muted);
   text-align: center;
   width: 100%;
@@ -629,7 +628,14 @@ input, select{ font-family: inherit; }
 }
 .empty-state{ margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
 
-.sitios-lista{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.sitios-lista{
+  list-style: none;
+  margin: 0px 2px 3px 7px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 .sitio-card{
   border: 1px solid var(--line-200);
   border-radius: var(--radius-md);
@@ -927,12 +933,12 @@ input, select{ font-family: inherit; }
 }
 .panel-tab{
   flex: 1;
-  height: 32px;
+  height: 38px;
   border: none;
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.78rem;
-  font-weight: 400;
+  font-size: 12px;
+  font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   border-bottom: 3px solid transparent;
@@ -1023,6 +1029,7 @@ input, select{ font-family: inherit; }
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
+  padding: 5px 4px 0px 7px;
 }
 #descubre-dropdown-desvios{
   margin-top: 6px;
