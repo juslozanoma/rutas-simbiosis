@@ -1023,7 +1023,7 @@
 
   function formatMunicipio(m) {
     if (!m || !m.nombre) return '';
-    if (!m.departamento || m.nombre === m.departamento) return m.nombre;
+    if (m.nombre === 'Bogotá D.C.' || !m.departamento) return m.nombre;
     return m.nombre + ', ' + m.departamento;
   }
 

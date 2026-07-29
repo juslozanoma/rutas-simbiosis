@@ -1093,7 +1093,7 @@ input, select{ font-family: inherit; }
   white-space: nowrap;
 }
 .parada-item__nombre .parada-item__dist{
-  display: block;
+  display: inline;
   font-weight: 400;
 }
 
