@@ -639,7 +639,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     if (!marker) return;
     if (!map.hasLayer(clusterSitios)) map.addLayer(clusterSitios);
     clusterSitios.zoomToShowLayer(marker, () => {
-      marker.openPopup();
+      if (typeof TourismModule !== 'undefined' && TourismModule.mostrarPopupSitio) {
+        const sitio = TourismModule.getSitios().find(s => s.id === sitioId);
+        if (sitio) TourismModule.mostrarPopupSitio(sitio);
+      }
     });
   }
 
@@ -665,6 +668,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       bounds = L.latLngBounds(geojsonOrLatLngs);
     }
     if (bounds.isValid()) map.fitBounds(bounds, { padding });
+  }
+
+  function centrarEn(lat, lon) {
+    map.setView([lat, lon], map.getZoom(), { animate: true });
   }
 
   return {
@@ -695,5 +702,6 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     toggleSitios,
     abrirPopupSitio,
     encuadrar,
+    centrarEn,
   };
 })();

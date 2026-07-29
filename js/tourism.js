@@ -78,6 +78,27 @@ const TourismModule = (() => {
       className: 'site-label',
     });
 
+    marker.__sitioId = sitio.id;
+
+    marker.on('click', () => {
+      mostrarPopupSitio(sitio);
+    });
+
+    return marker;
+  }
+
+  let _popupOverlay = null;
+
+  function ocultarPopupSitio() {
+    if (_popupOverlay) {
+      _popupOverlay.remove();
+      _popupOverlay = null;
+    }
+  }
+
+  function mostrarPopupSitio(sitio) {
+    ocultarPopupSitio();
+
     const tpl = document.getElementById('tpl-popup-sitio');
     const nodo = tpl.content.cloneNode(true);
     nodo.querySelector('.popup-sitio__cat').textContent = sitio.categoria;
@@ -91,45 +112,22 @@ const TourismModule = (() => {
       : '';
     nodo.querySelector('.popup-sitio__dist').textContent = distTxt;
 
-    const wrapper = document.createElement('div');
-    wrapper.appendChild(nodo);
-    marker.bindPopup(wrapper.innerHTML, { className: 'sitio-popup' });
-    marker.__sitioId = sitio.id;
-
-    marker.on('popupopen', (e) => {
-      const popupEl = e.popup.getElement();
-      const container = popupEl.closest('.leaflet-popup');
-      if (container) {
-        container.style.position = 'fixed';
-        container.style.top = '50%';
-        container.style.left = '50%';
-        container.style.transform = 'translate(-50%, -50%)';
-        container.style.margin = '0';
-      }
-      let backdrop = document.getElementById('popup-backdrop');
-      if (!backdrop) {
-        backdrop = document.createElement('div');
-        backdrop.id = 'popup-backdrop';
-        document.body.appendChild(backdrop);
-      }
-      backdrop.hidden = false;
-      backdrop.addEventListener('click', () => marker.closePopup(), { once: true });
-
-      const btn = popupEl.querySelector('.popup-sitio__add');
-      if (btn && !btn.dataset._listener) {
-        btn.dataset._listener = '1';
-        btn.addEventListener('click', () => {
-          marker.closePopup();
-          if (onAgregarParadaCallback) onAgregarParadaCallback(sitio, btn);
-        });
-      }
-    });
-    marker.on('popupclose', () => {
-      const backdrop = document.getElementById('popup-backdrop');
-      if (backdrop) backdrop.hidden = true;
+    const btn = nodo.querySelector('.popup-sitio__add');
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      ocultarPopupSitio();
+      if (onAgregarParadaCallback) onAgregarParadaCallback(sitio, btn);
     });
 
-    return marker;
+    const overlay = document.createElement('div');
+    overlay.className = 'sitio-overlay';
+    overlay.appendChild(nodo);
+    document.body.appendChild(overlay);
+    _popupOverlay = overlay;
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) ocultarPopupSitio();
+    });
   }
 
   return {
@@ -143,5 +141,7 @@ const TourismModule = (() => {
     municipiosUnicos,
     crearMarcador,
     setOnAgregarParada,
+    mostrarPopupSitio,
+    ocultarPopupSitio,
   };
 })();

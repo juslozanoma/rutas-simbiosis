@@ -1267,13 +1267,14 @@
   // Previsualización: ruta directa de origen a un sitio seleccionado
   // -------------------------------------------------------------------
   function previsualizarRutaHaciaSitio(sitio, cardEl) {
-    // Un segundo clic sobre la misma tarjeta cierra la ficha.
     if (state.previewSitioId === sitio.id) {
       limpiarPreview();
+      TourismModule.ocultarPopupSitio();
       return;
     }
     limpiarPreview();
-    MapModule.abrirPopupSitio(sitio.id);
+    MapModule.centrarEn(sitio.lat, sitio.lon);
+    TourismModule.mostrarPopupSitio(sitio);
     state.previewSitioId = sitio.id;
     marcarTarjetaActiva(cardEl);
   }
@@ -1286,6 +1287,7 @@
 
   function limpiarPreview() {
     state.previewSitioId = null;
+    TourismModule.ocultarPopupSitio();
     MapModule.limpiarRutaPreview();
     el.sitiosLista.querySelectorAll('.sitio-card').forEach((card) => {
       card.classList.remove('sitio-card--active');
