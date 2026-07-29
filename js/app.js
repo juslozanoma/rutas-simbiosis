@@ -911,6 +911,10 @@
     el.destinoInput.disabled = cargando;
     document.querySelectorAll('.combo__trigger.escala-trigger').forEach((b) => { b.disabled = cargando; });
     document.querySelectorAll('.sitio-card__add').forEach((b) => { b.disabled = cargando; });
+    if (esMovil()) {
+      el.panelLocate.hidden = cargando;
+      el.btnMostrarSitiosCercanos.hidden = cargando;
+    }
   }
 
   function _habilitarMostrarSitios() {

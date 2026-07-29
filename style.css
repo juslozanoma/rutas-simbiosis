@@ -921,7 +921,6 @@ input, select{ font-family: inherit; }
   font-size: 0.8rem;
   font-weight: 500;
   pointer-events: none;
-  backdrop-filter: blur(4px);
 }
 .mobile-summary strong{ color: #ffffff; font-weight: 700; }
 .stat-mobile--sep{ color: rgba(255,255,255,0.35); font-size: 0.9rem; }
@@ -968,7 +967,6 @@ input, select{ font-family: inherit; }
   gap: 0;
   flex-shrink: 0;
   border-bottom: 1px solid var(--line-200);
-  margin: 0 -20px;
 }
 .panel-tab{
   flex: auto;
@@ -984,7 +982,7 @@ input, select{ font-family: inherit; }
   transition: color 0.1s, border-color 0.1s;
   text-transform: uppercase;
   letter-spacing: 0.01em;
-  display: flow;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
@@ -1135,7 +1133,7 @@ input, select{ font-family: inherit; }
   background: #ffffff;
 }
 .mobile-tab-btn{
-  flex: 1;
+  flex: auto;
   height: 44px;
   border: none;
   background: transparent;
@@ -1204,6 +1202,8 @@ input, select{ font-family: inherit; }
   /* Mostrar botón de sitios solo en la pestaña Ruta */
   #btn-mostrar-sitios{ display: flex !important; align-items: center; justify-content: center; padding: 8px 18px; }
   #app[data-mobile-tab="descubre"] #btn-mostrar-sitios{ display: none !important; }
+  #btn-mostrar-sitios[hidden],
+  #app[data-mobile-tab="ruta"] #btn-mostrar-sitios[hidden]{ display: none !important; }
 
   /* El panel de sitios siempre visible en móvil (muestra u oculta hijos según pestaña) */
   .panel-sites[hidden]{ display: flex !important; }
@@ -1223,6 +1223,8 @@ input, select{ font-family: inherit; }
   .side-panel > .panel-sites{ order: 3; }
   .side-panel > #btn-mostrar-sitios{ order: 4; }
   .side-panel > #loading-sitios{ order: 2; }
+  .side-panel > #loading-ruta{ order: 2; }
+  #app[data-mobile-tab="ruta"] .loading-ruta:not([hidden]){ flex: 1; min-height: 0; }
 
   #app[data-mobile-tab="descubre"] .panel-locate{ display: none; }
   #app[data-mobile-tab="descubre"] .panel-paradas{ display: none; }
