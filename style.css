@@ -432,7 +432,7 @@ input, select{ font-family: inherit; }
 }
 .filter-row__check{
   width: 17px; height: 17px;
-  accent-color: var(--teal-500);
+  accent-color: #4a6fa5;
   flex-shrink: 0;
   cursor: pointer;
 }
@@ -448,7 +448,7 @@ input, select{ font-family: inherit; }
 .filter-row__value{ color: var(--text-strong); font-size: 0.72rem; font-weight: 600; }
 .filter-row__field input[type="range"]{
   width: 100%;
-  accent-color: var(--teal-500);
+  accent-color: #4a6fa5;
   height: 18px;
 }
 .filter-row__field input[type="range"]:disabled{ opacity: 0.4; }
@@ -869,15 +869,17 @@ input, select{ font-family: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 12px;
+  padding: 7px 16px;
   background: var(--ink-900);
   color: #ffffff;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 500;
   pointer-events: none;
+  backdrop-filter: blur(4px);
 }
 .mobile-summary strong{ color: #ffffff; font-weight: 700; }
+.stat-mobile--sep{ color: rgba(255,255,255,0.35); font-size: 0.9rem; }
 
 /* Botón flotante de toggle sitios en el mapa */
 .btn-toggle-sitios--float{
@@ -925,18 +927,22 @@ input, select{ font-family: inherit; }
 }
 .panel-tab{
   flex: 1;
-  height: 40px;
+  height: 32px;
   border: none;
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 400;
   font-family: inherit;
   cursor: pointer;
   border-bottom: 3px solid transparent;
   transition: color 0.1s, border-color 0.1s;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 .panel-tab:hover{ color: var(--text-strong); }
 .panel-tab--active{ color: var(--teal-500); border-bottom-color: var(--teal-500); }
@@ -1007,24 +1013,16 @@ input, select{ font-family: inherit; }
   flex-direction: column;
   gap: 2px;
 }
-.descubre-dropdown[hidden]{ display: none; }
+.descubre-dropdown[hidden]{ display: none !important; }
 #descubre-dropdown-categorias{
-  overflow-x: auto;
-  overflow-y: hidden;
-  display: flex;
-  padding-bottom: 4px;
-  scrollbar-width: none;
+  max-height: 90px;
+  overflow-y: auto;
+  padding-bottom: 2px;
 }
-#descubre-dropdown-categorias::-webkit-scrollbar{ display: none; }
 #descubre-dropdown-categorias .panel-categorias__grid{
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 5px;
-  flex-shrink: 0;
-  padding: 2px 0;
-}
-#descubre-dropdown-categorias .panel-categorias__grid > .categoria-chip{
-  flex-shrink: 0;
 }
 #descubre-dropdown-desvios{
   margin-top: 6px;

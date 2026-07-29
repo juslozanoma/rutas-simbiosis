@@ -37,8 +37,9 @@
   <!-- ============ MAPA A PANTALLA COMPLETA ============ -->
   <main class="map-full">
     <div class="mobile-summary" id="mobile-summary">
-      <span>Distancia: <strong class="mono" id="stat-distancia-mobile">—</strong></span>
-      <span> · Tiempo estimado: <strong class="mono" id="stat-tiempo-mobile">—</strong> h</span>
+      <span class="stat-mobile stat-mobile--dist">Distancia: <strong class="mono" id="stat-distancia-mobile">—</strong></span>
+      <span class="stat-mobile stat-mobile--sep" aria-hidden="true">·</span>
+      <span class="stat-mobile stat-mobile--dur">Tiempo estimado: <strong class="mono" id="stat-tiempo-mobile">—</strong></span>
     </div>
     <div id="map" role="application" aria-label="Mapa interactivo de la ruta y los sitios turísticos"></div>
     <button type="button" id="btn-toggle-sitios-float" class="btn-toggle-sitios btn-toggle-sitios--float" title="Mostrar/ocultar sitios en el mapa" aria-pressed="true">
@@ -85,7 +86,7 @@
     <!-- Pestañas del panel (escritorio) -->
     <div class="panel-tab-bar" id="panel-tab-bar">
       <button type="button" id="btn-tab-panel-ruta" class="panel-tab panel-tab--active">Ruta</button>
-      <button type="button" id="btn-tab-panel-descubre" class="panel-tab" disabled>Descubre Colombia</button>
+      <button type="button" id="btn-tab-panel-descubre" class="panel-tab" disabled>Descubre Colombia <span class="badge-count mono" id="sitios-contador-tab-desktop">0</span></button>
     </div>
 
     <!-- Ruta: origen/destino + paradas + monalisa -->

@@ -127,6 +127,7 @@
     statDistanciaMobile: document.getElementById('stat-distancia-mobile'),
     statTiempoMobile: document.getElementById('stat-tiempo-mobile'),
     sitiosContadorTab: document.getElementById('sitios-contador-tab'),
+    sitiosContadorTabDesktop: document.getElementById('sitios-contador-tab-desktop'),
     btnTabDescubre: document.getElementById('btn-tab-descubre'),
     btnTabRuta: document.getElementById('btn-tab-ruta'),
     mobileTabBar: document.getElementById('mobile-tab-bar'),
@@ -175,6 +176,33 @@
     actualizarBotonesOrden();
     _actualizarEstadoBotonesDescubre();
     renderizarSitios(state.sitiosFiltrados);
+  }
+
+  function activarPanelTab(tab) {
+    document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('panel-tab--active'));
+    if (tab === 'ruta') {
+      el.btnTabPanelRuta.classList.add('panel-tab--active');
+      el.panelDescubreActions.hidden = true;
+      el.loadingSitios.hidden = true;
+      el.panelSitios.hidden = true;
+      el.panelSitios.scrollTop = 0;
+      el.panelLocate.hidden = false;
+      el.panelEscalas.hidden = true;
+      if (state.rutaActual) {
+        el.panelParadas.hidden = false;
+      }
+      el.btnMostrarSitiosCercanos.hidden = false;
+      el.hintParadas.hidden = false;
+    } else {
+      el.btnTabPanelDescubre.classList.add('panel-tab--active');
+      el.panelLocate.hidden = true;
+      el.panelEscalas.hidden = true;
+      el.panelParadas.hidden = true;
+      el.panelDescubreActions.hidden = false;
+      el.panelSitios.hidden = false;
+      el.btnMostrarSitiosCercanos.hidden = true;
+      el.hintParadas.hidden = true;
+    }
   }
 
   // -------------------------------------------------------------------
@@ -767,33 +795,6 @@
     _actualizarEstadoBotonesDescubre();
 
     // Tab switching (panel tabs - desktop)
-    function activarPanelTab(tab) {
-      document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('panel-tab--active'));
-      if (tab === 'ruta') {
-        el.btnTabPanelRuta.classList.add('panel-tab--active');
-        el.panelDescubreActions.hidden = true;
-        el.loadingSitios.hidden = true;
-        el.panelSitios.hidden = true;
-        el.panelSitios.scrollTop = 0;
-        el.panelLocate.hidden = false;
-        el.panelEscalas.hidden = true;
-        if (state.rutaActual) {
-          el.panelParadas.hidden = false;
-        }
-        el.btnMostrarSitiosCercanos.hidden = false;
-        el.hintParadas.hidden = false;
-      } else {
-        el.btnTabPanelDescubre.classList.add('panel-tab--active');
-        el.panelLocate.hidden = true;
-        el.panelEscalas.hidden = true;
-        el.panelParadas.hidden = true;
-        el.panelDescubreActions.hidden = false;
-        el.panelSitios.hidden = false;
-        el.btnMostrarSitiosCercanos.hidden = true;
-        el.hintParadas.hidden = true;
-      }
-    }
-
     if (el.btnTabPanelRuta) {
       el.btnTabPanelRuta.addEventListener('click', () => activarPanelTab('ruta'));
     }
@@ -1050,6 +1051,7 @@
       el.statTiempo.textContent = '—';
       if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = '—';
       if (el.statTiempoMobile) el.statTiempoMobile.textContent = '—';
+      console.warn('Error al calcular ruta', err);
     } finally {
       ponerEnCargaRuta(false);
     }
@@ -1209,6 +1211,7 @@
     const sitiosOrdenados = ordenarSitios(sitios);
     el.sitiosContador.textContent = String(sitiosOrdenados.length);
     if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = String(sitiosOrdenados.length);
+    if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = String(sitiosOrdenados.length);
 
     if (sitiosOrdenados.length === 0) {
       el.sitiosVacio.hidden = false;
@@ -1441,13 +1444,11 @@
     MapModule.setMarcadoresParadas(state.paradas);
     MapModule.encuadrar(state.rutaActual.geojson);
     const distTexto = Utils.formatearDistancia(state.rutaActual.distanciaMetros);
+    const durTexto = Utils.formatearDuracion(state.rutaActual.duracionSegundos);
     el.statDistancia.textContent = distTexto;
-    el.statTiempo.textContent = Utils.formatearDuracion(state.rutaActual.duracionSegundos);
+    el.statTiempo.textContent = durTexto;
     if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = distTexto;
-    if (el.statTiempoMobile) {
-      const h = state.rutaActual.duracionSegundos / 3600;
-      el.statTiempoMobile.textContent = `${h.toFixed(1)}`;
-    }
+    if (el.statTiempoMobile) el.statTiempoMobile.textContent = durTexto;
     renderizarParadas();
   }
 
@@ -1551,11 +1552,15 @@
     if (idx === -1) return;
     state.paradas.splice(idx, 1);
     sincronizarOrden();
+    if (state.rutaActual) {
+      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
+      state.sitiosFiltrados = [];
+      state.sitiosFiltradosBase = [];
+      renderizarSitios([]);
+      await aplicarRutaConDesvios();
+    }
     renderizarParadas();
     MapModule.setMarcadoresParadas(state.paradas);
-    if (state.paradas.length === 0) return;
-    _habilitarMostrarSitios();
-    el.panelSitios.hidden = true;
   }
 
   function eliminarEscala(id) {
