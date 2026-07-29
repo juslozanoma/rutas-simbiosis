@@ -1151,6 +1151,7 @@ input, select{ font-family: inherit; }
 }
 .mobile-tab-btn--active,
 .mobile-tab-btn:active{ color: var(--teal-500); border-bottom-color: var(--teal-500); }
+.mobile-tab-btn:disabled{ opacity: 0.35; cursor: default; pointer-events: none; }
 
 /* ==========================================================================
    RESPONSIVE
@@ -1218,6 +1219,7 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="ruta"]  .panel-categorias{ display: none !important; }
   #app[data-mobile-tab="ruta"]  .panel-sites__scroll{ display: none; }
   #app[data-mobile-tab="ruta"]  .panel-sites > h2{ display: none; }
+  #app[data-mobile-tab="ruta"]  .panel-descubre-actions{ display: none !important; }
 
   #app[data-mobile-tab="altimetria"] .panel-locate{ display: none; }
   #app[data-mobile-tab="altimetria"] .panel-paradas{ display: none; }
@@ -1287,6 +1289,10 @@ input, select{ font-family: inherit; }
 /* Altimetría como pestaña del panel (móvil) */
 .altimetria-panel{ display: none; flex-direction: column; padding: 8px 0; }
 .altimetria-panel[hidden]{ display: none; }
+
+/* Icono de Colombia en pestaña Descubre */
+.tab-descubre-icon{ display: inline; vertical-align: middle; filter: brightness(0) invert(0.5); }
+.tab-descubre-icon[hidden]{ display: none; }
 
 .altimetria__header{
   display: flex;

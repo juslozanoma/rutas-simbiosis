@@ -87,7 +87,7 @@
     <!-- Pestañas del panel (escritorio) -->
     <div class="panel-tab-bar" id="panel-tab-bar">
       <button type="button" id="btn-tab-panel-ruta" class="panel-tab panel-tab--active">Ruta <img src="public/airplane.svg" alt="" width="14" height="14" style="filter: brightness(0) invert(0.5);"></button>
-      <button type="button" id="btn-tab-panel-descubre" class="panel-tab" disabled>Descubre Colombia <span class="badge-count mono" id="sitios-contador-tab-desktop">0</span></button>
+      <button type="button" id="btn-tab-panel-descubre" class="panel-tab" disabled>Descubre Colombia <img src="public/colombia.svg" alt="" width="13" height="13" class="tab-descubre-icon" id="ico-descubre-tab-desktop"><span class="badge-count mono" id="sitios-contador-tab-desktop" hidden>0</span></button>
     </div>
 
     <!-- Ruta: origen/destino + paradas + monalisa -->
@@ -274,9 +274,10 @@
     </button>
     <button type="button" class="mobile-tab-btn mobile-tab-btn--active" data-tab="ruta" id="btn-tab-ruta">Rutas <img src="public/airplane.svg" alt="" width="16" height="16" style="filter: brightness(0) invert(0.5);">
     </button>
-    <button type="button" class="mobile-tab-btn" data-tab="descubre" id="btn-tab-descubre">
+    <button type="button" class="mobile-tab-btn" data-tab="descubre" id="btn-tab-descubre" disabled>
       <span>Descubre Colombia</span>
-      <span class="badge-count mono" id="sitios-contador-tab">0</span>
+      <img src="public/colombia.svg" alt="" width="13" height="13" class="tab-descubre-icon" id="ico-descubre-tab">
+      <span class="badge-count mono" id="sitios-contador-tab" hidden>0</span>
     </button>
   </nav>
 </div>

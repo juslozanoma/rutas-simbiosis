@@ -128,6 +128,8 @@
     statTiempoMobile: document.getElementById('stat-tiempo-mobile'),
     sitiosContadorTab: document.getElementById('sitios-contador-tab'),
     sitiosContadorTabDesktop: document.getElementById('sitios-contador-tab-desktop'),
+    icoDescubreTab: document.getElementById('ico-descubre-tab'),
+    icoDescubreTabDesktop: document.getElementById('ico-descubre-tab-desktop'),
     btnTabDescubre: document.getElementById('btn-tab-descubre'),
     btnTabRuta: document.getElementById('btn-tab-ruta'),
     mobileTabBar: document.getElementById('mobile-tab-bar'),
@@ -753,6 +755,7 @@
       setTimeout(() => MapModule.invalidateSize(), 220);
     }
     function toggleMobileTab(tab) {
+      if (tab === 'descubre' && el.btnTabDescubre && el.btnTabDescubre.disabled) return;
       const currentTab = el.appRoot.getAttribute('data-mobile-tab');
       const isCollapsed = el.appRoot.getAttribute('data-mobile-panel') === 'collapsed';
       if (currentTab === tab && !isCollapsed) {
@@ -838,6 +841,19 @@
       'Casi listo…',
     ];
 
+    // Cerrar menús de Descubre al desplazar la lista o interactuar con el mapa
+    if (el.sitiosLista) {
+      el.sitiosLista.addEventListener('scroll', () => {
+        if (desplegandoDescubre) _cerrarDesplegadosDescubre();
+      }, { passive: true });
+    }
+    document.getElementById('map')?.addEventListener('mousedown', () => {
+      if (desplegandoDescubre) _cerrarDesplegadosDescubre();
+    });
+    document.getElementById('map')?.addEventListener('touchstart', () => {
+      if (desplegandoDescubre) _cerrarDesplegadosDescubre();
+    }, { passive: true });
+
     // Init Ruta tab
     activarPanelTab('ruta');
 
@@ -872,9 +888,19 @@
       el.filtroDistancia.value = '5';
       el.filtroDistanciaValor.textContent = '5 km';
       if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
+      if (el.btnTabDescubre) el.btnTabDescubre.disabled = false;
+      // Ocultar icono de Colombia, mostrar contador de sitios
+      if (el.icoDescubreTab) el.icoDescubreTab.hidden = true;
+      if (el.icoDescubreTabDesktop) el.icoDescubreTabDesktop.hidden = true;
+      if (el.sitiosContadorTab) el.sitiosContadorTab.hidden = false;
+      if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.hidden = false;
       if (el.loadingRuta) el.loadingRuta.hidden = true;
       activarPanelTab('descubre');
       if (esMovil()) setMobileTab('descubre');
+      // En móvil, abrir el menú de ordenar al mostrar sitios
+      if (esMovil() && el.btnDescubreOrdenar) {
+        el.btnDescubreOrdenar.click();
+      }
       el.loadingSitios.hidden = false;
       ejecutarFiltradoProgresivo(() => {
         el.panelSitios.hidden = false;
@@ -976,6 +1002,11 @@
       return;
     }
 
+    // Fullscreen en móvil durante el gesto del usuario (antes de cualquier await)
+    if (esMovil() && !document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+
     // Una nueva ruta principal invalida cualquier parada agregada previamente
     // (excepto cuando se reordenan escalas, que deben conservarse).
     if (!conservarParadas) {
@@ -1064,12 +1095,6 @@
 
       // Volver a la pestaña Ruta en móvil y reiniciar estado de sitios
       if (esMovil()) setMobileTab('ruta');
-
-      // En dispositivos móviles, calcular la ruta pone toda la página en
-      // pantalla completa (modo nativo del navegador) sin ocultar el panel.
-      if (esMovil() && !document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      }
 
     } catch (err) {
       el.statDistancia.textContent = '—';
