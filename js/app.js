@@ -937,8 +937,8 @@
       if (el.loadingRuta) el.loadingRuta.hidden = true;
       activarPanelTab('descubre');
       if (esMovil()) setMobileTab('descubre');
-      // En móvil, abrir el menú de ordenar al mostrar sitios
-      if (esMovil() && el.btnDescubreOrdenar) {
+      // Abrir el menú de ordenar al mostrar sitios
+      if (el.btnDescubreOrdenar) {
         el.btnDescubreOrdenar.click();
       }
       el.loadingSitios.hidden = false;
@@ -989,7 +989,6 @@
   function garantizarVisibilidadMovil() {
     if (esMovil()) {
       if (el.mobileTabBar) el.mobileTabBar.removeAttribute('hidden');
-      if (el.btnMostrarSitiosCercanos) el.btnMostrarSitiosCercanos.removeAttribute('hidden');
       setTimeout(() => MapModule.invalidateSize(), 50);
     }
   }
@@ -1729,6 +1728,13 @@
       const nombreEl = document.createElement('span');
       nombreEl.className = 'parada-item__nombre';
       nombreEl.textContent = nombre;
+
+      if (tipo === 'destino' && state.rutaActual?.distanciaMetros) {
+        const distEl = document.createElement('span');
+        distEl.className = 'parada-item__dist';
+        distEl.textContent = ' — ' + (state.rutaActual.distanciaMetros / 1000).toFixed(1) + ' km';
+        nombreEl.appendChild(distEl);
+      }
 
       li.appendChild(num);
       li.appendChild(nombreEl);
