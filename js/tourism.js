@@ -74,7 +74,7 @@ const TourismModule = (() => {
     marker.bindTooltip(sitio.nombre, {
       permanent: true,
       direction: 'top',
-      offset: [0, -12],
+      offset: [0, -22],
       className: 'site-label',
     });
 

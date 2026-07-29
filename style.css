@@ -552,16 +552,16 @@ input, select{ font-family: inherit; }
   display: none;
 }
 .loading-ruta .loader{
-  width: 120px;
-  height: 120px;
+  width: 160px;
+  height: 160px;
   display: block;
   margin: 0 auto;
 }
 .loading-ruta__msg{
   display: block;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
-  margin-bottom: 10px;
+  margin-top: 12px;
 }
 
 .loading-sitios{
@@ -684,15 +684,15 @@ input, select{ font-family: inherit; }
 
 /* Etiqueta permanente de nombre de sitio turístico (visible al individualizarse) */
 .site-label{
-  background: rgba(255,255,255,0.88);
+  background: rgba(255,255,255,0.92);
   border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 4px;
-  padding: 1px 5px;
-  font-size: 0.6rem;
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-size: 0.72rem;
   font-family: var(--font-body);
   color: var(--text-strong);
-  font-weight: 500;
-  box-shadow: 0 1px 3px rgba(20,32,27,0.15);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(20,32,27,0.2);
   white-space: nowrap;
 }
 .site-label::before{ display: none; }
@@ -951,6 +951,7 @@ input, select{ font-family: inherit; }
 }
 .descubre-btn:hover{ background: var(--teal-50); border-color: var(--teal-600); }
 .descubre-btn--active{ background: var(--teal-500); border-color: var(--teal-500); color: #ffffff; }
+.descubre-btn--active:hover{ background: var(--teal-600); border-color: var(--teal-600); }
 .descubre-dropdown{
   width: 100%;
   display: flex;
@@ -958,6 +959,17 @@ input, select{ font-family: inherit; }
   gap: 2px;
 }
 .descubre-dropdown[hidden]{ display: none; }
+#descubre-dropdown-categorias{
+  max-height: 110px;
+  overflow-y: auto;
+}
+#descubre-dropdown-desvios{
+  margin-top: 6px;
+}
+#descubre-dropdown-ordenar{
+  flex-direction: row;
+  gap: 6px;
+}
 .descubre-dropdown__item{
   padding: 6px 10px;
   font-size: 0.75rem;
@@ -971,6 +983,23 @@ input, select{ font-family: inherit; }
   border-radius: var(--radius-sm);
 }
 .descubre-dropdown__item:hover{ background: var(--teal-50); }
+#descubre-dropdown-ordenar .descubre-dropdown__item{
+  flex: 1;
+  text-align: center;
+  padding: 7px 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1.5px solid var(--teal-500);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  color: var(--teal-500);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+#descubre-dropdown-ordenar .descubre-dropdown__item:hover{ background: var(--teal-50); border-color: var(--teal-600); }
+#descubre-dropdown-ordenar .descubre-dropdown__item--active{ background: var(--teal-500); border-color: var(--teal-500); color: #ffffff; }
 
 /* Distancia en paradas */
 .parada-item__dist{
@@ -1083,7 +1112,7 @@ input, select{ font-family: inherit; }
   .side-panel > .panel-paradas{ order: 2; }
   .side-panel > .panel-sites{ order: 3; }
   .side-panel > #btn-mostrar-sitios{ order: 4; }
-  .side-panel > #loading-sitios{ order: 5; }
+  .side-panel > #loading-sitios{ order: 2; }
 
   #app[data-mobile-tab="descubre"] .panel-locate{ display: none; }
   #app[data-mobile-tab="descubre"] .panel-paradas{ display: none; }

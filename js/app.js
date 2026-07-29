@@ -106,6 +106,8 @@
     descubreDropdownCategorias: document.getElementById('descubre-dropdown-categorias'),
     descubreDropdownDesvios: document.getElementById('descubre-dropdown-desvios'),
     descubreDropdownOrdenar: document.getElementById('descubre-dropdown-ordenar'),
+    btnOrdenOrigenDes: document.getElementById('btn-descubre-orden-origen'),
+    btnOrdenDestinoDes: document.getElementById('btn-descubre-orden-destino'),
     categoriasGrid: document.getElementById('categorias-grid'),
 
 
@@ -231,13 +233,13 @@
   // Combos de búsqueda (origen / destino)
   // -------------------------------------------------------------------
   function initCombos() {
-    setupCombo(el.origenInput, el.origenList, (m) => { state.origen = m; actualizarEstadoBotonCalcular(); }, () => {
+    setupCombo(el.origenInput, el.origenList, (m) => { state.origen = m; actualizarEstadoBotonCalcular(); _actualizarTextoBotonesOrden(); }, () => {
       const ids = new Set();
       if (state.destino?.id) ids.add(state.destino.id);
       state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
       return ids;
     }, true);
-    setupCombo(el.destinoInput, el.destinoList, (m) => { state.destino = m; actualizarEstadoBotonCalcular(); }, () => {
+    setupCombo(el.destinoInput, el.destinoList, (m) => { state.destino = m; actualizarEstadoBotonCalcular(); _actualizarTextoBotonesOrden(); }, () => {
       const ids = new Set();
       if (state.origen?.id) ids.add(state.origen.id);
       state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
@@ -663,7 +665,6 @@
     } else {
       state.categoriasSeleccionadas.push(cat);
     }
-    if (typeof _actualizarEstadoBotonesDescubre === 'function') _actualizarEstadoBotonesDescubre();
     if (state.rutaActual) ejecutarFiltrado();
   }
 
@@ -745,13 +746,17 @@
     }
     function _cerrarDesplegadosDescubre() {
       desplegandoDescubre = null;
+      [el.btnDescubreCategorias, el.btnDescubreDesvios, el.btnDescubreOrdenar].forEach(b => { if (b) b.classList.remove('descubre-btn--active'); });
       [el.descubreDropdownCategorias, el.descubreDropdownDesvios, el.descubreDropdownOrdenar].forEach(d => { if (d) d.hidden = true; });
       _actualizarEstadoBotonesDescubre();
     }
     function _actualizarEstadoBotonesDescubre() {
-      if (el.btnDescubreCategorias) el.btnDescubreCategorias.classList.toggle('descubre-btn--active', state.categoriasSeleccionadas.length > 0);
-      if (el.btnDescubreDesvios) el.btnDescubreDesvios.classList.toggle('descubre-btn--active', el.checkDistancia.checked || el.checkTiempo.checked);
-      if (el.btnDescubreOrdenar) el.btnDescubreOrdenar.classList.toggle('descubre-btn--active', !!state.ordenSitios);
+      if (el.btnOrdenOrigenDes) el.btnOrdenOrigenDes.classList.toggle('descubre-dropdown__item--active', state.ordenSitios === 'origen');
+      if (el.btnOrdenDestinoDes) el.btnOrdenDestinoDes.classList.toggle('descubre-dropdown__item--active', state.ordenSitios === 'destino');
+    }
+    function _actualizarTextoBotonesOrden() {
+      if (el.btnOrdenOrigenDes) el.btnOrdenOrigenDes.textContent = state.origen?.nombre ? `Desde ${state.origen.nombre}` : 'Desde Origen';
+      if (el.btnOrdenDestinoDes) el.btnOrdenDestinoDes.textContent = state.destino?.nombre ? `Desde ${state.destino.nombre}` : 'Desde Destino';
     }
     if (el.btnOrdenOrigen) el.btnOrdenOrigen.addEventListener('click', () => aplicarOrdenSitios('origen'));
     if (el.btnOrdenDestino) el.btnOrdenDestino.addEventListener('click', () => aplicarOrdenSitios('destino'));
@@ -765,6 +770,7 @@
       if (tab === 'ruta') {
         el.btnTabPanelRuta.classList.add('panel-tab--active');
         el.panelDescubreActions.hidden = true;
+        el.loadingSitios.hidden = true;
         el.panelSitios.hidden = true;
         el.panelSitios.scrollTop = 0;
         el.panelLocate.hidden = false;
@@ -773,6 +779,7 @@
           el.panelParadas.hidden = false;
         }
         el.btnMostrarSitiosCercanos.hidden = false;
+        el.hintParadas.hidden = false;
       } else {
         el.btnTabPanelDescubre.classList.add('panel-tab--active');
         el.panelLocate.hidden = true;
@@ -781,6 +788,7 @@
         el.panelDescubreActions.hidden = false;
         el.panelSitios.hidden = false;
         el.btnMostrarSitiosCercanos.hidden = true;
+        el.hintParadas.hidden = true;
       }
     }
 
@@ -811,13 +819,11 @@
     }
 
     // Sort buttons in descubre dropdown
-    const btnOrdenOrigenDes = document.getElementById('btn-descubre-orden-origen');
-    const btnOrdenDestinoDes = document.getElementById('btn-descubre-orden-destino');
-    if (btnOrdenOrigenDes) {
-      btnOrdenOrigenDes.addEventListener('click', () => { aplicarOrdenSitios('origen'); actualizarBotonesOrden(); });
+    if (el.btnOrdenOrigenDes) {
+      el.btnOrdenOrigenDes.addEventListener('click', () => { aplicarOrdenSitios('origen'); actualizarBotonesOrden(); });
     }
-    if (btnOrdenDestinoDes) {
-      btnOrdenDestinoDes.addEventListener('click', () => { aplicarOrdenSitios('destino'); actualizarBotonesOrden(); });
+    if (el.btnOrdenDestinoDes) {
+      el.btnOrdenDestinoDes.addEventListener('click', () => { aplicarOrdenSitios('destino'); actualizarBotonesOrden(); });
     }
 
     el.loadingSitios = document.getElementById('loading-sitios');
@@ -832,7 +838,6 @@
       'Casi listo…',
     ];
     el.btnMostrarSitiosCercanos.addEventListener('click', () => {
-      if (el.hintParadas) el.hintParadas.hidden = true;
       el.btnMostrarSitiosCercanos.disabled = true;
       el.checkDistancia.checked = true;
       el.filtroDistancia.disabled = false;
@@ -841,7 +846,6 @@
       if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
       if (el.loadingRuta) el.loadingRuta.hidden = true;
       activarPanelTab('descubre');
-      el.panelSitios.hidden = true;
       if (esMovil()) setMobileTab('descubre');
       el.loadingSitios.hidden = false;
       ejecutarFiltradoProgresivo(() => {
@@ -857,12 +861,10 @@
     el.checkDistancia.addEventListener('change', () => {
       el.filtroDistancia.disabled = !el.checkDistancia.checked;
       actualizarEstadoBotonesRetry();
-      _actualizarEstadoBotonesDescubre();
     });
     el.checkTiempo.addEventListener('change', () => {
       el.filtroTiempo.disabled = !el.checkTiempo.checked;
       actualizarEstadoBotonesRetry();
-      _actualizarEstadoBotonesDescubre();
     });
     el.filtroDistancia.addEventListener('input', () => {
       el.filtroDistanciaValor.textContent = `${el.filtroDistancia.value} km`;
@@ -1016,11 +1018,11 @@
 
       // Activar pestaña Ruta
       el.panelEscalas.hidden = true;
-      if (el.hintParadas) el.hintParadas.hidden = true;
       activarPanelTab('ruta');
 
       // Enable "Mostrar sitios" button
       _habilitarMostrarSitios();
+      _actualizarTextoBotonesOrden();
       el.panelSitios.hidden = true;
       MapModule.limpiarSitios();
       state.sitiosFiltrados = [];

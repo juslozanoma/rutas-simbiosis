@@ -127,13 +127,11 @@
           </span>
         </button>
       </div>
+      <p class="hint-paradas" id="hint-paradas">No olvides añadir tus paradas antes de mostrar los sitios cercanos.</p>
     </section>
 
     <button type="button" id="btn-mostrar-sitios" class="btn-mostrar-sitios-cercanos" disabled>Mostrar sitios turísticos cercanos</button>
-
-    <p class="hint-paradas" id="hint-paradas">No olvides añadir tus paradas antes de mostrar los sitios cercanos.</p>
     <div id="loading-ruta" class="loading-ruta" hidden>
-      <span class="loading-ruta__msg">Calculando la mejor ruta…</span>
       <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="loader">
         <path pathLength="360" d="M 56.3752 2 H 7.6248 C 7.2797 2 6.9999 2.268 6.9999 2.5985 V 61.4015 C 6.9999 61.7321 7.2797 62 7.6248 62 H 56.3752 C 56.7203 62 57.0001 61.7321 57.0001 61.4015 V 2.5985 C 57.0001 2.268 56.7203 2 56.3752 2 Z"/>
         <path pathLength="360" d="M 55.7503 60.803 H 8.2497 V 3.1971 H 55.7503 V 60.803 Z"/>
@@ -151,6 +149,7 @@
         <path pathLength="360" d="M 49.5975 9.0325 V 19.3422 H 38.689 C 38.5937 18.6105 38.5061 17.9301 38.4329 17.3569 C 38.2063 15.5828 37.4422 13.9868 36.2237 12.7413 C 34.8748 11.3624 33.2514 10.6633 31.3984 10.6633 C 27.3688 10.6633 25.8233 13.5309 25.556 15.0901 C 25.1526 15.5932 24.3175 16.7856 23.916 18.46 C 23.8568 18.7069 23.8106 19.0066 23.7778 19.3421 H 14.4025 V 9.0323 H 49.5975 Z"/>
         <path pathLength="360" d="M 30.2223 21.2875 C 30.5674 21.2875 30.8471 21.0195 30.8471 20.6889 V 18.92 L 31.9916 18.9675 C 32.3376 18.9833 32.628 18.7259 32.643 18.3956 C 32.658 18.0654 32.3907 17.786 32.0459 17.7717 L 30.2495 17.6969 C 30.077 17.6889 29.9133 17.7497 29.7902 17.8624 C 29.6671 17.9753 29.5976 18.1315 29.5976 18.2948 V 20.6889 C 29.5974 21.0195 29.8772 21.2875 30.2223 21.2875 Z"/>
       </svg>
+      <span class="loading-ruta__msg">Calculando la mejor ruta…</span>
     </div>
     <section class="panel-paradas" id="panel-paradas" hidden>
       <h2 class="panel-paradas__title">
@@ -207,6 +206,38 @@
       </div>
     </div>
 
+    <div id="loading-sitios" class="loading-sitios" hidden>
+      <span class="loading-sitios__msg">Cargando lugares cercanos…</span>
+      <svg class="spinner-bike" viewBox="0 0 48 30">
+        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1">
+          <g transform="translate(9.5,19)">
+            <circle class="spinner-bike_tire" r="9" stroke-dasharray="56.549 56.549"></circle>
+            <g class="spinner-bike_spokes-spin" stroke-dasharray="31.416 31.416" stroke-dashoffset="-23.562">
+              <circle class="spinner-bike_spokes" r="5"></circle>
+              <circle class="spinner-bike_spokes" r="5" transform="rotate(180,0,0)"></circle>
+            </g>
+          </g>
+          <g transform="translate(24,19)">
+            <g class="spinner-bike_pedals-spin" stroke-dasharray="25.133 25.133" stroke-dashoffset="-21.991" transform="rotate(67.5,0,0)">
+              <circle class="spinner-bike_pedals" r="4"></circle>
+              <circle class="spinner-bike_pedals" r="4" transform="rotate(180,0,0)"></circle>
+            </g>
+          </g>
+          <g transform="translate(38.5,19)">
+            <circle class="spinner-bike_tire" r="9" stroke-dasharray="56.549 56.549"></circle>
+            <g class="spinner-bike_spokes-spin" stroke-dasharray="31.416 31.416" stroke-dashoffset="-23.562">
+              <circle class="spinner-bike_spokes" r="5"></circle>
+              <circle class="spinner-bike_spokes" r="5" transform="rotate(180,0,0)"></circle>
+            </g>
+          </g>
+          <polyline class="spinner-bike_seat" points="14 3,18 3" stroke-dasharray="5 5"></polyline>
+          <polyline class="spinner-bike_body" points="16 3,24 19,9.5 19,18 8,34 7,24 19" stroke-dasharray="79 79"></polyline>
+          <path class="spinner-bike_handlebars" d="m30,2h6s1,0,1,1-1,1-1,1" stroke-dasharray="10 10"></path>
+          <polyline class="spinner-bike_front" points="32.5 2,38.5 19" stroke-dasharray="19 19"></polyline>
+        </g>
+      </svg>
+    </div>
+
     <section class="panel-sites" id="panel-sites" hidden>
       <div class="panel-sites__header">
         <span class="badge-count mono" id="sitios-contador">0</span>
@@ -215,37 +246,6 @@
       <div class="panel-sites__scroll">
         <p class="empty-state" id="sitios-vacio">Activa un filtro y pulsa el botón de aplicar para ver los sitios turísticos cercanos.</p>
         <ul class="sitios-lista" id="sitios-lista" hidden></ul>
-      </div>
-      <div id="loading-sitios" class="loading-sitios" hidden>
-        <span class="loading-sitios__msg">Cargando lugares cercanos…</span>
-        <svg class="spinner-bike" viewBox="0 0 48 30">
-          <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1">
-            <g transform="translate(9.5,19)">
-              <circle class="spinner-bike_tire" r="9" stroke-dasharray="56.549 56.549"></circle>
-              <g class="spinner-bike_spokes-spin" stroke-dasharray="31.416 31.416" stroke-dashoffset="-23.562">
-                <circle class="spinner-bike_spokes" r="5"></circle>
-                <circle class="spinner-bike_spokes" r="5" transform="rotate(180,0,0)"></circle>
-              </g>
-            </g>
-            <g transform="translate(24,19)">
-              <g class="spinner-bike_pedals-spin" stroke-dasharray="25.133 25.133" stroke-dashoffset="-21.991" transform="rotate(67.5,0,0)">
-                <circle class="spinner-bike_pedals" r="4"></circle>
-                <circle class="spinner-bike_pedals" r="4" transform="rotate(180,0,0)"></circle>
-              </g>
-            </g>
-            <g transform="translate(38.5,19)">
-              <circle class="spinner-bike_tire" r="9" stroke-dasharray="56.549 56.549"></circle>
-              <g class="spinner-bike_spokes-spin" stroke-dasharray="31.416 31.416" stroke-dashoffset="-23.562">
-                <circle class="spinner-bike_spokes" r="5"></circle>
-                <circle class="spinner-bike_spokes" r="5" transform="rotate(180,0,0)"></circle>
-              </g>
-            </g>
-            <polyline class="spinner-bike_seat" points="14 3,18 3" stroke-dasharray="5 5"></polyline>
-            <polyline class="spinner-bike_body" points="16 3,24 19,9.5 19,18 8,34 7,24 19" stroke-dasharray="79 79"></polyline>
-            <path class="spinner-bike_handlebars" d="m30,2h6s1,0,1,1-1,1-1,1" stroke-dasharray="10 10"></path>
-            <polyline class="spinner-bike_front" points="32.5 2,38.5 19" stroke-dasharray="19 19"></polyline>
-          </g>
-        </svg>
       </div>
     </section>
 
