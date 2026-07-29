@@ -217,8 +217,8 @@
       if (state.rutaActual) {
         el.panelParadas.hidden = false;
       }
-      el.btnMostrarSitiosCercanos.hidden = state.sitiosFiltrados.length > 0;
-      el.btnMostrarSitiosCercanos.disabled = state.sitiosFiltrados.length > 0;
+      el.btnMostrarSitiosCercanos.hidden = !state.rutaActual || state.sitiosFiltrados.length > 0;
+      el.btnMostrarSitiosCercanos.disabled = !state.rutaActual || state.sitiosFiltrados.length > 0;
     } else {
       el.btnTabPanelDescubre.classList.add('panel-tab--active');
       el.panelLocate.hidden = true;
@@ -398,7 +398,7 @@
             const m = municipios[0];
             listEl.hidden = true;
             const txt = trigger.querySelector('.combo__trigger-text');
-            txt.textContent = m.nombre;
+            txt.textContent = formatMunicipio(m);
             txt.removeAttribute('data-placeholder');
             trigger.setAttribute('aria-label', m.nombre + ' — municipio de ' + m.departamento);
             onSelect(m);
@@ -432,7 +432,7 @@
           e.stopPropagation();
           listEl.hidden = true;
           const txt = trigger.querySelector('.combo__trigger-text');
-          txt.textContent = m.nombre;
+          txt.textContent = formatMunicipio(m);
           txt.removeAttribute('data-placeholder');
           trigger.setAttribute('aria-label', m.nombre + ' — municipio de ' + m.departamento);
           onSelect(m);
@@ -582,7 +582,7 @@
         li.addEventListener('click', (e) => {
           e.stopPropagation();
           listEl.hidden = true;
-          trigger.querySelector('.combo__trigger-text').textContent = m.nombre;
+          trigger.querySelector('.combo__trigger-text').textContent = formatMunicipio(m);
           trigger.querySelector('.combo__trigger-text').removeAttribute('data-placeholder');
           seleccion = m;
           actualizarEscalas();
@@ -1006,11 +1006,12 @@
 
   function _habilitarMostrarSitios() {
     el.btnMostrarSitiosCercanos.disabled = false;
+    el.btnMostrarSitiosCercanos.hidden = false;
   }
 
   function formatMunicipio(m) {
     if (!m || !m.nombre) return '';
-    if (m.nombre === 'Bogotá' || !m.departamento) return m.nombre;
+    if (!m.departamento || m.nombre === m.departamento) return m.nombre;
     return m.nombre + ', ' + m.departamento;
   }
 

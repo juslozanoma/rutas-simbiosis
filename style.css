@@ -1224,7 +1224,7 @@ input, select{ font-family: inherit; }
 
   /* El botón Mostrar sitios solo en pestaña Ruta en móvil */
   #app[data-mobile-tab="ruta"] #btn-mostrar-sitios{ display: block !important; }
-  #app[data-mobile-tab="descubre"] #btn-mostrar-sitios{ display: none !important; }
+  #app[data-mobile-tab="descubre"] #btn-mostrar-sitios{ display: none !important; margin-top: 8px;}
 
   /* Evitar que el contenido se salga de la pantalla en móvil */
   .app-shell{ overflow: hidden; height: 100dvh; }
