@@ -165,10 +165,15 @@
     if (el.btnOrdenDestinoDes) el.btnOrdenDestinoDes.textContent = state.destino?.nombre ? `Desde ${state.destino.nombre}` : 'Desde Destino';
   }
 
+  function _actualizarEstadoBotonesDescubre() {
+    if (el.btnOrdenOrigenDes) el.btnOrdenOrigenDes.classList.toggle('descubre-dropdown__item--active', state.ordenSitios === 'origen');
+    if (el.btnOrdenDestinoDes) el.btnOrdenDestinoDes.classList.toggle('descubre-dropdown__item--active', state.ordenSitios === 'destino');
+  }
+
   function aplicarOrdenSitios(orden) {
     state.ordenSitios = orden;
     actualizarBotonesOrden();
-    if (typeof _actualizarEstadoBotonesDescubre === 'function') _actualizarEstadoBotonesDescubre();
+    _actualizarEstadoBotonesDescubre();
     renderizarSitios(state.sitiosFiltrados);
   }
 
@@ -754,10 +759,6 @@
       [el.btnDescubreCategorias, el.btnDescubreDesvios, el.btnDescubreOrdenar].forEach(b => { if (b) b.classList.remove('descubre-btn--active'); });
       [el.descubreDropdownCategorias, el.descubreDropdownDesvios, el.descubreDropdownOrdenar].forEach(d => { if (d) d.hidden = true; });
       _actualizarEstadoBotonesDescubre();
-    }
-    function _actualizarEstadoBotonesDescubre() {
-      if (el.btnOrdenOrigenDes) el.btnOrdenOrigenDes.classList.toggle('descubre-dropdown__item--active', state.ordenSitios === 'origen');
-      if (el.btnOrdenDestinoDes) el.btnOrdenDestinoDes.classList.toggle('descubre-dropdown__item--active', state.ordenSitios === 'destino');
     }
     if (el.btnOrdenOrigen) el.btnOrdenOrigen.addEventListener('click', () => aplicarOrdenSitios('origen'));
     if (el.btnOrdenDestino) el.btnOrdenDestino.addEventListener('click', () => aplicarOrdenSitios('destino'));

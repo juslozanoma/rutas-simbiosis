@@ -93,11 +93,29 @@ const TourismModule = (() => {
 
     const wrapper = document.createElement('div');
     wrapper.appendChild(nodo);
-    marker.bindPopup(wrapper.innerHTML);
+    marker.bindPopup(wrapper.innerHTML, { className: 'sitio-popup' });
     marker.__sitioId = sitio.id;
 
     marker.on('popupopen', (e) => {
-      const btn = e.popup.getElement().querySelector('.popup-sitio__add');
+      const popupEl = e.popup.getElement();
+      const container = popupEl.closest('.leaflet-popup');
+      if (container) {
+        container.style.position = 'fixed';
+        container.style.top = '50%';
+        container.style.left = '50%';
+        container.style.transform = 'translate(-50%, -50%)';
+        container.style.margin = '0';
+      }
+      let backdrop = document.getElementById('popup-backdrop');
+      if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = 'popup-backdrop';
+        document.body.appendChild(backdrop);
+      }
+      backdrop.hidden = false;
+      backdrop.addEventListener('click', () => marker.closePopup(), { once: true });
+
+      const btn = popupEl.querySelector('.popup-sitio__add');
       if (btn && !btn.dataset._listener) {
         btn.dataset._listener = '1';
         btn.addEventListener('click', () => {
@@ -105,6 +123,10 @@ const TourismModule = (() => {
           if (onAgregarParadaCallback) onAgregarParadaCallback(sitio, btn);
         });
       }
+    });
+    marker.on('popupclose', () => {
+      const backdrop = document.getElementById('popup-backdrop');
+      if (backdrop) backdrop.hidden = true;
     });
 
     return marker;

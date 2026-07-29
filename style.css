@@ -461,6 +461,11 @@ input, select{ font-family: inherit; }
   flex-direction: column;
   gap: 8px;
 }
+#app[data-mobile-tab="descubre"] .panel-sites{
+  width: auto;
+  margin: 0 -20px;
+  padding: 0 20px;
+}
 .panel-sites[hidden]{ display: none !important; }
 .panel-sites__title{
   font-size: 0.72rem;
@@ -533,13 +538,11 @@ input, select{ font-family: inherit; }
 
 .hint-paradas{
   margin: 8px 0 0;
-  font-size: clamp(0.6rem, 1.8vw, 0.72rem);
+  font-size: clamp(0.5rem, 2vw, 0.6rem);
   color: var(--text-muted);
   text-align: center;
   width: 100%;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 /* --- Spinner de cálculo de ruta (monalisa) --- */
 .loading-ruta{
@@ -568,11 +571,17 @@ input, select{ font-family: inherit; }
 }
 
 .loading-sitios{
+  width: 100%;
   padding: 16px 10px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+#app[data-mobile-tab="descubre"] .loading-sitios{
+  width: auto;
+  margin: 0 -20px;
+  padding: 16px 20px;
 }
 .loading-sitios[hidden]{
   display: none;
@@ -682,6 +691,29 @@ input, select{ font-family: inherit; }
 
 .leaflet-popup-content-wrapper{ border-radius: var(--radius-md); }
 
+.sitio-popup{
+  z-index: 10000 !important;
+}
+.sitio-popup .leaflet-popup-content-wrapper{
+  box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+  padding: 0;
+}
+.sitio-popup .leaflet-popup-content{
+  margin: 12px 16px;
+}
+.sitio-popup .leaflet-popup-tip{
+  display: none;
+}
+#popup-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 9999;
+}
+#popup-backdrop[hidden]{
+  display: none;
+}
+
 .leaflet-overlay-pane path{ outline: none !important; }
 .leaflet-overlay-pane path:focus{ outline: none !important; }
 
@@ -698,7 +730,16 @@ input, select{ font-family: inherit; }
   box-shadow: 0 1px 4px rgba(20,32,27,0.2);
   white-space: nowrap;
 }
-.site-label::before{ display: none; }
+.site-label::before{
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(255,255,255,0.92);
+  pointer-events: none;
+}
 
 /* Tooltip que sigue al cursor sobre la ruta (distancia y tiempo desde el origen) */
 .route-tooltip{
@@ -884,16 +925,18 @@ input, select{ font-family: inherit; }
 }
 .panel-tab{
   flex: 1;
-  height: 36px;
+  height: 40px;
   border: none;
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.85rem;
+  font-weight: 700;
   font-family: inherit;
   cursor: pointer;
   border-bottom: 3px solid transparent;
   transition: color 0.1s, border-color 0.1s;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 .panel-tab:hover{ color: var(--text-strong); }
 .panel-tab--active{ color: var(--teal-500); border-bottom-color: var(--teal-500); }
@@ -936,8 +979,10 @@ input, select{ font-family: inherit; }
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 6px 0;
+  padding: 6px 20px;
   flex-shrink: 0;
+  width: auto;
+  margin: 0 -20px;
 }
 .panel-descubre-actions[hidden]{ display: none; }
 .descubre-btn{
@@ -964,8 +1009,22 @@ input, select{ font-family: inherit; }
 }
 .descubre-dropdown[hidden]{ display: none; }
 #descubre-dropdown-categorias{
-  max-height: 110px;
-  overflow-y: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: flex;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+#descubre-dropdown-categorias::-webkit-scrollbar{ display: none; }
+#descubre-dropdown-categorias .panel-categorias__grid{
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 5px;
+  flex-shrink: 0;
+  padding: 2px 0;
+}
+#descubre-dropdown-categorias .panel-categorias__grid > .categoria-chip{
+  flex-shrink: 0;
 }
 #descubre-dropdown-desvios{
   margin-top: 6px;
@@ -1004,6 +1063,7 @@ input, select{ font-family: inherit; }
 }
 #descubre-dropdown-ordenar .descubre-dropdown__item:hover{ background: #eef2f8; border-color: #3b5e8a; }
 #descubre-dropdown-ordenar .descubre-dropdown__item--active{ background: #4a6fa5; border-color: #4a6fa5; color: #ffffff; }
+#descubre-dropdown-ordenar .descubre-dropdown__item--active:hover{ background: #3b5e8a; border-color: #3b5e8a; }
 
 /* Distancia en paradas */
 .parada-item__dist{
@@ -1138,6 +1198,17 @@ input, select{ font-family: inherit; }
   .filter-row{ gap: 6px; }
   .filter-row__field input[type="range"]{ height: 14px; }
 
+  /* Descubre edge-to-edge en móvil (12px padding) */
+  #app[data-mobile-tab="descubre"] .panel-descubre-actions,
+  #app[data-mobile-tab="descubre"] .loading-sitios,
+  #app[data-mobile-tab="descubre"] .panel-sites{
+    margin-left: -12px;
+    margin-right: -12px;
+  }
+  #app[data-mobile-tab="descubre"] .panel-descubre-actions{ padding-left: 12px; padding-right: 12px; }
+  #app[data-mobile-tab="descubre"] .loading-sitios{ padding-left: 12px; padding-right: 12px; }
+  #app[data-mobile-tab="descubre"] .panel-sites{ padding-left: 12px; padding-right: 12px; }
+
 }
 
 .altimetria{
@@ -1234,11 +1305,11 @@ input, select{ font-family: inherit; }
   user-select: none;
   transition: background 0.1s ease, border-color 0.1s ease, color 0.1s ease;
 }
-.categoria-chip:hover{ border-color: var(--teal-500); }
+.categoria-chip:hover{ border-color: #4a6fa5; }
 .categoria-chip--selected{
-  background: var(--teal-500) !important;
+  background: #4a6fa5 !important;
   color: #ffffff !important;
-  border-color: var(--teal-500) !important;
+  border-color: #4a6fa5 !important;
 }
 
 @media (prefers-reduced-motion: reduce){
