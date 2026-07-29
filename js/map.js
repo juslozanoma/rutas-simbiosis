@@ -441,7 +441,6 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
     if (totalKm > 0) {
       _capaRutaHover.eachLayer((layer) => {
-        layer.bindTooltip('', { sticky: true, className: 'route-tooltip', opacity: 0.97 });
         layer.on('mousemove', (e) => {
           if (_rutaDragActive) return;
           const snapped = turf.nearestPointOnLine(
@@ -450,10 +449,14 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
             { units: 'kilometers' }
           );
           const distKm = Math.max(0, snapped.properties.location);
-          const tiempoSeg = totalSeg * (distKm / totalKm);
-          layer.setTooltipContent(
-            `${distKm.toFixed(1)} km · ${Utils.formatearDuracion(tiempoSeg)} desde ${origenNombre}`
-          );
+          if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.mostrarHoverEn) {
+            AltimetriaModule.mostrarHoverEn(distKm);
+          }
+        });
+        layer.on('mouseout', () => {
+          if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.ocultarHover) {
+            AltimetriaModule.ocultarHover();
+          }
         });
       });
     }

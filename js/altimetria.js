@@ -232,14 +232,15 @@ const AltimetriaModule = (() => {
       circle.setAttribute('cx', px);
       circle.setAttribute('cy', py);
       circle.setAttribute('r', '6');
-      circle.setAttribute('fill', '#fff');
-      circle.setAttribute('stroke', '#e35c2b');
+      circle.setAttribute('fill', '#4a6fa5');
+      circle.setAttribute('stroke', '#fff');
       circle.setAttribute('stroke-width', '2');
       circle.dataset.tipo = 'parada';
       circle.dataset.idx = p.nombre;
       circle.dataset.lat = p.lat;
       circle.dataset.lon = p.lon;
       circle.style.cursor = 'pointer';
+      circle.addEventListener('click', (ev) => { ev.stopPropagation(); _mostrarMenu(ev, { tipo: 'parada', lat: p.lat, lon: p.lon, nombre: p.nombre, distKm: p.distKm }); });
       svg.appendChild(circle);
     }
 
@@ -267,6 +268,8 @@ const AltimetriaModule = (() => {
     circle.setAttribute('fill', '#4a6fa5');
     circle.setAttribute('stroke', '#fff');
     circle.setAttribute('stroke-width', '2');
+    circle.style.cursor = 'pointer';
+    circle.addEventListener('click', (ev) => { ev.stopPropagation(); _mostrarMenu(ev, { tipo: letra, lat: pt.coord[1], lon: pt.coord[0], nombre: letra, distKm: pt.d }); });
     svg.appendChild(circle);
 
     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -333,6 +336,46 @@ const AltimetriaModule = (() => {
 
   function _mostrarTooltip(cont, ev) {
     // placeholder for marker click
+  }
+
+  let _menuFlotante = null;
+
+  function _crearMenuFlotante() {
+    if (_menuFlotante) return _menuFlotante;
+    _menuFlotante = document.createElement('div');
+    _menuFlotante.className = 'altimetria-floating-menu';
+    ['inicio', 'fin', 'ver'].forEach((acc) => {
+      const btn = document.createElement('button');
+      btn.className = 'altimetria-menu-btn';
+      btn.dataset.action = acc;
+      btn.textContent = acc === 'inicio' ? 'Asignar como punto inicial' : acc === 'fin' ? 'Asignar como punto final' : 'Ver en el mapa';
+      _menuFlotante.appendChild(btn);
+    });
+    document.body.appendChild(_menuFlotante);
+    document.addEventListener('click', (e) => {
+      if (_menuFlotante && !_menuFlotante.contains(e.target)) _cerrarMenuFlotante();
+    });
+    return _menuFlotante;
+  }
+
+  function _cerrarMenuFlotante() {
+    if (_menuFlotante) _menuFlotante.style.display = 'none';
+  }
+
+  function _mostrarMenu(ev, data) {
+    const menu = _crearMenuFlotante();
+    menu._menuData = data;
+    const btnInicio = menu.querySelector('[data-action="inicio"]');
+    const btnFin = menu.querySelector('[data-action="fin"]');
+    const btnVer = menu.querySelector('[data-action="ver"]');
+    btnInicio.style.display = data.tipo === 'Z' ? 'none' : '';
+    btnFin.style.display = data.tipo === 'A' ? 'none' : '';
+    btnInicio.onclick = () => { _cerrarMenuFlotante(); if (_onSetInicio) _onSetInicio(data); };
+    btnFin.onclick = () => { _cerrarMenuFlotante(); if (_onSetFin) _onSetFin(data); };
+    btnVer.onclick = () => { _cerrarMenuFlotante(); if (_onVerMapa) _onVerMapa(data); };
+    menu.style.display = 'flex';
+    menu.style.left = Math.min(ev.clientX + 8, window.innerWidth - 170) + 'px';
+    menu.style.top = Math.max(ev.clientY - 10, 10) + 'px';
   }
 
   function limpiar() {

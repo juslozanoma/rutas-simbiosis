@@ -762,7 +762,7 @@
     }
     if (tab === 'altimetria') {
       if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = false;
-      requestAnimationFrame(() => AltimetriaModule.renderizar('altimetria-chart-panel'));
+      _cargarElevacionAltimetria('altimetria-chart-panel');
     } else {
       if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = true;
     }
@@ -1011,6 +1011,16 @@
         if (_hoverMarker) { _hoverMarker.remove(); _hoverMarker = null; }
       });
 
+      AltimetriaModule.setOnSetInicio((data) => {
+        console.log('[ALT] Nuevo inicio:', data.nombre, 'dist:', data.distKm);
+      });
+      AltimetriaModule.setOnSetFin((data) => {
+        console.log('[ALT] Nuevo fin:', data.nombre, 'dist:', data.distKm);
+      });
+      AltimetriaModule.setOnVerMapa((data) => {
+        _map.setView([data.lat, data.lon], 13, { animate: true });
+      });
+
       document.getElementById('btn-cerrar-altimetria')?.addEventListener('click', () => {
         if (_hoverMarker) { _hoverMarker.remove(); _hoverMarker = null; }
       });
@@ -1075,18 +1085,27 @@
     if (active) { cerrarAltimetria(); return; }
     el.altimetriaPanel.hidden = false;
     if (el.btnAltimetria) el.btnAltimetria.hidden = true;
-    const chart = document.getElementById('altimetria-chart');
-    if (chart) chart.innerHTML = '<p style="font-size:0.78rem;color:var(--text-muted);text-align:center;padding:20px 0;">Cargando datos de elevación…</p>';
+    await _cargarElevacionAltimetria('altimetria-chart');
+  }
 
-    // Cargar elevación bajo demanda si no se ha hecho aún
-    if (!state.elevacion || !state.elevacion.some(e => e != null)) {
+  function cerrarAltimetria() {
+    if (!el.altimetriaPanel) return;
+    el.altimetriaPanel.hidden = true;
+    if (el.btnAltimetria) el.btnAltimetria.hidden = false;
+  }
+
+  async function _cargarElevacionAltimetria(containerId) {
+    const chart = document.getElementById(containerId);
+    if (!chart) return;
+    if (!state.elevacion || !state.elevacion.some((e) => e != null)) {
+      chart.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--text-muted);font-size:0.78rem;"><svg class="spinner-bike" viewBox="0 0 48 30" style="width:48px;height:30px;"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"><g transform="translate(9.5,19)"><circle class="spinner-bike_tire" r="9" stroke-dasharray="56.549 56.549"></circle><g class="spinner-bike_spokes-spin" stroke-dasharray="31.416 31.416" stroke-dashoffset="-23.562"><circle class="spinner-bike_spokes" r="5"></circle><circle class="spinner-bike_spokes" r="5" transform="rotate(180,0,0)"></circle></g></g><g transform="translate(24,19)"><g class="spinner-bike_pedals-spin" stroke-dasharray="25.133 25.133" stroke-dashoffset="-21.991" transform="rotate(67.5,0,0)"><circle class="spinner-bike_pedals" r="4"></circle><circle class="spinner-bike_pedals" r="4" transform="rotate(180,0,0)"></circle></g></g><g transform="translate(38.5,19)"><circle class="spinner-bike_tire" r="9" stroke-dasharray="56.549 56.549"></circle><g class="spinner-bike_spokes-spin" stroke-dasharray="31.416 31.416" stroke-dashoffset="-23.562"><circle class="spinner-bike_spokes" r="5"></circle><circle class="spinner-bike_spokes" r="5" transform="rotate(180,0,0)"></circle></g></g><polyline class="spinner-bike_seat" points="14 3,18 3" stroke-dasharray="5 5"></polyline><polyline class="spinner-bike_body" points="16 3,24 19,9.5 19,18 8,34 7,24 19" stroke-dasharray="79 79"></polyline><path class="spinner-bike_handlebars" d="m30,2h6s1,0,1,1-1,1-1,1" stroke-dasharray="10 10"></path><polyline class="spinner-bike_front" points="32.5 2,38.5 19" stroke-dasharray="19 19"></polyline></g></svg><span>Cargando datos de elevación…</span></div>';
       const geo = state.altimetriaGeo;
       if (geo && geo.geometry && geo.geometry.coordinates) {
         try {
           const coords = geo.geometry.coordinates;
           const { coordenadas, indices } = _prepararCoordenadasParaElevacion(coords);
           const elevBatch = await Utils.obtenerElevacionBatch(coordenadas);
-          if (elevBatch.some(e => e != null)) {
+          if (elevBatch.some((e) => e != null)) {
             state.elevacion = _reconstruirElevacion(elevBatch, indices, coords.length);
             AltimetriaModule.setDatos(geo, state.elevacion, state.altimetriaTotalKm, false);
           }
@@ -1095,13 +1114,7 @@
         }
       }
     }
-    AltimetriaModule.renderizar('altimetria-chart');
-  }
-
-  function cerrarAltimetria() {
-    if (!el.altimetriaPanel) return;
-    el.altimetriaPanel.hidden = true;
-    if (el.btnAltimetria) el.btnAltimetria.hidden = false;
+    AltimetriaModule.renderizar(containerId);
   }
 
   // -------------------------------------------------------------------
