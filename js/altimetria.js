@@ -30,8 +30,8 @@ const AltimetriaModule = (() => {
     _puntoHover = null;
   }
 
-  function agregarParada(lat, lon, nombre, distKm) {
-    _paradas.push({ lat, lon, nombre, distKm });
+  function agregarParada(lat, lon, nombre, distKm, label) {
+    _paradas.push({ lat, lon, nombre, distKm, label: label || '' });
   }
 
   function setOnSetInicio(fn) { _onSetInicio = fn; }
@@ -231,7 +231,7 @@ const AltimetriaModule = (() => {
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
       circle.setAttribute('cx', px);
       circle.setAttribute('cy', py);
-      circle.setAttribute('r', '6');
+      circle.setAttribute('r', '11');
       circle.setAttribute('fill', '#4a6fa5');
       circle.setAttribute('stroke', '#fff');
       circle.setAttribute('stroke-width', '2');
@@ -242,6 +242,18 @@ const AltimetriaModule = (() => {
       circle.style.cursor = 'pointer';
       circle.addEventListener('click', (ev) => { ev.stopPropagation(); _mostrarMenu(ev, { tipo: 'parada', lat: p.lat, lon: p.lon, nombre: p.nombre, distKm: p.distKm }); });
       svg.appendChild(circle);
+      if (p.label) {
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('x', px);
+        text.setAttribute('y', py + 4.5);
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('fill', '#fff');
+        text.setAttribute('font-size', '10');
+        text.setAttribute('font-weight', '700');
+        text.setAttribute('font-family', 'inherit');
+        text.textContent = p.label;
+        svg.appendChild(text);
+      }
     }
 
     // A (origen) y Z (destino) markers
@@ -424,5 +436,14 @@ const AltimetriaModule = (() => {
     if (info) info.hidden = true;
   }
 
-  return { setDatos, agregarParada, renderizar, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa, setOnHover, setOnLeave, mostrarHoverEn, ocultarHover };
+  function getInfoAt(distKm) {
+    const cont = document.getElementById('altimetria-chart') || document.getElementById('altimetria-chart-panel');
+    if (!cont || !cont._puntos) return { alt: null, dist: distKm };
+    let ei = 0;
+    while (ei < cont._puntos.length - 1 && cont._puntos[ei + 1].d < distKm) ei++;
+    const alt = cont._puntos[ei] && cont._puntos[ei].e != null ? cont._puntos[ei].e : null;
+    return { alt, dist: distKm };
+  }
+
+  return { setDatos, agregarParada, renderizar, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa, setOnHover, setOnLeave, mostrarHoverEn, ocultarHover, getInfoAt };
 })();

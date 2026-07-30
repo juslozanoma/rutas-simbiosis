@@ -441,6 +441,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
     if (totalKm > 0) {
       _capaRutaHover.eachLayer((layer) => {
+        let _tooltipBound = false;
         layer.on('mousemove', (e) => {
           if (_rutaDragActive) return;
           const snapped = turf.nearestPointOnLine(
@@ -452,11 +453,34 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
           if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.mostrarHoverEn) {
             AltimetriaModule.mostrarHoverEn(distKm);
           }
+          let info = {};
+          if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.getInfoAt) {
+            info = AltimetriaModule.getInfoAt(distKm);
+          }
+          const alt = info.alt;
+          const seg = (distKm / totalKm) * totalSeg;
+          const h = Math.floor(seg / 3600);
+          const min = Math.round((seg % 3600) / 60);
+          let durStr;
+          if (h > 0) durStr = h + ' h ' + min + ' min';
+          else durStr = min + ' min';
+          let tooltipParts = [];
+          if (alt != null) tooltipParts.push(alt.toFixed(0) + ' msnm');
+          tooltipParts.push(distKm.toFixed(1) + ' km');
+          tooltipParts.push(durStr);
+          if (!_tooltipBound) {
+            layer.bindTooltip(tooltipParts.join(' · '), { sticky: true, className: 'altimetria-map-tooltip', direction: 'top' });
+            _tooltipBound = true;
+          } else {
+            layer.setTooltipContent(tooltipParts.join(' · '));
+          }
         });
         layer.on('mouseout', () => {
           if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.ocultarHover) {
             AltimetriaModule.ocultarHover();
           }
+          layer.unbindTooltip();
+          _tooltipBound = false;
         });
       });
     }

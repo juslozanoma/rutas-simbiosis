@@ -1098,7 +1098,7 @@
     const chart = document.getElementById(containerId);
     if (!chart) return;
     if (!state.elevacion || !state.elevacion.some((e) => e != null)) {
-      chart.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--text-muted);font-size:0.78rem;"><svg class="spinner-bike" viewBox="0 0 48 30" style="width:48px;height:30px;"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"><g transform="translate(9.5,19)"><circle class="spinner-bike_tire" r="9" stroke-dasharray="56.549 56.549"></circle><g class="spinner-bike_spokes-spin" stroke-dasharray="31.416 31.416" stroke-dashoffset="-23.562"><circle class="spinner-bike_spokes" r="5"></circle><circle class="spinner-bike_spokes" r="5" transform="rotate(180,0,0)"></circle></g></g><g transform="translate(24,19)"><g class="spinner-bike_pedals-spin" stroke-dasharray="25.133 25.133" stroke-dashoffset="-21.991" transform="rotate(67.5,0,0)"><circle class="spinner-bike_pedals" r="4"></circle><circle class="spinner-bike_pedals" r="4" transform="rotate(180,0,0)"></circle></g></g><g transform="translate(38.5,19)"><circle class="spinner-bike_tire" r="9" stroke-dasharray="56.549 56.549"></circle><g class="spinner-bike_spokes-spin" stroke-dasharray="31.416 31.416" stroke-dashoffset="-23.562"><circle class="spinner-bike_spokes" r="5"></circle><circle class="spinner-bike_spokes" r="5" transform="rotate(180,0,0)"></circle></g></g><polyline class="spinner-bike_seat" points="14 3,18 3" stroke-dasharray="5 5"></polyline><polyline class="spinner-bike_body" points="16 3,24 19,9.5 19,18 8,34 7,24 19" stroke-dasharray="79 79"></polyline><path class="spinner-bike_handlebars" d="m30,2h6s1,0,1,1-1,1-1,1" stroke-dasharray="10 10"></path><polyline class="spinner-bike_front" points="32.5 2,38.5 19" stroke-dasharray="19 19"></polyline></g></svg><span>Cargando datos de elevación…</span></div>';
+      chart.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-muted);font-size:0.85rem;"><svg class="spinner-bike" viewBox="0 0 48 30" style="width:72px;height:45px;"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"><g transform="translate(9.5,19)"><circle class="spinner-bike_tire" r="9" stroke-dasharray="56.549 56.549"></circle><g class="spinner-bike_spokes-spin" stroke-dasharray="31.416 31.416" stroke-dashoffset="-23.562"><circle class="spinner-bike_spokes" r="5"></circle><circle class="spinner-bike_spokes" r="5" transform="rotate(180,0,0)"></circle></g></g><g transform="translate(24,19)"><g class="spinner-bike_pedals-spin" stroke-dasharray="25.133 25.133" stroke-dashoffset="-21.991" transform="rotate(67.5,0,0)"><circle class="spinner-bike_pedals" r="4"></circle><circle class="spinner-bike_pedals" r="4" transform="rotate(180,0,0)"></circle></g></g><g transform="translate(38.5,19)"><circle class="spinner-bike_tire" r="9" stroke-dasharray="56.549 56.549"></circle><g class="spinner-bike_spokes-spin" stroke-dasharray="31.416 31.416" stroke-dashoffset="-23.562"><circle class="spinner-bike_spokes" r="5"></circle><circle class="spinner-bike_spokes" r="5" transform="rotate(180,0,0)"></circle></g></g><polyline class="spinner-bike_seat" points="14 3,18 3" stroke-dasharray="5 5"></polyline><polyline class="spinner-bike_body" points="16 3,24 19,9.5 19,18 8,34 7,24 19" stroke-dasharray="79 79"></polyline><path class="spinner-bike_handlebars" d="m30,2h6s1,0,1,1-1,1-1,1" stroke-dasharray="10 10"></path><polyline class="spinner-bike_front" points="32.5 2,38.5 19" stroke-dasharray="19 19"></polyline></g></svg><span>Consultando datos de elevación…</span></div>';
       const geo = state.altimetriaGeo;
       if (geo && geo.geometry && geo.geometry.coordinates) {
         try {
@@ -1607,24 +1607,13 @@
     state.altimetriaGeo = geoPerfil;
     state.altimetriaTotalKm = totalKm;
     AltimetriaModule.setDatos(geoPerfil, state.elevacion, totalKm);
-    if (geoPerfil) {
-      const routeLine = turf.lineString(geoPerfil.geometry.coordinates);
-      state.escalas.filter(e => e.lat != null).forEach(e => {
-        const nearest = turf.nearestPointOnLine(routeLine, turf.point([e.lon, e.lat]), { units: 'kilometers' });
-        e._distKm = nearest.properties.location || 0;
-        AltimetriaModule.agregarParada(e.lat, e.lon, formatMunicipio(e), e._distKm);
-      });
-      state.paradas.forEach(p => {
-        const nearest = turf.nearestPointOnLine(routeLine, turf.point([p.lon, p.lat]), { units: 'kilometers' });
-        p._distKm = nearest.properties.location || 0;
-        AltimetriaModule.agregarParada(p.lat, p.lon, p.nombre, p._distKm);
-      });
-    }
-
     sincronizarOrden();
     let idxIntermedio = 0;
+    const mapaEtiquetas = new Map();
     state.orden.forEach((o) => {
       const etiqueta = etiquetaIntermedia(idxIntermedio++);
+      const key = o.tipo + '_' + o.id;
+      mapaEtiquetas.set(key, etiqueta);
       if (o.tipo === 'escala') {
         const e = state.escalas.find((e) => e.id === o.id);
         if (e && e.lat != null) e._numero = etiqueta;
@@ -1633,6 +1622,20 @@
         if (p) p._numero = etiqueta;
       }
     });
+
+    if (geoPerfil) {
+      const routeLine = turf.lineString(geoPerfil.geometry.coordinates);
+      state.escalas.filter(e => e.lat != null).forEach(e => {
+        const nearest = turf.nearestPointOnLine(routeLine, turf.point([e.lon, e.lat]), { units: 'kilometers' });
+        e._distKm = nearest.properties.location || 0;
+        AltimetriaModule.agregarParada(e.lat, e.lon, formatMunicipio(e), e._distKm, mapaEtiquetas.get('escala_' + e.id) || '');
+      });
+      state.paradas.forEach(p => {
+        const nearest = turf.nearestPointOnLine(routeLine, turf.point([p.lon, p.lat]), { units: 'kilometers' });
+        p._distKm = nearest.properties.location || 0;
+        AltimetriaModule.agregarParada(p.lat, p.lon, p.nombre, p._distKm, mapaEtiquetas.get('parada_' + p.id) || '');
+      });
+    }
     MapModule.setMarcadoresEscalas(state.escalas);
     MapModule.setMarcadoresParadas(state.paradas);
     MapModule.encuadrar(state.rutaActual.geojson);
