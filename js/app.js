@@ -1002,7 +1002,7 @@
         } else {
           _hoverMarker.setLatLng([p.lat, p.lon]);
         }
-        _hoverMarker.bindTooltip(`${p.alt} m · ${p.dist} km`, {
+        _hoverMarker.bindTooltip(`${p.alt} msnm · ${p.dist} km`, {
           permanent: true, direction: 'top', className: 'altimetria-map-tooltip',
         }).openTooltip();
       });
@@ -1122,6 +1122,7 @@
   // -------------------------------------------------------------------
   async function calcularRutaPrincipal(conservarParadas = false) {
     if (!state.origen || !state.destino) return;
+    cerrarAltimetria();
 
     if (state.origen.id === state.destino.id) {
       el.sitiosVacio.hidden = false;
@@ -1607,7 +1608,6 @@
     state.altimetriaGeo = geoPerfil;
     state.altimetriaTotalKm = totalKm;
     AltimetriaModule.setDatos(geoPerfil, state.elevacion, totalKm);
-    AltimetriaModule.renderizar('altimetria-chart');
     sincronizarOrden();
     let idxIntermedio = 0;
     const mapaEtiquetas = new Map();

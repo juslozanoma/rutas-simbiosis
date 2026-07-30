@@ -417,6 +417,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
    * la geometría real dibujada).
    */
   function dibujarRuta(geojsonLineString, meta = {}) {
+    console.log('[RUTA] dibujarRuta called', { meta });
     limpiarRuta();
     _rutaGeojson = geojsonLineString;
 
@@ -426,7 +427,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     }).addTo(map);
 
     _capaRutaHover = L.geoJSON(geojsonLineString, {
-      style: { color: '#2f7a6b', weight: 20, opacity: 0 },
+      style: { color: '#2f7a6b', weight: 20, opacity: 0.01, fillOpacity: 0.01 },
       interactive: true,
     }).addTo(map);
 
@@ -441,7 +442,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
     if (totalKm > 0) {
       _capaRutaHover.eachLayer((layer) => {
-        let _tooltipBound = false;
+        layer.bindTooltip(' ', { sticky: true, className: 'altimetria-map-tooltip', direction: 'top' });
         layer.on('mousemove', (e) => {
           if (_rutaDragActive) return;
           const snapped = turf.nearestPointOnLine(
@@ -468,19 +469,13 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
           if (alt != null) tooltipParts.push(alt.toFixed(0) + ' msnm');
           tooltipParts.push(distKm.toFixed(1) + ' km');
           tooltipParts.push(durStr);
-          if (!_tooltipBound) {
-            layer.bindTooltip(tooltipParts.join(' · '), { sticky: true, className: 'altimetria-map-tooltip', direction: 'top' });
-            _tooltipBound = true;
-          } else {
-            layer.setTooltipContent(tooltipParts.join(' · '));
-          }
+          layer.setTooltipContent(tooltipParts.join(' · '));
         });
         layer.on('mouseout', () => {
           if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.ocultarHover) {
             AltimetriaModule.ocultarHover();
           }
-          layer.unbindTooltip();
-          _tooltipBound = false;
+          layer.closeTooltip();
         });
       });
     }
