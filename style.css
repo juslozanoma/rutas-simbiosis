@@ -101,7 +101,7 @@ input, select{ font-family: inherit; }
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 .mobile-toggle-btn:hover{ background: #f5f3ec; border-color: var(--teal-500); }
-.mobile-toggle-btn[aria-pressed="true"]{ background: var(--teal-500); border-color: var(--teal-500); color: #ffffff; }
+.mobile-toggle-btn[aria-pressed="true"]{ background: #4a6fa5; border-color: var(--teal-500); color: #ffffff; }
 
 /* --- Origen / destino + calcular --- */
 .panel-locate{
@@ -254,7 +254,7 @@ input, select{ font-family: inherit; }
 .icon-btn:hover:not(:disabled){ background: #f5f3ec; border-color: var(--teal-500); }
 .icon-btn:active:not(:disabled){ transform: translateY(1px); }
 .icon-btn:disabled{ opacity: 0.35; cursor: not-allowed; }
-.icon-btn--accent{ background: var(--teal-500); border-color: var(--teal-500); color: #ffffff; }
+.icon-btn--accent{ background: #4a6fa5; border-color: var(--teal-500); color: #ffffff; }
 .icon-btn--accent:hover:not(:disabled){ background: var(--teal-600); border-color: var(--teal-600); }
 .icon-btn--accent:disabled{ opacity: 0.4; }
 
@@ -482,7 +482,7 @@ input, select{ font-family: inherit; }
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid var(--teal-500);
-  background: var(--teal-500);
+  background: #4a6fa5;
   color: #ffffff;
   font-size: 0.68rem;
   font-weight: 600;
@@ -510,7 +510,7 @@ input, select{ font-family: inherit; }
   height: 40px;
   border-radius: var(--radius-md);
   border: 1px solid var(--teal-500);
-  background: var(--teal-500);
+  background: #4a6fa5;
   color: #ffffff;
   font-size: 0.82rem;
   font-weight: 600;
@@ -602,7 +602,7 @@ input, select{ font-family: inherit; }
 }
 .sitios-sort__btn:hover,
 .sitios-sort__btn[aria-pressed="true"]{
-  background: var(--teal-500);
+  background: #4a6fa5;
   border-color: var(--teal-500);
   color: #ffffff;
 }
@@ -650,7 +650,7 @@ input, select{ font-family: inherit; }
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
-.sitio-card__add:hover:not(:disabled){ background: var(--teal-500); border-color: var(--teal-500); color: #ffffff; }
+.sitio-card__add:hover:not(:disabled){ background: #4a6fa5; border-color: var(--teal-500); color: #ffffff; }
 .sitio-card__add:disabled{ opacity: 0.4; cursor: not-allowed; }
 .sitio-card__add .icon-btn__spinner{ width: 12px; height: 12px; }
 
@@ -805,7 +805,7 @@ input, select{ font-family: inherit; }
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: var(--teal-500);
+  background: #4a6fa5;
   box-shadow: 0 2px 6px rgba(20,32,27,0.35);
 }
 
@@ -842,7 +842,7 @@ input, select{ font-family: inherit; }
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease;
 }
-.popup-sitio__add:hover{ background: var(--teal-500); border-color: var(--teal-500); color: #ffffff; }
+.popup-sitio__add:hover{ background: #4a6fa5; border-color: var(--teal-500); color: #ffffff; }
 
 /* Popup de una parada agregada a la ruta (con opción de quitarla) */
 .popup-parada{ font-family: var(--font-body); min-width: 170px; }
@@ -911,7 +911,7 @@ input, select{ font-family: inherit; }
   z-index: 1000;
   width: 34px;
   height: 34px;
-  background: var(--teal-500);
+  background: #4a6fa5;
   color: #ffffff;
   border: none;
 }
@@ -930,7 +930,7 @@ input, select{ font-family: inherit; }
   height: 34px;
   border-radius: 50%;
   border: none;
-  background: var(--teal-500);
+  background: #4a6fa5;
   color: #ffffff;
   align-items: center;
   justify-content: center;
@@ -989,7 +989,7 @@ input, select{ font-family: inherit; }
   height: 34px;
   border-radius: 50%;
   border: none;
-  background: var(--teal-500);
+  background: #4a6fa5;
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -1025,7 +1025,7 @@ input, select{ font-family: inherit; }
   transition: background 0.12s, border-color 0.12s;
 }
 .descubre-btn:hover{ background: var(--teal-50); border-color: var(--teal-600); }
-.descubre-btn--active{ background: var(--teal-500); border-color: var(--teal-500); color: #ffffff; }
+.descubre-btn--active{ background: #4a6fa5; border-color: var(--teal-500); color: #ffffff; }
 .descubre-btn--active:hover{ background: var(--teal-600); border-color: var(--teal-600); }
 .descubre-dropdown{
   width: stretch;
@@ -1497,8 +1497,9 @@ input, select{ font-family: inherit; }
 .dialog__btn--cancel{ background: #ffffff; color: var(--text-body); }
 .dialog__btn--cancel:hover{ background: var(--bg-subtle); }
 .dialog__btn--save{
-  background: var(--teal-500);
+  background: #4a6fa5;
   color: #ffffff;
   border-color: var(--teal-500);
 }
 .dialog__btn--save:hover{ background: var(--teal-600); border-color: var(--teal-600); }
+
