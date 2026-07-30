@@ -138,6 +138,8 @@
     btnAltimetria: document.getElementById('btn-altimetria'),
     btnTabAltimetria: document.getElementById('btn-tab-altimetria'),
     btnCerrarAltimetria: document.getElementById('btn-cerrar-altimetria'),
+    btnScopeAltimetria: document.getElementById('btn-scope-altimetria'),
+    btnScopeAltimetriaMovil: document.getElementById('btn-scope-altimetria-panel'),
     altimetriaPanel: document.getElementById('altimetria'),
     altimetriaChart: document.getElementById('altimetria-chart'),
     altimetriaPanelMovil: document.getElementById('altimetria-panel'),
@@ -393,17 +395,15 @@
         locLi.addEventListener('click', (e) => {
           e.stopPropagation();
           listEl.hidden = true;
-    ponerEnCargaRuta(true);
-    cerrarAltimetria();
-    AltimetriaModule.limpiar();
+          ponerEnCargaRuta(true);
+          cerrarAltimetria();
+          AltimetriaModule.limpiar();
           navigator.geolocation.getCurrentPosition(
             (pos) => {
               const { latitude: lat, longitude: lon } = pos.coords;
               const nombre = 'Mi ubicación';
-              const txt = trigger.querySelector('.combo__trigger-text');
-              txt.textContent = nombre;
-              txt.removeAttribute('data-placeholder');
-              trigger.setAttribute('aria-label', 'Ubicación actual');
+              trigger.value = nombre;
+              trigger.dataset.selectedId = 'gps_' + Date.now();
               onSelect({ id: 'gps_' + Date.now(), lat, lon, nombre, departamento: '' });
               ponerEnCargaRuta(false);
             },
@@ -423,10 +423,8 @@
         listEl.hidden = true;
         iniciarSeleccionMapa((lat, lon) => {
           const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-          const txt = trigger.querySelector('.combo__trigger-text');
-          txt.textContent = nombre;
-          txt.removeAttribute('data-placeholder');
-          trigger.setAttribute('aria-label', 'Punto en el mapa');
+          trigger.value = nombre;
+          trigger.dataset.selectedId = 'map_' + Date.now();
           onSelect({ id: 'map_' + Date.now(), lat, lon, nombre, departamento: '' });
         });
       });
@@ -441,13 +439,7 @@
           const idsExcluidos = excluirIdsFn ? excluirIdsFn() : new Set();
           const municipios = obtenerMunicipios(d).filter((m) => !idsExcluidos.has(m.id));
           if (municipios.length === 1) {
-            const m = municipios[0];
-            listEl.hidden = true;
-            const txt = trigger.querySelector('.combo__trigger-text');
-            txt.textContent = formatMunicipio(m);
-            txt.removeAttribute('data-placeholder');
-            trigger.setAttribute('aria-label', m.nombre + ' — municipio de ' + m.departamento);
-            onSelect(m);
+            seleccionar(municipios[0]);
           } else {
             renderMunicipios();
           }
@@ -476,12 +468,7 @@
         li.textContent = m.nombre;
         li.addEventListener('click', (e) => {
           e.stopPropagation();
-          listEl.hidden = true;
-          const txt = trigger.querySelector('.combo__trigger-text');
-          txt.textContent = formatMunicipio(m);
-          txt.removeAttribute('data-placeholder');
-          trigger.setAttribute('aria-label', m.nombre + ' — municipio de ' + m.departamento);
-          onSelect(m);
+          seleccionar(m);
         });
         listEl.appendChild(li);
       });
@@ -493,26 +480,75 @@
       listEl.hidden = true;
     }
 
-    trigger.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (listEl.hidden) {
-        renderDepartamentos();
+    function seleccionar(m) {
+      listEl.hidden = true;
+      trigger.value = formatMunicipio(m);
+      trigger.dataset.selectedId = m.id;
+      onSelect(m);
+    }
+
+    function renderFiltrados(texto) {
+      deptoSeleccionado = null;
+      listEl.innerHTML = '';
+      const idsExcluidos = excluirIdsFn ? excluirIdsFn() : new Set();
+      const q = texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const munis = state.municipios.filter((m) => {
+        if (idsExcluidos.has(m.id)) return false;
+        const nom = m.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const dep = m.departamento.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return nom.includes(q) || dep.includes(q);
+      }).slice(0, 100);
+      if (munis.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'no-results';
+        li.textContent = 'Sin resultados';
+        listEl.appendChild(li);
       } else {
-        cerrar();
+        munis.forEach((m) => {
+          const li = document.createElement('li');
+          li.textContent = m.nombre + ' (' + m.departamento + ')';
+          li.addEventListener('click', (e) => { e.stopPropagation(); seleccionar(m); });
+          listEl.appendChild(li);
+        });
       }
+      listEl.scrollTop = 0;
+      listEl.hidden = false;
+    }
+
+    function abrir() {
+      const texto = trigger.value.trim();
+      if (texto) {
+        renderFiltrados(texto);
+      } else {
+        renderDepartamentos();
+      }
+    }
+
+    trigger.addEventListener('focus', (e) => {
+      e.stopPropagation();
+      abrir();
     });
 
-    document.addEventListener('click', (e) => {
-      if (!combo.contains(e.target)) cerrar();
+    trigger.addEventListener('input', () => {
+      const texto = trigger.value.trim();
+      if (texto) {
+        renderFiltrados(texto);
+      } else {
+        renderDepartamentos();
+      }
+      delete trigger.dataset.selectedId;
+    });
+
+    trigger.addEventListener('blur', () => {
+      setTimeout(() => { cerrar(); }, 200);
     });
 
     trigger.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') cerrar();
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        if (listEl.hidden) renderDepartamentos();
-        else cerrar();
-      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!combo.contains(e.target)) { cerrar(); trigger.blur(); }
     });
   }
 
@@ -551,16 +587,27 @@
 
     const combo = document.createElement('div');
     combo.className = 'combo';
-    const trigger = document.createElement('button');
-    trigger.type = 'button';
+    const trigger = document.createElement('input');
+    trigger.type = 'text';
     trigger.className = 'combo__trigger escala-trigger';
-    trigger.innerHTML = '<span class="combo__trigger-text" data-placeholder="true">Pueblo intermedio</span>'
-      + '<svg class="combo__chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>';
+    trigger.placeholder = 'Pueblo intermedio';
+    trigger.autocomplete = 'off';
+    const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    chevron.setAttribute('class', 'combo__chevron');
+    chevron.setAttribute('viewBox', '0 0 24 24');
+    chevron.setAttribute('width', '12');
+    chevron.setAttribute('height', '12');
+    chevron.setAttribute('fill', 'none');
+    chevron.setAttribute('stroke', 'currentColor');
+    chevron.setAttribute('stroke-width', '2.5');
+    chevron.setAttribute('stroke-linecap', 'round');
+    chevron.innerHTML = '<path d="M6 9l6 6 6-6"/>';
     const listEl = document.createElement('ul');
     listEl.className = 'combo__list';
     listEl.role = 'listbox';
     listEl.hidden = true;
     combo.appendChild(trigger);
+    combo.appendChild(chevron);
     combo.appendChild(listEl);
 
     const removeBtn = document.createElement('button');
@@ -576,6 +623,45 @@
 
     let seleccion = null;
 
+    function seleccionar(m) {
+      listEl.hidden = true;
+      trigger.value = formatMunicipio(m);
+      trigger.dataset.selectedId = m.id;
+      seleccion = m;
+      actualizarEscalas();
+    }
+
+    function renderFiltrados(texto) {
+      seleccion = null;
+      listEl.innerHTML = '';
+      const idsNoDisponibles = new Set();
+      if (state.origen?.id) idsNoDisponibles.add(state.origen.id);
+      if (state.destino?.id) idsNoDisponibles.add(state.destino.id);
+      state.escalas.forEach((e) => { if (e.id != null && e._row !== row) idsNoDisponibles.add(e.id); });
+      const q = texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const munis = state.municipios.filter((m) => {
+        if (idsNoDisponibles.has(m.id)) return false;
+        const nom = m.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const dep = m.departamento.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return nom.includes(q) || dep.includes(q);
+      }).slice(0, 100);
+      if (munis.length === 0) {
+        const li = document.createElement('li');
+        li.className = 'no-results';
+        li.textContent = 'Sin resultados';
+        listEl.appendChild(li);
+      } else {
+        munis.forEach((m) => {
+          const li = document.createElement('li');
+          li.textContent = m.nombre + ' (' + m.departamento + ')';
+          li.addEventListener('click', (e) => { e.stopPropagation(); seleccionar(m); });
+          listEl.appendChild(li);
+        });
+      }
+      listEl.scrollTop = 0;
+      listEl.hidden = false;
+    }
+
     function renderDeptos() {
       seleccion = null;
       listEl.innerHTML = '';
@@ -586,8 +672,8 @@
         listEl.hidden = true;
         iniciarSeleccionMapa((lat, lon) => {
           const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-          trigger.querySelector('.combo__trigger-text').textContent = nombre;
-          trigger.querySelector('.combo__trigger-text').removeAttribute('data-placeholder');
+          trigger.value = nombre;
+          trigger.dataset.selectedId = 'map_' + Date.now();
           seleccion = { id: 'map_' + Date.now(), lat, lon, nombre, departamento: '' };
           actualizarEscalas();
         });
@@ -625,31 +711,32 @@
       muns.forEach((m) => {
         const li = document.createElement('li');
         li.textContent = m.nombre;
-        li.addEventListener('click', (e) => {
-          e.stopPropagation();
-          listEl.hidden = true;
-          trigger.querySelector('.combo__trigger-text').textContent = formatMunicipio(m);
-          trigger.querySelector('.combo__trigger-text').removeAttribute('data-placeholder');
-          trigger.dataset.rawName = m.nombre;
-          seleccion = m;
-          actualizarEscalas();
-        });
+        li.addEventListener('click', (e) => { e.stopPropagation(); seleccionar(m); });
         listEl.appendChild(li);
       });
       listEl.scrollTop = 0;
       listEl.hidden = false;
     }
 
-    trigger.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (listEl.hidden) renderDeptos(); else listEl.hidden = true;
+    function abrir() {
+      const texto = trigger.value.trim();
+      if (texto) {
+        renderFiltrados(texto);
+      } else {
+        renderDeptos();
+      }
+    }
+
+    trigger.addEventListener('focus', (e) => { e.stopPropagation(); abrir(); });
+    trigger.addEventListener('input', () => {
+      const texto = trigger.value.trim();
+      if (texto) { renderFiltrados(texto); } else { renderDeptos(); }
+      delete trigger.dataset.selectedId;
     });
+    trigger.addEventListener('blur', () => { setTimeout(() => { listEl.hidden = true; }, 200); });
+    trigger.addEventListener('keydown', (e) => { if (e.key === 'Escape') listEl.hidden = true; });
     document.addEventListener('click', function onClickOutside(e) {
-      if (!row.contains(e.target)) listEl.hidden = true;
-    });
-    trigger.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') listEl.hidden = true;
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (listEl.hidden) renderDeptos(); else listEl.hidden = true; }
+      if (!row.contains(e.target)) { listEl.hidden = true; }
     });
 
     removeBtn.addEventListener('click', () => {
@@ -675,11 +762,11 @@
   async function actualizarEscalas() {
     state.escalas.forEach((e) => {
       if (!e._row) return;
-      const txt = e._row.querySelector('.combo__trigger-text');
-      const triggerEl = e._row.querySelector('.combo__trigger');
-      if (!txt || txt.hasAttribute('data-placeholder')) return;
-      const nombre = triggerEl?.dataset.rawName || txt.textContent;
-      const m = state.municipios.find((mun) => mun.nombre === nombre);
+      const input = e._row.querySelector('.combo__trigger');
+      if (!input || !input.value.trim()) return;
+      const nombre = input.dataset.selectedId ? input.value.trim() : null;
+      if (!nombre) return;
+      const m = state.municipios.find((mun) => mun.nombre === nombre || (mun.nombre + ', ' + mun.departamento) === nombre);
       if (m) {
         Object.assign(e, m);
       } else {
@@ -1020,10 +1107,24 @@
       AltimetriaModule.setOnVerMapa((data) => {
         _map.setView([data.lat, data.lon], 13, { animate: true });
       });
+      AltimetriaModule.setOnCentrarMapa((data) => {
+        _map.panTo([data.lat, data.lon], { animate: true });
+      });
 
       document.getElementById('btn-cerrar-altimetria')?.addEventListener('click', () => {
         if (_hoverMarker) { _hoverMarker.remove(); _hoverMarker = null; }
       });
+      let _lastScopeToggle = 0;
+      function toggleScopeBtn(btn) {
+        if (!btn) return;
+        const now = Date.now();
+        if (now - _lastScopeToggle < 500) { return; }
+        _lastScopeToggle = now;
+        const active = AltimetriaModule.toggleFollow();
+        btn.setAttribute('aria-pressed', String(active));
+      }
+      document.getElementById('btn-scope-altimetria')?.addEventListener('click', function () { toggleScopeBtn(this); });
+      document.getElementById('btn-scope-altimetria-panel')?.addEventListener('click', function () { toggleScopeBtn(this); });
     }
 
   }
@@ -1065,6 +1166,7 @@
     if (esMovil()) {
       el.panelLocate.hidden = cargando;
       el.btnMostrarSitiosCercanos.hidden = cargando;
+      if (el.panelParadas) el.panelParadas.hidden = cargando;
     }
   }
 

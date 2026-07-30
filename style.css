@@ -177,27 +177,19 @@ input, select{ font-family: inherit; }
 .combo__trigger{
   width: 100%;
   height: 40px;
-  padding: 0 10px;
+  padding: 0 26px 0 10px;
   border-radius: var(--radius-md);
   border: 1px solid var(--line-300);
   background: #ffffff;
   color: var(--text-strong);
   font-size: 0.85rem;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
   font-family: inherit;
 }
+.combo__trigger::placeholder{ color: var(--text-muted); }
 .combo__trigger:hover{ border-color: var(--teal-500); }
 .combo__trigger:focus{ border-color: var(--teal-500); outline: none; }
-.combo__trigger-text{
-  flex: 1; min-width: 0;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  text-align: left;
-}
-.combo__trigger-text[data-placeholder="true"]{ color: var(--text-muted); }
-.combo__chevron{ flex-shrink: 0; color: var(--text-muted); }
+.combo__chevron{ position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
 .combo__list{
   position: absolute;
   top: calc(100% + 6px);
@@ -1112,11 +1104,11 @@ input, select{ font-family: inherit; }
 }
 .mobile-tab-btn{
   flex: auto;
-  height: 44px;
+  height: 48px;
   border: none;
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -1181,7 +1173,7 @@ input, select{ font-family: inherit; }
   #btn-desvios{ display: none !important; }
 
   /* Mostrar botón de sitios solo en la pestaña Ruta */
-  #btn-mostrar-sitios{ display: flex !important; align-items: center; justify-content: center; padding: 8px 18px; }
+  #btn-mostrar-sitios{ display: flex !important; align-items: center; justify-content: center; padding: 8px 18px; margin: 7px 0 -3px;}
   #app[data-mobile-tab="descubre"] #btn-mostrar-sitios{ display: none !important; }
   #btn-mostrar-sitios[hidden],
   #app[data-mobile-tab="ruta"] #btn-mostrar-sitios[hidden]{ display: none !important; }
@@ -1215,6 +1207,8 @@ input, select{ font-family: inherit; }
   .side-panel > #loading-ruta{ order: 2; }
   .side-panel > .altimetria-panel{ order: 5; }
   #app[data-mobile-tab="altimetria"] .altimetria-panel:not([hidden]){ display: flex; flex: 0 0 auto; }
+  #app[data-mobile-tab="altimetria"] .side-panel{ flex: 0 0 auto; height: auto; padding: 0 4px 56px; gap: 0; overflow: visible; }
+  #app[data-mobile-tab="altimetria"] .map-full{ flex: 1; }
   #app[data-mobile-tab="ruta"] .loading-ruta:not([hidden]){ flex: 1; min-height: 0; }
 
   #app[data-mobile-tab="descubre"] .panel-locate{ display: none; }
@@ -1264,7 +1258,7 @@ input, select{ font-family: inherit; }
 .altimetria[hidden]{ display: none; }
 
 /* Altimetría como pestaña del panel (móvil) */
-.altimetria-panel{ display: none; flex-direction: column; padding: 8px 0; }
+.altimetria-panel{ display: none; flex-direction: column; padding: 0px 2px; margin-top: 1px; }
 .altimetria-panel[hidden]{ display: none; }
 
 /* Icono de Colombia en pestaña Descubre */
@@ -1274,6 +1268,7 @@ input, select{ font-family: inherit; }
 .altimetria__header{
   display: flex;
   align-items: center;
+  position: relative;
   margin-bottom: 0px;
 }
 .altimetria__title{ font-size: 0.7rem; font-weight: 600; color: var(--text-muted); margin-right: auto; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -1282,12 +1277,29 @@ input, select{ font-family: inherit; }
   border: none; background: transparent;
   font-size: 1.2rem; line-height: 1;
   cursor: pointer; color: var(--text-muted);
-  margin-left: auto;
 }
 .altimetria__close:hover{ color: var(--text-strong); }
+.altimetria__scope{
+  width: 26px; height: 26px;
+  border: none; background: transparent;
+  cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0.5;
+  transition: opacity 0.12s ease;
+  touch-action: manipulation;
+}
+.altimetria__scope:hover{ opacity: 1; }
+.altimetria__scope[aria-pressed="false"] img{ filter: brightness(0) invert(0.5); }
+.altimetria__scope[aria-pressed="true"]{ opacity: 1; }
+.altimetria__scope[aria-pressed="true"] img{ filter: brightness(0) saturate(100%) invert(40%) sepia(11%) saturate(716%) hue-rotate(118deg) brightness(94%) contrast(92%); }
+.altimetria__scope img{ display: block; }
 .altimetria__chart{ width: 100%; height: 140px; position: relative; flex-shrink: 0; }
 .altimetria__chart svg{ width: 100%; height: 100%; display: block; }
 .altimetria__hover-info{
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
   display: flex;
   gap: 12px;
   font-size: 0.7rem;

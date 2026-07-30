@@ -9,6 +9,8 @@ const AltimetriaModule = (() => {
   let _onVerMapa = null;
   let _onHoverMapa = null;
   let _onLeaveMapa = null;
+  let _onCentrarMapa = null;
+  let _followActivo = true;
 
   function _acumular(coords, elev) {
     const total = [];
@@ -39,6 +41,9 @@ const AltimetriaModule = (() => {
   function setOnVerMapa(fn) { _onVerMapa = fn; }
   function setOnHover(fn) { _onHoverMapa = fn; }
   function setOnLeave(fn) { _onLeaveMapa = fn; }
+  function setOnCentrarMapa(fn) { _onCentrarMapa = fn; }
+  function toggleFollow() { _followActivo = !_followActivo; return _followActivo; }
+  function isFollowActivo() { return _followActivo; }
 
   function renderizar(containerId) {
     const cont = document.getElementById(containerId);
@@ -243,6 +248,9 @@ const AltimetriaModule = (() => {
     hit.addEventListener('mousemove', (ev) => { _onHover(cont, ev); });
     hit.addEventListener('mouseleave', () => { _onLeave(cont); });
     hit.addEventListener('click', (ev) => { if (_puntoHover) { _mostrarTooltip(cont, null); } });
+    // Touch support for mobile
+    hit.addEventListener('touchstart', (ev) => { ev.preventDefault(); _onTouchHover(cont, ev); }, { passive: false });
+    hit.addEventListener('touchmove', (ev) => { ev.preventDefault(); _onTouchHover(cont, ev); }, { passive: false });
   }
 
   function _agregarMarcadorExtremo(svg, puntos, idx, letra, padLeft, padTop, plotW, plotH, minAlt, rangoAlt, maxD) {
@@ -307,6 +315,7 @@ const AltimetriaModule = (() => {
     cont._hoverCircle.style.display = '';
     _puntoHover = { lat: pt.coord[1], lon: pt.coord[0], dist: dist.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A' };
     if (_onHoverMapa) _onHoverMapa(_puntoHover);
+    if (_followActivo && _onCentrarMapa) { _onCentrarMapa(_puntoHover); }
     const suffix = cont.id.includes('-panel') ? '-panel' : '';
     const distEl = document.getElementById('altimetria-dist' + suffix);
     const altEl = document.getElementById('altimetria-alt' + suffix);
@@ -324,6 +333,48 @@ const AltimetriaModule = (() => {
     else if (residuo <= 7) paso = 5 * magnitud;
     else paso = 10 * magnitud;
     return paso || 1;
+  }
+
+  function _onTouchHover(cont, ev) {
+    const touch = ev.touches[0];
+    if (!touch) return;
+    const rect = cont._svg.getBoundingClientRect();
+    const mx = touch.clientX - rect.left;
+    const my = touch.clientY - rect.top;
+    const rat = Math.max(0, Math.min(1, (mx - cont._padLeft) / cont._plotW));
+    const dist = rat * cont._maxD;
+    let lo = 0;
+    while (lo < cont._puntos.length - 1 && cont._puntos[lo + 1].d < dist) lo++;
+    const hi = Math.min(lo + 1, cont._puntos.length - 1);
+    const pt = cont._puntos[lo];
+    if (!pt) return;
+    cont._hoverLine.setAttribute('x1', mx);
+    cont._hoverLine.setAttribute('x2', mx);
+    cont._hoverLine.style.display = '';
+    cont._hoverCircle.setAttribute('cx', mx);
+    const pLo = cont._puntos[lo];
+    const pHi = cont._puntos[hi];
+    let alt;
+    if (pLo && pLo.e != null) {
+      if (pHi && pHi.e != null && pHi.d > pLo.d) {
+        const f = (dist - pLo.d) / (pHi.d - pLo.d);
+        alt = pLo.e + f * (pHi.e - pLo.e);
+      } else {
+        alt = pLo.e;
+      }
+    } else {
+      alt = cont._minAlt + cont._rangoAlt * 0.5;
+    }
+    cont._hoverCircle.setAttribute('cy', cont._padTop + cont._plotH - ((alt - cont._minAlt) / cont._rangoAlt) * cont._plotH);
+    cont._hoverCircle.style.display = '';
+    _puntoHover = { lat: pt.coord[1], lon: pt.coord[0], dist: dist.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A' };
+    if (_onHoverMapa) _onHoverMapa(_puntoHover);
+    if (_followActivo && _onCentrarMapa) { _onCentrarMapa(_puntoHover); }
+    const suffix = cont.id.includes('-panel') ? '-panel' : '';
+    const distEl = document.getElementById('altimetria-dist' + suffix);
+    const altEl = document.getElementById('altimetria-alt' + suffix);
+    if (distEl) distEl.textContent = `${dist.toFixed(1)} km`;
+    if (altEl) altEl.textContent = alt != null ? alt.toFixed(0) + ' msnm' : '';
   }
 
   function _onLeave(cont) {
@@ -423,6 +474,10 @@ const AltimetriaModule = (() => {
       cont._hoverCircle.setAttribute('cy', cont._padTop + cont._plotH - ((alt - cont._minAlt) / cont._rangoAlt) * cont._plotH);
       cont._hoverCircle.style.display = '';
     }
+    if (_followActivo && _onCentrarMapa) {
+      const pt = cont._puntos[lo];
+      if (pt) { _onCentrarMapa({ lat: pt.coord[1], lon: pt.coord[0], dist: distKm.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A' }); }
+    }
     const suffix = cont.id.includes('-panel') ? '-panel' : '';
     const distEl = document.getElementById('altimetria-dist' + suffix);
     const altEl = document.getElementById('altimetria-alt' + suffix);
@@ -446,5 +501,5 @@ const AltimetriaModule = (() => {
     return { alt, dist: distKm };
   }
 
-  return { setDatos, agregarParada, renderizar, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa, setOnHover, setOnLeave, mostrarHoverEn, ocultarHover, getInfoAt };
+  return { setDatos, agregarParada, renderizar, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa, setOnHover, setOnLeave, setOnCentrarMapa, toggleFollow, isFollowActivo, mostrarHoverEn, ocultarHover, getInfoAt };
 })();

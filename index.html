@@ -57,6 +57,7 @@
           <span id="altimetria-dist"></span>
           <span id="altimetria-alt"></span>
         </span>
+        <button type="button" id="btn-scope-altimetria" class="altimetria__scope" title="Seguir en el mapa" aria-pressed="true"><img src="public/scope.svg" alt="" width="15" height="26"></button>
         <button type="button" id="btn-cerrar-altimetria" class="altimetria__close">&times;</button>
       </div>
       <div class="altimetria__chart" id="altimetria-chart"></div>
@@ -82,10 +83,8 @@
     <section class="panel-locate" id="panel-locate">
       <div class="panel-locate__row" id="row-origen">
         <div class="combo" data-combo="origen">
-          <button type="button" class="combo__trigger" id="origen-input" aria-label="Seleccionar municipio de origen">
-            <span class="combo__trigger-text" data-placeholder="true">Origen</span>
-            <svg class="combo__chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
+          <input type="text" class="combo__trigger" id="origen-input" placeholder="Origen" autocomplete="off" aria-label="Seleccionar municipio de origen">
+          <svg class="combo__chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
           <ul class="combo__list" id="origen-list" role="listbox" hidden></ul>
         </div>
         <button type="button" id="btn-agregar-escala" class="icon-btn" title="Agregar pueblo intermedio" aria-label="Agregar pueblo intermedio">
@@ -95,10 +94,8 @@
       <div class="panel-locate__escalas" id="panel-escalas"></div>
       <div class="panel-locate__row" id="row-destino">
         <div class="combo" data-combo="destino">
-          <button type="button" class="combo__trigger" id="destino-input" aria-label="Seleccionar municipio de destino">
-            <span class="combo__trigger-text" data-placeholder="true">Destino</span>
-            <svg class="combo__chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
+          <input type="text" class="combo__trigger" id="destino-input" placeholder="Destino" autocomplete="off" aria-label="Seleccionar municipio de destino">
+          <svg class="combo__chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
           <ul class="combo__list" id="destino-list" role="listbox" hidden></ul>
         </div>
         <button type="button" id="btn-calcular" class="icon-btn icon-btn--accent" title="Calcular ruta" aria-label="Calcular ruta" disabled>
@@ -248,6 +245,7 @@
           <span id="altimetria-dist-panel"></span>
           <span id="altimetria-alt-panel"></span>
         </span>
+        <button type="button" id="btn-scope-altimetria-panel" class="altimetria__scope" title="Seguir en el mapa" aria-pressed="true"><img src="public/scope.svg" alt="" width="15" height="26"></button>
       </div>
       <div class="altimetria__chart" id="altimetria-chart-panel"></div>
     </div>
@@ -259,13 +257,13 @@
   <!-- ============ BARRA DE PESTAÑAS INFERIOR MÓVIL ============ -->
   <nav class="mobile-tab-bar" id="mobile-tab-bar">
     <button type="button" id="btn-tab-altimetria" class="mobile-tab-btn mobile-tab-btn--altimetria" title="Perfil de elevación" aria-label="Perfil de elevación">
-      <img src="public/bike.svg" alt="" width="22" height="22" style="filter: brightness(0) invert(0.5);">
+      <img src="public/bike.svg" alt="" width="26" height="26" style="filter: brightness(0) invert(0.5);">
     </button>
-    <button type="button" class="mobile-tab-btn mobile-tab-btn--active" data-tab="ruta" id="btn-tab-ruta">Rutas <img src="public/airplane.svg" alt="" width="16" height="16" style="filter: brightness(0) invert(0.5);">
+    <button type="button" class="mobile-tab-btn mobile-tab-btn--active" data-tab="ruta" id="btn-tab-ruta">Rutas <img src="public/airplane.svg" alt="" width="20" height="20" style="filter: brightness(0) invert(0.5);">
     </button>
     <button type="button" class="mobile-tab-btn" data-tab="descubre" id="btn-tab-descubre" disabled>
       <span>Descubre Colombia</span>
-      <img src="public/colombia.svg" alt="" width="18" height="18" class="tab-descubre-icon" id="ico-descubre-tab">
+      <img src="public/colombia.svg" alt="" width="22" height="22" class="tab-descubre-icon" id="ico-descubre-tab">
       <span class="badge-count mono" id="sitios-contador-tab" hidden>0</span>
     </button>
   </nav>
