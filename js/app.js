@@ -448,6 +448,7 @@
       });
       listEl.scrollTop = 0;
       listEl.hidden = false;
+      resaltar(0);
     }
 
     function renderMunicipios() {
@@ -474,10 +475,19 @@
       });
       listEl.scrollTop = 0;
       listEl.hidden = false;
+      resaltar(0);
     }
 
     function cerrar() {
       listEl.hidden = true;
+    }
+
+    function resaltar(idx) {
+      const items = [...listEl.querySelectorAll('li:not(.combo__back):not(.no-results)')];
+      items.forEach((li, i) => {
+        if (i === idx) { li.setAttribute('aria-selected', 'true'); li.scrollIntoView({ block: 'nearest' }); }
+        else li.removeAttribute('aria-selected');
+      });
     }
 
     function seleccionar(m) {
@@ -513,11 +523,16 @@
       }
       listEl.scrollTop = 0;
       listEl.hidden = false;
+      resaltar(0);
     }
 
     function abrir() {
       const texto = trigger.value.trim();
-      if (texto) {
+      if (trigger.dataset.selectedId) {
+        trigger.value = '';
+        delete trigger.dataset.selectedId;
+        renderDepartamentos();
+      } else if (texto) {
         renderFiltrados(texto);
       } else {
         renderDepartamentos();
@@ -544,8 +559,27 @@
     });
 
     trigger.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') cerrar();
+      if (e.key === 'Escape') { cerrar(); e.preventDefault(); return; }
+      if (listEl.hidden) return;
+      const items = [...listEl.querySelectorAll('li:not(.combo__back):not(.no-results)')];
+      if (items.length === 0) return;
+      let cur = items.findIndex((li) => li.hasAttribute('aria-selected'));
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        cur = Math.min(cur + 1, items.length - 1);
+        resaltar(cur);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        cur = Math.max(cur - 1, 0);
+        resaltar(cur);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const sel = items.find((li) => li.hasAttribute('aria-selected')) || items[0];
+        if (sel) sel.click();
+      }
     });
+
+    listEl.addEventListener('mousedown', (e) => { e.preventDefault(); });
 
     document.addEventListener('click', (e) => {
       if (!combo.contains(e.target)) { cerrar(); trigger.blur(); }
@@ -631,6 +665,14 @@
       actualizarEscalas();
     }
 
+    function resaltar(idx) {
+      const items = [...listEl.querySelectorAll('li:not(.combo__back):not(.no-results)')];
+      items.forEach((li, i) => {
+        if (i === idx) { li.setAttribute('aria-selected', 'true'); li.scrollIntoView({ block: 'nearest' }); }
+        else li.removeAttribute('aria-selected');
+      });
+    }
+
     function renderFiltrados(texto) {
       seleccion = null;
       listEl.innerHTML = '';
@@ -660,6 +702,7 @@
       }
       listEl.scrollTop = 0;
       listEl.hidden = false;
+      resaltar(0);
     }
 
     function renderDeptos() {
@@ -692,6 +735,7 @@
       });
       listEl.scrollTop = 0;
       listEl.hidden = false;
+      resaltar(0);
     }
     function renderMunicipios(depto) {
       listEl.innerHTML = '';
@@ -716,11 +760,16 @@
       });
       listEl.scrollTop = 0;
       listEl.hidden = false;
+      resaltar(0);
     }
 
     function abrir() {
       const texto = trigger.value.trim();
-      if (texto) {
+      if (trigger.dataset.selectedId) {
+        trigger.value = '';
+        delete trigger.dataset.selectedId;
+        renderDeptos();
+      } else if (texto) {
         renderFiltrados(texto);
       } else {
         renderDeptos();
@@ -734,7 +783,27 @@
       delete trigger.dataset.selectedId;
     });
     trigger.addEventListener('blur', () => { setTimeout(() => { listEl.hidden = true; }, 200); });
-    trigger.addEventListener('keydown', (e) => { if (e.key === 'Escape') listEl.hidden = true; });
+    trigger.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { listEl.hidden = true; e.preventDefault(); return; }
+      if (listEl.hidden) return;
+      const items = [...listEl.querySelectorAll('li:not(.combo__back):not(.no-results)')];
+      if (items.length === 0) return;
+      let cur = items.findIndex((li) => li.hasAttribute('aria-selected'));
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        cur = Math.min(cur + 1, items.length - 1);
+        resaltar(cur);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        cur = Math.max(cur - 1, 0);
+        resaltar(cur);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const sel = items.find((li) => li.hasAttribute('aria-selected')) || items[0];
+        if (sel) sel.click();
+      }
+    });
+    listEl.addEventListener('mousedown', (e) => { e.preventDefault(); });
     document.addEventListener('click', function onClickOutside(e) {
       if (!row.contains(e.target)) { listEl.hidden = true; }
     });
