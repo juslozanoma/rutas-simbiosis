@@ -20,11 +20,17 @@ const MapModule = (() => {
   let markerDestino = null;
   let capaParadas = null;       // L.layerGroup con las paradas (escalas + sitios agregados)
   let capaEscalas = null;       // L.layerGroup con marcadores de municipios intermedios
+  let capaPuntosDesvio = null;  // L.layerGroup con puntos de desvío (círculos pequeños)
   let capaAlertas = null;       // L.layerGroup con advertencias de tramos peligrosos
   let clusterSitios = null;     // L.markerClusterGroup con los sitios candidatos filtrados
   let _capaFlechas = null;      // L.layerGroup con flechas de dirección sobre la ruta
 
   const _sitioMarkers = new Map(); // sitioId → L.marker
+  const _marcadorParadas = new Map(); // paradaId → L.marker (sitios ya agregados a la ruta)
+  const _marcadorEscalas = new Map(); // escalaId → L.marker (municipios intermedios)
+  const _marcadorPuntosDesvio = new Map(); // escalaId → L.marker (puntos de desvío arrastrados)
+  let _coordOrigen = null; // [lat, lon]
+  let _coordDestino = null; // [lat, lon]
 
   // Route drag-to-reroute state
   let _rutaGeojson = null;
@@ -90,6 +96,7 @@ const MapModule = (() => {
 
     capaParadas = L.layerGroup().addTo(map);
     capaEscalas = L.layerGroup().addTo(map);
+    capaPuntosDesvio = L.layerGroup().addTo(map);
     capaAlertas = L.layerGroup().addTo(map);
 
     // El contenedor del mapa nace con un tamaño definido por CSS (flex),
@@ -100,6 +107,11 @@ const MapModule = (() => {
     map.on('contextmenu', _onMapContextMenu);
     document.addEventListener('click', _cerrarCtxMenu);
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cancelarMarcadoTramo(); });
+
+    // La flecha de dirección se mantiene centrada en el tramo de ruta visible
+    map.on('moveend', () => {
+      if (_capaFlechas) _actualizarFlechaRuta();
+    });
 
     return map;
   }
@@ -179,6 +191,7 @@ const MapModule = (() => {
     markerOrigen = L.marker([lat, lon], { icon: iconoOrigen(), zIndexOffset: 50 })
       .bindTooltip(`Origen: ${etiqueta}`, { direction: 'top', offset: [0, -10] })
       .addTo(map);
+    _coordOrigen = [lat, lon];
   }
 
   function setMarcadorDestino(lat, lon, etiqueta) {
@@ -186,11 +199,23 @@ const MapModule = (() => {
     markerDestino = L.marker([lat, lon], { icon: iconoDestino(), zIndexOffset: 50 })
       .bindTooltip(`Destino: ${etiqueta}`, { direction: 'top', offset: [0, -10] })
       .addTo(map);
+    _coordDestino = [lat, lon];
   }
 
   function limpiarMarcadoresRuta() {
     if (markerOrigen) { map.removeLayer(markerOrigen); markerOrigen = null; }
     if (markerDestino) { map.removeLayer(markerDestino); markerDestino = null; }
+    _coordOrigen = null;
+    _coordDestino = null;
+  }
+
+  /** Nivel de zoom al que se enfoca la vista al pulsar una fila de parada/extremo. */
+  const ZOOM_ENFOQUE_MUNICIPIO = 13;
+
+  /** Enfoca la vista sobre un punto acercándola al menos al zoom municipal. */
+  function enfocarLugar(lat, lon) {
+    if (lat == null || lon == null) return;
+    map.setView([lat, lon], Math.max(map.getZoom(), ZOOM_ENFOQUE_MUNICIPIO), { animate: true });
   }
 
   // ---------------------------------------------------------------------
@@ -207,9 +232,11 @@ const MapModule = (() => {
   /** Repinta los marcadores numerados de los sitios agregados a la ruta, en orden de visita. */
   function setMarcadoresParadas(paradas) {
     capaParadas.clearLayers();
+    _marcadorParadas.clear();
     paradas.forEach((sitio, i) => {
       const num = sitio._numero || i + 1;
       const marker = L.marker([sitio.lat, sitio.lon], { icon: _iconoParada(num), zIndexOffset: 900 });
+      _marcadorParadas.set(sitio.id, marker);
 
       const distTxt = sitio.distanciaRutaKm != null
         ? `A ${sitio.distanciaRutaKm.toFixed(1)} km del corredor · ~${Math.round(sitio.tiempoDesvioMin)} min de desvío`
@@ -260,23 +287,133 @@ const MapModule = (() => {
 
   function limpiarParadas() {
     capaParadas.clearLayers();
+    _marcadorParadas.clear();
   }
 
   /** Repinta los marcadores numerados de las escalas (municipios intermedios). */
   function setMarcadoresEscalas(escalas) {
     capaEscalas.clearLayers();
+    _marcadorEscalas.clear();
     escalas.forEach((e, i) => {
       if (e.lat == null || e.lon == null) return;
       if (e._dragGenerated) return;
       const num = e._numero || i + 1;
       const marker = L.marker([e.lat, e.lon], { icon: _iconoEscala(num), zIndexOffset: 950 });
-      marker.bindTooltip(e.nombre, { direction: 'top' });
+      _marcadorEscalas.set(e.id, marker);
+      marker.bindPopup(`
+        <div class="popup-sitio">
+          <span class="popup-sitio__cat">Pueblo intermedio</span>
+          <h3 class="popup-sitio__nombre">${e.nombre || ''}</h3>
+          <p class="popup-sitio__ubicacion">${e.departamento ? e.departamento : ''}</p>
+          <p class="popup-sitio__dist mono"></p>
+        </div>
+      `);
+      marker.on('popupopen', (ev) => {
+        const el = ev.popup.getElement();
+        const catBadge = el && el.querySelector('.popup-sitio__cat');
+        if (catBadge) {
+          catBadge.style.background = '#4a6fa522';
+          catBadge.style.color = '#4a6fa5';
+        }
+      });
       marker.addTo(capaEscalas);
     });
   }
 
   function limpiarEscalas() {
     capaEscalas.clearLayers();
+    _marcadorEscalas.clear();
+  }
+
+  // ---------------------------------------------------------------------
+  // Puntos de desvío (generados al arrastrar un tramo de la ruta)
+  // ---------------------------------------------------------------------
+
+  let _onMenuPuntoDesvio = null;   // (escalaId, clientX, clientY) => void
+  let _onMoverPuntoDesvio = null;  // (escalaId, lat, lon) => void
+
+  /** Registra la función que abre el menú contextual del punto de desvío. */
+  function setOnMenuPuntoDesvio(callback) {
+    _onMenuPuntoDesvio = callback;
+  }
+
+  /** Registra la función que se ejecuta al soltar un punto de desvío arrastrado. */
+  function setOnMoverPuntoDesvio(callback) {
+    _onMoverPuntoDesvio = callback;
+  }
+
+  /** Repinta los puntos de desvío (escalas `_dragGenerated`) como círculos pequeños y arrastrables. */
+  function setMarcadoresPuntosDesvio(escalas) {
+    capaPuntosDesvio.clearLayers();
+    _marcadorPuntosDesvio.clear();
+    escalas.forEach((e) => {
+      if (!e._dragGenerated || e.lat == null || e.lon == null) return;
+      const marker = L.marker([e.lat, e.lon], {
+        icon: L.divIcon({
+          html: '<div class="desvio-point"></div>',
+          className: '',
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+        }),
+        draggable: true,
+        zIndexOffset: 1400,
+      });
+
+      _marcadorPuntosDesvio.set(e.id, marker);
+
+      marker.on('dragend', () => {
+        const ll = marker.getLatLng();
+        if (_onMoverPuntoDesvio) _onMoverPuntoDesvio(e.id, ll.lat, ll.lng);
+      });
+
+      // Menú contextual (clic secundario / pulsación larga) sobre el punto
+      marker.on('contextmenu', (ev) => {
+        if (ev.originalEvent) {
+          ev.originalEvent.preventDefault();
+          ev.originalEvent.stopPropagation();
+        }
+        if (_onMenuPuntoDesvio) {
+          const p = ev.originalEvent || {};
+          _onMenuPuntoDesvio(e.id, p.clientX, p.clientY);
+        }
+      });
+
+      marker.on('add', () => {
+        const el = marker.getElement();
+        if (!el) return;
+        let longPress = null;
+        let startX = 0;
+        let startY = 0;
+        const programa = (evt) => {
+          const t = evt.touches[0];
+          if (!t) return;
+          startX = t.clientX;
+          startY = t.clientY;
+          longPress = setTimeout(() => {
+            longPress = null;
+            if (_onMenuPuntoDesvio) _onMenuPuntoDesvio(e.id, startX, startY);
+          }, 550);
+        };
+        const cancela = () => {
+          if (longPress) { clearTimeout(longPress); longPress = null; }
+        };
+        el.addEventListener('touchstart', programa, { passive: true });
+        el.addEventListener('touchmove', (evt) => {
+          if (!longPress) return;
+          const t = evt.touches[0];
+          if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) cancela();
+        }, { passive: true });
+        el.addEventListener('touchend', cancela);
+        el.addEventListener('touchcancel', cancela);
+      });
+
+      marker.addTo(capaPuntosDesvio);
+    });
+  }
+
+  function limpiarPuntosDesvio() {
+    capaPuntosDesvio.clearLayers();
+    _marcadorPuntosDesvio.clear();
   }
 
   // ---------------------------------------------------------------------
@@ -314,6 +451,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
   function _onMapContextMenu(e) {
     if (_marcandoTramo) return;
+    if (e.originalEvent && e.originalEvent.target && e.originalEvent.target.closest && e.originalEvent.target.closest('.desvio-point')) return;
     _cerrarCtxMenu();
     const div = document.createElement('div');
     div.className = 'ctx-menu';
@@ -485,30 +623,50 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       layer.on('mousedown', _onRutaMouseDown);
     });
 
-    // Direction arrows along the route
+    // Direction arrow (single) always centered on the visible portion of the route
     if (_capaFlechas) map.removeLayer(_capaFlechas);
     _capaFlechas = L.layerGroup().addTo(map);
-    const coords = geojsonLineString.geometry.coordinates;
-    if (coords && coords.length >= 2) {
-      const line = turf.lineString(coords);
-      const routeKm = turf.length(line, { units: 'kilometers' });
-      const paso = Math.max(30, routeKm / 6);
-      for (let d = paso * 0.5; d < routeKm - 1; d += paso) {
-        const pt = turf.along(line, d, { units: 'kilometers' });
-        const prev = turf.along(line, Math.max(0, d - 0.5), { units: 'kilometers' });
-        const next = turf.along(line, Math.min(routeKm, d + 0.5), { units: 'kilometers' });
-        const bearing = turf.bearing(prev, next);
-        const arrowIcon = L.divIcon({
-          html: `<div style="transform:rotate(${bearing}deg);font-size:16px;line-height:1;color:#2f7a6b;opacity:0.7;">▶</div>`,
-          className: '',
-          iconSize: [16, 16],
-          iconAnchor: [8, 8],
-        });
-        L.marker([pt.geometry.coordinates[1], pt.geometry.coordinates[0]], { icon: arrowIcon, interactive: false }).addTo(_capaFlechas);
-      }
-    }
+    _actualizarFlechaRuta();
 
     return capaRuta;
+  }
+
+  /** Ubica (o reposiciona) la única flecha en el punto medio del tramo de ruta visible en pantalla. */
+  function _actualizarFlechaRuta() {
+    if (!_capaFlechas || !map) return;
+    _capaFlechas.clearLayers();
+    if (!_rutaGeojson || !_rutaGeojson.geometry) return;
+
+    let coords;
+    try {
+      const b = map.getBounds();
+      const clipped = turf.bboxClip(_rutaGeojson, [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
+      if (clipped && clipped.geometry && clipped.geometry.type === 'LineString') {
+        coords = clipped.geometry.coordinates;
+      } else if (clipped && clipped.geometry && clipped.geometry.type === 'MultiLineString') {
+        coords = clipped.geometry.coordinates.reduce((a, c) => (c.length > a.length ? c : a), []);
+      }
+      if (coords && coords.length < 2) coords = null;
+    } catch (err) {
+      coords = _rutaGeojson.geometry.coordinates;
+    }
+    if (!coords) coords = _rutaGeojson.geometry.coordinates;
+    if (!coords || coords.length < 2) return;
+
+    const line = turf.lineString(coords);
+    const km = turf.length(line, { units: 'kilometers' });
+    const d = km / 2;
+    const pt = turf.along(line, d, { units: 'kilometers' });
+    const prev = turf.along(line, Math.max(0, d - 0.5), { units: 'kilometers' });
+    const next = turf.along(line, Math.min(km, d + 0.5), { units: 'kilometers' });
+    const bearing = turf.bearing(prev, next);
+    const arrowIcon = L.divIcon({
+      html: `<img src="public/arrow.svg" style="transform:rotate(${bearing}deg);width:22px;height:22px;"/>`,
+      className: '',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
+    });
+    L.marker([pt.geometry.coordinates[1], pt.geometry.coordinates[0]], { icon: arrowIcon, interactive: false }).addTo(_capaFlechas);
   }
 
   // ---------------------------------------------------------------------
@@ -638,6 +796,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarMarcadoresRuta();
     limpiarParadas();
     limpiarEscalas();
+    limpiarPuntosDesvio();
     limpiarAlertas();
     clusterSitios.clearLayers();
   }
@@ -666,6 +825,46 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         if (sitio) TourismModule.mostrarPopupSitio(sitio);
       }
     });
+  }
+
+  /** Abre el popup de una parada ya agregada a la ruta y acerca el mapa al lugar. */
+  function abrirPopupParada(sitioId) {
+    const marker = _marcadorParadas.get(sitioId);
+    if (!marker) {
+      abrirPopupSitio(sitioId);
+      if (typeof TourismModule !== 'undefined' && TourismModule.getSitios) {
+        const sitio = TourismModule.getSitios().find(s => s.id === sitioId);
+        if (sitio) enfocarLugar(sitio.lat, sitio.lon);
+      }
+      return;
+    }
+    marker.openPopup();
+    enfocarLugar(marker.getLatLng().lat, marker.getLatLng().lng);
+  }
+
+  /** Abre el popup de una escala (municipio intermedio) y acerca el mapa al lugar. */
+  function abrirPopupEscala(escalaId) {
+    const marker = _marcadorEscalas.get(escalaId);
+    if (!marker) return;
+    marker.openPopup();
+    enfocarLugar(marker.getLatLng().lat, marker.getLatLng().lng);
+  }
+
+  /** Abre la ficha informativa del origen o destino sobre su marcador y acerca el mapa al lugar. */
+  function abrirPopupExtremo(tipo, nombre, departamento) {
+    const marker = tipo === 'origen' ? markerOrigen : markerDestino;
+    if (!marker) return;
+    const etiqueta = tipo === 'origen' ? 'Ciudad de origen' : 'Ciudad de destino';
+    marker.bindPopup(`
+      <div class="popup-sitio">
+        <span class="popup-sitio__cat" style="background:#2d7d6822;color:#2d7d68">${etiqueta}</span>
+        <h3 class="popup-sitio__nombre">${nombre || ''}</h3>
+        <p class="popup-sitio__ubicacion">${departamento || ''}</p>
+        <p class="popup-sitio__dist mono"></p>
+      </div>
+    `);
+    marker.openPopup();
+    enfocarLugar(marker.getLatLng().lat, marker.getLatLng().lng);
   }
 
   function ocultarTooltipSitio(sitioId) {
@@ -725,6 +924,11 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarParadas,
     setMarcadoresEscalas,
     limpiarEscalas,
+    setMarcadoresPuntosDesvio,
+    limpiarPuntosDesvio,
+    setOnMenuPuntoDesvio,
+    setOnMoverPuntoDesvio,
+    abrirPopupEscala,
     mostrarAlertaRuta,
     limpiarAlertas,
     setOnTramoCompletado,
@@ -739,6 +943,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     agregarMarcadorSitio,
     toggleSitios,
     abrirPopupSitio,
+    abrirPopupParada,
+    abrirPopupExtremo,
     ocultarTooltipSitio,
     mostrarTooltipSitio,
     encuadrar,

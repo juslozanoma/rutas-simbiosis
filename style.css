@@ -777,6 +777,17 @@ input, select{ font-family: inherit; }
   box-shadow: 0 2px 6px rgba(20,32,27,0.4);
 }
 
+/* Punto de desvío persistente creado al arrastrar un tramo de la ruta */
+.desvio-point{
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #7ad0b4;
+  border: 3px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(20,32,27,0.55);
+  cursor: grab;
+}
+.desvio-point:active{ cursor: grabbing; }
+
 /* Pin numerado para un sitio agregado como parada de la ruta */
 .parada-pin{
   width: 28px; height: 28px;
@@ -1512,4 +1523,39 @@ input, select{ font-family: inherit; }
   border-color: var(--teal-500);
 }
 .dialog__btn--save:hover{ background: var(--teal-600); border-color: var(--teal-600); }
+
+/* Menú contextual de las filas de paradas (clic derecho / pulsación larga) */
+.fila-menu{
+  position: fixed;
+  background: #ffffff;
+  border: 1px solid var(--line-300);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 16px rgba(20,32,27,0.18);
+  z-index: 20000;
+  min-width: 190px;
+  max-width: 260px;
+  overflow: hidden;
+  padding: 4px;
+}
+.fila-menu__item{
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  color: var(--text-body);
+  cursor: pointer;
+  user-select: none;
+  border-radius: var(--radius-sm);
+  transition: background 0.08s ease;
+}
+.fila-menu__item:hover{ background: var(--teal-50); }
+
+/* Bloque de parada clicable como elemento */
+.parada-item{
+  cursor: pointer;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+  transition: background 0.1s ease, border-color 0.1s ease, box-shadow 0.1s ease;
+}
+.parada-item:hover{ background: #f0f4f2; border-color: var(--teal-500); }
+.parada-item:active{ background: #e6eee8; }
+.parada-item:focus-visible{ outline: 2px solid var(--teal-500); outline-offset: 1px; }
 

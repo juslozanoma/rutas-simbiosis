@@ -284,6 +284,8 @@
   async function init() {
     MapModule.init('map');
     MapModule.setOnEliminarParada(eliminarParada);
+    MapModule.setOnMenuPuntoDesvio(abrirMenuPuntoDesvio);
+    MapModule.setOnMoverPuntoDesvio(moverPuntoDesvio);
     TourismModule.setOnAgregarParada((sitio, btn) => agregarParada(sitio, btn));
     MapModule.setOnTramoCompletado(onTramoMarcado);
 
@@ -826,6 +828,7 @@
     });
 
     state.escalas.push({ _row: row });
+    return row;
   }
 
   async function actualizarEscalas() {
@@ -1375,27 +1378,35 @@
       state.escalas.forEach((e) => { delete e._row; });
       renderizarParadas();
 
-      // Limpiar sitios cargados antes de activar la pestaña
-      state.sitiosFiltrados = [];
-      state.sitiosFiltradosBase = [];
+      if (!conservarParadas) {
+        // Limpiar sitios cargados antes de activar la pestaña
+        state.sitiosFiltrados = [];
+        state.sitiosFiltradosBase = [];
 
-      // Activar pestaña Ruta
-      el.panelEscalas.hidden = true;
-      activarPanelTab('ruta');
+        // Activar pestaña Ruta
+        el.panelEscalas.hidden = true;
+        activarPanelTab('ruta');
 
-      // Enable "Mostrar sitios" button
-      _habilitarMostrarSitios();
-      _actualizarTextoBotonesOrden();
-      el.panelSitios.hidden = true;
-      MapModule.limpiarSitios();
+        // Enable "Mostrar sitios" button
+        _habilitarMostrarSitios();
+        _actualizarTextoBotonesOrden();
+        el.panelSitios.hidden = true;
+        MapModule.limpiarSitios();
 
-      el.checkDistancia.checked = true;
-      el.filtroDistancia.value = '5';
-      el.filtroDistanciaValor.textContent = '5 km';
-      el.filtroDistancia.disabled = false;
+        el.checkDistancia.checked = true;
+        el.filtroDistancia.value = '5';
+        el.filtroDistanciaValor.textContent = '5 km';
+        el.filtroDistancia.disabled = false;
 
-      // Volver a la pestaña Ruta en móvil y reiniciar estado de sitios
-      if (esMovil()) setMobileTab('ruta');
+        // Volver a la pestaña Ruta en móvil y reiniciar estado de sitios
+        if (esMovil()) setMobileTab('ruta');
+      } else {
+        // Ruta recalculada tras añadir/eliminar/reordenar paradas o escalas:
+        // se mantiene el estado de la pestaña Descubre y se desbloquea de nuevo.
+        _actualizarTextoBotonesOrden();
+        if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
+        if (el.btnTabDescubre) el.btnTabDescubre.disabled = false;
+      }
 
     } catch (err) {
       if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = '—';
@@ -1810,6 +1821,7 @@
     }
     MapModule.setMarcadoresEscalas(state.escalas);
     MapModule.setMarcadoresParadas(state.paradas);
+    MapModule.setMarcadoresPuntosDesvio(state.escalas);
     MapModule.encuadrar(state.rutaActual.geojson);
     const distTexto = Utils.formatearDistancia(state.rutaActual.distanciaMetros);
     const durTexto = Utils.formatearDuracion(state.rutaActual.duracionSegundos);
@@ -1865,6 +1877,50 @@
     state.orden.splice(segIdx, 0, { tipo: 'escala', id });
 
     // Invalidate cached distances so sites refilter on next request
+    state.sitios.forEach((s) => {
+      delete s.distanciaRutaKm;
+      delete s.tiempoDesvioMin;
+      delete s.distanciaOrigenKm;
+      delete s.distanciaDestinoKm;
+      delete s._offsetLado;
+    });
+    MapModule.limpiarSitios();
+
+    await calcularRutaPrincipal(true);
+    renderizarParadas();
+  }
+
+  /** Elimina un punto de desvío de la ruta conservando la pestaña Descubre. */
+  function eliminarPuntoDesvio(escalaId) {
+    const idx = state.escalas.findIndex((e) => e.id === escalaId);
+    if (idx === -1) return;
+    state.escalas.splice(idx, 1);
+    sincronizarOrden();
+    if (state.rutaActual) {
+      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
+      MapModule.limpiarSitios();
+      calcularRutaPrincipal(true);
+    } else {
+      renderizarParadas();
+    }
+  }
+
+  /** Abre el menú contextual de un punto de desvío (clic secundario / pulsación larga sobre el punto). */
+  function abrirMenuPuntoDesvio(escalaId, clientX, clientY) {
+    const opciones = [
+      { etiqueta: 'Eliminar punto de desvío', accion: () => eliminarPuntoDesvio(escalaId) },
+    ];
+    abrirMenuFila(opciones, clientX, clientY);
+  }
+
+  /** Mueve un punto de desvío arrastrado y recalcula la ruta pasando por su nueva posición. */
+  async function moverPuntoDesvio(escalaId, lat, lon) {
+    const escala = state.escalas.find((e) => e.id === escalaId);
+    if (!escala) return;
+    escala.lat = lat;
+    escala.lon = lon;
+
+    // Invalidar distancias cacheadas de los sitios
     state.sitios.forEach((s) => {
       delete s.distanciaRutaKm;
       delete s.tiempoDesvioMin;
@@ -1955,6 +2011,146 @@
   // -------------------------------------------------------------------
   // Renderizar lista de paradas en el panel (escalas + sitios turísticos)
   // -------------------------------------------------------------------
+
+  // ---------------------------------------------------------------------
+  // Menú contextual de las filas de paradas (clic derecho / pulsación larga)
+  // ---------------------------------------------------------------------
+  let _menuFila = null;
+  let _suprimirProximoClic = false;
+
+  function cerrarMenuFila() {
+    if (_menuFila) {
+      _menuFila.remove();
+      _menuFila = null;
+    }
+  }
+
+  function abrirMenuFila(opciones, clientX, clientY) {
+    cerrarMenuFila();
+    const menu = document.createElement('div');
+    menu.className = 'fila-menu';
+
+    opciones.forEach((op) => {
+      const item = document.createElement('div');
+      item.className = 'fila-menu__item';
+      item.textContent = op.etiqueta;
+      item.addEventListener('click', (evt) => {
+        evt.stopPropagation();
+        cerrarMenuFila();
+        op.accion();
+      });
+      menu.appendChild(item);
+    });
+
+    document.body.appendChild(menu);
+    _menuFila = menu;
+
+    const rect = menu.getBoundingClientRect();
+    let left = clientX;
+    let top = clientY;
+    if (left + rect.width > window.innerWidth - 8) left = window.innerWidth - rect.width - 8;
+    if (top + rect.height > window.innerHeight - 8) top = window.innerHeight - rect.height - 8;
+    left = Math.max(8, left);
+    top = Math.max(8, top);
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+  }
+
+  document.addEventListener('click', (evt) => {
+    if (_menuFila && !_menuFila.contains(evt.target)) cerrarMenuFila();
+  });
+  document.addEventListener('keydown', (evt) => {
+    if (evt.key === 'Escape') cerrarMenuFila();
+  });
+
+  /** Pulsación larga en móvil (≈550 ms) que abre el menú contextual de la fila. */
+  function engancharLongPress(li, alDisparar) {
+    let timer = null;
+    let startX = 0;
+    let startY = 0;
+    let disparado = false;
+
+    li.addEventListener('touchstart', (evt) => {
+      if (evt.touches.length !== 1) return;
+      disparado = false;
+      const t = evt.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+      timer = setTimeout(() => {
+        disparado = true;
+        _suprimirProximoClic = true;
+        setTimeout(() => { _suprimirProximoClic = false; }, 700);
+        navigator.vibrate && navigator.vibrate(20);
+        alDisparar({ clientX: t.clientX, clientY: t.clientY });
+      }, 550);
+    }, { passive: true });
+
+    li.addEventListener('touchmove', (evt) => {
+      if (!timer) return;
+      const t = evt.touches[0];
+      if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    }, { passive: true });
+
+    li.addEventListener('touchend', (evt) => {
+      if (timer) { clearTimeout(timer); timer = null; }
+      if (disparado) evt.preventDefault();
+    });
+
+    li.addEventListener('touchcancel', () => {
+      if (timer) { clearTimeout(timer); timer = null; }
+      if (disparado) { disparado = false; }
+    });
+  }
+
+  /** Lleva al usuario al panel Ruta con el campo de origen seleccionado y su lista desplegada. */
+  function irCambiarOrigen() {
+    activarPanelTab('ruta');
+    setMobileTab('ruta');
+    const row = document.getElementById('row-origen');
+    if (row) row.scrollIntoView({ block: 'nearest' });
+    if (el.origenInput) {
+      el.origenInput.focus();
+      el.origenInput.scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  /** Lleva al usuario al panel Ruta con el campo de destino seleccionado y su lista desplegada. */
+  function irCambiarDestino() {
+    activarPanelTab('ruta');
+    setMobileTab('ruta');
+    const row = document.getElementById('row-destino');
+    if (row) row.scrollIntoView({ block: 'nearest' });
+    if (el.destinoInput) {
+      el.destinoInput.focus();
+      el.destinoInput.scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  /** Lleva al usuario al panel Ruta con un nuevo campo de pueblo intermedio desplegado. */
+  function reemplazarPuebloIntermedio() {
+    activarPanelTab('ruta');
+    setMobileTab('ruta');
+    const row = agregarEscala();
+    el.panelEscalas.hidden = false;
+    el.panelEscalas.scrollIntoView({ block: 'nearest' });
+    const input = row && row.querySelector('.combo__trigger');
+    if (input) {
+      setTimeout(() => {
+        input.focus();
+        input.scrollIntoView({ block: 'nearest' });
+      }, 50);
+    }
+  }
+
+  /** Reemplaza un pueblo intermedio: lo quita de la ruta y abre un nuevo campo editable en el panel Ruta. */
+  function cambiarPueblo(escala) {
+    eliminarEscala(escala.id);
+    reemplazarPuebloIntermedio();
+  }
+
   function renderizarParadas() {
     sincronizarOrden();
 
@@ -1998,6 +2194,46 @@
 
       li.appendChild(num);
       li.appendChild(nombreEl);
+      li.role = 'button';
+      li.tabIndex = 0;
+
+      const accionExtremo = () => {
+        if (_suprimirProximoClic) { _suprimirProximoClic = false; return; }
+        const extremo = tipo === 'origen' ? state.origen : state.destino;
+        if (extremo && extremo.lat != null) {
+          MapModule.abrirPopupExtremo(tipo, extremo.nombre || '', (extremo.departamento || ''));
+        }
+      };
+      li.addEventListener('click', accionExtremo);
+      li.addEventListener('keydown', (evt) => {
+        if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); accionExtremo(); }
+      });
+      const opcionesExtremo = () => {
+        const opciones = [];
+        if (tipo === 'origen') {
+          opciones.push({ etiqueta: 'Cambiar lugar de origen', accion: () => irCambiarOrigen() });
+        } else {
+          opciones.push({ etiqueta: 'Cambiar lugar de destino', accion: () => irCambiarDestino() });
+        }
+        opciones.push({
+          etiqueta: 'Ubicar en el mapa',
+          accion: () => {
+            const extremo = tipo === 'origen' ? state.origen : state.destino;
+            if (extremo && extremo.lat != null) {
+              MapModule.abrirPopupExtremo(tipo, extremo.nombre || '', (extremo.departamento || ''));
+            }
+          },
+        });
+        return opciones;
+      };
+      li.addEventListener('contextmenu', (evt) => {
+        evt.preventDefault();
+        abrirMenuFila(opcionesExtremo(), evt.clientX, evt.clientY);
+      });
+      engancharLongPress(li, (evt) => {
+        abrirMenuFila(opcionesExtremo(), evt.clientX, evt.clientY);
+      });
+
       return li;
     }
 
@@ -2034,12 +2270,14 @@
           const btnUp = btnIcono('<polyline points="18 15 12 9 6 15"/>');
           btnUp.title = 'Subir';
           btnUp.addEventListener('click', (evt) => { evt.stopPropagation(); reordenar(idx, idx - 1); });
+          btnUp.addEventListener('contextmenu', (evt) => evt.stopPropagation());
           acciones.appendChild(btnUp);
         }
         if (idx < total - 1) {
           const btnDown = btnIcono('<polyline points="6 9 12 15 18 9"/>');
           btnDown.title = 'Bajar';
           btnDown.addEventListener('click', (evt) => { evt.stopPropagation(); reordenar(idx, idx + 1); });
+          btnDown.addEventListener('contextmenu', (evt) => evt.stopPropagation());
           acciones.appendChild(btnDown);
         }
       }
@@ -2054,15 +2292,52 @@
       }
       btnDel.title = 'Quitar de la ruta';
       btnDel.setAttribute('aria-label', 'Quitar ' + e.nombre + ' de la ruta');
+      btnDel.addEventListener('contextmenu', (evt) => evt.stopPropagation());
       btnDel.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>';
 
       acciones.appendChild(btnDel);
       li.appendChild(num);
       li.appendChild(nombre);
       li.appendChild(acciones);
-      li.addEventListener('click', () => {
-        if (item.tipo === 'parada') MapModule.abrirPopupSitio(e.id);
+      li.role = 'button';
+      li.tabIndex = 0;
+
+      const accionPrincipal = () => {
+        if (_suprimirProximoClic) { _suprimirProximoClic = false; return; }
+        cerrarMenuFila();
+        if (item.tipo === 'parada') {
+          MapModule.abrirPopupParada(e.id);
+        } else if (item.tipo === 'escala') {
+          MapModule.abrirPopupEscala(e.id);
+        }
+      };
+      li.addEventListener('click', accionPrincipal);
+      li.addEventListener('keydown', (evt) => {
+        if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); accionPrincipal(); }
       });
+
+      const construirOpcionesContexto = () => {
+        if (item.tipo === 'parada') {
+          return [
+            { etiqueta: 'Ubicar en el mapa', accion: () => MapModule.abrirPopupParada(e.id) },
+            { etiqueta: 'Eliminar de la ruta', accion: () => eliminarParada(e.id) },
+          ];
+        }
+        return [
+          { etiqueta: 'Cambiar pueblo intermedio', accion: () => cambiarPueblo(e) },
+          { etiqueta: 'Eliminar pueblo intermedio', accion: () => eliminarEscala(e.id) },
+          { etiqueta: 'Ubicar en la ruta', accion: () => MapModule.abrirPopupEscala(e.id) },
+        ];
+      };
+
+      li.addEventListener('contextmenu', (evt) => {
+        evt.preventDefault();
+        abrirMenuFila(construirOpcionesContexto(), evt.clientX, evt.clientY);
+      });
+      engancharLongPress(li, (evt) => {
+        abrirMenuFila(construirOpcionesContexto(), evt.clientX, evt.clientY);
+      });
+
       el.paradasLista.appendChild(li);
     });
 
