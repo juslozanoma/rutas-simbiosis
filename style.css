@@ -173,6 +173,25 @@ input, select{ font-family: inherit; }
   transition: background 0.1s ease, color 0.1s ease;
 }
 .escala-row__remove:hover{ background: #fdf3f1; color: #b3402f; }
+
+/* Botón "Calcular ruta" de cada pueblo intermedio (naranja) */
+.escala-row__calc{
+  width: 36px; height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid #e8590c;
+  background: #f97316;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0; margin: 0;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.05s ease;
+}
+.escala-row__calc:hover{ background: #ea580c; border-color: #ea580c; }
+.escala-row__calc:active{ transform: translateY(1px); }
+.escala-row__calc .icon-btn__spinner{ width: 14px; height: 14px; border-width: 2px; }
+.escala-row__calc[data-loading="true"] .icon-btn__icon{ visibility: hidden; }
+.escala-row__calc[data-loading="true"] .icon-btn__spinner{ display: inline-block; animation: spin 0.75s linear infinite; }
 .combo{ position: relative; flex: 1; min-width: 0; }
 .combo__trigger{
   width: 100%;
@@ -324,6 +343,24 @@ input, select{ font-family: inherit; }
   accent-color: var(--teal-500);
   cursor: pointer;
 }
+/* Botón "+" junto a "Organizar automáticamente" para añadir pueblo intermedio */
+.btn-agregar-intermedio{
+  width: 22px; height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--teal-500);
+  background: var(--teal-50);
+  color: var(--teal-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0; margin: 0;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.btn-agregar-intermedio:hover{ background: var(--teal-500); color: #ffffff; }
+.btn-agregar-intermedio{ display: none; }
+.btn-agregar-intermedio[hidden]{ display: none; }
 .paradas-lista{
   list-style: none;
   margin: 0;
@@ -1139,6 +1176,7 @@ input, select{ font-family: inherit; }
    ========================================================================== */
 @media (max-width: 860px){
   .app-body{ flex-direction: column; }
+  .btn-agregar-intermedio{ display: inline-flex; }
   .map-full{ flex: 0 0 50%; min-height: 0; }
   #app[data-mobile-panel="collapsed"] .map-full{ flex: 1 !important; }
   #app[data-mobile-panel="collapsed"] .side-panel{ display: none !important; }
@@ -1162,6 +1200,11 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="ruta"] .panel-sites__scroll{ display: none; }
   #app[data-mobile-tab="ruta"] .panel-sites > h2{ display: none; }
   #app[data-mobile-tab="ruta"] .panel-categorias{ display: none !important; }
+
+  /* En móvil, tras calcular la ruta solo se ven las paradas: se ocultan origen/destino */
+  #app[data-mobile-tab="ruta"][data-ruta-lista="true"] .panel-locate{ padding: 0; }
+  #app[data-mobile-tab="ruta"][data-ruta-lista="true"] #row-origen,
+  #app[data-mobile-tab="ruta"][data-ruta-lista="true"] #row-destino{ display: none; }
 
   /* En Descubre: panel-sites llena el panel, hint y desvíos ocultos */
   #app[data-mobile-tab="descubre"] .panel-sites{ flex: 1; min-height: 0; }

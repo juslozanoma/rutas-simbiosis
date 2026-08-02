@@ -115,6 +115,7 @@
 
     panelEscalas: document.getElementById('panel-escalas'),
     btnAgregarEscala: document.getElementById('btn-agregar-escala'),
+    btnAgregarIntermedio: document.getElementById('btn-agregar-intermedio'),
     panelLocate: document.getElementById('panel-locate'),
     btnTabPanelRuta: document.getElementById('btn-tab-panel-ruta'),
     btnTabPanelDescubre: document.getElementById('btn-tab-panel-descubre'),
@@ -267,6 +268,7 @@
       }
       el.btnMostrarSitiosCercanos.hidden = !state.rutaActual || state.sitiosFiltrados.length > 0;
       el.btnMostrarSitiosCercanos.disabled = !state.rutaActual || state.sitiosFiltrados.length > 0;
+      sincronizarModoRutaMovil();
     } else {
       el.btnTabPanelDescubre.classList.add('panel-tab--active');
       el.panelLocate.hidden = true;
@@ -275,6 +277,7 @@
       el.panelDescubreActions.hidden = false;
       el.panelSitios.hidden = false;
       el.btnMostrarSitiosCercanos.hidden = true;
+      _asegurarListadoSitios();
     }
   }
 
@@ -539,6 +542,7 @@
       } else {
         renderDepartamentos();
       }
+      ajustarComboAlTeclado(trigger, listEl);
     }
 
     trigger.addEventListener('focus', (e) => {
@@ -646,14 +650,17 @@
     combo.appendChild(chevron);
     combo.appendChild(listEl);
 
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'escala-row__remove';
-    removeBtn.title = 'Quitar';
-    removeBtn.textContent = '×';
+    const calcBtn = document.createElement('button');
+    calcBtn.type = 'button';
+    calcBtn.className = 'escala-row__calc';
+    calcBtn.title = 'Calcular ruta con este pueblo intermedio';
+    calcBtn.setAttribute('aria-label', 'Calcular ruta con este pueblo intermedio');
+    calcBtn.innerHTML = `
+      <svg class="icon-btn__icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      <span class="icon-btn__spinner" aria-hidden="true"></span>`;
 
     row.appendChild(combo);
-    row.appendChild(removeBtn);
+    row.appendChild(calcBtn);
     el.panelEscalas.appendChild(row);
     el.panelEscalas.hidden = false;
 
@@ -776,6 +783,7 @@
       } else {
         renderDeptos();
       }
+      ajustarComboAlTeclado(trigger, listEl);
     }
 
     trigger.addEventListener('focus', (e) => { e.stopPropagation(); abrir(); });
@@ -810,21 +818,9 @@
       if (!row.contains(e.target)) { listEl.hidden = true; }
     });
 
-    removeBtn.addEventListener('click', () => {
-      const idx = state.escalas.findIndex((e) => e._row === row);
-      if (idx !== -1) {
-        const e = state.escalas[idx];
-        state.escalas.splice(idx, 1);
-    if (state.rutaActual) {
-      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
-      state.sitiosFiltrados = [];
-      state.sitiosFiltradosBase = [];
-      renderizarSitios([]);
-      _habilitarMostrarSitios();
-        }
-      }
-      row.remove();
-      actualizarEstadoBotonCalcular();
+    calcBtn.addEventListener('click', () => {
+      actualizarEscalas();
+      calcularRutaPrincipal(false, { ocultarTestigoSitios: true });
     });
 
     state.escalas.push({ _row: row });
@@ -976,6 +972,9 @@
 
     el.btnTabDescubre.addEventListener('click', () => toggleMobileTab('descubre'));
     el.btnTabRuta.addEventListener('click', () => toggleMobileTab('ruta'));
+    if (el.btnAgregarIntermedio) {
+      el.btnAgregarIntermedio.addEventListener('click', () => agregarPuebloIntermedioDesdeLista());
+    }
     el.checkAutoOrganizar.addEventListener('change', () => {
       if (el.checkAutoOrganizar.checked) organizarAutomaticamente();
     });
@@ -1096,30 +1095,13 @@
     el.btnMostrarSitiosCercanos.addEventListener('click', () => {
       el.btnMostrarSitiosCercanos.hidden = true;
       el.btnMostrarSitiosCercanos.disabled = true;
-      el.checkDistancia.checked = true;
-      el.filtroDistancia.disabled = false;
-      el.filtroDistancia.value = '5';
-      el.filtroDistanciaValor.textContent = '5 km';
-      if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
-      if (el.btnTabDescubre) el.btnTabDescubre.disabled = false;
-      // Ocultar icono de Colombia, mostrar contador de sitios
-      if (el.icoDescubreTab) el.icoDescubreTab.hidden = true;
-      if (el.icoDescubreTabDesktop) el.icoDescubreTabDesktop.hidden = true;
-      if (el.sitiosContadorTab) el.sitiosContadorTab.hidden = false;
-      if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.hidden = false;
-      if (el.loadingRuta) el.loadingRuta.hidden = true;
+      _asegurarListadoSitios();
       activarPanelTab('descubre');
       if (esMovil()) setMobileTab('descubre');
       // Abrir el menú de ordenar al mostrar sitios
       if (el.btnDescubreOrdenar) {
         el.btnDescubreOrdenar.click();
       }
-      el.loadingSitios.hidden = false;
-      ejecutarFiltradoProgresivo(() => {
-        el.panelSitios.hidden = false;
-        actualizarEstadoBotonesRetry();
-        el.loadingSitios.hidden = true;
-      });
     });
     el.btnAplicarDistancia.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarDistancia));
     el.btnAplicarTiempo.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarTiempo));
@@ -1207,6 +1189,46 @@
     return window.matchMedia(MEDIA_MOVIL).matches;
   }
 
+  /** En móvil, tras calcular la ruta se ocultan los cubos de origen y destino (solo lista de paradas). */
+  function sincronizarModoRutaMovil() {
+    if (esMovil() && state.rutaActual) {
+      el.appRoot.setAttribute('data-ruta-lista', 'true');
+    } else {
+      el.appRoot.removeAttribute('data-ruta-lista');
+    }
+  }
+
+  /** En móvil, reubica un combo para que nunca quede tapado por el teclado del dispositivo. */
+  function ajustarComboAlTeclado(trigger, listEl) {
+    if (!esMovil() || !listEl) return;
+    const vv = window.visualViewport || null;
+    const vh = vv ? vv.height : window.innerHeight;
+    if (!trigger) {
+      listEl.style.maxHeight = '';
+      listEl.style.top = '';
+      listEl.style.bottom = '';
+      return;
+    }
+    const rect = trigger.getBoundingClientRect();
+    const espacioAbajo = vh - rect.bottom - 8;
+    if (espacioAbajo < 140) {
+      listEl.style.top = 'auto';
+      listEl.style.bottom = 'calc(100% + 6px)';
+      listEl.style.maxHeight = Math.max(120, rect.top - 8) + 'px';
+    } else {
+      listEl.style.top = 'calc(100% + 6px)';
+      listEl.style.bottom = 'auto';
+      listEl.style.maxHeight = Math.min(espacioAbajo, 260) + 'px';
+    }
+  }
+
+  window.addEventListener('resize', () => {
+    document.querySelectorAll('.combo__list:not([hidden])').forEach((l) => {
+      const trig = l.parentElement && l.parentElement.querySelector('.combo__trigger');
+      ajustarComboAlTeclado(trig, l);
+    });
+  });
+
   function garantizarVisibilidadMovil() {
     if (esMovil()) {
       if (el.mobileTabBar) el.mobileTabBar.removeAttribute('hidden');
@@ -1229,6 +1251,10 @@
     el.origenInput.disabled = cargando;
     el.destinoInput.disabled = cargando;
     document.querySelectorAll('.combo__trigger.escala-trigger').forEach((b) => { b.disabled = cargando; });
+    document.querySelectorAll('.escala-row__calc').forEach((b) => {
+      b.disabled = cargando;
+      b.setAttribute('data-loading', cargando ? 'true' : 'false');
+    });
     document.querySelectorAll('.sitio-card__add').forEach((b) => { b.disabled = cargando; });
     // Bloquear pestaña Descubre durante el cálculo (solo se bloquea, no se desbloquea aquí)
     if (cargando) {
@@ -1245,6 +1271,36 @@
   function _habilitarMostrarSitios() {
     el.btnMostrarSitiosCercanos.disabled = false;
     el.btnMostrarSitiosCercanos.hidden = false;
+  }
+
+  let _calculandoListado = false;
+
+  /** Calcula el listado de sitios de la pestaña Descubre solo si aún no hay listado. */
+  function _asegurarListadoSitios() {
+    if (!state.rutaActual) return;
+    if (state.sitiosFiltrados.length > 0) return;
+    if (_calculandoListado) return;
+    _calculandoListado = true;
+
+    el.checkDistancia.checked = true;
+    el.filtroDistancia.disabled = false;
+    el.filtroDistancia.value = '5';
+    el.filtroDistanciaValor.textContent = '5 km';
+    if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
+    if (el.btnTabDescubre) el.btnTabDescubre.disabled = false;
+    if (el.icoDescubreTab) el.icoDescubreTab.hidden = true;
+    if (el.icoDescubreTabDesktop) el.icoDescubreTabDesktop.hidden = true;
+    if (el.sitiosContadorTab) el.sitiosContadorTab.hidden = false;
+    if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.hidden = false;
+    if (el.loadingRuta) el.loadingRuta.hidden = true;
+    el.loadingSitios.hidden = false;
+    el.panelSitios.hidden = false;
+    ejecutarFiltradoProgresivo(() => {
+      _calculandoListado = false;
+      el.loadingSitios.hidden = true;
+      actualizarEstadoBotonesRetry();
+      el.panelSitios.hidden = false;
+    });
   }
 
   function formatMunicipio(m) {
@@ -1294,7 +1350,7 @@
   // -------------------------------------------------------------------
   // Cálculo de la ruta principal (solo al pulsar el botón)
   // -------------------------------------------------------------------
-  async function calcularRutaPrincipal(conservarParadas = false) {
+  async function calcularRutaPrincipal(conservarParadas = false, opciones = {}) {
     if (!state.origen || !state.destino) return;
     cerrarAltimetria();
 
@@ -1387,8 +1443,13 @@
         el.panelEscalas.hidden = true;
         activarPanelTab('ruta');
 
-        // Enable "Mostrar sitios" button
-        _habilitarMostrarSitios();
+        // Enable "Mostrar sitios" button (excepto al calcular desde un pueblo intermedio)
+        if (opciones.ocultarTestigoSitios) {
+          if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
+          if (el.btnTabDescubre) el.btnTabDescubre.disabled = false;
+        } else {
+          _habilitarMostrarSitios();
+        }
         _actualizarTextoBotonesOrden();
         el.panelSitios.hidden = true;
         MapModule.limpiarSitios();
@@ -1400,6 +1461,12 @@
 
         // Volver a la pestaña Ruta en móvil y reiniciar estado de sitios
         if (esMovil()) setMobileTab('ruta');
+
+        // Ocultar definitivamente el testigo "Mostrar sitios" al calcular desde un pueblo intermedio
+        if (opciones.ocultarTestigoSitios) {
+          el.btnMostrarSitiosCercanos.hidden = true;
+          el.btnMostrarSitiosCercanos.disabled = true;
+        }
       } else {
         // Ruta recalculada tras añadir/eliminar/reordenar paradas o escalas:
         // se mantiene el estado de la pestaña Descubre y se desbloquea de nuevo.
@@ -1414,6 +1481,7 @@
       console.warn('Error al calcular ruta', err);
     } finally {
       ponerEnCargaRuta(false);
+      sincronizarModoRutaMovil();
     }
   }
 
@@ -2109,6 +2177,7 @@
   function irCambiarOrigen() {
     activarPanelTab('ruta');
     setMobileTab('ruta');
+    el.appRoot.removeAttribute('data-ruta-lista');
     const row = document.getElementById('row-origen');
     if (row) row.scrollIntoView({ block: 'nearest' });
     if (el.origenInput) {
@@ -2117,10 +2186,11 @@
     }
   }
 
-  /** Lleva al usuario al panel Ruta con el campo de destino seleccionado y su lista desplegada. */
+  /** Lleva para usuario al panel Ruta con el campo de destino seleccionado y su lista desplegada. */
   function irCambiarDestino() {
     activarPanelTab('ruta');
     setMobileTab('ruta');
+    el.appRoot.removeAttribute('data-ruta-lista');
     const row = document.getElementById('row-destino');
     if (row) row.scrollIntoView({ block: 'nearest' });
     if (el.destinoInput) {
@@ -2131,6 +2201,22 @@
 
   /** Lleva al usuario al panel Ruta con un nuevo campo de pueblo intermedio desplegado. */
   function reemplazarPuebloIntermedio() {
+    activarPanelTab('ruta');
+    setMobileTab('ruta');
+    const row = agregarEscala();
+    el.panelEscalas.hidden = false;
+    el.panelEscalas.scrollIntoView({ block: 'nearest' });
+    const input = row && row.querySelector('.combo__trigger');
+    if (input) {
+      setTimeout(() => {
+        input.focus();
+        input.scrollIntoView({ block: 'nearest' });
+      }, 50);
+    }
+  }
+
+  /** Lleva al usuario al panel Ruta con un nuevo campo de pueblo intermedio desplegado. */
+  function agregarPuebloIntermedioDesdeLista() {
     activarPanelTab('ruta');
     setMobileTab('ruta');
     const row = agregarEscala();

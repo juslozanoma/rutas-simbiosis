@@ -661,10 +661,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const next = turf.along(line, Math.min(km, d + 0.5), { units: 'kilometers' });
     const bearing = turf.bearing(prev, next);
     const arrowIcon = L.divIcon({
-      html: `<img src="public/arrow.svg" style="transform:rotate(${bearing}deg);width:22px;height:22px;"/>`,
+      html: `<img src="public/arrow.svg" style="transform:rotate(${bearing}deg);width:26px;height:26px;filter:drop-shadow(0 2px 4px rgba(20,32,27,0.7));"/>`,
       className: '',
-      iconSize: [22, 22],
-      iconAnchor: [11, 11],
+      iconSize: [26, 26],
+      iconAnchor: [13, 13],
     });
     L.marker([pt.geometry.coordinates[1], pt.geometry.coordinates[0]], { icon: arrowIcon, interactive: false }).addTo(_capaFlechas);
   }
