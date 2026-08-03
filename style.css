@@ -204,7 +204,13 @@ input, select{ font-family: inherit; }
   font-size: 0.85rem;
   cursor: pointer;
   font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
 }
+.combo__trigger::-webkit-search-decoration,
+.combo__trigger::-webkit-search-cancel-button,
+.combo__trigger::-webkit-search-results-button,
+.combo__trigger::-webkit-search-results-decoration{ -webkit-appearance: none; display: none; }
 .combo__trigger::placeholder{ color: var(--text-muted); }
 .combo__trigger:hover{ border-color: var(--teal-500); }
 .combo__trigger:focus{ border-color: var(--teal-500); outline: none; }
