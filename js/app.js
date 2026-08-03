@@ -1448,7 +1448,7 @@
         // sugerencias/emojis (toolbar) que el visualViewport no mide:
         // la barra inferior debe montarse sobre las teclas, no sobre
         // el toolbar. Ajustable: window.CORR_TECLADO = 20, 25, etc.
-        const corr = typeof window.CORR_TECLADO !== 'undefined' ? window.CORR_TECLADO : 20;
+        const corr = typeof window.CORR_TECLADO !== 'undefined' ? window.CORR_TECLADO : 0;
         const v = Math.max(0, crudo - corr);
         kbLog('  cubierto: visualViewport =', v, 'px (crudo:', crudo, 'corr:', corr, '| innerHeight=', window.innerHeight, 'vv.h=', Math.round(vv.height), 'vv.top=', Math.round(vv.offsetTop), ')');
         return v;
