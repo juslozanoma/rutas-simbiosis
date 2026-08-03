@@ -364,6 +364,7 @@
     initEscalas();
     initEventos();
     garantizarVisibilidadMovil();
+    reordenarAereoMovil();
 
     // Mostrar todos los sitios de frontera (tecla F los oculta/muestra).
     _syncFrontera();
@@ -563,6 +564,9 @@
 
     function cerrar() {
       listEl.hidden = true;
+      // Si el teclado sigue abierto, el bloque baja del espacio reservado
+      // del menú al lift mínimo.
+      reencajarConTeclado();
     }
 
     function resaltar(idx) {
@@ -625,6 +629,7 @@
         renderDepartamentos();
       }
       ajustarComboAlTeclado(trigger, listEl);
+      reencajarConTeclado();
     }
 
     // Toque/clic repetido en el cuadro: sin texto alterna el menú (abre si
@@ -633,11 +638,11 @@
     trigger.addEventListener('pointerdown', () => {
       if (document.activeElement !== trigger) return; // el primer toque lo maneja focus
       if (trigger.value.trim()) {
-        listEl.hidden = true;
+        cerrar();
       } else if (listEl.hidden) {
         abrir();
       } else {
-        listEl.hidden = true;
+        cerrar();
       }
       _toqueContrae = true; // el focus de este toque no debe reabrir
     });
@@ -657,6 +662,7 @@
         renderDepartamentos();
       }
       delete trigger.dataset.selectedId;
+      reencajarConTeclado();
     });
 
     trigger.addEventListener('blur', () => {
@@ -916,6 +922,7 @@
         renderDeptos();
       }
       ajustarComboAlTeclado(trigger, listEl);
+      reencajarConTeclado();
     }
 
     // Toque/clic repetido en el cuadro: sin texto alterna el menú (abre si
@@ -925,10 +932,12 @@
       if (document.activeElement !== trigger) return; // el primer toque lo maneja focus
       if (trigger.value.trim()) {
         listEl.hidden = true;
+        reencajarConTeclado();
       } else if (listEl.hidden) {
         abrir();
       } else {
         listEl.hidden = true;
+        reencajarConTeclado();
       }
       _toqueContrae = true; // el focus de este toque no debe reabrir
     });
@@ -943,13 +952,14 @@
       const texto = trigger.value.trim();
       if (texto) { renderFiltrados(texto); } else { renderDeptos(); }
       delete trigger.dataset.selectedId;
+      reencajarConTeclado();
     });
     trigger.addEventListener('blur', () => {
       _toqueContrae = false;
       setTimeout(() => { listEl.hidden = true; }, 200);
     });
     trigger.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { listEl.hidden = true; e.preventDefault(); return; }
+      if (e.key === 'Escape') { listEl.hidden = true; reencajarConTeclado(); e.preventDefault(); return; }
       if (e.key === 'Enter' && listEl.hidden) {
         if (trigger.dataset.selectedId) {
           e.preventDefault();
@@ -1367,6 +1377,23 @@
     return window.matchMedia(MEDIA_MOVIL).matches;
   }
 
+  /** En móvil el "+" de agregar pueblo intermedio no existe desde el inicio y
+   *  el avión sube a la fila del origen: la fila de origen y la de cada pueblo
+   *  intermedio quedan con un botón de 40px y los cuadros tienen el mismo
+   *  ancho. En escritorio el "+" permanece desde el inicio y el avión vuelve a
+   *  la fila del destino (junto al botón de calcular ruta). */
+  function reordenarAereoMovil() {
+    const filaOrigen = document.getElementById('row-origen');
+    const filaDestino = document.getElementById('row-destino');
+    if (!el.btnAereo || !filaOrigen || !filaDestino) return;
+    if (esMovil()) {
+      if (el.btnAereo.parentElement !== filaOrigen) filaOrigen.appendChild(el.btnAereo);
+    } else if (el.btnAereo.parentElement !== filaDestino) {
+      filaDestino.insertBefore(el.btnAereo, el.btnCalcular);
+    }
+  }
+  window.addEventListener('resize', reordenarAereoMovil);
+
   /** Indica si la pestaña activa del panel es "Descubre Colombia". */
   function estaEnPestanaDescubre() {
     if (esMovil()) {
@@ -1424,12 +1451,20 @@
       // Lift MÍNIMO: el bloque sube solo lo necesario para que el cuadro
       // enfocado quede sobre el teclado, no el teclado completo (eso los
       // llevaba demasiado arriba). Si el cuadro ya está visible, no se sube.
+      // Con la lista del cuadro ABIERTA, se reserva además su alto para que
+      // el menú quepa desplegándose hacia abajo.
       const altoVisible = window.innerHeight - cubierto;
       let lift = cubierto;
       const act = document.activeElement;
       if (esTriggerCombo(act)) {
         const r = act.getBoundingClientRect();
-        const necesario = Math.max(0, Math.round(r.bottom + 8 - altoVisible));
+        let extra = 0;
+        const lista = act.parentElement && act.parentElement.querySelector('.combo__list');
+        if (lista && !lista.hidden) {
+          const tope = lista.classList.contains('combo__list--6') ? 200 : 170;
+          extra = Math.min(tope, Math.max(40, lista.scrollHeight));
+        }
+        const necesario = Math.max(0, Math.round(r.bottom + 8 + extra - altoVisible));
         lift = Math.min(cubierto, necesario);
       }
       app.style.setProperty('--teclado-alto', lift + 'px');
@@ -1527,13 +1562,12 @@
     });
   }
 
-  /** En móvil, coloca la lista de opciones del cuadro sin que el teclado la
-   *  corte: se abre hacia abajo si hay sitio y hacia arriba si no. El alto
-   *  visible se mide restando lo que tapa el teclado del layout (funciona
-   *  también en pantalla completa, donde visualViewport no cambia). El cuadro
-   *  enfocado lo sube el bloque completo (teclado-abierto), por eso aquí no se
-   *  usa scrollIntoView: sumado al transform subiría el cuadro fuera de la
-   *  pantalla. */
+  /** En móvil, el menú de opciones del cuadro se despliega SIEMPRE hacia
+   *  abajo; su alto máximo se limita al espacio visible bajo el cuadro (el
+   *  bloque completo sube con el teclado lo necesario para que quepa, ver
+   *  reposicionarInterfazTeclado). El cuadro enfocado lo sube el bloque
+   *  (teclado-abierto), por eso aquí no se usa scrollIntoView: sumado al
+   *  transform subiría el cuadro fuera de la pantalla. */
   function ajustarComboAlTeclado(trigger, listEl) {
     if (!esMovil() || !listEl) return;
     if (!trigger) {
@@ -1543,15 +1577,21 @@
       return;
     }
     const altoVisible = window.innerHeight - _tecladoCubierto();
-    const espacioAbajo = altoVisible - trigger.getBoundingClientRect().bottom;
-    if (espacioAbajo < 180) {
-      listEl.style.top = 'auto';
-      listEl.style.bottom = 'calc(100% + 6px)';
-    } else {
-      listEl.style.top = 'calc(100% + 6px)';
-      listEl.style.bottom = 'auto';
+    const espacioAbajo = Math.max(0, altoVisible - trigger.getBoundingClientRect().bottom - 6);
+    const tope = listEl.classList.contains('combo__list--6') ? 200 : 170; // 6 u 5 elementos
+    listEl.style.maxHeight = Math.min(tope, Math.max(40, espacioAbajo)) + 'px';
+    listEl.style.top = 'calc(100% + 6px)';
+    listEl.style.bottom = 'auto';
+  }
+
+  /** Con el teclado abierto y un cuadro enfocado, recalcula el lift del bloque
+   *  según el estado actual de su lista: reserva el espacio del menú al
+   *  abrirlo, o baja al lift mínimo al cerrarlo. El teclado ya está asentado,
+   *  por eso se aplica de inmediato (un solo salto por cambio de estado). */
+  function reencajarConTeclado() {
+    if (esMovil() && _tecladoCubierto() > 0 && esTriggerCombo(document.activeElement)) {
+      reposicionarInterfazTeclado(true, true);
     }
-    listEl.style.maxHeight = listEl.classList.contains('combo__list--6') ? '200px' : '170px'; // 6 u 5 elementos
   }
 
   window.addEventListener('resize', _ajustarListasAbiertas);
