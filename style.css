@@ -112,6 +112,7 @@ input, select{ font-family: inherit; }
   padding: 9px;
 }
 .panel-locate[hidden]{ display: none; }
+.panel-locate__row[hidden]{ display: none; }
 .panel-locate__row{
   display: flex;
   align-items: center;
@@ -268,6 +269,7 @@ input, select{ font-family: inherit; }
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
 }
+.icon-btn[hidden]{ display: none; }
 .icon-btn:hover:not(:disabled){ background: #f5f3ec; border-color: var(--teal-500); }
 .icon-btn:active:not(:disabled){ transform: translateY(1px); }
 .icon-btn:disabled{ opacity: 0.35; cursor: not-allowed; }

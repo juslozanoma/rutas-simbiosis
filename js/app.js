@@ -386,6 +386,8 @@
       _limpiarTurfYListado();
       actualizarEstadoBotonCalcular();
       _actualizarTextoBotonesOrden();
+      // Fin del modo "solo cuadro de origen": se restaura el panel completo.
+      _modoCambiarOrigen(false);
     }, () => {
       const ids = new Set();
       if (state.destino?.id) ids.add(state.destino.id);
@@ -560,7 +562,6 @@
     }
 
     function cerrar() {
-      kbLog('cerrar lista:', kbEtiqueta(trigger));
       listEl.hidden = true;
     }
 
@@ -573,7 +574,6 @@
     }
 
     function seleccionar(m) {
-      kbLog('SELECCIONAR:', kbEtiqueta(trigger), '->', formatMunicipio(m), '| blur móvil:', esMovil());
       listEl.hidden = true;
       trigger.value = formatMunicipio(m);
       trigger.dataset.selectedId = m.id;
@@ -614,7 +614,6 @@
     }
 
     function abrir() {
-      kbLog('ABRIR lista:', kbEtiqueta(trigger), '| texto=', JSON.stringify(trigger.value), '| selectedId=', trigger.dataset.selectedId || 'ninguno');
       const texto = trigger.value.trim();
       if (trigger.dataset.selectedId) {
         trigger.value = '';
@@ -666,14 +665,12 @@
     });
 
     trigger.addEventListener('keydown', (e) => {
-      kbLog('keydown:', e.key, '|', kbEtiqueta(trigger), '| lista oculta:', listEl.hidden, '| selectedId:', trigger.dataset.selectedId || 'ninguno');
       if (e.key === 'Escape') { cerrar(); e.preventDefault(); return; }
       if (e.key === 'Enter' && listEl.hidden) {
         if (trigger.dataset.selectedId) {
           const otro = trigger.id === 'origen-input' ? state.destino : state.origen;
           if (otro && otro.id) {
             e.preventDefault();
-            kbLog('  Enter con selección y lista cerrada -> calcularRutaPrincipal');
             calcularRutaPrincipal(false);
           }
         }
@@ -693,7 +690,6 @@
         resaltar(cur);
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        kbLog('  Enter con lista abierta -> clic en ítem (seleccionar cierra lista y teclado)');
         const sel = items.find((li) => li.hasAttribute('aria-selected')) || items[0];
         if (sel) sel.click();
       }
@@ -733,13 +729,11 @@
   // -------------------------------------------------------------------
   function initEscalas() {
     el.btnAgregarEscala.addEventListener('click', () => {
-      kbLog('CLIC en "+" agregar pueblo intermedio (btnAgregarEscala)');
       agregarEscala();
     });
   }
 
   function agregarEscala() {
-    kbLog('agregarEscala: creando fila de pueblo intermedio (autofocus en 50 ms)');
     const row = document.createElement('div');
     row.className = 'escala-row';
 
@@ -785,7 +779,6 @@
     el.panelEscalas.appendChild(row);
     el.panelEscalas.hidden = false;
     setTimeout(() => {
-      kbLog('agregarEscala: autofocus del trigger (focus + scrollIntoView)');
       trigger.focus();
       trigger.scrollIntoView({ block: 'nearest' });
     }, 50);
@@ -794,7 +787,6 @@
     let _toqueContrae = false;
 
     function seleccionar(m) {
-      kbLog('SELECCIONAR (pueblo intermedio):', kbEtiqueta(trigger), '->', formatMunicipio(m), '| blur móvil:', esMovil());
       listEl.hidden = true;
       trigger.value = formatMunicipio(m);
       trigger.dataset.selectedId = m.id;
@@ -913,7 +905,6 @@
     }
 
     function abrir() {
-      kbLog('ABRIR lista (pueblo intermedio):', kbEtiqueta(trigger), '| texto=', JSON.stringify(trigger.value), '| selectedId=', trigger.dataset.selectedId || 'ninguno');
       const texto = trigger.value.trim();
       if (trigger.dataset.selectedId) {
         trigger.value = '';
@@ -958,12 +949,10 @@
       setTimeout(() => { listEl.hidden = true; }, 200);
     });
     trigger.addEventListener('keydown', (e) => {
-      kbLog('keydown:', e.key, '|', kbEtiqueta(trigger), '(pueblo intermedio) | lista oculta:', listEl.hidden, '| selectedId:', trigger.dataset.selectedId || 'ninguno');
       if (e.key === 'Escape') { listEl.hidden = true; e.preventDefault(); return; }
       if (e.key === 'Enter' && listEl.hidden) {
         if (trigger.dataset.selectedId) {
           e.preventDefault();
-          kbLog('  Enter con selección y lista cerrada -> actualizarEscalas + calcularRutaPrincipal');
           actualizarEscalas();
           calcularRutaPrincipal(false, { ocultarTestigoSitios: true });
         }
@@ -983,7 +972,6 @@
         resaltar(cur);
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        kbLog('  Enter con lista abierta -> clic en ítem (seleccionar cierra lista y teclado)');
         const sel = items.find((li) => li.hasAttribute('aria-selected')) || items[0];
         if (sel) sel.click();
       }
@@ -1410,29 +1398,8 @@
   let _reposActivo = false;
   let _reposTimer = null;
 
-  /** Logs de depuración del teclado y los cuadros de búsqueda. Para apagar:
-   *  window.DEBUG_TECLADO = false en la consola. */
-  const kbLog = (...a) => { if (window.DEBUG_TECLADO !== false) console.log('[KB]', ...a); };
-  const kbEtiqueta = (t) => (t && t.id ? t.id : (t && t.tagName ? t.tagName : 'null'));
-  /** Reporta la posición de la barra inferior vs el tope del teclado:
-   *  diferencia 0 = justo sobre el teclado; > 0 = espacio blanco debajo; < 0 = barra oculta bajo el teclado. */
-  const kbBarra = () => {
-    const barra = el.mobileTabBar;
-    if (!barra) return;
-    if (el.appRoot.classList.contains('combo-enfocado')) {
-      kbLog('    barra: OCULTA (cuadro en edición)');
-      return;
-    }
-    const r = barra.getBoundingClientRect();
-    const topeTeclado = window.innerHeight - _tecladoCubierto();
-    const dif = Math.round(r.bottom - topeTeclado);
-    kbLog('    barra bottom=', Math.round(r.bottom), '| topeTeclado=', Math.round(topeTeclado),
-      '| diferencia=', dif, dif === 0 ? '(JUSTO sobre el teclado)' : (dif > 0 ? '(espacio blanco debajo)' : '(barra bajo el teclado)'));
-  };
-
   function reposicionarInterfazTeclado(activar, inmediato = false) {
     const app = el.appRoot;
-    kbLog('reposicionarInterfazTeclado:', activar ? 'ACTIVAR' : 'DESACTIVAR', '| inmediato:', inmediato, '| foco:', kbEtiqueta(document.activeElement));
     const restaurar = () => {
       app.classList.remove('teclado-abierto');
       app.style.removeProperty('--teclado-alto');
@@ -1441,19 +1408,16 @@
     clearTimeout(_reposTimer);
     if (!_reposActivo) {
       restaurar();
-      kbLog('  -> restaura (quita lift y clase)');
       _ajustarListasAbiertas();
       return;
     }
     const aplicar = () => {
       if (!_reposActivo || !esMovil()) {
-        kbLog('  aplicar(): no aplicable (inactivo o desktop) -> restaura');
         restaurar();
         return;
       }
       const cubierto = _tecladoCubierto();
       if (cubierto <= 0) {
-        kbLog('  aplicar(): cubierto=0 -> sin lift');
         restaurar();
         return;
       }
@@ -1467,11 +1431,9 @@
         const r = act.getBoundingClientRect();
         const necesario = Math.max(0, Math.round(r.bottom + 8 - altoVisible));
         lift = Math.min(cubierto, necesario);
-        kbLog('  aplicar(): lift mínimo=', lift, 'px (cubierto=', cubierto, 'necesario=', necesario, 'cuadro.bottom=', Math.round(r.bottom), ')');
       }
       app.style.setProperty('--teclado-alto', lift + 'px');
       app.classList.add('teclado-abierto');
-      kbLog('  aplicar(): lift=', lift, 'px | teclado-abierto=', app.classList.contains('teclado-abierto'));
     };
     // UN SOLO SALTO: el lift no sigue la animación del teclado evento a evento
     // (eso superponía una medida por evento + el re-chequeo final y producía el
@@ -1480,9 +1442,8 @@
     // cuadro a otro) se aplica de inmediato: no hay animación en curso.
     if (inmediato && _tecladoCubierto() > 0) {
       aplicar();
-      kbBarra();
     }
-    _reposTimer = setTimeout(() => { aplicar(); _ajustarListasAbiertas(); kbBarra(); }, 250);
+    _reposTimer = setTimeout(() => { aplicar(); _ajustarListasAbiertas(); }, 250);
   }
 
   /** Cuánto tapa el teclado del área visible: prioriza la geometría exacta de
@@ -1497,11 +1458,8 @@
         const br = vk.boundingRect;
         const fondo = br.top + br.height;
         if (fondo >= window.innerHeight - 2 && fondo <= window.innerHeight + 2) {
-          const v = Math.round(Math.max(0, window.innerHeight - br.top));
-          kbLog('  cubierto: vk.boundingRect =', v, 'px (top=', Math.round(br.top), 'h=', Math.round(br.height), ')');
-          return v;
+          return Math.round(Math.max(0, window.innerHeight - br.top));
         }
-        kbLog('  cubierto: vk.boundingRect DESCARTADO (fondo=', Math.round(fondo), 'vs innerHeight=', window.innerHeight, ')');
       }
     } catch (e) { /* ignorar */ }
     if (window.visualViewport) {
@@ -1509,18 +1467,12 @@
       const crudo = Math.round(window.innerHeight - (vv.height + vv.offsetTop));
       if (crudo > 0) {
         // En pantalla normal el teclado físico tiene una barra de
-        // sugerencias/emojis (toolbar) que el visualViewport no mide:
-        // la barra inferior debe montarse sobre las teclas, no sobre
-        // el toolbar. Ajustable: window.CORR_TECLADO = 20, 25, etc.
+        // sugerencias/emojis (toolbar) que el visualViewport no mide.
         const corr = typeof window.CORR_TECLADO !== 'undefined' ? window.CORR_TECLADO : 0;
-        const v = Math.max(0, crudo - corr);
-        kbLog('  cubierto: visualViewport =', v, 'px (crudo:', crudo, 'corr:', corr, '| innerHeight=', window.innerHeight, 'vv.h=', Math.round(vv.height), 'vv.top=', Math.round(vv.offsetTop), ')');
-        return v;
+        return Math.max(0, crudo - corr);
       }
-      kbLog('  cubierto: visualViewport = 0 px (innerHeight=', window.innerHeight, 'vv.h=', Math.round(vv.height), 'vv.top=', Math.round(vv.offsetTop), ')');
       return 0;
     }
-    kbLog('  cubierto: sin fuente -> 0');
     return 0;
   }
 
@@ -1537,7 +1489,6 @@
   // Aplica a TODOS los cuadros de búsqueda (origen, destino y los pueblos
   // intermedios que se crean dinámicamente desde las paradas).
   document.addEventListener('focusin', (e) => {
-    kbLog('EVENTO focusin ->', kbEtiqueta(e.target), '| esTrigger:', esTriggerCombo(e.target));
     if (esTriggerCombo(e.target)) {
       // Al editar un cuadro (origen, pueblo intermedio o destino) la barra
       // inferior se oculta: no sube flotando sobre el teclado.
@@ -1546,7 +1497,6 @@
     }
   });
   document.addEventListener('focusout', (e) => {
-    kbLog('EVENTO focusout <-', kbEtiqueta(e.target), '| relatedTarget:', kbEtiqueta(e.relatedTarget), '| esTrigger(related):', esTriggerCombo(e.relatedTarget));
     if (!esTriggerCombo(e.relatedTarget)) {
       el.appRoot.classList.remove('combo-enfocado');
       reposicionarInterfazTeclado(false);
@@ -1554,19 +1504,15 @@
   });
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => {
-      kbLog('EVENTO vv.resize | h=', Math.round(window.visualViewport.height), 'top=', Math.round(window.visualViewport.offsetTop), '| foco:', kbEtiqueta(document.activeElement));
       if (esTriggerCombo(document.activeElement)) reposicionarInterfazTeclado(true);
       else reposicionarInterfazTeclado(false);
     });
     window.visualViewport.addEventListener('scroll', () => {
-      kbLog('EVENTO vv.scroll | top=', Math.round(window.visualViewport.offsetTop), '| foco:', kbEtiqueta(document.activeElement));
       if (esTriggerCombo(document.activeElement)) reposicionarInterfazTeclado(true);
     });
   }
   if (navigator.virtualKeyboard && typeof navigator.virtualKeyboard.addEventListener === 'function') {
     navigator.virtualKeyboard.addEventListener('geometrychange', () => {
-      const vk = navigator.virtualKeyboard;
-      kbLog('EVENTO vk.geometrychange | rect=', vk.boundingRect ? ('top=' + Math.round(vk.boundingRect.top) + ' h=' + Math.round(vk.boundingRect.height)) : 'sin rect', '| foco:', kbEtiqueta(document.activeElement));
       if (esTriggerCombo(document.activeElement)) reposicionarInterfazTeclado(true);
       else reposicionarInterfazTeclado(false);
     });
@@ -1598,8 +1544,6 @@
     }
     const altoVisible = window.innerHeight - _tecladoCubierto();
     const espacioAbajo = altoVisible - trigger.getBoundingClientRect().bottom;
-    const dir = espacioAbajo < 180 ? 'ARRIBA' : 'ABAJO';
-    kbLog('ajustarComboAlTeclado:', kbEtiqueta(trigger), '| altoVisible=', Math.round(altoVisible), 'espacioAbajo=', Math.round(espacioAbajo), '-> lista', dir);
     if (espacioAbajo < 180) {
       listEl.style.top = 'auto';
       listEl.style.bottom = 'calc(100% + 6px)';
@@ -2980,12 +2924,12 @@
 
   /** Lleva al usuario al panel Ruta con el campo de origen seleccionado y su lista desplegada. */
   function irCambiarOrigen() {
-    kbLog('irCambiarOrigen: muestra panel Ruta y enfoca origenInput');
     activarPanelTab('ruta');
     setMobileTab('ruta');
     el.appRoot.removeAttribute('data-ruta-lista');
-    // Al cambiar el origen solo se muestra el cuadro del origen (sin el "+" de agregar escala).
-    if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = true;
+    // Modo "solo cuadro de origen": se ocultan el "+", el cuadro de destino y
+    // sus botones (avión y calcular ruta); solo queda el origen desplegado.
+    _modoCambiarOrigen(true);
     const row = document.getElementById('row-origen');
     if (row) row.scrollIntoView({ block: 'nearest' });
     if (el.origenInput) {
@@ -2994,12 +2938,22 @@
     }
   }
 
+  /** Ocultar/mostrar el resto del panel Ruta al cambiar el origen: en el modo
+   *  activo solo se ve el cuadro de origen (con su lista desplegada). */
+  function _modoCambiarOrigen(activo) {
+    if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = activo;
+    if (el.panelEscalas) el.panelEscalas.hidden = activo;
+    const rowDestino = document.getElementById('row-destino');
+    if (rowDestino) rowDestino.hidden = activo;
+  }
+
   /** Lleva para usuario al panel Ruta con el campo de destino seleccionado y su lista desplegada. */
   function irCambiarDestino() {
-    kbLog('irCambiarDestino: muestra panel Ruta y enfoca destinoInput');
     activarPanelTab('ruta');
     setMobileTab('ruta');
     el.appRoot.removeAttribute('data-ruta-lista');
+    // Si venía del modo "solo cuadro de origen", se restaura el panel completo.
+    _modoCambiarOrigen(false);
     if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = true;
     const row = document.getElementById('row-destino');
     if (row) row.scrollIntoView({ block: 'nearest' });
@@ -3011,7 +2965,6 @@
 
   /** Lleva al usuario al panel Ruta con un nuevo campo de pueblo intermedio desplegado. */
   function reemplazarPuebloIntermedio() {
-    kbLog('reemplazarPuebloIntermedio: fila nueva + autofocus en 50 ms');
     activarPanelTab('ruta');
     setMobileTab('ruta');
     const row = agregarEscala();
@@ -3028,7 +2981,6 @@
 
   /** Lleva al usuario al panel Ruta con un nuevo campo de pueblo intermedio desplegado. */
   function agregarPuebloIntermedioDesdeLista() {
-    kbLog('agregarPuebloIntermedioDesdeLista: fila nueva + autofocus en 50 ms');
     activarPanelTab('ruta');
     setMobileTab('ruta');
     const row = agregarEscala();
@@ -3045,7 +2997,6 @@
 
   /** Reemplaza un pueblo intermedio: lo quita de la ruta y abre un nuevo campo editable en el panel Ruta. */
   function cambiarPueblo(escala) {
-    kbLog('cambiarPueblo:', escala ? (escala.nombre || escala.id) : '?', '-> elimina y abre campo nuevo');
     // Sin recalcular: la ruta se recalcula cuando el usuario elige el nuevo pueblo,
     // así el campo recién abierto no se elimina por la limpieza asíncrona de filas.
     eliminarEscala(escala.id, false);
