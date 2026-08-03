@@ -1376,6 +1376,14 @@ input, select{ font-family: inherit; }
   /* En móvil el shell debe poder desplazarse para que los cuadros suban sobre el teclado */
   .app-shell{ overflow-y: auto; overflow-x: hidden; height: 100dvh; }
 
+  /* Pantalla completa: el panel crece la altura del teclado para que el shell
+     pueda desplazarse y los cuadros subir sobre el teclado (como en pantalla normal) */
+  #app.kb-abierto .side-panel{
+    flex-basis: calc(50% + var(--kb-teclado, 0px));
+    z-index: 1050;
+    box-shadow: 0 -6px 20px rgba(20, 32, 27, 0.18);
+  }
+
   /* Ajuste de padding del panel en móvil */
   .side-panel{ padding: 12px 12px 56px; gap: 0px; }
 

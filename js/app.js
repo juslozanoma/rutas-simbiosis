@@ -1075,6 +1075,7 @@
       });
       document.addEventListener('fullscreenchange', () => {
         el.btnFullscreen.setAttribute('aria-pressed', String(!!document.fullscreenElement));
+        subirCuadrosFullscreen(null);
       });
     }
 
@@ -1317,6 +1318,46 @@
     }
   }
 
+  /** En pantalla completa (móvil) el teclado no encoge la página ni el navegador
+   *  sube el cuadro como en pantalla normal. Se replica ese comportamiento: se
+   *  agranda el panel para que el shell pueda desplazarse y se centra el cuadro
+   *  enfocado en el área visible (sobre el teclado). */
+  function subirCuadrosFullscreen(trigger) {
+    const app = el.appRoot;
+    const vv = window.visualViewport;
+    const shell = document.querySelector('.app-shell');
+    const limpiar = () => {
+      app.classList.remove('kb-abierto');
+      app.style.removeProperty('--kb-teclado');
+      if (shell) shell.scrollTop = 0;
+    };
+    if (!document.fullscreenElement || !trigger || !vv || !shell) {
+      limpiar();
+      return;
+    }
+    const cubierto = Math.round(window.innerHeight - (vv.height + vv.offsetTop));
+    if (cubierto <= 0) {
+      limpiar();
+      return;
+    }
+    app.style.setProperty('--kb-teclado', cubierto + 'px');
+    app.classList.add('kb-abierto');
+    const rect = trigger.getBoundingClientRect();
+    const centroVisible = vv.offsetTop + vv.height / 2;
+    const delta = Math.round(rect.top + rect.height / 2 - centroVisible);
+    shell.scrollTop = Math.max(0, Math.min(delta, cubierto));
+  }
+
+  // El teclado abre con retraso respecto al foco: se reajusta el cuadro cada
+  // vez que cambia el área visible (solo en pantalla completa).
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      if (!document.fullscreenElement) return;
+      const trig = document.querySelector('.combo__trigger:focus');
+      if (trig) subirCuadrosFullscreen(trig);
+    });
+  }
+
   /** En móvil, sube el cuadro seleccionado hacia la parte superior (sobre el teclado). */
   function ajustarComboAlTeclado(trigger, listEl) {
     if (!esMovil() || !listEl) return;
@@ -1328,9 +1369,15 @@
     }
     // El shell móvil ahora es scrolleable: se centra el input en el área visible
     // (funciona también en pantalla completa y al modificar origen/destino/pueblo).
-    try {
-      trigger.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    } catch (e) { /* ignorar */ }
+    if (document.fullscreenElement) {
+      // En pantalla completa el teclado no encoge la página: se sube el cuadro
+      // manualmente igual que hace el navegador en pantalla normal.
+      subirCuadrosFullscreen(trigger);
+    } else {
+      try {
+        trigger.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      } catch (e) { /* ignorar */ }
+    }
     listEl.style.top = 'calc(100% + 6px)';
     listEl.style.bottom = 'auto';
     listEl.style.maxHeight = '170px'; // 5 elementos
