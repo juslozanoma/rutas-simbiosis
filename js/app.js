@@ -470,6 +470,7 @@
         locLi.addEventListener('click', (e) => {
           e.stopPropagation();
           listEl.hidden = true;
+          if (esMovil()) trigger.blur();
     ponerEnCargaRuta(true, opciones.silencioso);
           cerrarAltimetria();
           AltimetriaModule.limpiar();
@@ -497,6 +498,7 @@
         e.stopPropagation();
         listEl.hidden = true;
         reposicionarInterfazTeclado(false);
+        if (esMovil()) trigger.blur();
         iniciarSeleccionMapa((lat, lon) => {
           const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
           trigger.value = nombre;
@@ -572,6 +574,9 @@
       trigger.dataset.selectedId = m.id;
       reposicionarInterfazTeclado(false);
       onSelect(m);
+      // En móvil ya no se escribe nada: se quita el foco para ocultar el
+      // teclado y el cursor. En escritorio se conserva el foco (Enter calcula).
+      if (esMovil()) trigger.blur();
     }
 
     function renderFiltrados(texto) {
@@ -817,6 +822,7 @@
         e.stopPropagation();
         listEl.hidden = true;
         reposicionarInterfazTeclado(false);
+        if (esMovil()) trigger.blur();
         iniciarSeleccionMapa((lat, lon) => {
           const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
           trigger.value = nombre;
@@ -1367,16 +1373,23 @@
     };
     aplicar();
     _reposTimer = setTimeout(aplicar, 150);
+    _reposTimer = setTimeout(aplicar, 400);
   }
 
   /** Cuánto tapa el teclado del área visible: prioriza la geometría exacta de
    *  la VirtualKeyboard API (que también funciona en pantalla completa, donde
-   *  visualViewport puede no actualizarse) y cae al visualViewport. */
+   *  visualViewport puede no actualizarse) y cae al visualViewport. El rect de
+   *  la API solo se usa si su borde inferior coincide con el fondo del layout
+   *  (si no, está en otro espacio de coordenadas y se usa visualViewport). */
   function _tecladoCubierto() {
     try {
       const vk = navigator.virtualKeyboard;
       if (vk && typeof vk.boundingRect !== 'undefined' && vk.boundingRect && vk.boundingRect.height > 0) {
-        return Math.round(Math.max(0, window.innerHeight - vk.boundingRect.top));
+        const br = vk.boundingRect;
+        const fondo = br.top + br.height;
+        if (fondo >= window.innerHeight - 2 && fondo <= window.innerHeight + 2) {
+          return Math.round(Math.max(0, window.innerHeight - br.top));
+        }
       }
     } catch (e) { /* ignorar */ }
     if (window.visualViewport) {
