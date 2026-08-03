@@ -226,9 +226,9 @@ input, select{ font-family: inherit; }
   background: #ffffff;
   border: 1px solid var(--line-200);
   border-radius: var(--radius-md);
-  box-shadow: 0 10px 30px rgba(20, 32, 27, 0.14);
   z-index: 900;
 }
+.combo__list--6{ max-height: 200px; } /* 6 opciones visibles (origen y pueblo intermedio) */
 .combo__list li{
   padding: 8px 10px;
   border-radius: var(--radius-sm);
@@ -1383,13 +1383,14 @@ input, select{ font-family: inherit; }
   .app-shell{ overflow-y: auto; overflow-x: hidden; height: 100dvh; }
 
   /* Teclado abierto (cuadro de destino): la interfaz inferior sube en bloque
-     (cuadros, botones y barra de navegación) justo por encima del teclado.
-     Sin transición: el bloque sigue el teclado evento a evento y la barra
-     queda SIEMPRE justo sobre el teclado (una transición haría que la barra
-     vaya por detrás del teclado durante su animación). El re-chequeo (400 ms)
-     deja el bloque asentado exacto y reposiciona las listas. */
-  #app.teclado-abierto .side-panel,
-  #app.teclado-abierto .mobile-tab-bar{
+     (cuadros y botones) justo por encima del teclado. La barra de navegación
+     NO sube: al editar un cuadro se oculta por completo (combo-enfocado).
+     Sin transición: el bloque sigue el teclado evento a evento y queda
+     SIEMPRE justo sobre el teclado (una transición haría que la barra
+     vaya por detrás del teclado durante su animación). El re-chequeo
+     (400 ms) deja el bloque asentado exacto y reposiciona las listas. */
+  #app.combo-enfocado .mobile-tab-bar{ display: none; }
+  #app.teclado-abierto .side-panel{
     transform: translateY(calc(-1 * var(--teclado-alto, 0px)));
   }
   #app.teclado-abierto .side-panel{ z-index: 1050; }

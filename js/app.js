@@ -392,6 +392,8 @@
       state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
       return ids;
     }, true);
+    // El menú de origen muestra 6 opciones visibles (el resto con scroll).
+    el.origenList.classList.add('combo__list--6');
     setupCombo(el.destinoInput, el.destinoList, (m) => {
       state.destino = m;
       _limpiarTurfYListado();
@@ -436,6 +438,7 @@
   function setupCombo(trigger, listEl, onSelect, excluirIdsFn, showCurrentLocation) {
     const combo = trigger.parentElement;
     let deptoSeleccionado = null;
+    let _toqueContrae = false;
 
     function obtenerDepartamentos() {
       return [...new Set(state.municipios.map((m) => m.departamento))].sort((a, b) => {
@@ -625,8 +628,16 @@
       ajustarComboAlTeclado(trigger, listEl);
     }
 
+    // Segundo toque/clic en el cuadro con la lista abierta y sin texto: las
+    // opciones se contraen (el primer toque las abre vía focus).
+    trigger.addEventListener('pointerdown', () => {
+      _toqueContrae = document.activeElement === trigger && !listEl.hidden && !trigger.value.trim();
+      if (_toqueContrae) listEl.hidden = true;
+    });
+
     trigger.addEventListener('focus', (e) => {
       e.stopPropagation();
+      if (_toqueContrae) { _toqueContrae = false; return; }
       abrir();
     });
 
@@ -641,6 +652,7 @@
     });
 
     trigger.addEventListener('blur', () => {
+      _toqueContrae = false;
       setTimeout(() => { cerrar(); }, 200);
     });
 
@@ -743,7 +755,7 @@
     chevron.setAttribute('stroke-linecap', 'round');
     chevron.innerHTML = '<path d="M6 9l6 6 6-6"/>';
     const listEl = document.createElement('ul');
-    listEl.className = 'combo__list';
+    listEl.className = 'combo__list combo__list--6'; // 6 opciones visibles (resto con scroll)
     listEl.role = 'listbox';
     listEl.hidden = true;
     combo.appendChild(trigger);
@@ -770,6 +782,7 @@
     }, 50);
 
     let seleccion = null;
+    let _toqueContrae = false;
 
     function seleccionar(m) {
       kbLog('SELECCIONAR (pueblo intermedio):', kbEtiqueta(trigger), '->', formatMunicipio(m), '| blur móvil:', esMovil());
@@ -905,13 +918,27 @@
       ajustarComboAlTeclado(trigger, listEl);
     }
 
-    trigger.addEventListener('focus', (e) => { e.stopPropagation(); abrir(); });
+    // Segundo toque/clic en el cuadro con la lista abierta y sin texto: las
+    // opciones se contraen (el primer toque las abre vía focus).
+    trigger.addEventListener('pointerdown', () => {
+      _toqueContrae = document.activeElement === trigger && !listEl.hidden && !trigger.value.trim();
+      if (_toqueContrae) listEl.hidden = true;
+    });
+
+    trigger.addEventListener('focus', (e) => {
+      e.stopPropagation();
+      if (_toqueContrae) { _toqueContrae = false; return; }
+      abrir();
+    });
     trigger.addEventListener('input', () => {
       const texto = trigger.value.trim();
       if (texto) { renderFiltrados(texto); } else { renderDeptos(); }
       delete trigger.dataset.selectedId;
     });
-    trigger.addEventListener('blur', () => { setTimeout(() => { listEl.hidden = true; }, 200); });
+    trigger.addEventListener('blur', () => {
+      _toqueContrae = false;
+      setTimeout(() => { listEl.hidden = true; }, 200);
+    });
     trigger.addEventListener('keydown', (e) => {
       kbLog('keydown:', e.key, '|', kbEtiqueta(trigger), '(pueblo intermedio) | lista oculta:', listEl.hidden, '| selectedId:', trigger.dataset.selectedId || 'ninguno');
       if (e.key === 'Escape') { listEl.hidden = true; e.preventDefault(); return; }
@@ -1374,6 +1401,10 @@
   const kbBarra = () => {
     const barra = el.mobileTabBar;
     if (!barra) return;
+    if (el.appRoot.classList.contains('combo-enfocado')) {
+      kbLog('    barra: OCULTA (cuadro en edición)');
+      return;
+    }
     const r = barra.getBoundingClientRect();
     const topeTeclado = window.innerHeight - _tecladoCubierto();
     const dif = Math.round(r.bottom - topeTeclado);
@@ -1474,11 +1505,19 @@
   // intermedios que se crean dinámicamente desde las paradas).
   document.addEventListener('focusin', (e) => {
     kbLog('EVENTO focusin ->', kbEtiqueta(e.target), '| esTrigger:', esTriggerCombo(e.target));
-    if (esTriggerCombo(e.target)) reposicionarInterfazTeclado(true);
+    if (esTriggerCombo(e.target)) {
+      // Al editar un cuadro (origen, pueblo intermedio o destino) la barra
+      // inferior se oculta: no sube flotando sobre el teclado.
+      el.appRoot.classList.add('combo-enfocado');
+      reposicionarInterfazTeclado(true);
+    }
   });
   document.addEventListener('focusout', (e) => {
     kbLog('EVENTO focusout <-', kbEtiqueta(e.target), '| relatedTarget:', kbEtiqueta(e.relatedTarget), '| esTrigger(related):', esTriggerCombo(e.relatedTarget));
-    if (!esTriggerCombo(e.relatedTarget)) reposicionarInterfazTeclado(false);
+    if (!esTriggerCombo(e.relatedTarget)) {
+      el.appRoot.classList.remove('combo-enfocado');
+      reposicionarInterfazTeclado(false);
+    }
   });
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => {
@@ -1567,7 +1606,7 @@
       listEl.style.top = 'calc(100% + 6px)';
       listEl.style.bottom = 'auto';
     }
-    listEl.style.maxHeight = '170px'; // 5 elementos
+    listEl.style.maxHeight = listEl.classList.contains('combo__list--6') ? '200px' : '170px'; // 6 u 5 elementos
   }
 
   window.addEventListener('resize', _ajustarListasAbiertas);
