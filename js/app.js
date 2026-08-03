@@ -498,7 +498,7 @@
         e.stopPropagation();
         listEl.hidden = true;
         if (trigger.id === 'origen-input') intercambiarPanel(false);
-        if (trigger.id === 'destino-input') reposicionarDestino(false);
+        if (trigger.id === 'destino-input') reposicionarInterfazTeclado(false);
         iniciarSeleccionMapa((lat, lon) => {
           const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
           trigger.value = nombre;
@@ -573,7 +573,7 @@
       trigger.value = formatMunicipio(m);
       trigger.dataset.selectedId = m.id;
       if (trigger.id === 'origen-input') intercambiarPanel(false);
-      if (trigger.id === 'destino-input') reposicionarDestino(false);
+      if (trigger.id === 'destino-input') reposicionarInterfazTeclado(false);
       onSelect(m);
     }
 
@@ -1333,65 +1333,55 @@
     setTimeout(() => MapModule.invalidateSize(), 60);
   }
 
-  // Estado del reposicionamiento del cuadro de destino.
-  const _destinoFijado = { activo: false, left: 0, right: 0, height: 0 };
+  // Estado del reposicionamiento en bloque de la interfaz inferior.
+  const _tecladoBloque = { activo: false };
 
-  /** Móvil: fija el contenedor del cuadro de destino y su menú justo por encima
-   *  del teclado virtual (visualViewport). Se actualiza con resize/scroll del
-   *  viewport visual y se restaura en blur o al seleccionar una sugerencia. */
-  function reposicionarDestino(activar) {
+  /** Móvil: desplaza como un único bloque sincronizado la interfaz inferior
+   *  (cuadros de origen/destino, botones de acción y barra de navegación
+   *  inferior) justo por encima del teclado virtual. El desplazamiento se
+   *  calcula respecto al área visible (visualViewport) y se aplica por igual
+   *  a todo el bloque, no a sus hijos de forma independiente. */
+  function reposicionarInterfazTeclado(activar) {
+    const app = el.appRoot;
     const vv = window.visualViewport;
-    const combo = el.destinoInput ? el.destinoInput.closest('.combo') : null;
-    const listEl = el.destinoList;
-    if (!combo || !listEl) return;
     const restaurar = () => {
-      _destinoFijado.activo = false;
-      combo.style.position = '';
-      combo.style.left = '';
-      combo.style.right = '';
-      combo.style.bottom = '';
-      combo.style.zIndex = '';
-      listEl.style.top = '';
-      listEl.style.bottom = '';
+      _tecladoBloque.activo = false;
+      app.classList.remove('teclado-abierto');
+      app.style.removeProperty('--teclado-alto');
     };
     if (!activar || !esMovil() || !vv) {
-      if (_destinoFijado.activo) restaurar();
+      if (_tecladoBloque.activo) restaurar();
       return;
     }
     const cubierto = Math.round(window.innerHeight - (vv.height + vv.offsetTop));
     if (cubierto <= 0) {
-      if (_destinoFijado.activo) restaurar();
+      if (_tecladoBloque.activo) restaurar();
       return;
     }
-    if (!_destinoFijado.activo) {
-      const rect = combo.getBoundingClientRect();
-      _destinoFijado.left = Math.round(rect.left);
-      _destinoFijado.right = Math.round(window.innerWidth - rect.right);
-      _destinoFijado.height = Math.round(rect.height);
-      _destinoFijado.activo = true;
-      combo.style.position = 'fixed';
-      combo.style.left = _destinoFijado.left + 'px';
-      combo.style.right = _destinoFijado.right + 'px';
-      combo.style.zIndex = '1150';
-      // El menú abre hacia arriba para quedar visible sobre el teclado.
-      listEl.style.top = 'auto';
-      listEl.style.bottom = 'calc(100% + 6px)';
+    // No subir más allá del borde superior del panel para no cortar los cuadros.
+    const panel = document.querySelector('.side-panel');
+    const topePanel = panel ? Math.max(0, Math.round(panel.getBoundingClientRect().top)) : 0;
+    const subida = Math.min(cubierto, topePanel);
+    if (subida <= 0) {
+      if (_tecladoBloque.activo) restaurar();
+      return;
     }
-    const bottom = Math.min(cubierto + 8, window.innerHeight - _destinoFijado.height - 8);
-    combo.style.bottom = bottom + 'px';
+    app.style.setProperty('--teclado-alto', subida + 'px');
+    app.classList.add('teclado-abierto');
+    _tecladoBloque.activo = true;
   }
 
   if (el.destinoInput) {
-    el.destinoInput.addEventListener('focus', () => reposicionarDestino(true));
-    el.destinoInput.addEventListener('blur', () => reposicionarDestino(false));
+    el.destinoInput.addEventListener('focus', () => reposicionarInterfazTeclado(true));
+    el.destinoInput.addEventListener('blur', () => reposicionarInterfazTeclado(false));
   }
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => {
-      if (document.activeElement === el.destinoInput) reposicionarDestino(true);
-      else if (_destinoFijado.activo) reposicionarDestino(false);
+      if (document.activeElement === el.destinoInput) reposicionarInterfazTeclado(true);
+      else if (_tecladoBloque.activo) reposicionarInterfazTeclado(false);
     });
     window.visualViewport.addEventListener('scroll', () => {
-      if (document.activeElement === el.destinoInput) reposicionarDestino(true);
+      if (document.activeElement === el.destinoInput) reposicionarInterfazTeclado(true);
     });
   }
 
@@ -1407,7 +1397,7 @@
     // El shell móvil ahora es scrolleable: se centra el input en el área visible
     // (funciona también en pantalla completa y al modificar origen/destino/pueblo).
     if (trigger.id === 'destino-input' && window.visualViewport) {
-      // El destino se reposiciona con visualViewport (reposicionarDestino).
+      // El destino se reposiciona en bloque con visualViewport (reposicionarInterfazTeclado).
     } else if (!el.appRoot.classList.contains('panel-arriba')) {
       // Con el panel intercambiado (arriba) el cuadro ya queda fuera del teclado.
       try {
@@ -1422,7 +1412,6 @@
   window.addEventListener('resize', () => {
     document.querySelectorAll('.combo__list:not([hidden])').forEach((l) => {
       const trig = l.parentElement && l.parentElement.querySelector('.combo__trigger');
-      if (trig && trig.id === 'destino-input' && _destinoFijado.activo) return;
       ajustarComboAlTeclado(trig, l);
     });
   });

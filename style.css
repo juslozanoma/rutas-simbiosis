@@ -1379,6 +1379,15 @@ input, select{ font-family: inherit; }
   /* Al enfocar un cuadro (prueba: origen) el panel sube y el mapa baja */
   #app.panel-arriba .app-body{ flex-direction: column-reverse; }
 
+  /* Teclado abierto (cuadro de destino): la interfaz inferior sube en bloque
+     (cuadros, botones y barra de navegación) justo por encima del teclado */
+  #app.teclado-abierto .side-panel,
+  #app.teclado-abierto .mobile-tab-bar{
+    transform: translateY(calc(-1 * var(--teclado-alto, 0px)));
+    transition: transform 0.15s ease;
+  }
+  #app.teclado-abierto .side-panel{ z-index: 1050; }
+
   /* Ajuste de padding del panel en móvil */
   .side-panel{ padding: 12px 12px 56px; gap: 0px; }
 
