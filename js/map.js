@@ -336,11 +336,15 @@ const MapModule = (() => {
       const muni = _municipioDe(e);
       marker.bindPopup(`
         <div class="popup-sitio">
-          <span class="popup-sitio__cat">Pueblo intermedio</span>
+          <div class="popup-sitio__head">
+            <span class="popup-sitio__cat">Pueblo intermedio</span>
+            ${muni && muni.temperatura_promedio ? `<span class="popup-sitio__stat">${muni.temperatura_promedio}</span>` : ''}
+            ${muni && muni.altura ? `<span class="popup-sitio__stat">${muni.altura}</span>` : ''}
+          </div>
           <h3 class="popup-sitio__nombre">${e.nombre || ''}</h3>
-          <p class="popup-sitio__ubicacion">${e.departamento ? e.departamento : ''}</p>
+          <p class="popup-sitio__ubicacion">${e.departamento ? `${e.nombre || ''}, ${e.departamento}` : (e.nombre || '')}</p>
           ${muni && muni.descripción ? `<p class="popup-sitio__desc">${muni.descripción}</p>` : ''}
-          ${_htmlDetallesMunicipio(muni)}
+          ${_htmlDatosMunicipio(muni)}
           <p class="popup-sitio__dist mono"></p>
         </div>
       `);
@@ -368,19 +372,14 @@ const MapModule = (() => {
     return (munis || []).find((m) => m.id === punto.id || (punto.nombre && m.nombre === punto.nombre)) || null;
   }
 
-  /** HTML de la lista de detalles del municipio (temperatura, altura, población, superficies). */
-  function _htmlDetallesMunicipio(muni) {
+  /** HTML de la línea inferior de datos del municipio (habitantes + superficies). */
+  function _htmlDatosMunicipio(muni) {
     if (!muni) return '';
-    const filas = [];
-    if (muni.temperatura_promedio) filas.push(['Temperatura', muni.temperatura_promedio]);
-    if (muni.altura) filas.push(['Altura', muni.altura]);
-    if (muni.poblacion_total) filas.push(['Población', muni.poblacion_total]);
-    if (muni.superficie_urbana) filas.push(['Superficie urbana', muni.superficie_urbana]);
-    if (muni.superficie_total) filas.push(['Superficie total', muni.superficie_total]);
-    if (!filas.length) return '';
-    return `<div class="popup-sitio__detalles">${filas
-      .map(([l, v]) => `<div class="popup-sitio__detalle"><span class="popup-sitio__detalle-label">${l}</span><span class="popup-sitio__detalle-valor">${v}</span></div>`)
-      .join('')}</div>`;
+    const partes = [];
+    if (muni.poblacion_total) partes.push(`${muni.poblacion_total} habitantes`);
+    if (muni.superficie_total) partes.push(`Superficie: ${muni.superficie_total}`);
+    if (muni.superficie_urbana) partes.push(`urbana: ${muni.superficie_urbana}`);
+    return partes.length ? `<div class="popup-sitio__datos">${partes.join(' · ')}</div>` : '';
   }
 
   // ---------------------------------------------------------------------

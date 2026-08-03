@@ -703,7 +703,9 @@
       trigger.dataset.selectedId = m.id;
       seleccion = m;
       actualizarEscalas();
-      row.style.display = 'none';
+      // El cuadro solo se oculta cuando los cuadros de origen/destino ya no
+      // están en pantalla (ruta calculada); al inicio permanece visible.
+      row.style.display = el.appRoot && el.appRoot.getAttribute('data-ruta-lista') === 'true' ? 'none' : '';
       if (el.checkAutoOrganizar.checked) organizarAutomaticamente();
     }
 
@@ -761,7 +763,7 @@
           trigger.dataset.selectedId = 'map_' + Date.now();
           seleccion = { id: 'map_' + Date.now(), lat, lon, nombre, departamento: '' };
           actualizarEscalas();
-          row.style.display = 'none';
+          row.style.display = el.appRoot && el.appRoot.getAttribute('data-ruta-lista') === 'true' ? 'none' : '';
           if (el.checkAutoOrganizar.checked) organizarAutomaticamente();
         });
       });
@@ -1256,7 +1258,7 @@
     }
   }
 
-  /** En móvil, reubica un combo para que nunca quede tapado por el teclado del dispositivo. */
+  /** En móvil, los menús de los combos abren siempre hacia abajo. */
   function ajustarComboAlTeclado(trigger, listEl) {
     if (!esMovil() || !listEl) return;
     const vv = window.visualViewport || null;
@@ -1269,15 +1271,9 @@
     }
     const rect = trigger.getBoundingClientRect();
     const espacioAbajo = vh - rect.bottom - 8;
-    if (espacioAbajo < 140) {
-      listEl.style.top = 'auto';
-      listEl.style.bottom = 'calc(100% + 6px)';
-      listEl.style.maxHeight = Math.max(120, rect.top - 8) + 'px';
-    } else {
-      listEl.style.top = 'calc(100% + 6px)';
-      listEl.style.bottom = 'auto';
-      listEl.style.maxHeight = Math.min(espacioAbajo, 260) + 'px';
-    }
+    listEl.style.top = 'calc(100% + 6px)';
+    listEl.style.bottom = 'auto';
+    listEl.style.maxHeight = Math.min(Math.max(espacioAbajo, 100), 260) + 'px';
   }
 
   window.addEventListener('resize', () => {
@@ -2447,19 +2443,6 @@
     return state.municipios.find((m) => m.id === punto.id || (punto.nombre && m.nombre === punto.nombre)) || null;
   }
 
-  /** Detalles del municipio para la ficha informativa (temperatura, altura, población, superficies). */
-  function _detallesMunicipio(punto) {
-    const m = _datosMunicipio(punto);
-    if (!m) return [];
-    const d = [];
-    if (m.temperatura_promedio) d.push({ etiqueta: 'Temperatura', valor: m.temperatura_promedio });
-    if (m.altura) d.push({ etiqueta: 'Altura', valor: m.altura });
-    if (m.poblacion_total) d.push({ etiqueta: 'Población', valor: m.poblacion_total });
-    if (m.superficie_urbana) d.push({ etiqueta: 'Superficie urbana', valor: m.superficie_urbana });
-    if (m.superficie_total) d.push({ etiqueta: 'Superficie total', valor: m.superficie_total });
-    return d;
-  }
-
   /** Centra el mapa y muestra la ficha centrada de un pueblo intermedio. */
   function mostrarCuadroEscala(escala) {
     if (!escala || escala.lat == null || escala.lon == null) return;
@@ -2489,11 +2472,15 @@
     TourismModule.mostrarCuadroInfo({
       categoria: 'Pueblo intermedio',
       color: '#4a6fa5',
-      nombre: formatMunicipio(escala),
-      ubicacion: escala.departamento || '',
+      nombre: escala.nombre || '',
+      ubicacion: formatMunicipio(escala),
       descripcion: muni ? (muni.descripción || '') : '',
       dist: '',
-      detalles: _detallesMunicipio(escala),
+      altura: muni ? (muni.altura || '') : '',
+      temperatura: muni ? (muni.temperatura_promedio || '') : '',
+      poblacion: muni ? (muni.poblacion_total || '') : '',
+      superficie_total: muni ? (muni.superficie_total || '') : '',
+      superficie_urbana: muni ? (muni.superficie_urbana || '') : '',
       botones: [btnCambiar, btnEliminar],
     });
   }
@@ -2521,10 +2508,14 @@
       categoria: tipo === 'origen' ? 'Ciudad de origen' : 'Ciudad de destino',
       color: '#2d7d68',
       nombre: nombre || '',
-      ubicacion: departamento || '',
+      ubicacion: [nombre, departamento].filter(Boolean).join(', '),
       descripcion: muni ? (muni.descripción || '') : '',
       dist: '',
-      detalles: _detallesMunicipio(extremo),
+      altura: muni ? (muni.altura || '') : '',
+      temperatura: muni ? (muni.temperatura_promedio || '') : '',
+      poblacion: muni ? (muni.poblacion_total || '') : '',
+      superficie_total: muni ? (muni.superficie_total || '') : '',
+      superficie_urbana: muni ? (muni.superficie_urbana || '') : '',
       botones: [btnCambiar],
     });
   }

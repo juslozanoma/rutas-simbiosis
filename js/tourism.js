@@ -173,13 +173,16 @@ const TourismModule = (() => {
   /**
    * Muestra una ficha informativa centrada (paradas, escalas o extremos) con
    * el mismo comportamiento que la ficha de un sitio turístico.
-   * opciones: { categoria, color, nombre, ubicacion, descripcion, dist, botones[] }
+   * opciones: { categoria, color, nombre, ubicacion, descripcion, dist,
+   *             altura, temperatura, poblacion, superficie_total, superficie_urbana,
+   *             botones[] }
    */
   function mostrarCuadroInfo(opciones) {
     ocultarPopupSitio();
 
     const tpl = document.getElementById('tpl-popup-sitio');
     const nodo = tpl.content.cloneNode(true);
+    const popup = nodo.querySelector('.popup-sitio');
 
     const catEl = nodo.querySelector('.popup-sitio__cat');
     const color = opciones.color || colorCategoria(opciones.categoria);
@@ -187,6 +190,24 @@ const TourismModule = (() => {
       catEl.textContent = opciones.categoria;
       catEl.style.background = `${color}22`;
       catEl.style.color = color;
+
+      // Fila superior: categoría + altura + temperatura, a la izquierda del cerrar.
+      const head = document.createElement('div');
+      head.className = 'popup-sitio__head';
+      popup.insertBefore(head, catEl);
+      head.appendChild(catEl);
+      if (opciones.altura) {
+        const a = document.createElement('span');
+        a.className = 'popup-sitio__stat';
+        a.textContent = opciones.altura;
+        head.appendChild(a);
+      }
+      if (opciones.temperatura) {
+        const t = document.createElement('span');
+        t.className = 'popup-sitio__stat';
+        t.textContent = opciones.temperatura;
+        head.appendChild(t);
+      }
     } else {
       catEl.remove();
     }
@@ -202,29 +223,20 @@ const TourismModule = (() => {
     else descEl.remove();
 
     const distEl = nodo.querySelector('.popup-sitio__dist');
-    if (opciones.detalles && opciones.detalles.length) {
-      const dl = document.createElement('div');
-      dl.className = 'popup-sitio__detalles';
-      opciones.detalles.forEach((d) => {
-        const row = document.createElement('div');
-        row.className = 'popup-sitio__detalle';
-        const label = document.createElement('span');
-        label.className = 'popup-sitio__detalle-label';
-        label.textContent = d.etiqueta;
-        const valor = document.createElement('span');
-        valor.className = 'popup-sitio__detalle-valor';
-        valor.textContent = d.valor;
-        row.appendChild(label);
-        row.appendChild(valor);
-        dl.appendChild(row);
-      });
-      const popup = nodo.querySelector('.popup-sitio');
-      if (distEl) popup.insertBefore(dl, distEl);
-      else popup.appendChild(dl);
-    }
-
     if (opciones.dist) distEl.textContent = opciones.dist;
     else distEl.remove();
+
+    // Fila inferior: habitantes + superficies en una sola línea.
+    const partes = [];
+    if (opciones.poblacion) partes.push(`${opciones.poblacion} habitantes`);
+    if (opciones.superficie_total) partes.push(`Superficie: ${opciones.superficie_total}`);
+    if (opciones.superficie_urbana) partes.push(`urbana: ${opciones.superficie_urbana}`);
+    if (partes.length) {
+      const datos = document.createElement('div');
+      datos.className = 'popup-sitio__datos';
+      datos.textContent = partes.join(' · ');
+      popup.appendChild(datos);
+    }
 
     nodo.querySelector('.popup-sitio__add').remove();
 
@@ -232,7 +244,7 @@ const TourismModule = (() => {
       const contenedor = document.createElement('div');
       contenedor.className = 'popup-sitio__acciones';
       opciones.botones.forEach((b) => contenedor.appendChild(b));
-      nodo.querySelector('.popup-sitio').appendChild(contenedor);
+      popup.appendChild(contenedor);
     }
 
     const btnClose = nodo.querySelector('.popup-sitio__close');
