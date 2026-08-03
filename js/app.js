@@ -628,11 +628,14 @@
       ajustarComboAlTeclado(trigger, listEl);
     }
 
-    // Segundo toque/clic en el cuadro con la lista abierta y sin texto: las
-    // opciones se contraen (el primer toque las abre vía focus).
+    // Toque/clic repetido en el cuadro SIN texto: alterna el menú (si está
+    // abierto lo cierra, si está cerrado lo abre). El primer toque lo abre vía
+    // focus; _toqueContrae evita que el focus de este mismo toque lo reabra.
     trigger.addEventListener('pointerdown', () => {
-      _toqueContrae = document.activeElement === trigger && !listEl.hidden && !trigger.value.trim();
-      if (_toqueContrae) listEl.hidden = true;
+      if (document.activeElement !== trigger || trigger.value.trim()) return;
+      if (listEl.hidden) abrir();
+      else listEl.hidden = true;
+      _toqueContrae = true;
     });
 
     trigger.addEventListener('focus', (e) => {
@@ -918,11 +921,14 @@
       ajustarComboAlTeclado(trigger, listEl);
     }
 
-    // Segundo toque/clic en el cuadro con la lista abierta y sin texto: las
-    // opciones se contraen (el primer toque las abre vía focus).
+    // Toque/clic repetido en el cuadro SIN texto: alterna el menú (si está
+    // abierto lo cierra, si está cerrado lo abre). El primer toque lo abre vía
+    // focus; _toqueContrae evita que el focus de este mismo toque lo reabra.
     trigger.addEventListener('pointerdown', () => {
-      _toqueContrae = document.activeElement === trigger && !listEl.hidden && !trigger.value.trim();
-      if (_toqueContrae) listEl.hidden = true;
+      if (document.activeElement !== trigger || trigger.value.trim()) return;
+      if (listEl.hidden) abrir();
+      else listEl.hidden = true;
+      _toqueContrae = true;
     });
 
     trigger.addEventListener('focus', (e) => {
@@ -1412,9 +1418,9 @@
       '| diferencia=', dif, dif === 0 ? '(JUSTO sobre el teclado)' : (dif > 0 ? '(espacio blanco debajo)' : '(barra bajo el teclado)'));
   };
 
-  function reposicionarInterfazTeclado(activar) {
+  function reposicionarInterfazTeclado(activar, inmediato = false) {
     const app = el.appRoot;
-    kbLog('reposicionarInterfazTeclado:', activar ? 'ACTIVAR' : 'DESACTIVAR', '| foco:', kbEtiqueta(document.activeElement));
+    kbLog('reposicionarInterfazTeclado:', activar ? 'ACTIVAR' : 'DESACTIVAR', '| inmediato:', inmediato, '| foco:', kbEtiqueta(document.activeElement));
     const restaurar = () => {
       app.classList.remove('teclado-abierto');
       app.style.removeProperty('--teclado-alto');
@@ -1443,13 +1449,16 @@
       app.classList.add('teclado-abierto');
       kbLog('  aplicar(): lift=', cubierto, 'px | teclado-abierto=', app.classList.contains('teclado-abierto'));
     };
-    aplicar();
-    kbBarra();
-    // Las listas se reposicionan solo cuando el teclado ya se asentó (400 ms
-    // desde el último evento): durante la animación el bloque y sus listas
-    // suben juntos con el transform (la transición suaviza el movimiento) y
-    // redecidir la dirección en cada evento haría parpadear la lista.
-    _reposTimer = setTimeout(() => { aplicar(); _ajustarListasAbiertas(); kbBarra(); }, 400);
+    // UN SOLO SALTO: el lift no sigue la animación del teclado evento a evento
+    // (eso superponía una medida por evento + el re-chequeo final y producía el
+    // doble salto). Se aplica una única vez, 250 ms después del último evento
+    // del teclado. Solo si el teclado YA estaba abierto (p. ej. al pasar de un
+    // cuadro a otro) se aplica de inmediato: no hay animación en curso.
+    if (inmediato && _tecladoCubierto() > 0) {
+      aplicar();
+      kbBarra();
+    }
+    _reposTimer = setTimeout(() => { aplicar(); _ajustarListasAbiertas(); kbBarra(); }, 250);
   }
 
   /** Cuánto tapa el teclado del área visible: prioriza la geometría exacta de
@@ -1509,7 +1518,7 @@
       // Al editar un cuadro (origen, pueblo intermedio o destino) la barra
       // inferior se oculta: no sube flotando sobre el teclado.
       el.appRoot.classList.add('combo-enfocado');
-      reposicionarInterfazTeclado(true);
+      reposicionarInterfazTeclado(true, true);
     }
   });
   document.addEventListener('focusout', (e) => {
