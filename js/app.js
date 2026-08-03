@@ -1356,6 +1356,7 @@
     clearTimeout(_reposTimer);
     if (!_reposActivo) {
       restaurar();
+      _ajustarListasAbiertas();
       return;
     }
     const aplicar = () => {
@@ -1372,8 +1373,11 @@
       app.classList.add('teclado-abierto');
     };
     aplicar();
-    _reposTimer = setTimeout(aplicar, 150);
-    _reposTimer = setTimeout(aplicar, 400);
+    // El bloque sube con transform (no dispara `resize`): las listas abiertas
+    // se reubican tras cada cambio del teclado para que ninguna quede cortada.
+    _ajustarListasAbiertas();
+    _reposTimer = setTimeout(() => { aplicar(); _ajustarListasAbiertas(); }, 150);
+    _reposTimer = setTimeout(() => { aplicar(); _ajustarListasAbiertas(); }, 400);
   }
 
   /** Cuánto tapa el teclado del área visible: prioriza la geometría exacta de
@@ -1432,8 +1436,19 @@
     });
   }
 
+  /** Reubica las listas de opciones abiertas tras un cambio del teclado (el
+   *  bloque sube o baja con transform, que no dispara `resize`). */
+  function _ajustarListasAbiertas() {
+    document.querySelectorAll('.combo__list:not([hidden])').forEach((l) => {
+      const trig = l.parentElement && l.parentElement.querySelector('.combo__trigger');
+      ajustarComboAlTeclado(trig, l);
+    });
+  }
+
   /** En móvil, coloca la lista de opciones del cuadro sin que el teclado la
-   *  corte: se abre hacia abajo si hay sitio y hacia arriba si no. El cuadro
+   *  corte: se abre hacia abajo si hay sitio y hacia arriba si no. El alto
+   *  visible se mide restando lo que tapa el teclado del layout (funciona
+   *  también en pantalla completa, donde visualViewport no cambia). El cuadro
    *  enfocado lo sube el bloque completo (teclado-abierto), por eso aquí no se
    *  usa scrollIntoView: sumado al transform subiría el cuadro fuera de la
    *  pantalla. */
@@ -1445,7 +1460,7 @@
       listEl.style.bottom = '';
       return;
     }
-    const altoVisible = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const altoVisible = window.innerHeight - _tecladoCubierto();
     const espacioAbajo = altoVisible - trigger.getBoundingClientRect().bottom;
     if (espacioAbajo < 180) {
       listEl.style.top = 'auto';
@@ -1457,12 +1472,7 @@
     listEl.style.maxHeight = '170px'; // 5 elementos
   }
 
-  window.addEventListener('resize', () => {
-    document.querySelectorAll('.combo__list:not([hidden])').forEach((l) => {
-      const trig = l.parentElement && l.parentElement.querySelector('.combo__trigger');
-      ajustarComboAlTeclado(trig, l);
-    });
-  });
+  window.addEventListener('resize', _ajustarListasAbiertas);
 
   function garantizarVisibilidadMovil() {
     if (esMovil()) {
