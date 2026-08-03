@@ -496,7 +496,7 @@
       pickLi.addEventListener('click', (e) => {
         e.stopPropagation();
         listEl.hidden = true;
-        if (trigger.id === 'destino-input') reposicionarInterfazTeclado(false);
+        reposicionarInterfazTeclado(false);
         iniciarSeleccionMapa((lat, lon) => {
           const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
           trigger.value = nombre;
@@ -570,7 +570,7 @@
       listEl.hidden = true;
       trigger.value = formatMunicipio(m);
       trigger.dataset.selectedId = m.id;
-      if (trigger.id === 'destino-input') reposicionarInterfazTeclado(false);
+      reposicionarInterfazTeclado(false);
       onSelect(m);
     }
 
@@ -710,10 +710,13 @@
     const combo = document.createElement('div');
     combo.className = 'combo';
     const trigger = document.createElement('input');
-    trigger.type = 'text';
+    trigger.type = 'search';
     trigger.className = 'combo__trigger escala-trigger';
     trigger.placeholder = 'Pueblo intermedio';
-    trigger.autocomplete = 'off';
+    trigger.autocomplete = 'one-time-code';
+    trigger.autocorrect = 'off';
+    trigger.autocapitalize = 'off';
+    trigger.spellcheck = false;
     const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     chevron.setAttribute('class', 'combo__chevron');
     chevron.setAttribute('viewBox', '0 0 24 24');
@@ -757,6 +760,7 @@
       trigger.value = formatMunicipio(m);
       trigger.dataset.selectedId = m.id;
       seleccion = m;
+      reposicionarInterfazTeclado(false);
       actualizarEscalas();
       // El cuadro solo se oculta cuando los cuadros de origen/destino ya no
       // están en pantalla (ruta calculada); al inicio permanece visible.
@@ -812,6 +816,7 @@
       pickLi.addEventListener('click', (e) => {
         e.stopPropagation();
         listEl.hidden = true;
+        reposicionarInterfazTeclado(false);
         iniciarSeleccionMapa((lat, lon) => {
           const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
           trigger.value = nombre;
@@ -1320,10 +1325,16 @@
   }
 
   // Estado del reposicionamiento en bloque de la interfaz inferior.
-  // El bloque (cuadros, botones y barra de navegación) sube EXACTAMENTE lo que
-  // el teclado tapa del área visible en cada evento de visualViewport, sin topes
-  // ni valores cacheados: un tope por la altura del panel dejaba un hueco en
-  // blanco entre el bloque y el teclado.
+  // Con `interactive-widget=resizes-content` (meta viewport) Chrome Android
+  // encoge el layout viewport con el teclado y la barra fija sube sola: aquí
+  // cubierto queda en 0 y no se aplica ningún transform. En pantalla completa
+  // el meta no aplica, así que el bloque (cuadros, botones y barra de
+  // navegación) sube EXACTAMENTE lo que el teclado tapa del área visible.
+  // Se espera a que el teclado se asiente para no aplicar un transform
+  // intermedio (eso dejaba un hueco en blanco bajo el bloque).
+  let _reposActivo = false;
+  let _reposTimer = null;
+
   function reposicionarInterfazTeclado(activar) {
     const app = el.appRoot;
     const vv = window.visualViewport;
@@ -1331,30 +1342,53 @@
       app.classList.remove('teclado-abierto');
       app.style.removeProperty('--teclado-alto');
     };
-    if (!activar || !esMovil() || !vv) {
+    _reposActivo = Boolean(activar);
+    clearTimeout(_reposTimer);
+    if (!_reposActivo) {
       restaurar();
       return;
     }
-    const cubierto = Math.round(window.innerHeight - (vv.height + vv.offsetTop));
-    if (cubierto <= 0) {
-      restaurar();
-      return;
-    }
-    app.style.setProperty('--teclado-alto', cubierto + 'px');
-    app.classList.add('teclado-abierto');
+    const aplicar = () => {
+      if (!_reposActivo || !esMovil() || !vv) {
+        restaurar();
+        return;
+      }
+      const cubierto = Math.round(window.innerHeight - (vv.height + vv.offsetTop));
+      if (cubierto <= 0) {
+        restaurar();
+        return;
+      }
+      app.style.setProperty('--teclado-alto', cubierto + 'px');
+      app.classList.add('teclado-abierto');
+    };
+    aplicar();
+    _reposTimer = setTimeout(aplicar, 150);
   }
 
-  if (el.destinoInput) {
-    el.destinoInput.addEventListener('focus', () => reposicionarInterfazTeclado(true));
-    el.destinoInput.addEventListener('blur', () => reposicionarInterfazTeclado(false));
+  const esTriggerCombo = (t) => Boolean(t && t.classList && t.classList.contains('combo__trigger'));
+
+  // VirtualKeyboard API: en pantalla completa el meta interactive-widget y el
+  // visualViewport no encogen el layout, pero overlayContent=false sí lo hace:
+  // la barra inferior sube sola por encima del teclado sin transform.
+  if (navigator.virtualKeyboard && typeof navigator.virtualKeyboard.overlayContent !== 'undefined') {
+    try { navigator.virtualKeyboard.overlayContent = false; } catch (e) { /* ignorar */ }
   }
+
+  // Aplica a TODOS los cuadros de búsqueda (origen, destino y los pueblos
+  // intermedios que se crean dinámicamente desde las paradas).
+  document.addEventListener('focusin', (e) => {
+    if (esTriggerCombo(e.target)) reposicionarInterfazTeclado(true);
+  });
+  document.addEventListener('focusout', (e) => {
+    if (!esTriggerCombo(e.relatedTarget)) reposicionarInterfazTeclado(false);
+  });
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => {
-      if (document.activeElement === el.destinoInput) reposicionarInterfazTeclado(true);
+      if (esTriggerCombo(document.activeElement)) reposicionarInterfazTeclado(true);
       else reposicionarInterfazTeclado(false);
     });
     window.visualViewport.addEventListener('scroll', () => {
-      if (document.activeElement === el.destinoInput) reposicionarInterfazTeclado(true);
+      if (esTriggerCombo(document.activeElement)) reposicionarInterfazTeclado(true);
     });
   }
 
@@ -1369,7 +1403,9 @@
     }
     // El shell móvil ahora es scrolleable: se centra el input en el área visible
     // (funciona también en pantalla completa y al modificar origen/destino/pueblo).
-    if (!(trigger.id === 'destino-input' && window.visualViewport)) {
+    // Cuando el bloque está subido por el teclado (teclado-abierto) no se centra:
+    // el transform ya coloca el cuadro sobre el teclado y scrollIntoView pelearía.
+    if (!el.appRoot.classList.contains('teclado-abierto')) {
       try {
         trigger.scrollIntoView({ block: 'center', behavior: 'smooth' });
       } catch (e) { /* ignorar */ }
