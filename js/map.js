@@ -877,47 +877,80 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     capaRuta = null;
   }
 
-  /** Dibuja el tramo aéreo (línea punteada curva) entre dos aeropuertos. Recibe [lon,lat]. */
-  function dibujarTramoAereo(coords, meta) {
+  /**
+   * Dibuja los tramos aéreos (líneas punteadas curvas). Recibe un arreglo de
+   * tramos: [{ coords:[lon,lat], distanciaMetros, duracionSegundos }, ...].
+   */
+  function dibujarTramoAereo(tramos) {
     limpiarTramoAereo();
-    if (!capaAerea || !coords || coords.length < 2) return;
-    const latLngs = coords.map((c) => [Number(c[1]), Number(c[0])]);
-    const linea = L.polyline(latLngs, {
-      color: '#4a6fa5',
-      weight: 3,
-      opacity: 0.9,
-      dashArray: '8 8',
-      lineCap: 'round',
-      interactive: true,
-    }).addTo(capaAerea);
-    if (meta) {
-      const km = (meta.distanciaMetros || 0) / 1000;
-      const seg = meta.duracionSegundos || 0;
-      const h = Math.floor(seg / 3600);
-      const min = Math.round((seg % 3600) / 60);
-      const durStr = h > 0 ? `${h} h ${min} min` : `${min} min`;
-      linea.bindTooltip(`✈ ${km.toFixed(1)} km · ${durStr}`, { sticky: true, direction: 'top', className: 'altimetria-map-tooltip' });
-    }
+    if (!capaAerea || !tramos || !tramos.length) return;
+    tramos.forEach((t) => {
+      const coords = t.coords;
+      if (!coords || coords.length < 2) return;
+      const latLngs = coords.map((c) => [Number(c[1]), Number(c[0])]);
+      const linea = L.polyline(latLngs, {
+        color: '#4a6fa5',
+        weight: 3,
+        opacity: 0.9,
+        dashArray: '8 8',
+        lineCap: 'round',
+        interactive: true,
+      }).addTo(capaAerea);
+      if (t.distanciaMetros || t.duracionSegundos) {
+        const km = (t.distanciaMetros || 0) / 1000;
+        const seg = t.duracionSegundos || 0;
+        const h = Math.floor(seg / 3600);
+        const min = Math.round((seg % 3600) / 60);
+        const durStr = h > 0 ? `${h} h ${min} min` : `${min} min`;
+        linea.bindTooltip(`✈ ${km.toFixed(1)} km · ${durStr}`, { sticky: true, direction: 'top', className: 'altimetria-map-tooltip' });
+      }
 
-    // Ícono de avión blanco en la mitad de la trayectoria, apuntando al aeropuerto de destino.
-    const midIdx = Math.floor(coords.length / 2);
-    const mid = coords[midIdx];
-    const dest = coords[coords.length - 1] || mid;
-    let bearing = 0;
-    try {
-      bearing = turf.bearing(turf.point(mid), turf.point(dest));
-    } catch (e) { /* ignorar */ }
-    const icono = L.divIcon({
-      html: `<img src="public/airplane.svg" style="transform:rotate(${bearing}deg);width:22px;height:22px;filter:brightness(0) invert(1) drop-shadow(0 2px 4px rgba(20,32,27,0.7));"/>`,
-      className: '',
-      iconSize: [22, 22],
-      iconAnchor: [11, 11],
+      // Ícono de avión blanco en la mitad de la trayectoria, apuntando al destino del tramo.
+      const midIdx = Math.floor(coords.length / 2);
+      const mid = coords[midIdx];
+      const dest = coords[coords.length - 1] || mid;
+      let bearing = 0;
+      try {
+        bearing = turf.bearing(turf.point(mid), turf.point(dest));
+      } catch (e) { /* ignorar */ }
+      const icono = L.divIcon({
+        html: `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid #ffffff;box-shadow:0 1px 4px rgba(20,32,27,0.55);"><img src="public/airplane.svg" style="width:16px;height:16px;transform:rotate(${bearing - 90}deg);filter:brightness(0) saturate(100%) invert(40%) sepia(11%) saturate(716%) hue-rotate(118deg) brightness(94%) contrast(92%);"/></div>`,
+        className: '',
+        iconSize: [26, 26],
+        iconAnchor: [13, 13],
+      });
+      L.marker([Number(mid[1]), Number(mid[0])], { icon: icono, interactive: false, zIndexOffset: 1500 }).addTo(capaAerea);
     });
-    L.marker([Number(mid[1]), Number(mid[0])], { icon: icono, interactive: false, zIndexOffset: 1500 }).addTo(capaAerea);
   }
 
   function limpiarTramoAereo() {
     if (capaAerea) capaAerea.clearLayers();
+  }
+
+  let _aeropuertoMarkers = [];
+
+  /** Pinta los marcadores de los aeropuertos de la ruta aérea. Recibe [{ap, titulo}, ...]. */
+  function setMarcadoresAeropuertos(lista) {
+    limpiarMarcadoresAeropuertos();
+    if (!capaAerea || !lista || !lista.length) return;
+    lista.forEach(({ ap, titulo }) => {
+      if (!ap) return;
+      const icono = L.divIcon({
+        html: '<div class="aeropuerto-pin">✈</div>',
+        className: '',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
+      });
+      const m = L.marker([Number(ap.latitud), Number(ap.longitud)], { icon: icono, zIndexOffset: 1450 });
+      m.bindTooltip(`${titulo}: ${ap.aeropuerto || ''}`, { direction: 'top' });
+      m.addTo(capaAerea);
+      _aeropuertoMarkers.push(m);
+    });
+  }
+
+  function limpiarMarcadoresAeropuertos() {
+    _aeropuertoMarkers.forEach((m) => { if (capaAerea) capaAerea.removeLayer(m); });
+    _aeropuertoMarkers = [];
   }
 
   function limpiarTodo() {
@@ -1097,6 +1130,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     habilitarArrastreRuta,
     dibujarTramoAereo,
     limpiarTramoAereo,
+    setMarcadoresAeropuertos,
+    limpiarMarcadoresAeropuertos,
     dibujarRutaPreview,
     limpiarRutaPreview,
     limpiarRuta,

@@ -269,7 +269,7 @@
       if (state.rutaActual) {
         el.panelParadas.hidden = false;
       }
-      const ocultarTestigo = esMovil() || !state.rutaActual || state.sitiosFiltrados.length === 0;
+      const ocultarTestigo = esMovil() || !state.rutaActual || _soMostrarSitiosVisto;
       el.btnMostrarSitiosCercanos.hidden = ocultarTestigo;
       el.btnMostrarSitiosCercanos.disabled = ocultarTestigo;
       sincronizarModoRutaMovil();
@@ -405,7 +405,8 @@
     }, false);
   }
 
-  /** Al cambiar la ciudad de origen o destino se borran el perfil (turf) y el listado de sitios. */
+  /** Al cambiar la ciudad de origen o destino se borran el perfil (turf), los sitios
+   *  del mapa y el listado de Descubre. */
   function _limpiarTurfYListado() {
     state.elevacion = null;
     state.altimetriaGeo = null;
@@ -413,9 +414,23 @@
     state.sitiosFiltrados = [];
     state.sitiosFiltradosBase = [];
     state.modoVisibilidad = 'completa';
+    conteoCategoriasBase = new Map();
     _sincronizarBotonVisibles();
+    _calculandoListado = 0;
+    _listadoParaGeojson = null;
+    MapModule.limpiarSitios();
+    TourismModule.ocultarPopupSitio();
+    if (el.sitiosLista) el.sitiosLista.innerHTML = '';
+    if (el.sitiosLista) el.sitiosLista.hidden = true;
+    if (el.sitiosVacio) el.sitiosVacio.hidden = true;
+    if (el.sitiosContador) el.sitiosContador.textContent = '0';
+    if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = '0';
+    if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = '0';
+    renderizarCategoriasMenu([]);
     _syncBotonSitios();
     if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.hidden = true;
+    // De vuelta al modo de configuración: se restaura el "+" de agregar escala.
+    if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = false;
   }
 
   function setupCombo(trigger, listEl, onSelect, excluirIdsFn, showCurrentLocation) {
@@ -1305,35 +1320,17 @@
   /** En móvil, sube el cuadro seleccionado hacia la parte superior (sobre el teclado). */
   function ajustarComboAlTeclado(trigger, listEl) {
     if (!esMovil() || !listEl) return;
-    const vv = window.visualViewport || null;
     if (!trigger) {
       listEl.style.maxHeight = '';
       listEl.style.top = '';
       listEl.style.bottom = '';
       return;
     }
-    // Lleva el input casi al borde superior del área visible (funciona en pantalla completa).
-    const vTop = vv ? vv.offsetTop : 0;
-    const rect = trigger.getBoundingClientRect();
-    const topVis = rect.top - vTop;
-    const delta = topVis - 10;
-    if (Math.abs(delta) > 2) {
-      let cont = trigger.parentElement;
-      let scrolleado = false;
-      while (cont && cont !== document.body && cont !== document.documentElement) {
-        const s = getComputedStyle(cont);
-        if (/(auto|scroll|hidden)/.test(s.overflowY)) {
-          cont.scrollTop += delta;
-          scrolleado = true;
-          break;
-        }
-        cont = cont.parentElement;
-      }
-      if (!scrolleado) {
-        const doc = document.scrollingElement || document.documentElement;
-        doc.scrollTop += delta;
-      }
-    }
+    // El shell móvil ahora es scrolleable: se centra el input en el área visible
+    // (funciona también en pantalla completa y al modificar origen/destino/pueblo).
+    try {
+      trigger.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    } catch (e) { /* ignorar */ }
     listEl.style.top = 'calc(100% + 6px)';
     listEl.style.bottom = 'auto';
     listEl.style.maxHeight = '170px'; // 5 elementos
@@ -1357,6 +1354,7 @@
 
   let ultimosValoresAplicados = { distancia: null, tiempo: null };
   let conteoCategoriasBase = null;
+  let _soMostrarSitiosVisto = false;
 
   /** Habilita/deshabilita todos los controles de entrada durante el cálculo de ruta. */
   function ponerEnCargaRuta(cargando, silencioso = false) {
@@ -1383,31 +1381,52 @@
     }
   }
 
-  /** Muestra u oculta el testigo "Mostrar sitios" según haya resultados en Descubre. */
+  /** Sincroniza el botón flotante del mapa según haya o no listado en Descubre. */
   function _syncBotonSitios() {
-    if (!el.btnMostrarSitiosCercanos) return;
-    // En celular el botón no se usa (la pestaña Descubre cumple ese papel).
-    const hay = state.sitiosFiltrados.length > 0 && !esMovil();
-    el.btnMostrarSitiosCercanos.hidden = !hay;
-    el.btnMostrarSitiosCercanos.disabled = !hay;
-    // El botón flotante del mapa solo aparece cuando hay un listado de sitios.
     if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.hidden = state.sitiosFiltrados.length === 0;
   }
 
   function _habilitarMostrarSitios() {
-    // No se calcula el listado ni se muestran sitios al calcular la ruta:
-    // el listado se genera solo al abrir la pestaña Descubre.
-    _syncBotonSitios();
+    // Habilita la pestaña Descubre tras calcular una ruta.
+    if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
+    if (el.btnTabDescubre) el.btnTabDescubre.disabled = false;
+    if (el.icoDescubreTab) el.icoDescubreTab.hidden = true;
+    if (el.icoDescubreTabDesktop) el.icoDescubreTabDesktop.hidden = true;
+    if (el.sitiosContadorTab) el.sitiosContadorTab.hidden = false;
+    if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.hidden = false;
+    // El testigo "Mostrar sitios" solo aparece tras calcular la PRIMERA ruta
+    // y luego se elimina para siempre.
+    if (_soMostrarSitiosVisto) {
+      el.btnMostrarSitiosCercanos.disabled = true;
+      el.btnMostrarSitiosCercanos.hidden = true;
+      return;
+    }
+    _soMostrarSitiosVisto = true;
+    el.btnMostrarSitiosCercanos.disabled = false;
+    el.btnMostrarSitiosCercanos.hidden = false;
   }
 
-  let _calculandoListado = false;
+  let _calculandoListado = 0;
+  let _listadoParaGeojson = null; // referencia de la ruta con la que se calculó el listado
 
   /** Calcula el listado de sitios de la pestaña Descubre solo si aún no hay listado. */
   function _asegurarListadoSitios(silencioso = false) {
     if (!state.rutaActual) { _syncBotonSitios(); return; }
-    if (state.sitiosFiltrados.length > 0) { if (silencioso) _syncBotonSitios(); return; }
-    if (_calculandoListado) return;
-    _calculandoListado = true;
+    const rutaFiltro = state.rutaBase || state.rutaActual;
+    const geojsonListado = rutaFiltro ? rutaFiltro.geojson : null;
+    if (state.sitiosFiltrados.length > 0) {
+      if (silencioso) _syncBotonSitios();
+      // Si el listado corresponde a otra ruta (ruta recalculada), se recalcula.
+      if (_listadoParaGeojson === geojsonListado) return;
+      state.sitiosFiltrados = [];
+      state.sitiosFiltradosBase = [];
+    }
+    if (_calculandoListado) {
+      // Si quedó atascado (p. ej. cerraron la pestaña a mitad de carga) se reintenta.
+      if (Date.now() - _calculandoListado > 30000) _calculandoListado = 0;
+      else return;
+    }
+    _calculandoListado = Date.now();
 
     el.checkDistancia.checked = true;
     el.filtroDistancia.disabled = false;
@@ -1423,7 +1442,8 @@
     el.loadingSitios.hidden = false;
     if (!silencioso) el.panelSitios.hidden = false;
     ejecutarFiltradoProgresivo(() => {
-      _calculandoListado = false;
+      _calculandoListado = 0;
+      _listadoParaGeojson = geojsonListado;
       el.loadingSitios.hidden = true;
       actualizarEstadoBotonesRetry();
       if (silencioso) {
@@ -1724,9 +1744,23 @@
     return porCiudad || porDist;
   }
 
+  /** Busca un aeropuerto hub al que ambos aeropuertos tengan vuelos directos (prefiere Bogotá). */
+  function _encontrarHub(apOri, apDes) {
+    if (!state.aeropuertos) return null;
+    const dOri = new Set((apOri.destinos || []).map((d) => _normTexto(d)));
+    const dDes = new Set((apDes.destinos || []).map((d) => _normTexto(d)));
+    if (!dOri.size || !dDes.size) return null;
+    const sirve = (ap) => {
+      const c = _normTexto(ap.ciudad_origen);
+      return dOri.has(c) && dDes.has(c);
+    };
+    const bogo = state.aeropuertos.find((a) => _normTexto(a.ciudad_origen) === 'bogota');
+    if (bogo && sirve(bogo)) return bogo;
+    return state.aeropuertos.find(sirve) || null;
+  }
+
   /** Genera una línea curva entre dos aeropuertos para el tramo aéreo. */
-  function _arcCoords(a, b) {
-    const lon1 = Number(a.longitud), lat1 = Number(a.latitud);
+  function _arcCoords(a, b) {    const lon1 = Number(a.longitud), lat1 = Number(a.latitud);
     const lon2 = Number(b.longitud), lat2 = Number(b.latitud);
     const n = 26;
     const dLon = lon2 - lon1, dLat = lat2 - lat1;
@@ -1771,11 +1805,20 @@
         RoutingModule.calcularRuta({ lat: apDes.latitud, lon: apDes.longitud }, state.destino, 'driving'),
       ]);
 
-      const coordsAvion = _arcCoords(apOri, apDes);
-      const distAvion = turf.length(turf.lineString(coordsAvion), { units: 'kilometers' }) * 1000;
-      const durAvion = (distAvion / 1000) / 750 * 3600;
       const coordsCarro1 = rutaCarro1.geojson.geometry.coordinates;
       const coordsCarro2 = rutaCarro2.geojson.geometry.coordinates;
+
+      // Plan de vuelos: directo o con conexión vía un hub (p. ej. Bogotá).
+      const hub = _encontrarHub(apOri, apDes);
+      const pares = hub ? [[apOri, hub], [hub, apDes]] : [[apOri, apDes]];
+      const vuelos = pares.map(([a, b]) => {
+        const coords = _arcCoords(a, b);
+        const dist = turf.length(turf.lineString(coords), { units: 'kilometers' }) * 1000;
+        const dur = (dist / 1000) / 750 * 3600;
+        return { coords, distanciaMetros: dist, duracionSegundos: dur, a, b };
+      });
+      const distAvion = vuelos.reduce((s, v) => s + v.distanciaMetros, 0);
+      const durAvion = vuelos.reduce((s, v) => s + v.duracionSegundos, 0);
 
       // Mapa: MultiLineString con los tramos en carro (sin línea recta entre aeropuertos).
       const geojsonMapa = {
@@ -1804,11 +1847,12 @@
 
       state.modoAereo = true;
       state.tramosAereo = {
-        avion: coordsAvion,
+        vuelos,
         carro1: coordsCarro1,
         carro2: coordsCarro2,
         apOri,
         apDes,
+        hub,
         distCarro1: rutaCarro1.distanciaMetros,
         distCarro2: rutaCarro2.distanciaMetros,
         distAvion,
@@ -1853,12 +1897,25 @@
         AltimetriaModule.agregarParada(p.lat, p.lon, p.nombre, p._distKm, mapaEtiquetas.get('parada_' + p.id) || '', p.id, 'parada');
       });
 
+      // Aeropuertos en el perfil: salida, (hub) y llegada.
+      const aeropuertos = [{ ap: apOri }, ...(hub ? [{ ap: hub }] : []), { ap: apDes }];
+      aeropuertos.forEach(({ ap }) => {
+        if (!ap) return;
+        const nearest = turf.nearestPointOnLine(routeLine, turf.point([ap.longitud, ap.latitud]), { units: 'kilometers' });
+        AltimetriaModule.agregarParada(ap.latitud, ap.longitud, ap.aeropuerto, nearest.properties.location || 0, '✈', 'aero_' + (ap.id != null ? ap.id : (ap.ciudad_origen || 'x')), 'aeropuerto');
+      });
+
       MapModule.dibujarRuta(geojsonMapa, {
         distanciaMetros: totalDist,
         duracionSegundos: totalDur,
         origenNombre: state.origen?.nombre || 'el origen',
       });
-      MapModule.dibujarTramoAereo(coordsAvion, { distanciaMetros: distAvion, duracionSegundos: durAvion });
+      MapModule.dibujarTramoAereo(vuelos);
+      MapModule.setMarcadoresAeropuertos([
+        { ap: apOri, titulo: 'Salida' },
+        ...(hub ? [{ ap: hub, titulo: 'Conexión' }] : []),
+        { ap: apDes, titulo: 'Llegada' },
+      ]);
       MapModule.setMarcadorOrigen(state.origen.lat, state.origen.lon, state.origen.nombre);
       MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);
       MapModule.setMarcadoresEscalas(state.escalas);
@@ -2222,10 +2279,13 @@
       origenNombre: state.origen?.nombre || 'el origen',
     });
     if (state.modoAereo && state.tramosAereo) {
-      MapModule.dibujarTramoAereo(state.tramosAereo.avion, {
-        distanciaMetros: state.tramosAereo.distAvion,
-        duracionSegundos: state.tramosAereo.durAvion,
-      });
+      MapModule.dibujarTramoAereo(state.tramosAereo.vuelos || []);
+      const ta = state.tramosAereo;
+      MapModule.setMarcadoresAeropuertos([
+        { ap: ta.apOri, titulo: 'Salida' },
+        ...(ta.hub ? [{ ap: ta.hub, titulo: 'Conexión' }] : []),
+        { ap: ta.apDes, titulo: 'Llegada' },
+      ]);
     }
 
     // Enable drag-to-reroute with current waypoints
@@ -2651,6 +2711,8 @@
     activarPanelTab('ruta');
     setMobileTab('ruta');
     el.appRoot.removeAttribute('data-ruta-lista');
+    // Al cambiar el origen solo se muestra el cuadro del origen (sin el "+" de agregar escala).
+    if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = true;
     const row = document.getElementById('row-origen');
     if (row) row.scrollIntoView({ block: 'nearest' });
     if (el.origenInput) {
@@ -2664,6 +2726,7 @@
     activarPanelTab('ruta');
     setMobileTab('ruta');
     el.appRoot.removeAttribute('data-ruta-lista');
+    if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = true;
     const row = document.getElementById('row-destino');
     if (row) row.scrollIntoView({ block: 'nearest' });
     if (el.destinoInput) {
@@ -2852,9 +2915,12 @@
     const tramos = state.tramosAereo;
     const distTxt = (() => {
       if (!tramos) return '';
-      const dist = prefijo === 'Salida' ? tramos.distCarro1 : tramos.distCarro2;
+      let dist = null;
+      if (prefijo === 'Salida') dist = tramos.distCarro1;
+      else if (prefijo === 'Llegada') dist = tramos.distCarro2;
+      else if (tramos.vuelos && tramos.vuelos[0]) dist = tramos.vuelos[0].distanciaMetros;
       if (dist == null) return '';
-      return `${prefijo}: ${(dist / 1000).toFixed(1)} km por carretera`;
+      return `${prefijo}: ${(dist / 1000).toFixed(1)} km`;
     })();
 
     TourismModule.mostrarCuadroInfo({
@@ -2986,8 +3052,8 @@
       };
     }
 
-    function construirFilaAeropuerto(tramos, ap, prefijo, distKey) {
-      const li = crearFilaAeropuerto(ap.aeropuerto, prefijo, tramos[distKey] != null ? tramos[distKey] / 1000 : null);
+    function construirFilaAeropuerto(tramos, ap, prefijo, distMetros) {
+      const li = crearFilaAeropuerto(ap.aeropuerto, prefijo, distMetros != null ? distMetros / 1000 : null);
       li.addEventListener('click', accionAeropuerto(ap, prefijo));
       li.addEventListener('keydown', (evt) => {
         if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); accionAeropuerto(ap, prefijo)(); }
@@ -2999,7 +3065,10 @@
       el.paradasLista.appendChild(crearFilaExtremo('A', formatMunicipio(state.origen), 'origen'));
     }
     if (state.modoAereo && state.tramosAereo && state.tramosAereo.apOri) {
-      el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, state.tramosAereo.apOri, 'Salida', 'distCarro1'));
+      el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, state.tramosAereo.apOri, 'Salida', state.tramosAereo.distCarro1));
+    }
+    if (state.modoAereo && state.tramosAereo && state.tramosAereo.hub && state.tramosAereo.vuelos && state.tramosAereo.vuelos[0]) {
+      el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, state.tramosAereo.hub, 'Conexión', state.tramosAereo.vuelos[0].distanciaMetros));
     }
 
     items.forEach((item, idx) => {
@@ -3103,7 +3172,7 @@
     });
 
     if (state.modoAereo && state.tramosAereo && state.tramosAereo.apDes) {
-      el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, state.tramosAereo.apDes, 'Llegada', 'distCarro2'));
+      el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, state.tramosAereo.apDes, 'Llegada', state.tramosAereo.distCarro2));
     }
     if (incluirExtremos) {
       el.paradasLista.appendChild(crearFilaExtremo('Z', formatMunicipio(state.destino), 'destino'));

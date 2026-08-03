@@ -859,6 +859,17 @@ input, select{ font-family: inherit; }
 .parada-pin--parada{ background: #3b7ebd; }
 .parada-pin--escala{ background: #3b7ebd; }
 
+/* Pin de aeropuerto (ruta aérea) */
+.aeropuerto-pin{
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: #4a6fa5;
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(20,32,27,0.45);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem;
+}
+
 .sitio-pin{
   width: 34px; height: 34px;
   display: flex;
@@ -1020,6 +1031,7 @@ input, select{ font-family: inherit; }
 }
 .btn-toggle-sitios--float:hover{ background: var(--teal-600); }
 .btn-toggle-sitios--float[aria-pressed="false"]{ background: var(--bg-subtle); color: var(--text-muted); opacity: 0.5; }
+.btn-toggle-sitios--float[hidden]{ display: none !important; }
 .btn-toggle-sitios--float .btn-toggle-sitios__icon{ width: 20px; height: 20px; }
 
 /* Botón flotante de pantalla completa (solo móvil, debajo de la barra) */
@@ -1361,8 +1373,8 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="ruta"] #btn-mostrar-sitios{ display: block !important; }
   #app[data-mobile-tab="descubre"] #btn-mostrar-sitios{ display: none !important; margin-top: 8px;}
 
-  /* Evitar que el contenido se salga de la pantalla en móvil */
-  .app-shell{ overflow: hidden; height: 100dvh; }
+  /* En móvil el shell debe poder desplazarse para que los cuadros suban sobre el teclado */
+  .app-shell{ overflow-y: auto; overflow-x: hidden; height: 100dvh; }
 
   /* Ajuste de padding del panel en móvil */
   .side-panel{ padding: 12px 12px 56px; gap: 0px; }
