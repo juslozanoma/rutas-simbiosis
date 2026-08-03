@@ -498,6 +498,7 @@
         e.stopPropagation();
         listEl.hidden = true;
         if (trigger.id === 'origen-input') intercambiarPanel(false);
+        if (trigger.id === 'destino-input') reposicionarDestino(false);
         iniciarSeleccionMapa((lat, lon) => {
           const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
           trigger.value = nombre;
@@ -572,6 +573,7 @@
       trigger.value = formatMunicipio(m);
       trigger.dataset.selectedId = m.id;
       if (trigger.id === 'origen-input') intercambiarPanel(false);
+      if (trigger.id === 'destino-input') reposicionarDestino(false);
       onSelect(m);
     }
 
@@ -1331,6 +1333,68 @@
     setTimeout(() => MapModule.invalidateSize(), 60);
   }
 
+  // Estado del reposicionamiento del cuadro de destino.
+  const _destinoFijado = { activo: false, left: 0, right: 0, height: 0 };
+
+  /** Móvil: fija el contenedor del cuadro de destino y su menú justo por encima
+   *  del teclado virtual (visualViewport). Se actualiza con resize/scroll del
+   *  viewport visual y se restaura en blur o al seleccionar una sugerencia. */
+  function reposicionarDestino(activar) {
+    const vv = window.visualViewport;
+    const combo = el.destinoInput ? el.destinoInput.closest('.combo') : null;
+    const listEl = el.destinoList;
+    if (!combo || !listEl) return;
+    const restaurar = () => {
+      _destinoFijado.activo = false;
+      combo.style.position = '';
+      combo.style.left = '';
+      combo.style.right = '';
+      combo.style.bottom = '';
+      combo.style.zIndex = '';
+      listEl.style.top = '';
+      listEl.style.bottom = '';
+    };
+    if (!activar || !esMovil() || !vv) {
+      if (_destinoFijado.activo) restaurar();
+      return;
+    }
+    const cubierto = Math.round(window.innerHeight - (vv.height + vv.offsetTop));
+    if (cubierto <= 0) {
+      if (_destinoFijado.activo) restaurar();
+      return;
+    }
+    if (!_destinoFijado.activo) {
+      const rect = combo.getBoundingClientRect();
+      _destinoFijado.left = Math.round(rect.left);
+      _destinoFijado.right = Math.round(window.innerWidth - rect.right);
+      _destinoFijado.height = Math.round(rect.height);
+      _destinoFijado.activo = true;
+      combo.style.position = 'fixed';
+      combo.style.left = _destinoFijado.left + 'px';
+      combo.style.right = _destinoFijado.right + 'px';
+      combo.style.zIndex = '1150';
+      // El menú abre hacia arriba para quedar visible sobre el teclado.
+      listEl.style.top = 'auto';
+      listEl.style.bottom = 'calc(100% + 6px)';
+    }
+    const bottom = Math.min(cubierto + 8, window.innerHeight - _destinoFijado.height - 8);
+    combo.style.bottom = bottom + 'px';
+  }
+
+  if (el.destinoInput) {
+    el.destinoInput.addEventListener('focus', () => reposicionarDestino(true));
+    el.destinoInput.addEventListener('blur', () => reposicionarDestino(false));
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      if (document.activeElement === el.destinoInput) reposicionarDestino(true);
+      else if (_destinoFijado.activo) reposicionarDestino(false);
+    });
+    window.visualViewport.addEventListener('scroll', () => {
+      if (document.activeElement === el.destinoInput) reposicionarDestino(true);
+    });
+  }
+
   /** En móvil, sube el cuadro seleccionado hacia la parte superior (sobre el teclado). */
   function ajustarComboAlTeclado(trigger, listEl) {
     if (!esMovil() || !listEl) return;
@@ -1342,7 +1406,9 @@
     }
     // El shell móvil ahora es scrolleable: se centra el input en el área visible
     // (funciona también en pantalla completa y al modificar origen/destino/pueblo).
-    if (!el.appRoot.classList.contains('panel-arriba')) {
+    if (trigger.id === 'destino-input' && window.visualViewport) {
+      // El destino se reposiciona con visualViewport (reposicionarDestino).
+    } else if (!el.appRoot.classList.contains('panel-arriba')) {
       // Con el panel intercambiado (arriba) el cuadro ya queda fuera del teclado.
       try {
         trigger.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -1356,6 +1422,7 @@
   window.addEventListener('resize', () => {
     document.querySelectorAll('.combo__list:not([hidden])').forEach((l) => {
       const trig = l.parentElement && l.parentElement.querySelector('.combo__trigger');
+      if (trig && trig.id === 'destino-input' && _destinoFijado.activo) return;
       ajustarComboAlTeclado(trig, l);
     });
   });
