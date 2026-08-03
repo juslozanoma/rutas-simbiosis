@@ -779,6 +779,9 @@
       seleccion = m;
       reposicionarInterfazTeclado(false);
       actualizarEscalas();
+      // En móvil ya no se escribe nada: se quita el foco para ocultar el
+      // teclado y el cursor (igual que en origen/destino).
+      if (esMovil()) trigger.blur();
       // El cuadro solo se oculta cuando los cuadros de origen/destino ya no
       // están en pantalla (ruta calculada); al inicio permanece visible.
       row.style.display = el.appRoot && el.appRoot.getAttribute('data-ruta-lista') === 'true' ? 'none' : '';
@@ -1439,9 +1442,19 @@
     } catch (e) { /* ignorar */ }
     if (window.visualViewport) {
       const vv = window.visualViewport;
-      const v = Math.round(window.innerHeight - (vv.height + vv.offsetTop));
-      kbLog('  cubierto: visualViewport =', v, 'px (innerHeight=', window.innerHeight, 'vv.h=', Math.round(vv.height), 'vv.top=', Math.round(vv.offsetTop), ')');
-      return v;
+      const crudo = Math.round(window.innerHeight - (vv.height + vv.offsetTop));
+      if (crudo > 0) {
+        // En pantalla normal el teclado físico tiene una barra de
+        // sugerencias/emojis (toolbar) que el visualViewport no mide:
+        // la barra inferior debe montarse sobre las teclas, no sobre
+        // el toolbar. Ajustable: window.CORR_TECLADO = 20, 25, etc.
+        const corr = typeof window.CORR_TECLADO !== 'undefined' ? window.CORR_TECLADO : 20;
+        const v = Math.max(0, crudo - corr);
+        kbLog('  cubierto: visualViewport =', v, 'px (crudo:', crudo, 'corr:', corr, '| innerHeight=', window.innerHeight, 'vv.h=', Math.round(vv.height), 'vv.top=', Math.round(vv.offsetTop), ')');
+        return v;
+      }
+      kbLog('  cubierto: visualViewport = 0 px (innerHeight=', window.innerHeight, 'vv.h=', Math.round(vv.height), 'vv.top=', Math.round(vv.offsetTop), ')');
+      return 0;
     }
     kbLog('  cubierto: sin fuente -> 0');
     return 0;
