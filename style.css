@@ -265,6 +265,10 @@ input, select{ font-family: inherit; }
 .icon-btn:hover:not(:disabled){ background: #f5f3ec; border-color: var(--teal-500); }
 .icon-btn:active:not(:disabled){ transform: translateY(1px); }
 .icon-btn:disabled{ opacity: 0.35; cursor: not-allowed; }
+.icon-btn--aereo img{ transition: filter 0.12s; }
+.icon-btn--active{ background: var(--teal-500); border-color: var(--teal-500); }
+.icon-btn--active:hover:not(:disabled){ background: var(--teal-600); border-color: var(--teal-600); }
+.icon-btn--active img{ filter: brightness(0) invert(1) !important; }
 .icon-btn--accent{ background: var(--teal-500); border-color: var(--teal-500); color: #ffffff; }
 .icon-btn--accent:hover:not(:disabled){ background: var(--teal-600); border-color: var(--teal-600); }
 .icon-btn--accent:disabled{ opacity: 0.4; }
@@ -876,15 +880,14 @@ input, select{ font-family: inherit; }
   white-space: nowrap;
 }
 .popup-sitio__datos{
-  margin: 0 0 8px;
-  font-size: 0.62rem;
+  margin: 0 0 6px;
+  font-size: 0.68rem;
   line-height: 1.4;
-  color: var(--text-body);
-  white-space: nowrap;
+  color: var(--text-muted);
 }
 .popup-sitio__nombre{ margin: 2px 0 3px; font-size: 0.95rem; color: var(--text-strong); }
 .popup-sitio__ubicacion{ margin: 0 0 5px; font-size: 0.76rem; color: var(--text-muted); }
-.popup-sitio__desc{ margin: 0 0 6px; font-size: 0.8rem; line-height: 1.4; color: var(--text-body); max-height: 96px; overflow-y: auto; scrollbar-width: thin; }
+.popup-sitio__desc{ margin: 0 0 6px; font-size: 0.8rem; line-height: 1.4; color: var(--text-body); text-align: justify; }
 .popup-sitio__dist{ margin: 0 0 8px; font-size: 0.72rem; color: var(--teal-600); font-weight: 600; }
 .popup-sitio__add{
   width: 100%;
@@ -907,11 +910,18 @@ input, select{ font-family: inherit; }
 /* Acciones extra dentro de la ficha centrada (paradas, escalas, extremos) */
 .popup-sitio__acciones{
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 6px;
-  margin-top: 6px;
+  margin-top: 8px;
 }
-.popup-sitio__acciones .popup-sitio__add{ width: 100%; }
+.popup-sitio__acciones .popup-sitio__add{
+  flex: 1;
+  width: auto;
+  height: 28px;
+  font-size: 0.7rem;
+  padding: 0 8px;
+}
 .popup-sitio__add.popup-sitio__quitar{
   border-color: #e3c4bd;
   background: #fdf3f1;

@@ -174,8 +174,7 @@ const TourismModule = (() => {
    * Muestra una ficha informativa centrada (paradas, escalas o extremos) con
    * el mismo comportamiento que la ficha de un sitio turístico.
    * opciones: { categoria, color, nombre, ubicacion, descripcion, dist,
-   *             altura, temperatura, poblacion, superficie_total, superficie_urbana,
-   *             botones[] }
+   *             altura, temperatura, poblacion, superficie_total, botones[] }
    */
   function mostrarCuadroInfo(opciones) {
     ocultarPopupSitio();
@@ -226,16 +225,22 @@ const TourismModule = (() => {
     if (opciones.dist) distEl.textContent = opciones.dist;
     else distEl.remove();
 
-    // Fila inferior: habitantes + superficies en una sola línea.
+    // Línea de habitantes + superficie, debajo del nombre del pueblo, en gris.
     const partes = [];
     if (opciones.poblacion) partes.push(`${opciones.poblacion} habitantes`);
-    if (opciones.superficie_total) partes.push(`Superficie: ${opciones.superficie_total}`);
-    if (opciones.superficie_urbana) partes.push(`urbana: ${opciones.superficie_urbana}`);
+    if (opciones.superficie_total) partes.push(opciones.superficie_total);
     if (partes.length) {
       const datos = document.createElement('div');
       datos.className = 'popup-sitio__datos';
       datos.textContent = partes.join(' · ');
-      popup.appendChild(datos);
+      const nombreEl = nodo.querySelector('.popup-sitio__nombre');
+      if (nombreEl && nombreEl.nextSibling) {
+        nombreEl.parentNode.insertBefore(datos, nombreEl.nextSibling);
+      } else if (nombreEl) {
+        nombreEl.parentNode.appendChild(datos);
+      } else {
+        popup.appendChild(datos);
+      }
     }
 
     nodo.querySelector('.popup-sitio__add').remove();

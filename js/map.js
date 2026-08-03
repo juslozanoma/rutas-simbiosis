@@ -22,6 +22,7 @@ const MapModule = (() => {
   let capaEscalas = null;       // L.layerGroup con marcadores de municipios intermedios
   let capaPuntosDesvio = null;  // L.layerGroup con puntos de desvío (círculos pequeños)
   let capaAlertas = null;       // L.layerGroup con advertencias de tramos peligrosos
+  let capaAerea = null;         // L.layerGroup con el tramo aéreo (avión)
   let capaFrontera = null;      // L.layerGroup overlay de prueba: sitios de frontera
   let clusterSitios = null;     // L.markerClusterGroup con los sitios candidatos filtrados
   let _capaFlechas = null;      // L.layerGroup con flechas de dirección sobre la ruta
@@ -105,6 +106,7 @@ const MapModule = (() => {
     capaEscalas = L.layerGroup().addTo(map);
     capaPuntosDesvio = L.layerGroup().addTo(map);
     capaAlertas = L.layerGroup().addTo(map);
+    capaAerea = L.layerGroup().addTo(map);
     capaFrontera = L.layerGroup().addTo(map);
 
     // El contenedor del mapa nace con un tamaño definido por CSS (flex),
@@ -339,12 +341,11 @@ const MapModule = (() => {
           <div class="popup-sitio__head">
             <span class="popup-sitio__cat">Pueblo intermedio</span>
             ${muni && muni.temperatura_promedio ? `<span class="popup-sitio__stat">${muni.temperatura_promedio}</span>` : ''}
-            ${muni && muni.altura ? `<span class="popup-sitio__stat">${muni.altura}</span>` : ''}
+            ${muni && muni.altura ? `<span class="popup-sitio__stat">${_msnm(muni.altura)}</span>` : ''}
           </div>
-          <h3 class="popup-sitio__nombre">${e.nombre || ''}</h3>
-          <p class="popup-sitio__ubicacion">${e.departamento ? `${e.nombre || ''}, ${e.departamento}` : (e.nombre || '')}</p>
-          ${muni && muni.descripción ? `<p class="popup-sitio__desc">${muni.descripción}</p>` : ''}
+          <h3 class="popup-sitio__nombre">${e.nombre ? `${e.nombre}${e.departamento ? ', ' + e.departamento : ''}` : ''}</h3>
           ${_htmlDatosMunicipio(muni)}
+          ${muni && muni.descripción ? `<p class="popup-sitio__desc">${muni.descripción}</p>` : ''}
           <p class="popup-sitio__dist mono"></p>
         </div>
       `);
@@ -372,13 +373,19 @@ const MapModule = (() => {
     return (munis || []).find((m) => m.id === punto.id || (punto.nombre && m.nombre === punto.nombre)) || null;
   }
 
-  /** HTML de la línea inferior de datos del municipio (habitantes + superficies). */
+  /** Normaliza la altura a "X msnm" (los datos pueden traer "80 m s. n. m."). */
+  function _msnm(altura) {
+    if (!altura) return '';
+    const m = String(altura).match(/^\s*([\d.,]+)/);
+    return m ? m[1] + ' msnm' : String(altura);
+  }
+
+  /** HTML de la línea de habitantes + superficie del municipio. */
   function _htmlDatosMunicipio(muni) {
     if (!muni) return '';
     const partes = [];
     if (muni.poblacion_total) partes.push(`${muni.poblacion_total} habitantes`);
-    if (muni.superficie_total) partes.push(`Superficie: ${muni.superficie_total}`);
-    if (muni.superficie_urbana) partes.push(`urbana: ${muni.superficie_urbana}`);
+    if (muni.superficie_total) partes.push(muni.superficie_total);
     return partes.length ? `<div class="popup-sitio__datos">${partes.join(' · ')}</div>` : '';
   }
 
@@ -709,7 +716,14 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     } catch (err) {
       coords = _rutaGeojson.geometry.coordinates;
     }
-    if (!coords) coords = _rutaGeojson.geometry.coordinates;
+    if (!coords) {
+      const gc = _rutaGeojson.geometry.coordinates;
+      if (_rutaGeojson.geometry.type === 'MultiLineString') {
+        coords = gc.reduce((a, c) => (c.length > a.length ? c : a), []);
+      } else {
+        coords = gc;
+      }
+    }
     if (!coords || coords.length < 2) return;
 
     const line = turf.lineString(coords);
@@ -846,7 +860,26 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     if (_capaRutaVisible) { map.removeLayer(_capaRutaVisible); _capaRutaVisible = null; }
     if (_capaRutaHover) { map.removeLayer(_capaRutaHover); _capaRutaHover = null; }
     if (_capaFlechas) { map.removeLayer(_capaFlechas); _capaFlechas = null; }
+    limpiarTramoAereo();
     capaRuta = null;
+  }
+
+  /** Dibuja el tramo aéreo (línea punteada curva) entre dos aeropuertos. */
+  function dibujarTramoAereo(coords) {
+    limpiarTramoAereo();
+    if (!capaAerea || !coords || coords.length < 2) return;
+    L.polyline(coords, {
+      color: '#4a6fa5',
+      weight: 3,
+      opacity: 0.9,
+      dashArray: '8 8',
+      lineCap: 'round',
+      interactive: false,
+    }).addTo(capaAerea);
+  }
+
+  function limpiarTramoAereo() {
+    if (capaAerea) capaAerea.clearLayers();
   }
 
   function limpiarTodo() {
@@ -1023,6 +1056,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     cancelarMarcadoTramo,
     dibujarRuta,
     habilitarArrastreRuta,
+    dibujarTramoAereo,
+    limpiarTramoAereo,
     dibujarRutaPreview,
     limpiarRutaPreview,
     limpiarRuta,

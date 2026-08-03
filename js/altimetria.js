@@ -193,6 +193,14 @@ const AltimetriaModule = (() => {
     _construir(cont);
   }
 
+  /** Re-renderiza solo los perfiles visibles (sin reconstruir si están ocultos). */
+  function renderizarVisibles() {
+    ['altimetria-chart', 'altimetria-chart-panel'].forEach((id) => {
+      const cont = document.getElementById(id);
+      if (cont && cont.offsetParent !== null) _construir(cont);
+    });
+  }
+
   function _construir(cont) {
     if (!_rutaGeojson || !_rutaGeojson.geometry) { cont.innerHTML = '<p style="font-size:0.78rem;color:var(--text-muted);text-align:center;padding:20px 0;">Calcula una ruta primero</p>'; return; }
     const coords = _rutaGeojson.geometry.coordinates;
@@ -263,6 +271,8 @@ const AltimetriaModule = (() => {
       else dLine += ` L${x(p.d)},${y(p.e)}`;
     }
 
+    const _prevHTML = cont.innerHTML;
+    try {
     cont.innerHTML = '';
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', `0 0 ${ancho} ${alto}`);
@@ -483,6 +493,10 @@ const AltimetriaModule = (() => {
       cont._zoomEnd = maxD;
       _construir(cont);
     });
+    } catch (err) {
+      console.warn('[ALT] Error al dibujar el perfil:', err);
+      if (!cont.querySelector('svg')) cont.innerHTML = _prevHTML;
+    }
   }
 
   /** Crea el indicador circular (con su letra incluida en el área clickeable) y tooltip al pasar el mouse. */
@@ -872,5 +886,5 @@ const AltimetriaModule = (() => {
     return { alt, dist: distKm };
   }
 
-  return { setDatos, agregarParada, renderizar, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa, setOnHover, setOnLeave, setOnCentrarMapa, setOnEliminarParada, setExtremos, setRangoInicio, setRangoFin, quitarRangoInicio, quitarRangoFin, toggleFollow, isFollowActivo, mostrarHoverEn, ocultarHover, getInfoAt };
+  return { setDatos, agregarParada, renderizar, renderizarVisibles, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa, setOnHover, setOnLeave, setOnCentrarMapa, setOnEliminarParada, setExtremos, setRangoInicio, setRangoFin, quitarRangoInicio, quitarRangoFin, toggleFollow, isFollowActivo, mostrarHoverEn, ocultarHover, getInfoAt };
 })();

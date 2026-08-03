@@ -58,6 +58,9 @@
     previewSitioId: null,
     categoriasSeleccionadas: [],
     categoriasUnicas: [],
+    aeropuertos: [],
+    modoAereo: false,
+    tramosAereo: null,
     elevacion: null,
     altimetriaGeo: null,
     altimetriaTotalKm: 0,
@@ -74,6 +77,7 @@
     origenList: document.getElementById('origen-list'),
     destinoList: document.getElementById('destino-list'),
     btnCalcular: document.getElementById('btn-calcular'),
+    btnAereo: document.getElementById('btn-aereo'),
 
     checkAutoOrganizar: document.getElementById('check-auto-organizar'),
 
@@ -338,6 +342,13 @@
       if (el.sitiosFronteraContador) {
         el.sitiosFronteraContador.textContent = 'Frontera: ' + state.sitios.filter(s => s.frontera).length;
       }
+
+      // Cargar aeropuertos (opción de desplazamiento aéreo)
+      state.aeropuertos = [];
+      try {
+        const resAer = await fetch('data/aeropuertos_colombia.json');
+        if (resAer.ok) state.aeropuertos = await resAer.json();
+      } catch {}
     } catch (err) {
       el.sitiosVacio.textContent = 'Error cargando los datos base: ' + err.message;
       return;
@@ -993,6 +1004,17 @@
 
   function initEventos() {
     el.btnCalcular.addEventListener('click', () => calcularRutaPrincipal());
+    if (el.btnAereo) {
+      el.btnAereo.addEventListener('click', () => {
+        if (state.modoAereo) {
+          state.modoAereo = false;
+          _actualizarBotonAereo();
+          calcularRutaPrincipal(false);
+        } else {
+          calcularRutaAerea();
+        }
+      });
+    }
 
     function toggleSitiosHandler() {
       const visible = MapModule.toggleSitios();
@@ -1271,9 +1293,10 @@
     }
     const rect = trigger.getBoundingClientRect();
     const espacioAbajo = vh - rect.bottom - 8;
+    // Hasta 6 elementos (≈200px), sin exceder el espacio hasta el teclado.
     listEl.style.top = 'calc(100% + 6px)';
     listEl.style.bottom = 'auto';
-    listEl.style.maxHeight = Math.min(Math.max(espacioAbajo, 100), 260) + 'px';
+    listEl.style.maxHeight = Math.min(200, Math.max(espacioAbajo, 60)) + 'px';
   }
 
   window.addEventListener('resize', () => {
@@ -1300,6 +1323,7 @@
   function ponerEnCargaRuta(cargando, silencioso = false) {
     if (cargando) el.btnCalcular.disabled = true;
     el.btnCalcular.setAttribute('data-loading', cargando ? 'true' : 'false');
+    if (el.btnAereo) el.btnAereo.disabled = cargando;
     // El spinner Monalisa no debe aparecer en la pestaña Descubre ni en recálculos
     // silenciosos (p. ej. al agregar un sitio a la ruta).
     if (el.loadingRuta) el.loadingRuta.hidden = !cargando || silencioso || estaEnPestanaDescubre();
@@ -1458,7 +1482,24 @@
   // -------------------------------------------------------------------
   async function calcularRutaPrincipal(conservarParadas = false, opciones = {}) {
     if (!state.origen || !state.destino) return;
-    cerrarAltimetria();
+    // Al agregar/reordenar paradas la altimetría abierta se mantiene.
+    if (!opciones.conservarAltimetria) cerrarAltimetria();
+
+    // Recalculo interno en modo aéreo: no se vuelve a consultar OSRM por carretera,
+    // solo se redibuja la ruta aérea y se actualizan paradas/perfil.
+    if (conservarParadas && state.modoAereo) {
+      ponerEnCargaRuta(true, true);
+      try {
+        await aplicarRutaConDesvios({ mantenerMapa: true, conservarAltimetria: true });
+        renderizarParadas();
+      } catch (err) {
+        console.warn('Error al recalcular ruta aérea', err);
+      } finally {
+        ponerEnCargaRuta(false);
+        sincronizarModoRutaMovil();
+      }
+      return;
+    }
 
     if (state.origen.id === state.destino.id) {
       el.sitiosVacio.hidden = false;
@@ -1475,6 +1516,10 @@
     // Una nueva ruta principal invalida cualquier parada agregada previamente
     // (excepto cuando se reordenan escalas, que deben conservarse).
     if (!conservarParadas) {
+      state.modoAereo = false;
+      state.tramosAereo = null;
+      _actualizarBotonAereo();
+      state.elevacion = null;
       state.paradas = [];
       state.sitios.forEach((s) => {
         delete s._detourCoords;
@@ -1596,6 +1641,178 @@
   async function aplicarRutaCalculada(ruta, opciones = {}) {
     state.rutaBase = ruta;
     await aplicarRutaConDesvios(opciones);
+  }
+
+  // -------------------------------------------------------------------
+  // Ruta aérea (avión): tramos en carro hasta/desde los aeropuertos + vuelo
+  // -------------------------------------------------------------------
+
+  function _normTexto(s) {
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  /** Devuelve el aeropuerto más cercano a un punto (prioriza el de su misma ciudad). */
+  function _aeropuertoMasCercano(punto) {
+    if (!punto || !state.aeropuertos || !state.aeropuertos.length) return null;
+    const nombre = _normTexto(punto.nombre);
+    let porCiudad = null, porCiudadDist = Infinity;
+    let porDist = null, porDistVal = Infinity;
+    for (const ap of state.aeropuertos) {
+      const dist = turf.distance(turf.point([punto.lon, punto.lat]), turf.point([ap.longitud, ap.latitud]), { units: 'kilometers' });
+      if (dist < porDistVal) { porDistVal = dist; porDist = ap; }
+      if (nombre && _normTexto(ap.ciudad_origen) === nombre && dist < porCiudadDist) {
+        porCiudadDist = dist;
+        porCiudad = ap;
+      }
+    }
+    return porCiudad || porDist;
+  }
+
+  /** Genera una línea curva entre dos aeropuertos para el tramo aéreo. */
+  function _arcCoords(a, b) {
+    const lon1 = Number(a.longitud), lat1 = Number(a.latitud);
+    const lon2 = Number(b.longitud), lat2 = Number(b.latitud);
+    const n = 26;
+    const dLon = lon2 - lon1, dLat = lat2 - lat1;
+    const len = Math.sqrt(dLon * dLon + dLat * dLat) || 1;
+    const bulge = Math.min(Math.max(len * 0.10, 0.15), 3.5);
+    const px = -dLat / len;
+    const py = dLon / len;
+    const pts = [];
+    for (let i = 0; i <= n; i++) {
+      const t = i / n;
+      const off = Math.sin(Math.PI * t);
+      pts.push([lon1 + dLon * t + px * bulge * off, lat1 + dLat * t + py * bulge * off]);
+    }
+    return pts;
+  }
+
+  function _actualizarBotonAereo() {
+    if (!el.btnAereo) return;
+    el.btnAereo.setAttribute('aria-pressed', String(state.modoAereo));
+    el.btnAereo.classList.toggle('icon-btn--active', state.modoAereo);
+  }
+
+  /** Calcula la ruta directamente en avión (carro→aeropuerto→vuelo→aeropuerto→carro). */
+  async function calcularRutaAerea() {
+    if (!state.origen || !state.destino) return;
+    if (!state.aeropuertos || !state.aeropuertos.length) {
+      _mostrarNotificacion('No hay datos de aeropuertos disponibles');
+      return;
+    }
+    cerrarAltimetria();
+    const apOri = _aeropuertoMasCercano(state.origen);
+    const apDes = _aeropuertoMasCercano(state.destino);
+    if (!apOri || !apDes) {
+      _mostrarNotificacion('No se encontraron aeropuertos cercanos al origen o destino');
+      return;
+    }
+
+    ponerEnCargaRuta(true, true);
+    try {
+      const [rutaCarro1, rutaCarro2] = await Promise.all([
+        RoutingModule.calcularRuta(state.origen, { lat: apOri.latitud, lon: apOri.longitud }, 'driving'),
+        RoutingModule.calcularRuta({ lat: apDes.latitud, lon: apDes.longitud }, state.destino, 'driving'),
+      ]);
+
+      const coordsAvion = _arcCoords(apOri, apDes);
+      const distAvion = turf.length(turf.lineString(coordsAvion), { units: 'kilometers' }) * 1000;
+      const durAvion = (distAvion / 1000) / 750 * 3600;
+      const coordsCarro1 = rutaCarro1.geojson.geometry.coordinates;
+      const coordsCarro2 = rutaCarro2.geojson.geometry.coordinates;
+
+      // Mapa: MultiLineString con los tramos en carro (sin línea recta entre aeropuertos).
+      const geojsonMapa = {
+        type: 'Feature',
+        properties: { perfil: 'aereo' },
+        geometry: { type: 'MultiLineString', coordinates: [coordsCarro1, coordsCarro2] },
+      };
+      // Perfil: LineString continua con los tramos en carro (turf solo en carro).
+      const geojsonPerfil = {
+        type: 'Feature',
+        properties: {},
+        geometry: { type: 'LineString', coordinates: [...coordsCarro1, ...coordsCarro2] },
+      };
+
+      const elevacion = [...(rutaCarro1.elevacion || []), ...(rutaCarro2.elevacion || [])];
+      const totalDist = rutaCarro1.distanciaMetros + distAvion + rutaCarro2.distanciaMetros;
+      const totalDur = rutaCarro1.duracionSegundos + durAvion + rutaCarro2.duracionSegundos;
+
+      const ruta = {
+        geojson: geojsonMapa,
+        distanciaMetros: totalDist,
+        duracionSegundos: totalDur,
+        vertices: coordsCarro1.length + coordsCarro2.length,
+        perfil: 'aereo',
+      };
+
+      state.modoAereo = true;
+      state.tramosAereo = { avion: coordsAvion, carro1: coordsCarro1, carro2: coordsCarro2 };
+      state.rutaBase = ruta;
+      state.rutaActual = ruta;
+      state.elevacion = elevacion;
+      state.altimetriaGeo = geojsonPerfil;
+      state.altimetriaTotalKm = totalDist / 1000;
+      AltimetriaModule.setDatos(geojsonPerfil, state.elevacion, state.altimetriaTotalKm);
+
+      sincronizarOrden();
+      let idxIntermedio = 0;
+      const mapaEtiquetas = new Map();
+      state.orden.forEach((o) => {
+        if (o.tipo === 'escala') {
+          const dragE = state.escalas.find((e) => e.id === o.id);
+          if (dragE && dragE._dragGenerated) return;
+        }
+        const etiqueta = etiquetaIntermedia(idxIntermedio++);
+        const key = o.tipo + '_' + o.id;
+        mapaEtiquetas.set(key, etiqueta);
+        if (o.tipo === 'escala') {
+          const e = state.escalas.find((e) => e.id === o.id);
+          if (e && e.lat != null) e._numero = etiqueta;
+        } else {
+          const p = state.paradas.find((p) => p.id === o.id);
+          if (p) p._numero = etiqueta;
+        }
+      });
+
+      const routeLine = turf.lineString(geojsonPerfil.geometry.coordinates);
+      state.escalas.filter(e => e.lat != null && !e._dragGenerated).forEach(e => {
+        const nearest = turf.nearestPointOnLine(routeLine, turf.point([e.lon, e.lat]), { units: 'kilometers' });
+        e._distKm = nearest.properties.location || 0;
+        AltimetriaModule.agregarParada(e.lat, e.lon, formatMunicipio(e), e._distKm, mapaEtiquetas.get('escala_' + e.id) || '', e.id, 'escala');
+      });
+      state.paradas.forEach(p => {
+        const nearest = turf.nearestPointOnLine(routeLine, turf.point([p.lon, p.lat]), { units: 'kilometers' });
+        p._distKm = nearest.properties.location || 0;
+        AltimetriaModule.agregarParada(p.lat, p.lon, p.nombre, p._distKm, mapaEtiquetas.get('parada_' + p.id) || '', p.id, 'parada');
+      });
+      AltimetriaModule.renderizarVisibles();
+
+      MapModule.dibujarRuta(geojsonMapa, {
+        distanciaMetros: totalDist,
+        duracionSegundos: totalDur,
+        origenNombre: state.origen?.nombre || 'el origen',
+      });
+      MapModule.dibujarTramoAereo(coordsAvion);
+      MapModule.setMarcadorOrigen(state.origen.lat, state.origen.lon, state.origen.nombre);
+      MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);
+      MapModule.setMarcadoresEscalas(state.escalas);
+      MapModule.setMarcadoresParadas(state.paradas);
+      MapModule.setMarcadoresPuntosDesvio(state.escalas);
+      MapModule.encuadrar(geojsonMapa);
+
+      const distTexto = Utils.formatearDistancia(totalDist);
+      const durTexto = Utils.formatearDuracion(totalDur);
+      if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = distTexto;
+      if (el.statTiempoMobile) el.statTiempoMobile.textContent = durTexto;
+      renderizarParadas();
+      _actualizarBotonAereo();
+    } catch (err) {
+      console.warn('Error al calcular ruta aérea', err);
+      _mostrarNotificacion('No se pudo calcular la ruta en avión');
+    } finally {
+      ponerEnCargaRuta(false);
+    }
   }
 
   // -------------------------------------------------------------------
@@ -1913,15 +2130,20 @@
 
   async function aplicarRutaConDesvios(opciones = {}) {
     if (!state.rutaBase) return;
-    state.rutaActual = await construirRutaConDesvios(state.rutaBase, state.paradas);
+    // En modo aéreo no hay desvíos por carretera: la ruta es la base (MultiLineString).
+    state.rutaActual = state.modoAereo
+      ? state.rutaBase
+      : await construirRutaConDesvios(state.rutaBase, state.paradas);
 
     let iteraciones = 0;
-    while (state.rutaActual.idsFallidos && state.rutaActual.idsFallidos.length > 0 && iteraciones < 3) {
-      const idsSet = new Set(state.rutaActual.idsFallidos);
-      state.paradas = state.paradas.filter((p) => !idsSet.has(p.id));
-      renderizarParadas();
-      state.rutaActual = await construirRutaConDesvios(state.rutaBase, state.paradas);
-      iteraciones++;
+    if (!state.modoAereo) {
+      while (state.rutaActual.idsFallidos && state.rutaActual.idsFallidos.length > 0 && iteraciones < 3) {
+        const idsSet = new Set(state.rutaActual.idsFallidos);
+        state.paradas = state.paradas.filter((p) => !idsSet.has(p.id));
+        renderizarParadas();
+        state.rutaActual = await construirRutaConDesvios(state.rutaBase, state.paradas);
+        iteraciones++;
+      }
     }
 
     MapModule.dibujarRuta(state.rutaActual.geojson, {
@@ -1929,6 +2151,9 @@
       duracionSegundos: state.rutaActual.duracionSegundos,
       origenNombre: state.origen?.nombre || 'el origen',
     });
+    if (state.modoAereo && state.tramosAereo) {
+      MapModule.dibujarTramoAereo(state.tramosAereo.avion);
+    }
 
     // Enable drag-to-reroute with current waypoints
     const waypointsCoords = [];
@@ -1968,8 +2193,14 @@
 
     // Almacenar datos para altimetría (elevación se carga bajo demanda)
     const totalKm = state.rutaBase ? state.rutaBase.distanciaMetros / 1000 : 0;
-    const geoPerfil = state.rutaBase ? state.rutaBase.geojson : state.rutaActual.geojson;
-    state.elevacion = (state.rutaBase && state.rutaBase.elevacion) || null;
+    const geoPerfil = state.modoAereo && state.altimetriaGeo
+      ? state.altimetriaGeo
+      : (state.rutaBase ? state.rutaBase.geojson : state.rutaActual.geojson);
+    if (state.rutaBase && state.rutaBase.elevacion) {
+      state.elevacion = state.rutaBase.elevacion;
+    }
+    // Si la base no trae elevación (carga bajo demanda), se conserva la ya cargada
+    // para que el perfil no se borre al recalcular tras quitar/añadir paradas.
     state.altimetriaGeo = geoPerfil;
     state.altimetriaTotalKm = totalKm;
     AltimetriaModule.setDatos(geoPerfil, state.elevacion, totalKm);
@@ -2006,6 +2237,10 @@
         p._distKm = nearest.properties.location || 0;
         AltimetriaModule.agregarParada(p.lat, p.lon, p.nombre, p._distKm, mapaEtiquetas.get('parada_' + p.id) || '', p.id, 'parada');
       });
+    }
+    // Si el perfil está visible, se actualiza en el sitio (puntos y letras) sin recargar la página.
+    if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.renderizarVisibles) {
+      AltimetriaModule.renderizarVisibles();
     }
     MapModule.setMarcadoresEscalas(state.escalas);
     MapModule.setMarcadoresParadas(state.paradas);
@@ -2410,6 +2645,7 @@
   /** Centra el mapa y muestra la ficha centrada de una parada (como la de un sitio). */
   function mostrarCuadroParada(sitio) {
     if (!sitio || sitio.lat == null || sitio.lon == null) return;
+    cerrarAltimetria();
     const map = MapModule.getMap();
     if (map) map.closePopup();
     MapModule.centrarEn(sitio.lat, sitio.lon);
@@ -2443,9 +2679,17 @@
     return state.municipios.find((m) => m.id === punto.id || (punto.nombre && m.nombre === punto.nombre)) || null;
   }
 
+  /** Normaliza la altura a "X msnm" (los datos pueden traer "80 m s. n. m."). */
+  function _formatearAltura(altura) {
+    if (!altura) return '';
+    const m = String(altura).match(/^\s*([\d.,]+)/);
+    return m ? m[1] + ' msnm' : String(altura);
+  }
+
   /** Centra el mapa y muestra la ficha centrada de un pueblo intermedio. */
   function mostrarCuadroEscala(escala) {
     if (!escala || escala.lat == null || escala.lon == null) return;
+    cerrarAltimetria();
     const map = MapModule.getMap();
     if (map) map.closePopup();
     MapModule.centrarEn(escala.lat, escala.lon);
@@ -2472,15 +2716,13 @@
     TourismModule.mostrarCuadroInfo({
       categoria: 'Pueblo intermedio',
       color: '#4a6fa5',
-      nombre: escala.nombre || '',
-      ubicacion: formatMunicipio(escala),
+      nombre: formatMunicipio(escala),
       descripcion: muni ? (muni.descripción || '') : '',
       dist: '',
-      altura: muni ? (muni.altura || '') : '',
+      altura: muni ? _formatearAltura(muni.altura) : '',
       temperatura: muni ? (muni.temperatura_promedio || '') : '',
       poblacion: muni ? (muni.poblacion_total || '') : '',
       superficie_total: muni ? (muni.superficie_total || '') : '',
-      superficie_urbana: muni ? (muni.superficie_urbana || '') : '',
       botones: [btnCambiar, btnEliminar],
     });
   }
@@ -2489,6 +2731,7 @@
   function mostrarCuadroExtremo(tipo, nombre, departamento) {
     const extremo = tipo === 'origen' ? state.origen : state.destino;
     if (!extremo || extremo.lat == null || extremo.lon == null) return;
+    cerrarAltimetria();
     const map = MapModule.getMap();
     if (map) map.closePopup();
     MapModule.centrarEn(extremo.lat, extremo.lon);
@@ -2507,15 +2750,13 @@
     TourismModule.mostrarCuadroInfo({
       categoria: tipo === 'origen' ? 'Ciudad de origen' : 'Ciudad de destino',
       color: '#2d7d68',
-      nombre: nombre || '',
-      ubicacion: [nombre, departamento].filter(Boolean).join(', '),
+      nombre: [nombre, departamento].filter(Boolean).join(', '),
       descripcion: muni ? (muni.descripción || '') : '',
       dist: '',
-      altura: muni ? (muni.altura || '') : '',
+      altura: muni ? _formatearAltura(muni.altura) : '',
       temperatura: muni ? (muni.temperatura_promedio || '') : '',
       poblacion: muni ? (muni.poblacion_total || '') : '',
       superficie_total: muni ? (muni.superficie_total || '') : '',
-      superficie_urbana: muni ? (muni.superficie_urbana || '') : '',
       botones: [btnCambiar],
     });
   }
@@ -2750,7 +2991,7 @@
     state.paradas.splice(0, state.paradas.length, ...nuevasParadas);
 
     if (state.rutaActual) {
-      await calcularRutaPrincipal(true, { silencioso: true });
+      await calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
     }
     renderizarParadas();
   }
@@ -2775,7 +3016,7 @@
 
     if (movido.tipo === 'escala') {
       state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
-      await calcularRutaPrincipal(true, { silencioso: true });
+      await calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
     } else {
       await aplicarRutaConDesvios();
     }
