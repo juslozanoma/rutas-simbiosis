@@ -1382,15 +1382,13 @@ input, select{ font-family: inherit; }
   /* En móvil el shell debe poder desplazarse para que los cuadros suban sobre el teclado */
   .app-shell{ overflow-y: auto; overflow-x: hidden; height: 100dvh; }
 
-  /* Al enfocar un cuadro (prueba: origen) el panel sube y el mapa baja */
-  #app.panel-arriba .app-body{ flex-direction: column-reverse; }
-
   /* Teclado abierto (cuadro de destino): la interfaz inferior sube en bloque
-     (cuadros, botones y barra de navegación) justo por encima del teclado */
+     (cuadros, botones y barra de navegación) justo por encima del teclado.
+     Sin transición: el bloque sigue el teclado evento a evento y no se
+     separa de él durante la animación del teclado. */
   #app.teclado-abierto .side-panel,
   #app.teclado-abierto .mobile-tab-bar{
     transform: translateY(calc(-1 * var(--teclado-alto, 0px)));
-    transition: transform 0.15s ease;
   }
   #app.teclado-abierto .side-panel{ z-index: 1050; }
 

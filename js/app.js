@@ -470,7 +470,6 @@
         locLi.addEventListener('click', (e) => {
           e.stopPropagation();
           listEl.hidden = true;
-          if (trigger.id === 'origen-input') intercambiarPanel(false);
     ponerEnCargaRuta(true, opciones.silencioso);
           cerrarAltimetria();
           AltimetriaModule.limpiar();
@@ -497,7 +496,6 @@
       pickLi.addEventListener('click', (e) => {
         e.stopPropagation();
         listEl.hidden = true;
-        if (trigger.id === 'origen-input') intercambiarPanel(false);
         if (trigger.id === 'destino-input') reposicionarInterfazTeclado(false);
         iniciarSeleccionMapa((lat, lon) => {
           const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
@@ -572,7 +570,6 @@
       listEl.hidden = true;
       trigger.value = formatMunicipio(m);
       trigger.dataset.selectedId = m.id;
-      if (trigger.id === 'origen-input') intercambiarPanel(false);
       if (trigger.id === 'destino-input') reposicionarInterfazTeclado(false);
       onSelect(m);
     }
@@ -607,9 +604,6 @@
     }
 
     function abrir() {
-      // Prueba: al enfocar el cuadro de origen el panel sube (intercambia con el
-      // mapa) ANTES de abrir la lista, para que el menú quede desplegado y visible.
-      if (trigger.id === 'origen-input') intercambiarPanel(true);
       const texto = trigger.value.trim();
       if (trigger.dataset.selectedId) {
         trigger.value = '';
@@ -640,7 +634,6 @@
 
     trigger.addEventListener('blur', () => {
       setTimeout(() => { cerrar(); }, 200);
-      if (trigger.id === 'origen-input') intercambiarPanel(false);
     });
 
     trigger.addEventListener('keydown', (e) => {
@@ -1326,55 +1319,29 @@
     }
   }
 
-  /** En móvil, intercambia el panel con el mapa (menú arriba / mapa abajo) para
-   *  que el cuadro enfocado quede en la parte superior, fuera del teclado. */
-  function intercambiarPanel(panelArriba) {
-    if (!esMovil()) return;
-    el.appRoot.classList.toggle('panel-arriba', Boolean(panelArriba));
-    setTimeout(() => MapModule.invalidateSize(), 60);
-  }
-
   // Estado del reposicionamiento en bloque de la interfaz inferior.
-  // topePanel se mide UNA sola vez al activar (antes de aplicar el transform),
-  // porque getBoundingClientRect incluye el transform y medir el panel ya subido
-  // hacía oscilar el límite y dejaba un espacio en blanco debajo del bloque.
-  const _tecladoBloque = { activo: false, topePanel: 0 };
-
-  /** Móvil: desplaza como un único bloque sincronizado la interfaz inferior
-   *  (cuadros de origen/destino, botones de acción y barra de navegación
-   *  inferior) justo por encima del teclado virtual. El desplazamiento se
-   *  calcula respecto al área visible (visualViewport) y se aplica por igual
-   *  a todo el bloque, no a sus hijos de forma independiente. */
+  // El bloque (cuadros, botones y barra de navegación) sube EXACTAMENTE lo que
+  // el teclado tapa del área visible en cada evento de visualViewport, sin topes
+  // ni valores cacheados: un tope por la altura del panel dejaba un hueco en
+  // blanco entre el bloque y el teclado.
   function reposicionarInterfazTeclado(activar) {
     const app = el.appRoot;
     const vv = window.visualViewport;
     const restaurar = () => {
-      _tecladoBloque.activo = false;
       app.classList.remove('teclado-abierto');
       app.style.removeProperty('--teclado-alto');
     };
     if (!activar || !esMovil() || !vv) {
-      if (_tecladoBloque.activo) restaurar();
+      restaurar();
       return;
     }
     const cubierto = Math.round(window.innerHeight - (vv.height + vv.offsetTop));
     if (cubierto <= 0) {
-      if (_tecladoBloque.activo) restaurar();
+      restaurar();
       return;
     }
-    if (!_tecladoBloque.activo) {
-      const panel = document.querySelector('.side-panel');
-      _tecladoBloque.topePanel = panel ? Math.max(0, Math.round(panel.getBoundingClientRect().top)) : 0;
-    }
-    // No subir más allá del borde superior del panel para no cortar los cuadros.
-    const subida = Math.min(cubierto, _tecladoBloque.topePanel);
-    if (subida <= 0) {
-      if (_tecladoBloque.activo) restaurar();
-      return;
-    }
-    app.style.setProperty('--teclado-alto', subida + 'px');
+    app.style.setProperty('--teclado-alto', cubierto + 'px');
     app.classList.add('teclado-abierto');
-    _tecladoBloque.activo = true;
   }
 
   if (el.destinoInput) {
@@ -1384,7 +1351,7 @@
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => {
       if (document.activeElement === el.destinoInput) reposicionarInterfazTeclado(true);
-      else if (_tecladoBloque.activo) reposicionarInterfazTeclado(false);
+      else reposicionarInterfazTeclado(false);
     });
     window.visualViewport.addEventListener('scroll', () => {
       if (document.activeElement === el.destinoInput) reposicionarInterfazTeclado(true);
@@ -1402,10 +1369,7 @@
     }
     // El shell móvil ahora es scrolleable: se centra el input en el área visible
     // (funciona también en pantalla completa y al modificar origen/destino/pueblo).
-    if (trigger.id === 'destino-input' && window.visualViewport) {
-      // El destino se reposiciona en bloque con visualViewport (reposicionarInterfazTeclado).
-    } else if (!el.appRoot.classList.contains('panel-arriba')) {
-      // Con el panel intercambiado (arriba) el cuadro ya queda fuera del teclado.
+    if (!(trigger.id === 'destino-input' && window.visualViewport)) {
       try {
         trigger.scrollIntoView({ block: 'center', behavior: 'smooth' });
       } catch (e) { /* ignorar */ }
