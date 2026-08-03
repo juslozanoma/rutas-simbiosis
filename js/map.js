@@ -25,6 +25,8 @@ const MapModule = (() => {
   let clusterSitios = null;     // L.markerClusterGroup con los sitios candidatos filtrados
   let _capaFlechas = null;      // L.layerGroup con flechas de dirección sobre la ruta
 
+  const ZOOM_MIN_FLECHA = 9;    // Zoom mínimo para mostrar la flecha de dirección
+
   const _sitioMarkers = new Map(); // sitioId → L.marker
   const _marcadorParadas = new Map(); // paradaId → L.marker (sitios ya agregados a la ruta)
   const _marcadorEscalas = new Map(); // escalaId → L.marker (municipios intermedios)
@@ -59,13 +61,13 @@ const MapModule = (() => {
       zoomControl: false,
       minZoom: 5,
       maxZoom: 18,
+      zoomSnap: 0.25,
+      zoomDelta: 0.25,
     }).setView(CENTRO_COLOMBIA, ZOOM_INICIAL);
 
     // Desactivar boxZoom (evita rectángulo al hacer clic en la ruta)
     map.boxZoom.disable();
     map.doubleClickZoom.disable();
-
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -78,6 +80,10 @@ const MapModule = (() => {
 
     map.getPane('markerPane').style.zIndex = 700;
     map.getPane('tooltipPane').style.zIndex = 780;
+
+    // El panel de popups debe quedar sobre tooltips de sitios y clusters
+    // (círculos oscuros) para que las fichas de información no queden ocultas.
+    map.getPane('popupPane').style.zIndex = 900;
 
     clusterSitios = L.markerClusterGroup({
       maxClusterRadius: 45,
@@ -218,6 +224,30 @@ const MapModule = (() => {
     map.setView([lat, lon], Math.max(map.getZoom(), ZOOM_ENFOQUE_MUNICIPIO), { animate: true });
   }
 
+  /** Desplaza la vista para que el cuadro (popup) abierto quede centrado en el mapa. */
+  function _centrarPopupEnVista(marker) {
+    const popup = marker && marker.getPopup ? marker.getPopup() : null;
+    if (!popup) return;
+    let hecho = false;
+    const aplicar = () => {
+      if (hecho) return;
+      const el = popup.getElement();
+      if (!el || !el.isConnected) return;
+      const pr = el.getBoundingClientRect();
+      if (!pr.width || !pr.height) return;
+      const cr = map.getContainer().getBoundingClientRect();
+      const dx = (pr.left + pr.width / 2) - (cr.left + cr.width / 2);
+      const dy = (pr.top + pr.height / 2) - (cr.top + cr.height / 2);
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+        map.panBy([-dx, -dy], { animate: true });
+      }
+      hecho = true;
+      clearTimeout(temporizador);
+    };
+    map.once('moveend', aplicar);
+    const temporizador = setTimeout(aplicar, 800);
+  }
+
   // ---------------------------------------------------------------------
   // Paradas (sitios agregados a la ruta)
   // ---------------------------------------------------------------------
@@ -294,10 +324,11 @@ const MapModule = (() => {
   function setMarcadoresEscalas(escalas) {
     capaEscalas.clearLayers();
     _marcadorEscalas.clear();
-    escalas.forEach((e, i) => {
+    let indiceEscala = 0;
+    escalas.forEach((e) => {
       if (e.lat == null || e.lon == null) return;
       if (e._dragGenerated) return;
-      const num = e._numero || i + 1;
+      const num = e._numero || ++indiceEscala;
       const marker = L.marker([e.lat, e.lon], { icon: _iconoEscala(num), zIndexOffset: 950 });
       _marcadorEscalas.set(e.id, marker);
       marker.bindPopup(`
@@ -590,7 +621,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
           );
           const distKm = Math.max(0, snapped.properties.location);
           if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.mostrarHoverEn) {
-            AltimetriaModule.mostrarHoverEn(distKm);
+            AltimetriaModule.mostrarHoverEn(distKm, false);
           }
           let info = {};
           if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.getInfoAt) {
@@ -635,6 +666,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   function _actualizarFlechaRuta() {
     if (!_capaFlechas || !map) return;
     _capaFlechas.clearLayers();
+    // La flecha de dirección solo se muestra con el mapa suficientemente ampliado.
+    if (map.getZoom() < ZOOM_MIN_FLECHA) return;
     if (!_rutaGeojson || !_rutaGeojson.geometry) return;
 
     let coords;
@@ -840,6 +873,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     }
     marker.openPopup();
     enfocarLugar(marker.getLatLng().lat, marker.getLatLng().lng);
+    _centrarPopupEnVista(marker);
   }
 
   /** Abre el popup de una escala (municipio intermedio) y acerca el mapa al lugar. */
@@ -848,6 +882,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     if (!marker) return;
     marker.openPopup();
     enfocarLugar(marker.getLatLng().lat, marker.getLatLng().lng);
+    _centrarPopupEnVista(marker);
   }
 
   /** Abre la ficha informativa del origen o destino sobre su marcador y acerca el mapa al lugar. */
@@ -865,6 +900,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     `);
     marker.openPopup();
     enfocarLugar(marker.getLatLng().lat, marker.getLatLng().lng);
+    _centrarPopupEnVista(marker);
   }
 
   function ocultarTooltipSitio(sitioId) {

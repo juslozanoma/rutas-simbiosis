@@ -106,6 +106,31 @@ const TourismModule = (() => {
     }
   }
 
+  /** Monta una ficha centrada en el área visible del mapa (no bloquea la navegación). */
+  function _montarCuadroCentrado(nodo) {
+    const mapContainer = (typeof MapModule !== 'undefined' && MapModule.getMap)
+      ? (MapModule.getMap().getContainer())
+      : null;
+    if (!mapContainer) return false;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'sitio-overlay';
+
+    // La barra de resumen tapa la parte superior del mapa; al centrar la ficha
+    // en todo el mapa quedaría desplazada hacia arriba, así que se compensa.
+    const sumEl = document.querySelector('.mobile-summary');
+    const topOffset = (sumEl && sumEl.offsetHeight > 0) ? sumEl.offsetHeight : 0;
+    if (topOffset > 0) {
+      overlay.style.paddingTop = `${topOffset}px`;
+      overlay.style.paddingBottom = '0';
+    }
+
+    overlay.appendChild(nodo);
+    mapContainer.appendChild(overlay);
+    _popupOverlay = overlay;
+    return true;
+  }
+
   function mostrarPopupSitio(sitio) {
     ocultarPopupSitio();
 
@@ -142,25 +167,62 @@ const TourismModule = (() => {
       });
     }
 
-    const overlay = document.createElement('div');
-    overlay.className = 'sitio-overlay';
+    _montarCuadroCentrado(nodo);
+  }
 
-    const wrapper = document.createElement('div');
-    wrapper.className = 'sitio-overlay-wrapper';
+  /**
+   * Muestra una ficha informativa centrada (paradas, escalas o extremos) con
+   * el mismo comportamiento que la ficha de un sitio turístico.
+   * opciones: { categoria, color, nombre, ubicacion, descripcion, dist, botones[] }
+   */
+  function mostrarCuadroInfo(opciones) {
+    ocultarPopupSitio();
 
-    wrapper.appendChild(nodo);
+    const tpl = document.getElementById('tpl-popup-sitio');
+    const nodo = tpl.content.cloneNode(true);
 
-    const arrow = document.createElement('div');
-    arrow.className = 'sitio-arrow';
-    wrapper.appendChild(arrow);
+    const catEl = nodo.querySelector('.popup-sitio__cat');
+    const color = opciones.color || colorCategoria(opciones.categoria);
+    if (opciones.categoria) {
+      catEl.textContent = opciones.categoria;
+      catEl.style.background = `${color}22`;
+      catEl.style.color = color;
+    } else {
+      catEl.remove();
+    }
 
-    overlay.appendChild(wrapper);
-    document.body.appendChild(overlay);
-    _popupOverlay = overlay;
+    nodo.querySelector('.popup-sitio__nombre').textContent = opciones.nombre || '';
 
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) ocultarPopupSitio();
-    });
+    const ubiEl = nodo.querySelector('.popup-sitio__ubicacion');
+    if (opciones.ubicacion) ubiEl.textContent = opciones.ubicacion;
+    else ubiEl.remove();
+
+    const descEl = nodo.querySelector('.popup-sitio__desc');
+    if (opciones.descripcion) descEl.textContent = opciones.descripcion;
+    else descEl.remove();
+
+    const distEl = nodo.querySelector('.popup-sitio__dist');
+    if (opciones.dist) distEl.textContent = opciones.dist;
+    else distEl.remove();
+
+    nodo.querySelector('.popup-sitio__add').remove();
+
+    if (opciones.botones && opciones.botones.length) {
+      const contenedor = document.createElement('div');
+      contenedor.className = 'popup-sitio__acciones';
+      opciones.botones.forEach((b) => contenedor.appendChild(b));
+      nodo.querySelector('.popup-sitio').appendChild(contenedor);
+    }
+
+    const btnClose = nodo.querySelector('.popup-sitio__close');
+    if (btnClose) {
+      btnClose.addEventListener('click', (e) => {
+        e.stopPropagation();
+        ocultarPopupSitio();
+      });
+    }
+
+    _montarCuadroCentrado(nodo);
   }
 
   return {
@@ -175,6 +237,7 @@ const TourismModule = (() => {
     crearMarcador,
     setOnAgregarParada,
     mostrarPopupSitio,
+    mostrarCuadroInfo,
     ocultarPopupSitio,
   };
 })();

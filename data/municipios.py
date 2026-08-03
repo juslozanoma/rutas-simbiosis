@@ -1,334 +1,378 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Enriquece municipios.json con datos de Wikipedia, Wikidata, DANE e IGAC.
+Enriquece municipios.json con:
+  - altitud         : msnm (infobox Wikipedia)
+  - poblacion       : habitantes (infobox Wikipedia, o DANE CSV)
+  - area_total_km2  : km² total (infobox Wikipedia)
+  - area_urbana_km2 : km² urbano (IGAC CSV)
 
-Salida (por municipio):
-  - descripcion_general : str   (párrafo de Wikipedia: cultura, economía, historia)
-  - altitud             : float (msnm)
-  - poblacion           : int   (prioridad: DANE > Wikidata)
-  - area_total_km2      : float (Wikidata)
-  - area_urbana_km2     : float (IGAC CSV)
+Cuando no encuentra un dato, escribe "Pendiente".
 
 Uso:
-  1. Guarda este archivo como enriquecer.py
-  2. Pon tu municipios.json en la MISMA carpeta
-  3. (Opcional) Pon los CSVs del DANE e IGAC y ajusta las rutas abajo
-  4. Ejecuta:  python enriquecer.py
-  5. Revisa:   municipios_enriquecidos.json
+  python enriquecer.py
 """
 
 import json
 import re
+import ssl
 import time
 import unicodedata
-import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
 
 import pandas as pd
 
-# =============================================================================
-# CONFIGURACIÓN
-# =============================================================================
+ssl._create_default_https_context = ssl._create_unverified_context
+
 INPUT_JSON = Path("municipios.json")
 OUTPUT_JSON = Path("municipios_enriquecidos.json")
 
-# CSVs opcionales (pon la ruta si los tienes, o déjalo en None)
-CSV_DANE_POBLACION = None          # Ej: Path("dane_poblacion.csv")
-CSV_IGAC_AREA_URBANA = None        # Ej: Path("igac_urbana.csv")
-
-# Ajusta los nombres de columna si tus CSVs usan otros encabezados
-DANE_COL_MUNICIPIO = "MUNICIPIO"     # o "Municipio", "NOMBRE_MUNICIPIO", etc.
-DANE_COL_POBLACION = "POBLACION"     # o "Total", "CENSO_2018", etc.
-IGAC_COL_MUNICIPIO = "MUNICIPIO"     # o "Municipio"
-IGAC_COL_AREA_URB  = "AREA_URBANA_KM2"  # o "Area Urbana", "SUPERFICIE_URBANA"
-
-# Throttling amable para no saturar servidores
-REQUEST_DELAY = 0.4
+CSV_DANE_POBLACION = None
+CSV_IGAC_AREA_URBANA = None
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; ColombiaMunicipiosBot/1.0; contact@localhost)",
+    "User-Agent": "Mozilla/5.0 (compatible; ColombiaMunicipiosBot/1.0)",
     "Accept": "application/json",
 }
+DELAY = 0.6  # un poco más de cortesía a Wikipedia
 
-# =============================================================================
-# NORMALIZACIÓN DE NOMBRES
-# =============================================================================
-def normalizar(texto: str) -> str:
-    t = texto.lower().strip()
+
+def normalizar(t: str) -> str:
+    t = t.lower().strip()
     t = unicodedata.normalize("NFKD", t).encode("ASCII", "ignore").decode("utf-8")
-    t = t.replace("santa fe de antioquia", "santafe de antioquia")
-    t = t.replace("bogota d.c.", "bogota")
     t = re.sub(r"[^\w\s]", "", t)
     t = re.sub(r"\s+", " ", t).strip()
     return t
 
 
-def limpiar_numero(valor) -> float | None:
-    if pd.isna(valor):
-        return None
-    try:
-        v = str(valor).replace(".", "").replace(",", ".") if str(valor).count(".") > 1 else str(valor).replace(",", ".")
-        return float(v)
-    except Exception:
-        return None
-
-
-# =============================================================================
-# 1. WIKIPEDIA – Descripción general (cultura, economía, historia)
-# =============================================================================
-def fetch_wikipedia_extract(titulo: str) -> str | None:
+def fetch_wikipedia_infobox(nombre: str, departamento: str):
     """
-    Usa la API REST de Wikipedia en español para traer el extracto del artículo.
-    Si el municipio no tiene artículo propio, devuelve None.
+    Extrae altitud, poblacion y area_total_km2 del infobox de Wikipedia.
+    Prueba múltiples variantes de título incluyendo el departamento.
     """
-    # Algunos municipios tienen artículos con "(Colombia)" o "(municipio)"
+    result = {
+        "altitud": None,
+        "poblacion": None,
+        "area_total_km2": None,
+        "titulo_encontrado": None,
+        "error": None,
+    }
+
+    # Variantes de título a probar, en orden de prioridad
     candidatos = [
-        titulo,
-        f"{titulo} (Colombia)",
-        f"{titulo} (municipio)",
-        f"{titulo}, Colombia",
+        nombre,
+        f"{nombre} (municipio)",
+        f"{nombre} (Colombia)",
+        f"{nombre}, {departamento}",
+        f"{nombre} ({departamento})",
+        f"{nombre}, Colombia",
     ]
+
+    wikitext = ""
+    titulo_usado = None
 
     for cand in candidatos:
         try:
-            url = (
-                "https://es.wikipedia.org/api/rest_v1/page/summary/"
-                + urllib.parse.quote(cand.replace(" ", "_"))
+            api_url = "https://es.wikipedia.org/w/api.php"
+            params = {
+                "action": "parse",
+                "page": cand.replace(" ", "_"),
+                "prop": "wikitext",
+                "format": "json",
+                "redirects": "1",
+            }
+            req = urllib.request.Request(
+                api_url + "?" + urllib.parse.urlencode(params),
+                headers=HEADERS,
             )
-            req = urllib.request.Request(url, headers=HEADERS)
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-            if data.get("type") == "standard" and "extract" in data:
-                return data["extract"]
+            with urllib.request.urlopen(req, timeout=15) as r:
+                data = json.loads(r.read().decode("utf-8"))
+
+            if "error" in data:
+                continue
+
+            wikitext = data.get("parse", {}).get("wikitext", {}).get("*", "")
+            titulo_usado = cand
+            break
+
         except urllib.error.HTTPError as e:
             if e.code == 404:
                 continue
-            time.sleep(REQUEST_DELAY)
-        except Exception:
-            time.sleep(REQUEST_DELAY)
-    return None
+            result["error"] = f"HTTP {e.code}"
+        except Exception as e:
+            result["error"] = str(e)
+
+    if not titulo_usado:
+        result["error"] = "No se encontró artículo en Wikipedia"
+        return result
+
+    result["titulo_encontrado"] = titulo_usado
+
+    # ========== EXTRAER DATOS DEL INFOBOX ==========
+    
+    # --- Altitud ---
+    # Busca: |altitud = 96 m, |altitud = {{convert|96|m}}, |elevación = 2.150 msnm
+    alt_patterns = [
+        r"\|\s*altitud\s*=\s*([^\n\|]+)",
+        r"\|\s*elevaci[oó]n\s*=\s*([^\n\|]+)",
+        r"\|\s*altura\s*=\s*([^\n\|]+)",
+    ]
+    for pat in alt_patterns:
+        m = re.search(pat, wikitext, re.IGNORECASE)
+        if m:
+            val = m.group(1).strip()
+            # Quitar templates {{...}}
+            val = re.sub(r"\{\{.*?\}\}", "", val)
+            # Extraer números
+            nums = re.findall(r"[\d\s.,]+", val)
+            if nums:
+                n_raw = nums[0].replace(" ", "")
+                # Detectar si usa punto como miles o decimal
+                if n_raw.count(".") == 1 and len(n_raw.split(".")[-1]) == 3 and len(n_raw) > 4:
+                    # Ej: "2.150" -> probablemente 2150 (punto de miles)
+                    n_raw = n_raw.replace(".", "")
+                else:
+                    n_raw = n_raw.replace(",", ".")
+                try:
+                    alt = float(n_raw)
+                    if alt > 10000:
+                        alt = alt / 1000
+                    result["altitud"] = alt
+                except Exception:
+                    pass
+            break
+
+    # --- Población ---
+    # Busca: |población = 48 760, |población = {{dato|48760}}, |habitantes = 48760 hab.
+    pob_patterns = [
+        r"\|\s*poblaci[oó]n\s*=\s*([^\n\|]+)",
+        r"\|\s*habitantes\s*=\s*([^\n\|]+)",
+        r"\|\s*poblaci[oó]n_total\s*=\s*([^\n\|]+)",
+    ]
+    for pat in pob_patterns:
+        m = re.search(pat, wikitext, re.IGNORECASE)
+        if m:
+            val = m.group(1).strip()
+            val = re.sub(r"\{\{.*?\}\}", "", val)
+            # Buscar números grandes (más de 3 dígitos = habitantes, no años)
+            nums = re.findall(r"[\d\s.,]+", val)
+            for num_str in nums:
+                clean = num_str.replace(" ", "").replace(".", "").replace(",", "")
+                try:
+                    n = int(clean)
+                    if n > 999:  # Evitar años como 2023
+                        result["poblacion"] = n
+                        break
+                except Exception:
+                    continue
+            if result["poblacion"]:
+                break
+
+    # --- Área total ---
+    # Busca: |superficie = 5.588 km², |área = 5588 km², |área_total = 5.588
+    area_patterns = [
+        r"\|\s*superficie\s*=\s*([^\n\|]+)",
+        r"\|\s*[aá]rea_total\s*=\s*([^\n\|]+)",
+        r"\|\s*[aá]rea\s*=\s*([^\n\|]+)",
+    ]
+    for pat in area_patterns:
+        m = re.search(pat, wikitext, re.IGNORECASE)
+        if m:
+            val = m.group(1).strip()
+            val = re.sub(r"\{\{.*?\}\}", "", val)
+            nums = re.findall(r"[\d\s.,]+", val)
+            for num_str in nums:
+                clean = num_str.replace(" ", "")
+                # Si tiene coma y punto, asumimos coma decimal
+                if "," in clean and "." in clean:
+                    clean = clean.replace(".", "").replace(",", ".")
+                elif "," in clean:
+                    clean = clean.replace(",", ".")
+                try:
+                    n = float(clean)
+                    if n > 0.1:
+                        # Si viene en m² (número enorme), convertir
+                        if n > 1_000_000:
+                            n = n / 1_000_000
+                        result["area_total_km2"] = n
+                        break
+                except Exception:
+                    continue
+            if result["area_total_km2"]:
+                break
+
+    return result
 
 
-# =============================================================================
-# 2. WIKIDATA – Altitud, área total, población
-# =============================================================================
-def fetch_wikidata_sparql() -> pd.DataFrame:
-    """
-    Consulta SPARQL a Wikidata para todos los municipios de Colombia (Q493522).
-    Devuelve DataFrame con: nombre_norm, altitud, area_total_km2, poblacion_wikidata
-    """
-    query = """
-    SELECT ?item ?itemLabel ?altitud ?area ?poblacion
-    WHERE {
-      ?item wdt:P31 wd:Q493522 .
-      OPTIONAL { ?item wdt:P2044 ?altitud. }
-      OPTIONAL { ?item wdt:P2046 ?area. }
-      OPTIONAL { ?item wdt:P1082 ?poblacion. }
-      SERVICE wikibase:label { bd:serviceParam wikibase:language "es". }
-    }
-    """
-    url = "https://query.wikidata.org/sparql?" + urllib.parse.urlencode({"query": query})
-    req = urllib.request.Request(url, headers={**HEADERS, "Accept": "application/sparql-results+json"})
-
-    print("⏳ Consultando Wikidata (puede tardar 10-30 segundos)...")
-    with urllib.request.urlopen(req, timeout=120) as resp:
-        result = json.loads(resp.read().decode("utf-8"))
-
-    filas = []
-    for row in result.get("results", {}).get("bindings", []):
-        nombre = row.get("itemLabel", {}).get("value", "")
-        if not nombre:
-            continue
-
-        alt = limpiar_numero(row.get("altitud", {}).get("value"))
-        area = limpiar_numero(row.get("area", {}).get("value"))
-        pob = limpiar_numero(row.get("poblacion", {}).get("value"))
-
-        # Wikidata a veces devuelve m² en lugar de km²
-        if area and area > 1_000_000:
-            area = area / 1_000_000
-
-        filas.append({
-            "nombre_norm": normalizar(nombre),
-            "altitud": alt,
-            "area_total_km2": area,
-            "poblacion_wikidata": int(pob) if pd.notna(pob) else None,
-        })
-
-    df = pd.DataFrame(filas).drop_duplicates(subset=["nombre_norm"], keep="first")
-    print(f"✅ Wikidata: {len(df)} municipios con datos.")
-    return df
-
-
-# =============================================================================
-# 3. CSVs LOCALES – DANE (población) e IGAC (área urbana)
-# =============================================================================
-def cargar_csv_generico(
-    path: Path,
-    col_mun: str,
-    col_dato: str,
-    nombre_salida: str,
-) -> pd.DataFrame:
+def cargar_csv(path: Path, out_name: str) -> pd.DataFrame:
     if not path or not path.exists():
-        return pd.DataFrame(columns=["nombre_norm", nombre_salida])
+        return pd.DataFrame(columns=["nombre_norm", out_name])
 
-    # Detectar delimitador
     with open(path, "r", encoding="utf-8") as f:
         sample = f.read(4096)
-        f.seek(0)
     delim = ";" if sample.count(";") > sample.count(",") else ","
 
     df = pd.read_csv(path, delimiter=delim, encoding="utf-8", low_memory=False)
 
-    # Buscar columna de municipio de forma flexible
-    col_mun_real = None
-    for c in df.columns:
-        if col_mun.lower() in c.lower() or "municipio" in c.lower() or "nombre" in c.lower():
-            col_mun_real = c
-            break
-    if not col_mun_real:
-        raise ValueError(f"No encontré columna de municipio en {path}. Columnas: {list(df.columns)}")
+    mun_col = next(
+        (c for c in df.columns if "municipio" in c.lower() or "nombre" in c.lower()),
+        None,
+    )
+    val_col = next(
+        (
+            c
+            for c in df.columns
+            if any(
+                k in c.lower()
+                for k in ["poblacion", "total", "censo", "habitantes", "area", "urbana", "superficie"]
+            )
+        ),
+        None,
+    )
 
-    # Buscar columna de dato de forma flexible
-    col_dato_real = None
-    for c in df.columns:
-        if col_dato.lower() in c.lower() or nombre_salida.replace("_", " ").lower() in c.lower():
-            col_dato_real = c
-            break
-    if not col_dato_real:
-        # Último intento: buscar por palabras clave
-        for c in df.columns:
-            if any(k in c.lower() for k in ["poblacion", "total", "censo", "habitantes", "area", "urbana", "superficie"]):
-                col_dato_real = c
-                break
-    if not col_dato_real:
-        raise ValueError(f"No encontré columna de dato en {path}. Columnas: {list(df.columns)}")
+    if not mun_col or not val_col:
+        raise ValueError(f"Columnas no encontradas en {path}. Tienes: {list(df.columns)}")
 
-    df = df[[col_mun_real, col_dato_real]].copy()
-    df.columns = ["nombre_raw", "valor_raw"]
+    df = df[[mun_col, val_col]].copy()
+    df.columns = ["nombre_raw", "val_raw"]
     df["nombre_norm"] = df["nombre_raw"].astype(str).apply(normalizar)
-    df[nombre_salida] = pd.to_numeric(df["valor_raw"].astype(str).str.replace(",", "."), errors="coerce")
-    df = df.dropna(subset=[nombre_salida]).drop_duplicates(subset=["nombre_norm"], keep="first")
+    df[out_name] = pd.to_numeric(
+        df["val_raw"].astype(str).str.replace(",", "."), errors="coerce"
+    )
+    return df.dropna(subset=[out_name]).drop_duplicates("nombre_norm", keep="first")[
+        ["nombre_norm", out_name]
+    ]
 
-    print(f"✅ CSV {path.name}: {len(df)} registros cargados.")
-    return df[["nombre_norm", nombre_salida]]
 
-
-# =============================================================================
-# 4. PROCESAMIENTO PRINCIPAL
-# =============================================================================
 def main():
-    if not INPUT_JSON.exists():
-        raise FileNotFoundError(f"No se encontró {INPUT_JSON}. Colócalo junto a este script.")
+    # Leer JSON
+    with open(INPUT_JSON, "rb") as f:
+        raw_bytes = f.read()
 
-    # -------------------------------------------------------------------------
-    # Cargar base
-    # -------------------------------------------------------------------------
-    with open(INPUT_JSON, "r", encoding="utf-8") as f:
-        base = json.load(f)
+    if raw_bytes.startswith(b"\xef\xbb\xbf"):
+        raw_bytes = raw_bytes[3:]
+    raw = raw_bytes.decode("utf-8", errors="ignore").strip()
 
-    df_base = pd.DataFrame(base)
-    df_base["nombre_norm"] = df_base["nombre"].apply(normalizar)
-    print(f"📂 JSON base: {len(df_base)} municipios.")
+    if not raw.startswith("["):
+        raw = "[" + raw + "]"
 
-    # -------------------------------------------------------------------------
-    # Wikidata (altitud, área total, población)
-    # -------------------------------------------------------------------------
+    base = json.loads(raw)
+
+    df = pd.DataFrame(base)
+    df["nombre_norm"] = df["nombre"].apply(normalizar)
+    print(f"📂 Base: {len(df)} municipios\n")
+
+    # CSVs opcionales
     try:
-        df_wd = fetch_wikidata_sparql()
+        dane = (
+            cargar_csv(CSV_DANE_POBLACION, "poblacion_dane")
+            if CSV_DANE_POBLACION
+            else pd.DataFrame(columns=["nombre_norm", "poblacion_dane"])
+        )
     except Exception as e:
-        print(f"⚠️  Error con Wikidata: {e}")
-        df_wd = pd.DataFrame(columns=["nombre_norm", "altitud", "area_total_km2", "poblacion_wikidata"])
-
-    # -------------------------------------------------------------------------
-    # CSVs locales
-    # -------------------------------------------------------------------------
-    try:
-        df_dane = cargar_csv_generico(CSV_DANE_POBLACION, DANE_COL_MUNICIPIO, DANE_COL_POBLACION, "poblacion_dane")
-    except Exception as e:
-        print(f"⚠️  Error cargando DANE: {e}")
-        df_dane = pd.DataFrame(columns=["nombre_norm", "poblacion_dane"])
+        print(f"⚠️ DANE: {e}")
+        dane = pd.DataFrame(columns=["nombre_norm", "poblacion_dane"])
 
     try:
-        df_igac = cargar_csv_generico(CSV_IGAC_AREA_URBANA, IGAC_COL_MUNICIPIO, IGAC_COL_AREA_URB, "area_urbana_km2")
+        igac = (
+            cargar_csv(CSV_IGAC_AREA_URBANA, "area_urbana_km2")
+            if CSV_IGAC_AREA_URBANA
+            else pd.DataFrame(columns=["nombre_norm", "area_urbana_km2"])
+        )
     except Exception as e:
-        print(f"⚠️  Error cargando IGAC: {e}")
-        df_igac = pd.DataFrame(columns=["nombre_norm", "area_urbana_km2"])
+        print(f"⚠️ IGAC: {e}")
+        igac = pd.DataFrame(columns=["nombre_norm", "area_urbana_km2"])
 
-    # -------------------------------------------------------------------------
-    # Merge (uniones)
-    # -------------------------------------------------------------------------
-    df = df_base.merge(df_wd, on="nombre_norm", how="left")
-    df = df.merge(df_dane, on="nombre_norm", how="left")
-    df = df.merge(df_igac, on="nombre_norm", how="left")
+    # Consultar Wikipedia para cada municipio
+    print("⏳ Consultando Wikipedia...\n")
 
-    # Población final: prioridad DANE > Wikidata
-    df["poblacion"] = df["poblacion_dane"].fillna(df["poblacion_wikidata"])
+    altitudes = {}
+    poblaciones = {}
+    areas = {}
 
-    # -------------------------------------------------------------------------
-    # Wikipedia – Descripción general (uno por uno con delay)
-    # -------------------------------------------------------------------------
-    print("⏳ Consultando Wikipedia para descripciones generales...")
-    descripciones = {}
-    total = len(df)
-    for idx, row in df.iterrows():
+    for i, row in df.iterrows():
         nombre = row["nombre"]
         depto = row["departamento"]
-        # Algunos artículos usan "Municipio de X" o solo el nombre
-        extracto = fetch_wikipedia_extract(nombre)
-        if not extracto:
-            extracto = fetch_wikipedia_extract(f"{nombre}, {depto}")
-        descripciones[idx] = extracto
-        if (idx + 1) % 50 == 0:
-            print(f"   Progreso: {idx + 1}/{total}")
-        time.sleep(REQUEST_DELAY)
 
-    df["descripcion_general"] = df.index.map(descripciones)
-    print(f"✅ Wikipedia: {df['descripcion_general'].notna().sum()} descripciones encontradas.")
+        data = fetch_wikipedia_infobox(nombre, depto)
 
-    # -------------------------------------------------------------------------
-    # Construir JSON de salida
-    # -------------------------------------------------------------------------
-    resultado = []
-    for _, row in df.iterrows():
-        resultado.append({
-            "id": int(row["id"]) if pd.notna(row["id"]) else None,
-            "nombre": row["nombre"],
-            "departamento": row["departamento"],
-            "lat": row["lat"],
-            "lon": row["lon"],
-            "descripcion_general": row["descripcion_general"] if pd.notna(row["descripcion_general"]) else None,
-            "altitud": float(row["altitud"]) if pd.notna(row["altitud"]) else None,
-            "poblacion": int(row["poblacion"]) if pd.notna(row["poblacion"]) else None,
-            "area_total_km2": float(row["area_total_km2"]) if pd.notna(row["area_total_km2"]) else None,
-            "area_urbana_km2": float(row["area_urbana_km2"]) if pd.notna(row["area_urbana_km2"]) else None,
-        })
+        # Logging detallado
+        log_parts = [f"[{i+1:4d}/{len(df)}] {nombre} ({depto})"]
+        
+        if data["titulo_encontrado"]:
+            log_parts.append(f"✅ Artículo: '{data['titulo_encontrado']}'")
+        else:
+            log_parts.append(f"❌ Sin artículo: {data['error']}")
+
+        if data["altitud"]:
+            log_parts.append(f"Alt:{data['altitud']:.0f}")
+        else:
+            log_parts.append("Alt:❌")
+
+        if data["poblacion"]:
+            log_parts.append(f"Pob:{data['poblacion']:,}")
+        else:
+            log_parts.append("Pob:❌")
+
+        if data["area_total_km2"]:
+            log_parts.append(f"Area:{data['area_total_km2']:.1f}")
+        else:
+            log_parts.append("Area:❌")
+
+        print(" | ".join(log_parts))
+
+        altitudes[i] = data["altitud"]
+        poblaciones[i] = data["poblacion"]
+        areas[i] = data["area_total_km2"]
+
+        time.sleep(DELAY)
+
+    df["altitud"] = df.index.map(altitudes)
+    df["poblacion_wiki"] = df.index.map(poblaciones)
+    df["area_total_km2"] = df.index.map(areas)
+
+    # Merge CSVs
+    df = df.merge(dane, on="nombre_norm", how="left")
+    df = df.merge(igac, on="nombre_norm", how="left")
+
+    # Población final: DANE > Wikipedia
+    df["poblacion"] = df["poblacion_dane"].fillna(df["poblacion_wiki"])
+
+    def fmt(val):
+        if pd.isna(val) or val is None:
+            return "Pendiente"
+        return val
+
+    # Construir salida
+    out = []
+    for _, r in df.iterrows():
+        out.append(
+            {
+                "id": int(r["id"]) if pd.notna(r["id"]) else None,
+                "nombre": r["nombre"],
+                "departamento": r["departamento"],
+                "lat": r["lat"],
+                "lon": r["lon"],
+                "altitud": fmt(r["altitud"]),
+                "poblacion": int(fmt(r["poblacion"])) if r["poblacion"] != "Pendiente" and pd.notna(r["poblacion"]) else fmt(r["poblacion"]),
+                "area_total_km2": fmt(r["area_total_km2"]),
+                "area_urbana_km2": fmt(r["area_urbana_km2"]),
+            }
+        )
 
     with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
-        json.dump(resultado, f, ensure_ascii=False, indent=2)
+        json.dump(out, f, ensure_ascii=False, indent=2)
 
-    # -------------------------------------------------------------------------
-    # Resumen
-    # -------------------------------------------------------------------------
-    print("\n" + "=" * 60)
-    print("RESUMEN")
-    print("=" * 60)
-    print(f"💾 Guardado: {OUTPUT_JSON}")
-    print(f"📊 Total: {len(resultado)} municipios")
-    print(f"   - Con descripción (Wikipedia): {sum(1 for r in resultado if r['descripcion_general'])}")
-    print(f"   - Con altitud:                 {sum(1 for r in resultado if r['altitud'])}")
-    print(f"   - Con población:               {sum(1 for r in resultado if r['poblacion'])}")
-    print(f"   - Con área total:              {sum(1 for r in resultado if r['area_total_km2'])}")
-    print(f"   - Con área urbana:             {sum(1 for r in resultado if r['area_urbana_km2'])}")
-    print(f"   - Completamente vacíos:        {sum(1 for r in resultado if not any([r['descripcion_general'], r['altitud'], r['poblacion'], r['area_total_km2'], r['area_urbana_km2']]))}")
-    print("\n📝 Muestra del primer registro con datos:")
-    for r in resultado:
-        if r["descripcion_general"] or r["poblacion"]:
-            print(json.dumps(r, ensure_ascii=False, indent=2))
-            break
+    print(f"\n💾 Guardado: {OUTPUT_JSON}")
+    print(f"   Con altitud:      {sum(1 for x in out if x['altitud'] != 'Pendiente')}")
+    print(f"   Con poblacion:    {sum(1 for x in out if x['poblacion'] != 'Pendiente')}")
+    print(f"   Con area total:   {sum(1 for x in out if x['area_total_km2'] != 'Pendiente')}")
+    print(f"   Con area urbana:  {sum(1 for x in out if x['area_urbana_km2'] != 'Pendiente')}")
+
+    print("\n📝 Muestra:")
+    print(json.dumps(out[0], ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

@@ -40,7 +40,7 @@
     <div class="mobile-summary" id="mobile-summary">
       <span class="stat-mobile stat-mobile--dist">Distancia: <strong class="mono" id="stat-distancia-mobile">—</strong></span>
       <span class="stat-mobile stat-mobile--sep" aria-hidden="true">·</span>
-      <span class="stat-mobile stat-mobile--dur">Tiempo estimado: <strong class="mono" id="stat-tiempo-mobile">—</strong></span>
+      <span class="stat-mobile stat-mobile--dur">Tiempo: <strong class="mono" id="stat-tiempo-mobile">—</strong></span>
     </div>
     <div id="map" role="application" aria-label="Mapa interactivo de la ruta y los sitios turísticos"></div>
     <button type="button" id="btn-toggle-sitios-float" class="btn-toggle-sitios btn-toggle-sitios--float" title="Mostrar/ocultar sitios en el mapa" aria-pressed="true">
@@ -57,7 +57,7 @@
           <span id="altimetria-dist"></span>
           <span id="altimetria-alt"></span>
         </span>
-        <button type="button" id="btn-scope-altimetria" class="altimetria__scope" title="Seguir en el mapa" aria-pressed="true"><img src="public/scope.svg" alt="" width="15" height="26"></button>
+        <button type="button" id="btn-seguimiento-altimetria" class="altimetria__seguimiento" title="Activar o desactivar el seguimiento en el mapa" aria-pressed="true"><img src="public/scope.svg" alt="" width="12" height="21"><span class="altimetria__seguimiento-label">Seguimiento activado</span></button>
         <button type="button" id="btn-cerrar-altimetria" class="altimetria__close">&times;</button>
       </div>
       <div class="altimetria__chart" id="altimetria-chart"></div>
@@ -76,7 +76,7 @@
     <!-- Pestañas del panel (escritorio) -->
     <div class="panel-tab-bar" id="panel-tab-bar">
       <button type="button" id="btn-tab-panel-ruta" class="panel-tab panel-tab--active">Ruta <img src="public/airplane.svg" alt="" width="16" height="16" style="filter: brightness(0) invert(0.5);"></button>
-      <button type="button" id="btn-tab-panel-descubre" class="panel-tab" disabled>Descubre Colombia <img src="public/colombia.svg" alt="" width="18" height="18" class="tab-descubre-icon" id="ico-descubre-tab-desktop"><span class="badge-count mono" id="sitios-contador-tab-desktop" hidden>0</span></button>
+      <button type="button" id="btn-tab-panel-descubre" class="panel-tab">Descubre Colombia <img src="public/colombia.svg" alt="" width="18" height="18" class="tab-descubre-icon" id="ico-descubre-tab-desktop"><span class="badge-count mono" id="sitios-contador-tab-desktop" hidden>0</span></button>
     </div>
 
     <!-- Ruta: origen/destino + paradas + monalisa -->
@@ -156,14 +156,15 @@
       <button type="button" id="btn-descubre-categorias" class="descubre-btn">Categorías</button>
       <button type="button" id="btn-descubre-ordenar" class="descubre-btn">Ordenar</button>
       <button type="button" id="btn-descubre-desvios" class="descubre-btn">Desvíos</button>
+      <button type="button" id="btn-descubre-visibles-btn" class="descubre-btn descubre-btn--round" title="Ver solo sitios visibles en el mapa" aria-label="Ver solo sitios visibles en el mapa" aria-pressed="false">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
       <div class="descubre-dropdown" id="descubre-dropdown-categorias" hidden>
         <div class="panel-categorias__grid" id="categorias-grid"></div>
       </div>
       <div class="descubre-dropdown" id="descubre-dropdown-ordenar" hidden>
         <button type="button" id="btn-descubre-orden-origen" class="descubre-dropdown__item">Desde Origen</button>
         <button type="button" id="btn-descubre-orden-destino" class="descubre-dropdown__item">Desde Destino</button>
-        <button type="button" id="btn-descubre-lista-completa" class="descubre-dropdown__item">Lista completa</button>
-        <button type="button" id="btn-descubre-visibles" class="descubre-dropdown__item">Sitios visibles</button>
       </div>
       <div class="descubre-dropdown" id="descubre-dropdown-desvios" hidden>
       <div class="filter-row">
@@ -243,12 +244,12 @@
     <!-- Altimetría como pestaña del panel -->
     <div id="altimetria-panel" class="altimetria-panel" hidden>
       <div class="altimetria__header">
-        <span class="altimetria__title">Perfil de elevación</span>
+        <span class="altimetria__title">Perfil</span>
         <span class="altimetria__hover-info">
           <span id="altimetria-dist-panel"></span>
           <span id="altimetria-alt-panel"></span>
         </span>
-        <button type="button" id="btn-scope-altimetria-panel" class="altimetria__scope" title="Seguir en el mapa" aria-pressed="true"><img src="public/scope.svg" alt="" width="15" height="26"></button>
+        <button type="button" id="btn-seguimiento-altimetria-panel" class="altimetria__seguimiento" title="Activar o desactivar el seguimiento" aria-pressed="true"><img src="public/scope.svg" alt="" width="12" height="21"><span class="altimetria__seguimiento-label">Seguimiento</span></button>
       </div>
       <div class="altimetria__chart" id="altimetria-chart-panel"></div>
     </div>
@@ -264,7 +265,7 @@
     </button>
     <button type="button" class="mobile-tab-btn mobile-tab-btn--active" data-tab="ruta" id="btn-tab-ruta">Rutas <img src="public/airplane.svg" alt="" width="20" height="20" style="filter: brightness(0) invert(0.5);">
     </button>
-    <button type="button" class="mobile-tab-btn" data-tab="descubre" id="btn-tab-descubre" disabled>
+    <button type="button" class="mobile-tab-btn" data-tab="descubre" id="btn-tab-descubre">
       <span>Descubre Colombia</span>
       <img src="public/colombia.svg" alt="" width="22" height="22" class="tab-descubre-icon" id="ico-descubre-tab">
       <span class="badge-count mono" id="sitios-contador-tab" hidden>0</span>

@@ -361,6 +361,15 @@ input, select{ font-family: inherit; }
 .btn-agregar-intermedio:hover{ background: var(--teal-500); color: #ffffff; }
 .btn-agregar-intermedio{ display: none; }
 .btn-agregar-intermedio[hidden]{ display: none; }
+
+/* Tras calcular la ruta: se ocultan los cuadros de origen y destino y aparece el botón "+" */
+#app[data-ruta-lista="true"] #row-origen,
+#app[data-ruta-lista="true"] #row-destino{ display: none; }
+#app[data-ruta-lista="true"] #btn-agregar-intermedio{ display: inline-flex; }
+
+/* Cuando están visibles los cuadros de origen y destino, no se muestran los botones
+   naranjas de "calcular ruta" de los pueblos intermedios. */
+#app:not([data-ruta-lista="true"]) .escala-row__calc{ display: none; }
 .paradas-lista{
   list-style: none;
   margin: 0;
@@ -658,6 +667,7 @@ input, select{ font-family: inherit; }
 .sitio-card__top{ display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .sitio-card__top-right{ display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .sitio-card__nombre{ font-size: 0.85rem; font-weight: 600; color: var(--text-strong); }
+.sitio-card__num{ color: var(--teal-600); font-weight: 700; margin-right: 3px; }
 .sitio-card__cat{ display: none; }
 .sitio-card__meta{ font-size: 0.71rem; color: var(--text-muted); margin-top: 3px; display: flex; justify-content: space-between; gap: 8px; }
 .sitio-card__preview{
@@ -707,16 +717,14 @@ input, select{ font-family: inherit; }
 .leaflet-popup-content-wrapper{ border-radius: var(--radius-md); }
 
 .sitio-overlay{
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
+  z-index: 10001;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10001;
-  pointer-events: auto;
+  padding: 20px;
+  pointer-events: none;
 }
 .sitio-overlay .popup-sitio{
   background: #ffffff;
@@ -724,22 +732,9 @@ input, select{ font-family: inherit; }
   box-shadow: 0 8px 40px rgba(0,0,0,0.25);
   padding: 15px 15px 15px;
   min-width: 200px;
-  max-width: 320px;
+  max-width: min(320px, 100%);
   pointer-events: auto;
   position: relative;
-}
-.sitio-overlay-wrapper{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-.sitio-arrow{
-  width: 0;
-  height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 8px solid #ffffff;
 }
 .popup-sitio__close{
   position: absolute;
@@ -883,6 +878,21 @@ input, select{ font-family: inherit; }
   transition: background 0.12s ease, border-color 0.12s ease;
 }
 .popup-sitio__add:hover{ background: var(--teal-500); border-color: var(--teal-500); color: #ffffff; }
+
+/* Acciones extra dentro de la ficha centrada (paradas, escalas, extremos) */
+.popup-sitio__acciones{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.popup-sitio__acciones .popup-sitio__add{ width: 100%; }
+.popup-sitio__add.popup-sitio__quitar{
+  border-color: #e3c4bd;
+  background: #fdf3f1;
+  color: #b3402f;
+}
+.popup-sitio__add.popup-sitio__quitar:hover{ background: #fbe4e0; border-color: #d97f72; color: #b3402f; }
 
 /* Popup de una parada agregada a la ruta (con opción de quitarla) */
 .popup-parada{ font-family: var(--font-body); min-width: 170px; }
@@ -1067,6 +1077,21 @@ input, select{ font-family: inherit; }
 .descubre-btn:hover{ background: var(--teal-50); border-color: var(--teal-600); }
 .descubre-btn--active{ background: var(--teal-500); border-color: var(--teal-500); color: #ffffff; }
 .descubre-btn--active:hover{ background: var(--teal-600); border-color: var(--teal-600); }
+
+/* Botón redondo "solo sitios visibles" (a la derecha de Desvíos en Descubre) */
+.descubre-btn--round{
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.descubre-btn--round[aria-pressed="true"],
+.descubre-btn--round.descubre-btn--active{ background: var(--teal-500); border-color: var(--teal-500); color: #ffffff; }
+.descubre-btn--round[aria-pressed="true"]:hover{ background: var(--teal-600); border-color: var(--teal-600); }
 .descubre-dropdown{
   width: stretch;
   padding: 3px 7px;
@@ -1321,7 +1346,9 @@ input, select{ font-family: inherit; }
 
 .altimetria__header{
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 4px;
   position: relative;
   margin-bottom: 0px;
 }
@@ -1333,20 +1360,29 @@ input, select{ font-family: inherit; }
   cursor: pointer; color: var(--text-muted);
 }
 .altimetria__close:hover{ color: var(--text-strong); }
-.altimetria__scope{
-  width: 26px; height: 26px;
-  border: none; background: transparent;
-  cursor: pointer; padding: 0;
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0.5;
-  transition: opacity 0.12s ease;
-  touch-action: manipulation;
+.altimetria__seguimiento{
+  height: 26px;
+  margin-left: 6px;
+  border: none;
+  border-radius: 999px;
+  background: var(--teal-50);
+  color: var(--teal-600);
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  padding: 0 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.12s, color 0.12s;
 }
-.altimetria__scope:hover{ opacity: 1; }
-.altimetria__scope[aria-pressed="false"] img{ filter: brightness(0) invert(0.5); }
-.altimetria__scope[aria-pressed="true"]{ opacity: 1; }
-.altimetria__scope[aria-pressed="true"] img{ filter: brightness(0) saturate(100%) invert(40%) sepia(11%) saturate(716%) hue-rotate(118deg) brightness(94%) contrast(92%); }
-.altimetria__scope img{ display: block; }
+.altimetria__seguimiento img{ display: block; width: 12px; height: auto; }
+.altimetria__seguimiento:hover{ background: var(--teal-100); }
+.altimetria__seguimiento[aria-pressed="true"] img{ filter: brightness(0) saturate(100%) invert(40%) sepia(11%) saturate(716%) hue-rotate(118deg) brightness(94%) contrast(92%); }
+.altimetria__seguimiento[aria-pressed="false"]{ color: var(--text-muted); background: var(--bg-subtle); }
+.altimetria__seguimiento[aria-pressed="false"] img{ filter: brightness(0) invert(0.5); }
 .altimetria__chart{ width: 100%; height: 140px; position: relative; flex-shrink: 0; }
 .altimetria__chart svg{ width: 100%; height: 100%; display: block; }
 .altimetria__hover-info{
@@ -1399,6 +1435,22 @@ input, select{ font-family: inherit; }
 }
 .altimetria-menu-btn:hover{ background: var(--teal-50); }
 .altimetria-map-tooltip::before{ border-top-color: #246054; }
+
+/* Tooltip al pasar el mouse sobre los indicadores de parada en el perfil */
+.altimetria-mark-tooltip{
+  position: fixed;
+  z-index: 2100;
+  background: var(--ink-900);
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 14px rgba(20,32,27,0.25);
+}
 
 /* ==========================================================================
    BOTÓN DE CATEGORÍAS

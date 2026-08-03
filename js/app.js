@@ -108,8 +108,6 @@
     descubreDropdownOrdenar: document.getElementById('descubre-dropdown-ordenar'),
     btnOrdenOrigenDes: document.getElementById('btn-descubre-orden-origen'),
     btnOrdenDestinoDes: document.getElementById('btn-descubre-orden-destino'),
-    btnListaCompleta: document.getElementById('btn-descubre-lista-completa'),
-    btnSitiosVisibles: document.getElementById('btn-descubre-visibles'),
     categoriasGrid: document.getElementById('categorias-grid'),
 
 
@@ -123,6 +121,7 @@
     sitiosFronteraContador: document.getElementById('sitios-frontera-contador'),
 
     btnToggleSitiosFloat: document.getElementById('btn-toggle-sitios-float'),
+    btnDescubreVisibles: document.getElementById('btn-descubre-visibles-btn'),
     btnFullscreen: document.getElementById('btn-fullscreen'),
     panelSitios: document.getElementById('panel-sites'),
     btnMostrarSitiosCercanos: document.getElementById('btn-mostrar-sitios'),
@@ -139,8 +138,8 @@
     btnAltimetria: document.getElementById('btn-altimetria'),
     btnTabAltimetria: document.getElementById('btn-tab-altimetria'),
     btnCerrarAltimetria: document.getElementById('btn-cerrar-altimetria'),
-    btnScopeAltimetria: document.getElementById('btn-scope-altimetria'),
-    btnScopeAltimetriaMovil: document.getElementById('btn-scope-altimetria-panel'),
+    btnSeguimientoAltimetria: document.getElementById('btn-seguimiento-altimetria'),
+    btnSeguimientoAltimetriaMovil: document.getElementById('btn-seguimiento-altimetria-panel'),
     altimetriaPanel: document.getElementById('altimetria'),
     altimetriaChart: document.getElementById('altimetria-chart'),
     altimetriaPanelMovil: document.getElementById('altimetria-panel'),
@@ -177,8 +176,6 @@
   function _actualizarEstadoBotonesDescubre() {
     if (el.btnOrdenOrigenDes) el.btnOrdenOrigenDes.classList.toggle('descubre-dropdown__item--active', state.ordenSitios === 'origen');
     if (el.btnOrdenDestinoDes) el.btnOrdenDestinoDes.classList.toggle('descubre-dropdown__item--active', state.ordenSitios === 'destino');
-    if (el.btnListaCompleta) el.btnListaCompleta.classList.toggle('descubre-dropdown__item--active', state.modoVisibilidad === 'completa');
-    if (el.btnSitiosVisibles) el.btnSitiosVisibles.classList.toggle('descubre-dropdown__item--active', state.modoVisibilidad === 'visibles');
   }
 
   function aplicarOrdenSitios(orden) {
@@ -186,16 +183,6 @@
     actualizarBotonesOrden();
     _actualizarEstadoBotonesDescubre();
     renderizarSitios(state.modoVisibilidad === 'visibles' ? _filtrarVisibles(state.sitiosFiltrados) : state.sitiosFiltrados);
-  }
-
-  function aplicarModoVisibilidad(modo) {
-    state.modoVisibilidad = modo;
-    _actualizarEstadoBotonesDescubre();
-    if (modo === 'visibles') {
-      renderizarSitios(_filtrarVisibles(state.sitiosFiltrados));
-    } else {
-      renderizarSitios(state.sitiosFiltrados);
-    }
   }
 
   function _filtrarVisibles(sitios) {
@@ -266,8 +253,9 @@
       if (state.rutaActual) {
         el.panelParadas.hidden = false;
       }
-      el.btnMostrarSitiosCercanos.hidden = !state.rutaActual || state.sitiosFiltrados.length > 0;
-      el.btnMostrarSitiosCercanos.disabled = !state.rutaActual || state.sitiosFiltrados.length > 0;
+      const ocultarTestigo = _soMostrarSitiosVisto || !state.rutaActual || state.sitiosFiltrados.length > 0;
+      el.btnMostrarSitiosCercanos.hidden = ocultarTestigo;
+      el.btnMostrarSitiosCercanos.disabled = ocultarTestigo;
       sincronizarModoRutaMovil();
     } else {
       el.btnTabPanelDescubre.classList.add('panel-tab--active');
@@ -277,7 +265,13 @@
       el.panelDescubreActions.hidden = false;
       el.panelSitios.hidden = false;
       el.btnMostrarSitiosCercanos.hidden = true;
-      _asegurarListadoSitios();
+      if (!state.rutaActual && el.sitiosVacio) {
+        el.sitiosVacio.hidden = false;
+        el.sitiosVacio.textContent = 'Calcula una ruta para descubrir sitios turísticos.';
+        if (el.sitiosLista) el.sitiosLista.hidden = true;
+      } else {
+        _asegurarListadoSitios();
+      }
     }
   }
 
@@ -955,6 +949,10 @@
     }
     if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.addEventListener('click', toggleSitiosHandler);
 
+    if (el.btnDescubreVisibles) {
+      el.btnDescubreVisibles.addEventListener('click', toggleSitiosVisibles);
+    }
+
     if (el.btnFullscreen) {
       el.btnFullscreen.addEventListener('click', () => {
         if (document.fullscreenElement) {
@@ -977,6 +975,7 @@
     }
     el.checkAutoOrganizar.addEventListener('change', () => {
       if (el.checkAutoOrganizar.checked) organizarAutomaticamente();
+      renderizarParadas();
     });
     // Descubre Colombia buttons handlers
     let desplegandoDescubre = null; // 'categorias' | 'desvios' | 'ordenar'
@@ -1085,12 +1084,6 @@
     if (el.btnOrdenDestinoDes) {
       el.btnOrdenDestinoDes.addEventListener('click', () => { aplicarOrdenSitios('destino'); actualizarBotonesOrden(); });
     }
-    if (el.btnListaCompleta) {
-      el.btnListaCompleta.addEventListener('click', () => aplicarModoVisibilidad('completa'));
-    }
-    if (el.btnSitiosVisibles) {
-      el.btnSitiosVisibles.addEventListener('click', () => aplicarModoVisibilidad('visibles'));
-    }
 
     el.btnMostrarSitiosCercanos.addEventListener('click', () => {
       el.btnMostrarSitiosCercanos.hidden = true;
@@ -1098,10 +1091,6 @@
       _asegurarListadoSitios();
       activarPanelTab('descubre');
       if (esMovil()) setMobileTab('descubre');
-      // Abrir el menú de ordenar al mostrar sitios
-      if (el.btnDescubreOrdenar) {
-        el.btnDescubreOrdenar.click();
-      }
     });
     el.btnAplicarDistancia.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarDistancia));
     el.btnAplicarTiempo.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarTiempo));
@@ -1153,10 +1142,14 @@
       });
 
       AltimetriaModule.setOnSetInicio((data) => {
-        console.log('[ALT] Nuevo inicio:', data.nombre, 'dist:', data.distKm);
+        AltimetriaModule.setRangoInicio(data.distKm);
       });
       AltimetriaModule.setOnSetFin((data) => {
-        console.log('[ALT] Nuevo fin:', data.nombre, 'dist:', data.distKm);
+        AltimetriaModule.setRangoFin(data.distKm);
+      });
+      AltimetriaModule.setOnEliminarParada((data) => {
+        if (data.tipo === 'escala') eliminarEscala(data.id);
+        else if (data.tipo === 'parada') eliminarParada(data.id);
       });
       AltimetriaModule.setOnVerMapa((data) => {
         _map.setView([data.lat, data.lon], 13, { animate: true });
@@ -1168,17 +1161,25 @@
       document.getElementById('btn-cerrar-altimetria')?.addEventListener('click', () => {
         if (_hoverMarker) { _hoverMarker.remove(); _hoverMarker = null; }
       });
-      let _lastScopeToggle = 0;
-      function toggleScopeBtn(btn) {
-        if (!btn) return;
-        const now = Date.now();
-        if (now - _lastScopeToggle < 500) { return; }
-        _lastScopeToggle = now;
-        const active = AltimetriaModule.toggleFollow();
-        btn.setAttribute('aria-pressed', String(active));
+
+      function actualizarTextoSeguimiento() {
+        const activo = AltimetriaModule.isFollowActivo();
+        const pcBtn = document.getElementById('btn-seguimiento-altimetria');
+        const movBtn = document.getElementById('btn-seguimiento-altimetria-panel');
+        if (pcBtn) {
+          const label = pcBtn.querySelector('.altimetria__seguimiento-label');
+          if (label) label.textContent = activo ? 'Seguimiento activado' : 'Seguimiento inactivado';
+          pcBtn.setAttribute('aria-pressed', String(activo));
+        }
+        if (movBtn) movBtn.setAttribute('aria-pressed', String(activo));
       }
-      document.getElementById('btn-scope-altimetria')?.addEventListener('click', function () { toggleScopeBtn(this); });
-      document.getElementById('btn-scope-altimetria-panel')?.addEventListener('click', function () { toggleScopeBtn(this); });
+      function toggleSeguimientoBtn() {
+        AltimetriaModule.toggleFollow();
+        actualizarTextoSeguimiento();
+      }
+      document.getElementById('btn-seguimiento-altimetria')?.addEventListener('click', toggleSeguimientoBtn);
+      document.getElementById('btn-seguimiento-altimetria-panel')?.addEventListener('click', toggleSeguimientoBtn);
+      actualizarTextoSeguimiento();
     }
 
   }
@@ -1189,9 +1190,17 @@
     return window.matchMedia(MEDIA_MOVIL).matches;
   }
 
-  /** En móvil, tras calcular la ruta se ocultan los cubos de origen y destino (solo lista de paradas). */
+  /** Indica si la pestaña activa del panel es "Descubre Colombia". */
+  function estaEnPestanaDescubre() {
+    if (esMovil()) {
+      return el.appRoot && el.appRoot.getAttribute('data-mobile-tab') === 'descubre';
+    }
+    return Boolean(el.btnTabPanelDescubre && el.btnTabPanelDescubre.classList.contains('panel-tab--active'));
+  }
+
+  /** Tras calcular la ruta se ocultan los cuadros de origen y destino (aparece el botón "+"). */
   function sincronizarModoRutaMovil() {
-    if (esMovil() && state.rutaActual) {
+    if (state.rutaActual) {
       el.appRoot.setAttribute('data-ruta-lista', 'true');
     } else {
       el.appRoot.removeAttribute('data-ruta-lista');
@@ -1240,6 +1249,7 @@
 
   let ultimosValoresAplicados = { distancia: null, tiempo: null };
   let conteoCategoriasBase = null;
+  let _soMostrarSitiosVisto = false;
 
   /** Habilita/deshabilita todos los controles de entrada durante el cálculo de ruta. */
   function ponerEnCargaRuta(cargando) {
@@ -1256,11 +1266,6 @@
       b.setAttribute('data-loading', cargando ? 'true' : 'false');
     });
     document.querySelectorAll('.sitio-card__add').forEach((b) => { b.disabled = cargando; });
-    // Bloquear pestaña Descubre durante el cálculo (solo se bloquea, no se desbloquea aquí)
-    if (cargando) {
-      if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = true;
-      if (el.btnTabDescubre) el.btnTabDescubre.disabled = true;
-    }
     if (esMovil()) {
       el.panelLocate.hidden = cargando;
       el.btnMostrarSitiosCercanos.hidden = cargando;
@@ -1269,6 +1274,14 @@
   }
 
   function _habilitarMostrarSitios() {
+    // El testigo "Mostrar sitios" solo aparece la primera vez que se calcula
+    // una ruta; en adelante (aunque cambie origen/destino) no vuelve a salir.
+    if (_soMostrarSitiosVisto) {
+      el.btnMostrarSitiosCercanos.disabled = true;
+      el.btnMostrarSitiosCercanos.hidden = true;
+      return;
+    }
+    _soMostrarSitiosVisto = true;
     el.btnMostrarSitiosCercanos.disabled = false;
     el.btnMostrarSitiosCercanos.hidden = false;
   }
@@ -1307,6 +1320,52 @@
     if (!m || !m.nombre) return '';
     if (m.nombre === 'Bogotá D.C.' || !m.departamento) return m.nombre;
     return m.nombre + ', ' + m.departamento;
+  }
+
+  /** Sincroniza el botón redondo de "sitios visibles" con el modo de visibilidad actual. */
+  function _sincronizarBotonVisibles() {
+    if (!el.btnDescubreVisibles) return;
+    const activo = state.modoVisibilidad === 'visibles';
+    el.btnDescubreVisibles.setAttribute('aria-pressed', String(activo));
+    el.btnDescubreVisibles.classList.toggle('descubre-btn--active', activo);
+  }
+
+  /** Limpia el listado de la pestaña Descubre cuando cambia el trazado de la ruta. */
+  function _borrarListadoDescubre() {
+    state.sitiosFiltrados = [];
+    state.sitiosFiltradosBase = [];
+    state.modoVisibilidad = 'completa';
+    conteoCategoriasBase = new Map();
+    _sincronizarBotonVisibles();
+    _actualizarEstadoBotonesDescubre();
+    if (el.panelSitios) el.panelSitios.hidden = true;
+    if (el.sitiosVacio) el.sitiosVacio.textContent = '';
+    if (el.sitiosContador) el.sitiosContador.textContent = '0';
+    if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = '0';
+    if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = '0';
+  }
+
+  /** Alterna el filtro "solo sitios visibles": activo filtra, inactivo muestra la lista completa. */
+  function toggleSitiosVisibles() {
+    if (!state.rutaActual) return;
+
+    if (state.modoVisibilidad === 'visibles') {
+      state.modoVisibilidad = 'completa';
+    } else {
+      state.modoVisibilidad = 'visibles';
+    }
+    _sincronizarBotonVisibles();
+
+    const fuente = state.sitiosFiltrados.length ? state.sitiosFiltrados : state.sitiosFiltradosBase;
+    if (!fuente.length) {
+      _asegurarListadoSitios();
+      return;
+    }
+    if (state.modoVisibilidad === 'visibles') {
+      renderizarSitios(_filtrarVisibles(fuente));
+    } else {
+      renderizarSitios(fuente);
+    }
   }
 
   async function toggleAltimetria() {
@@ -1438,10 +1497,15 @@
         // Limpiar sitios cargados antes de activar la pestaña
         state.sitiosFiltrados = [];
         state.sitiosFiltradosBase = [];
+        state.modoVisibilidad = 'completa';
+        _sincronizarBotonVisibles();
 
         // Activar pestaña Ruta
         el.panelEscalas.hidden = true;
         activarPanelTab('ruta');
+
+        // Volver a la pestaña Ruta en móvil antes de activar el testigo
+        if (esMovil()) setMobileTab('ruta');
 
         // Enable "Mostrar sitios" button (excepto al calcular desde un pueblo intermedio)
         if (opciones.ocultarTestigoSitios) {
@@ -1458,9 +1522,6 @@
         el.filtroDistancia.value = '5';
         el.filtroDistanciaValor.textContent = '5 km';
         el.filtroDistancia.disabled = false;
-
-        // Volver a la pestaña Ruta en móvil y reiniciar estado de sitios
-        if (esMovil()) setMobileTab('ruta');
 
         // Ocultar definitivamente el testigo "Mostrar sitios" al calcular desde un pueblo intermedio
         if (opciones.ocultarTestigoSitios) {
@@ -1659,7 +1720,7 @@
     el.sitiosVacio.hidden = true;
     el.sitiosLista.hidden = false;
 
-    sitiosOrdenados.forEach((sitio) => {
+    sitiosOrdenados.forEach((sitio, i) => {
       if (sitio.lat == null || sitio.lon == null || isNaN(Number(sitio.lat)) || isNaN(Number(sitio.lon))) return;
       const marker = TourismModule.crearMarcador(sitio);
       // Viceversa: hover en marcador del mapa → destacar en perfil
@@ -1668,16 +1729,16 @@
         marker.on('mouseout', () => { AltimetriaModule.ocultarHover(); });
       }
       MapModule.agregarMarcadorSitio(marker);
-      el.sitiosLista.appendChild(crearTarjetaSitio(sitio));
+      el.sitiosLista.appendChild(crearTarjetaSitio(sitio, i));
     });
   }
 
   /** Construye la tarjeta de un sitio en la lista, con acciones de previsualizar y agregar. */
-  function crearTarjetaSitio(sitio) {
+  function crearTarjetaSitio(sitio, idx) {
     const li = Utils.crearElemento(`
       <li class="sitio-card" data-sitio-id="${sitio.id}">
         <div class="sitio-card__top">
-          <span class="sitio-card__nombre">${sitio.nombre}</span>
+          <span class="sitio-card__nombre"><span class="sitio-card__num">${idx != null ? (idx + 1) + '.' : ''}</span>&nbsp;${sitio.nombre}</span>
           <div class="sitio-card__top-right">
             <button type="button" class="icon-btn sitio-card__add" title="Agregar a la ruta" aria-label="Agregar ${sitio.nombre} a la ruta">
               <svg class="icon-btn__icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -1858,10 +1919,15 @@
     state.altimetriaGeo = geoPerfil;
     state.altimetriaTotalKm = totalKm;
     AltimetriaModule.setDatos(geoPerfil, state.elevacion, totalKm);
+    if (state.origen) AltimetriaModule.setExtremos(formatMunicipio(state.origen), state.destino ? formatMunicipio(state.destino) : 'Destino');
     sincronizarOrden();
     let idxIntermedio = 0;
     const mapaEtiquetas = new Map();
     state.orden.forEach((o) => {
+      if (o.tipo === 'escala') {
+        const dragE = state.escalas.find((e) => e.id === o.id);
+        if (dragE && dragE._dragGenerated) return;
+      }
       const etiqueta = etiquetaIntermedia(idxIntermedio++);
       const key = o.tipo + '_' + o.id;
       mapaEtiquetas.set(key, etiqueta);
@@ -1879,12 +1945,12 @@
       state.escalas.filter(e => e.lat != null).forEach(e => {
         const nearest = turf.nearestPointOnLine(routeLine, turf.point([e.lon, e.lat]), { units: 'kilometers' });
         e._distKm = nearest.properties.location || 0;
-        AltimetriaModule.agregarParada(e.lat, e.lon, formatMunicipio(e), e._distKm, mapaEtiquetas.get('escala_' + e.id) || '');
+        AltimetriaModule.agregarParada(e.lat, e.lon, formatMunicipio(e), e._distKm, mapaEtiquetas.get('escala_' + e.id) || '', e.id, 'escala');
       });
       state.paradas.forEach(p => {
         const nearest = turf.nearestPointOnLine(routeLine, turf.point([p.lon, p.lat]), { units: 'kilometers' });
         p._distKm = nearest.properties.location || 0;
-        AltimetriaModule.agregarParada(p.lat, p.lon, p.nombre, p._distKm, mapaEtiquetas.get('parada_' + p.id) || '');
+        AltimetriaModule.agregarParada(p.lat, p.lon, p.nombre, p._distKm, mapaEtiquetas.get('parada_' + p.id) || '', p.id, 'parada');
       });
     }
     MapModule.setMarcadoresEscalas(state.escalas);
@@ -1953,6 +2019,7 @@
       delete s._offsetLado;
     });
     MapModule.limpiarSitios();
+    _borrarListadoDescubre();
 
     await calcularRutaPrincipal(true);
     renderizarParadas();
@@ -1967,6 +2034,7 @@
     if (state.rutaActual) {
       state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
       MapModule.limpiarSitios();
+      _borrarListadoDescubre();
       calcularRutaPrincipal(true);
     } else {
       renderizarParadas();
@@ -1997,6 +2065,7 @@
       delete s._offsetLado;
     });
     MapModule.limpiarSitios();
+    _borrarListadoDescubre();
 
     await calcularRutaPrincipal(true);
     renderizarParadas();
@@ -2059,9 +2128,7 @@
     sincronizarOrden();
     if (state.rutaActual) {
       state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
-      state.sitiosFiltrados = [];
-      state.sitiosFiltradosBase = [];
-      renderizarSitios([]);
+      _borrarListadoDescubre();
       calcularRutaPrincipal(true);
     } else {
       renderizarParadas();
@@ -2237,6 +2304,99 @@
     reemplazarPuebloIntermedio();
   }
 
+  /** Centra el mapa y muestra la ficha centrada de una parada (como la de un sitio). */
+  function mostrarCuadroParada(sitio) {
+    if (!sitio || sitio.lat == null || sitio.lon == null) return;
+    const map = MapModule.getMap();
+    if (map) map.closePopup();
+    MapModule.centrarEn(sitio.lat, sitio.lon);
+
+    const distTxt = sitio.distanciaRutaKm != null
+      ? `A ${sitio.distanciaRutaKm.toFixed(1)} km del corredor · ~${Math.round(sitio.tiempoDesvioMin)} min de desvío`
+      : '';
+    const btnQuitar = document.createElement('button');
+    btnQuitar.type = 'button';
+    btnQuitar.className = 'popup-sitio__add popup-sitio__quitar';
+    btnQuitar.textContent = 'Quitar de la ruta';
+    btnQuitar.addEventListener('click', () => {
+      TourismModule.ocultarPopupSitio();
+      eliminarParada(sitio.id);
+    });
+
+    TourismModule.mostrarCuadroInfo({
+      categoria: sitio.categoria || '',
+      color: TourismModule.colorCategoria(sitio.categoria),
+      nombre: sitio.nombre,
+      ubicacion: `${sitio.municipio ? sitio.municipio + ', ' : ''}${sitio.departamento || ''}`,
+      descripcion: sitio.descripcion || '',
+      dist: distTxt,
+      botones: [btnQuitar],
+    });
+  }
+
+  /** Centra el mapa y muestra la ficha centrada de un pueblo intermedio. */
+  function mostrarCuadroEscala(escala) {
+    if (!escala || escala.lat == null || escala.lon == null) return;
+    const map = MapModule.getMap();
+    if (map) map.closePopup();
+    MapModule.centrarEn(escala.lat, escala.lon);
+
+    const btnCambiar = document.createElement('button');
+    btnCambiar.type = 'button';
+    btnCambiar.className = 'popup-sitio__add';
+    btnCambiar.textContent = 'Cambiar pueblo intermedio';
+    btnCambiar.addEventListener('click', () => {
+      TourismModule.ocultarPopupSitio();
+      cambiarPueblo(escala);
+    });
+
+    const btnEliminar = document.createElement('button');
+    btnEliminar.type = 'button';
+    btnEliminar.className = 'popup-sitio__add popup-sitio__quitar';
+    btnEliminar.textContent = 'Eliminar pueblo intermedio';
+    btnEliminar.addEventListener('click', () => {
+      TourismModule.ocultarPopupSitio();
+      eliminarEscala(escala.id);
+    });
+
+    TourismModule.mostrarCuadroInfo({
+      categoria: 'Pueblo intermedio',
+      color: '#4a6fa5',
+      nombre: formatMunicipio(escala),
+      ubicacion: escala.departamento || '',
+      dist: '',
+      botones: [btnCambiar, btnEliminar],
+    });
+  }
+
+  /** Centra el mapa y muestra la ficha centrada del origen o destino. */
+  function mostrarCuadroExtremo(tipo, nombre, departamento) {
+    const extremo = tipo === 'origen' ? state.origen : state.destino;
+    if (!extremo || extremo.lat == null || extremo.lon == null) return;
+    const map = MapModule.getMap();
+    if (map) map.closePopup();
+    MapModule.centrarEn(extremo.lat, extremo.lon);
+
+    const btnCambiar = document.createElement('button');
+    btnCambiar.type = 'button';
+    btnCambiar.className = 'popup-sitio__add';
+    btnCambiar.textContent = tipo === 'origen' ? 'Cambiar lugar de origen' : 'Cambiar lugar de destino';
+    btnCambiar.addEventListener('click', () => {
+      TourismModule.ocultarPopupSitio();
+      if (tipo === 'origen') irCambiarOrigen();
+      else irCambiarDestino();
+    });
+
+    TourismModule.mostrarCuadroInfo({
+      categoria: tipo === 'origen' ? 'Ciudad de origen' : 'Ciudad de destino',
+      color: '#2d7d68',
+      nombre: nombre || '',
+      ubicacion: departamento || '',
+      dist: '',
+      botones: [btnCambiar],
+    });
+  }
+
   function renderizarParadas() {
     sincronizarOrden();
 
@@ -2256,7 +2416,8 @@
     const incluirExtremos = Boolean(state.rutaActual && state.origen && state.destino);
     el.paradasContador.textContent = String(incluirExtremos ? total : total);
     el.paradasContador.hidden = total === 0;
-    el.panelParadas.hidden = !incluirExtremos && total === 0;
+    // En la pestaña Descubre las paradas no deben aparecer aunque haya paradas.
+    el.panelParadas.hidden = estaEnPestanaDescubre() || (!incluirExtremos && total === 0);
 
     function crearFilaExtremo(letra, nombre, tipo) {
       const li = document.createElement('li');
@@ -2287,7 +2448,7 @@
         if (_suprimirProximoClic) { _suprimirProximoClic = false; return; }
         const extremo = tipo === 'origen' ? state.origen : state.destino;
         if (extremo && extremo.lat != null) {
-          MapModule.abrirPopupExtremo(tipo, extremo.nombre || '', (extremo.departamento || ''));
+          mostrarCuadroExtremo(tipo, extremo.nombre || '', (extremo.departamento || ''));
         }
       };
       li.addEventListener('click', accionExtremo);
@@ -2306,7 +2467,7 @@
           accion: () => {
             const extremo = tipo === 'origen' ? state.origen : state.destino;
             if (extremo && extremo.lat != null) {
-              MapModule.abrirPopupExtremo(tipo, extremo.nombre || '', (extremo.departamento || ''));
+              mostrarCuadroExtremo(tipo, extremo.nombre || '', (extremo.departamento || ''));
             }
           },
         });
@@ -2392,9 +2553,9 @@
         if (_suprimirProximoClic) { _suprimirProximoClic = false; return; }
         cerrarMenuFila();
         if (item.tipo === 'parada') {
-          MapModule.abrirPopupParada(e.id);
+          mostrarCuadroParada(e);
         } else if (item.tipo === 'escala') {
-          MapModule.abrirPopupEscala(e.id);
+          mostrarCuadroEscala(e);
         }
       };
       li.addEventListener('click', accionPrincipal);
@@ -2405,14 +2566,14 @@
       const construirOpcionesContexto = () => {
         if (item.tipo === 'parada') {
           return [
-            { etiqueta: 'Ubicar en el mapa', accion: () => MapModule.abrirPopupParada(e.id) },
+            { etiqueta: 'Ubicar en el mapa', accion: () => mostrarCuadroParada(e) },
             { etiqueta: 'Eliminar de la ruta', accion: () => eliminarParada(e.id) },
           ];
         }
         return [
           { etiqueta: 'Cambiar pueblo intermedio', accion: () => cambiarPueblo(e) },
           { etiqueta: 'Eliminar pueblo intermedio', accion: () => eliminarEscala(e.id) },
-          { etiqueta: 'Ubicar en la ruta', accion: () => MapModule.abrirPopupEscala(e.id) },
+          { etiqueta: 'Ubicar en la ruta', accion: () => mostrarCuadroEscala(e) },
         ];
       };
 
