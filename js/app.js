@@ -628,19 +628,25 @@
       ajustarComboAlTeclado(trigger, listEl);
     }
 
-    // Toque/clic repetido en el cuadro SIN texto: alterna el menú (si está
-    // abierto lo cierra, si está cerrado lo abre). El primer toque lo abre vía
-    // focus; _toqueContrae evita que el focus de este mismo toque lo reabra.
+    // Toque/clic repetido en el cuadro: sin texto alterna el menú (abre si
+    // está cerrado, cierra si está abierto); con texto el toque solo ubica el
+    // cursor (se cierra el menú si estaba abierto, nunca se abre).
     trigger.addEventListener('pointerdown', () => {
-      if (document.activeElement !== trigger || trigger.value.trim()) return;
-      if (listEl.hidden) abrir();
-      else listEl.hidden = true;
-      _toqueContrae = true;
+      if (document.activeElement !== trigger) return; // el primer toque lo maneja focus
+      if (trigger.value.trim()) {
+        listEl.hidden = true;
+      } else if (listEl.hidden) {
+        abrir();
+      } else {
+        listEl.hidden = true;
+      }
+      _toqueContrae = true; // el focus de este toque no debe reabrir
     });
 
     trigger.addEventListener('focus', (e) => {
       e.stopPropagation();
       if (_toqueContrae) { _toqueContrae = false; return; }
+      if (trigger.value.trim()) { listEl.hidden = true; return; }
       abrir();
     });
 
@@ -921,19 +927,25 @@
       ajustarComboAlTeclado(trigger, listEl);
     }
 
-    // Toque/clic repetido en el cuadro SIN texto: alterna el menú (si está
-    // abierto lo cierra, si está cerrado lo abre). El primer toque lo abre vía
-    // focus; _toqueContrae evita que el focus de este mismo toque lo reabra.
+    // Toque/clic repetido en el cuadro: sin texto alterna el menú (abre si
+    // está cerrado, cierra si está abierto); con texto el toque solo ubica el
+    // cursor (se cierra el menú si estaba abierto, nunca se abre).
     trigger.addEventListener('pointerdown', () => {
-      if (document.activeElement !== trigger || trigger.value.trim()) return;
-      if (listEl.hidden) abrir();
-      else listEl.hidden = true;
-      _toqueContrae = true;
+      if (document.activeElement !== trigger) return; // el primer toque lo maneja focus
+      if (trigger.value.trim()) {
+        listEl.hidden = true;
+      } else if (listEl.hidden) {
+        abrir();
+      } else {
+        listEl.hidden = true;
+      }
+      _toqueContrae = true; // el focus de este toque no debe reabrir
     });
 
     trigger.addEventListener('focus', (e) => {
       e.stopPropagation();
       if (_toqueContrae) { _toqueContrae = false; return; }
+      if (trigger.value.trim()) { listEl.hidden = true; return; }
       abrir();
     });
     trigger.addEventListener('input', () => {
@@ -1445,9 +1457,21 @@
         restaurar();
         return;
       }
-      app.style.setProperty('--teclado-alto', cubierto + 'px');
+      // Lift MÍNIMO: el bloque sube solo lo necesario para que el cuadro
+      // enfocado quede sobre el teclado, no el teclado completo (eso los
+      // llevaba demasiado arriba). Si el cuadro ya está visible, no se sube.
+      const altoVisible = window.innerHeight - cubierto;
+      let lift = cubierto;
+      const act = document.activeElement;
+      if (esTriggerCombo(act)) {
+        const r = act.getBoundingClientRect();
+        const necesario = Math.max(0, Math.round(r.bottom + 8 - altoVisible));
+        lift = Math.min(cubierto, necesario);
+        kbLog('  aplicar(): lift mínimo=', lift, 'px (cubierto=', cubierto, 'necesario=', necesario, 'cuadro.bottom=', Math.round(r.bottom), ')');
+      }
+      app.style.setProperty('--teclado-alto', lift + 'px');
       app.classList.add('teclado-abierto');
-      kbLog('  aplicar(): lift=', cubierto, 'px | teclado-abierto=', app.classList.contains('teclado-abierto'));
+      kbLog('  aplicar(): lift=', lift, 'px | teclado-abierto=', app.classList.contains('teclado-abierto'));
     };
     // UN SOLO SALTO: el lift no sigue la animación del teclado evento a evento
     // (eso superponía una medida por evento + el re-chequeo final y producía el
@@ -1549,44 +1573,12 @@
   }
 
   /** Reubica las listas de opciones abiertas tras un cambio del teclado (el
-   *  bloque sube o baja con transform, que no dispara `resize`) y asegura que
-   *  el cuadro enfocado quede dentro del área visible. */
+   *  bloque sube o baja con transform, que no dispara `resize`). */
   function _ajustarListasAbiertas() {
     document.querySelectorAll('.combo__list:not([hidden])').forEach((l) => {
       const trig = l.parentElement && l.parentElement.querySelector('.combo__trigger');
       ajustarComboAlTeclado(trig, l);
     });
-    _garantizarTriggerVisible();
-  }
-
-  /** Tras levantar el bloque, asegura que el cuadro enfocado quede dentro del
-   *  área visible (sobre el teclado) desplazando su contenedor scrolleable.
-   *  Necesario al crear un pueblo intermedio con el "+": el auto-scroll de la
-   *  fila nueva se calcula sin teclado y la fila quedaría oculta bajo él. */
-  function _garantizarTriggerVisible() {
-    const act = document.activeElement;
-    if (!esTriggerCombo(act)) return;
-    const altoVisible = window.innerHeight - _tecladoCubierto();
-    const r = act.getBoundingClientRect();
-    if (r.top >= 0 && r.bottom <= altoVisible) return;
-    let cont = act.parentElement;
-    while (cont && cont !== el.appRoot && cont !== document.body) {
-      if (cont.scrollHeight > cont.clientHeight) break;
-      cont = cont.parentElement;
-    }
-    if (!cont || cont === el.appRoot || cont === document.body) {
-      kbLog('garantizarTriggerVisible:', kbEtiqueta(act), 'fuera del área visible (r.top=', Math.round(r.top), 'r.bottom=', Math.round(r.bottom), 'altoVisible=', Math.round(altoVisible), ') pero SIN contenedor scrolleable');
-      return;
-    }
-    if (r.bottom > altoVisible) {
-      const d = r.bottom - altoVisible + 8;
-      cont.scrollTop += d;
-      kbLog('garantizarTriggerVisible:', kbEtiqueta(act), 'se baja para que el cuadro quede sobre el teclado | scroll en', kbEtiqueta(cont), 'delta=', Math.round(d));
-    } else if (r.top < 0) {
-      const d = r.top - 8;
-      cont.scrollTop += d;
-      kbLog('garantizarTriggerVisible:', kbEtiqueta(act), 'se sube (cuadro cortado arriba) | scroll en', kbEtiqueta(cont), 'delta=', Math.round(d));
-    }
   }
 
   /** En móvil, coloca la lista de opciones del cuadro sin que el teclado la
@@ -3238,8 +3230,10 @@
     const incluirExtremos = Boolean(state.rutaActual && state.origen && state.destino);
     el.paradasContador.textContent = String(incluirExtremos ? total : total);
     el.paradasContador.hidden = total === 0;
-    // En la pestaña Descubre las paradas no deben aparecer aunque haya paradas.
-    el.panelParadas.hidden = estaEnPestanaDescubre() || (!incluirExtremos && total === 0);
+    // En la pestaña Descubre las paradas no deben aparecer aunque haya paradas;
+    // tampoco antes de calcular la ruta inicial (seleccionando pueblos
+    // intermedios): las paradas se muestran solo tras el primer cálculo.
+    el.panelParadas.hidden = estaEnPestanaDescubre() || !state.rutaActual || (!incluirExtremos && total === 0);
 
     function crearFilaExtremo(letra, nombre, tipo) {
       const li = document.createElement('li');
