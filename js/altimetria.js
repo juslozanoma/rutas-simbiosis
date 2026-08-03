@@ -10,7 +10,7 @@ const AltimetriaModule = (() => {
   let _onHoverMapa = null;
   let _onLeaveMapa = null;
   let _onCentrarMapa = null;
-  let _followActivo = true;
+  let _followActivo = ('ontouchstart' in window) || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);
   let _inicioOffset = 0;       // distancia (km) del perfil que se muestra como inicio del eje x
   let _finOffset = null;       // distancia (km) del perfil que se muestra como fin del eje x (null = total)
   let _inicioAsignado = false; // true si el usuario asignó un punto como inicio
@@ -18,6 +18,38 @@ const AltimetriaModule = (() => {
   let _nombreOrigen = 'Origen';
   let _nombreDestino = 'Destino';
   let _onEliminarParada = null;
+  const _esTactil = ('ontouchstart' in window) || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);
+
+  // Arrastre horizontal del perfil (clic + mover para desplazarse lateralmente).
+  let _arrastrePerfil = null; // {cont, startX, startZs, startZe}
+
+  function _onPerfilDragMove(ev) {
+    const arr = _arrastrePerfil;
+    if (!arr || !arr.cont) return;
+    const cont = arr.cont;
+    if (!cont._svg || !cont._plotW) return;
+    const dx = ev.clientX - arr.startX;
+    const span = arr.startZe - arr.startZs;
+    if (span <= 0) return;
+    const dKm = -(dx / cont._plotW) * span;
+    let nuevoIni = arr.startZs + dKm;
+    let nuevoFin = arr.startZe + dKm;
+    const domIni = cont._domInicio != null ? cont._domInicio : 0;
+    const domFin = cont._domFin != null ? cont._domFin : cont._maxD;
+    if (nuevoIni < domIni) { nuevoFin += domIni - nuevoIni; nuevoIni = domIni; }
+    if (nuevoFin > domFin) { nuevoIni -= nuevoFin - domFin; nuevoFin = domFin; }
+    if (nuevoFin - nuevoIni < MIN_SPAN_ZOOM) return;
+    cont._zoomStart = nuevoIni;
+    cont._zoomEnd = nuevoFin;
+    _construir(cont);
+  }
+
+  function _onPerfilDragEnd() {
+    _arrastrePerfil = null;
+  }
+
+  document.addEventListener('mousemove', _onPerfilDragMove);
+  document.addEventListener('mouseup', _onPerfilDragEnd);
 
   const MIN_SPAN_ZOOM = 0.5;   // km mínimos de rango visible al hacer zoom horizontal
 
@@ -200,8 +232,10 @@ const AltimetriaModule = (() => {
     }
     rangoAlt = Math.max(maxAlt - minAlt, 10);
 
-    const padTop = 6;
-    const padRight = 10;
+    // Márgenes amplios para que los marcadores (radio 11) y sus etiquetas
+    // no queden cortados en los bordes superior y derecho del perfil.
+    const padTop = 16;
+    const padRight = 14;
     const padBottom = 22;
     const padLeft = 52;
     const ancho = cont.clientWidth || 300;
@@ -421,9 +455,14 @@ const AltimetriaModule = (() => {
     });
 
     // Hover listeners
-    hit.addEventListener('mousemove', (ev) => { _onHover(cont, ev); });
-    hit.addEventListener('mouseleave', () => { _onLeave(cont); });
+    hit.addEventListener('mousemove', (ev) => { if (!_arrastrePerfil) _onHover(cont, ev); });
+    hit.addEventListener('mouseleave', () => { if (!_arrastrePerfil) _onLeave(cont); });
     hit.addEventListener('click', (ev) => { if (_puntoHover) { _mostrarTooltip(cont, null); } });
+    // Arrastre con el ratón para desplazarse lateralmente por el perfil
+    hit.addEventListener('mousedown', (ev) => {
+      _arrastrePerfil = { cont, startX: ev.clientX, startZs: cont._zoomStart, startZe: cont._zoomEnd };
+      ev.preventDefault();
+    });
     // Touch support for mobile (hover de un dedo y zoom con dos dedos)
     hit.addEventListener('touchstart', (ev) => { ev.preventDefault(); _onTouchStart(cont, ev); }, { passive: false });
     hit.addEventListener('touchmove', (ev) => { ev.preventDefault(); _onTouchMove(cont, ev); }, { passive: false });
@@ -472,11 +511,22 @@ const AltimetriaModule = (() => {
       g.appendChild(text);
     }
 
-    g.addEventListener('click', (ev) => { ev.stopPropagation(); _mostrarMenu(ev, data); });
-    g.addEventListener('contextmenu', (ev) => { ev.preventDefault(); ev.stopPropagation(); _mostrarMenu(ev, data); });
-    g.addEventListener('mouseenter', (ev) => _mostrarTooltipIndicador(ev, tooltipTexto));
-    g.addEventListener('mousemove', (ev) => _mostrarTooltipIndicador(ev, tooltipTexto));
-    g.addEventListener('mouseleave', () => _ocultarTooltipIndicador());
+    // Clic instantáneo: abre el menú; si ya está abierto para ESTE marcador, lo cierra.
+    g.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      if (_menuFlotante && _menuFlotante._menuTarget === g && _menuFlotante.style.display !== 'none') {
+        _cerrarMenuFlotante();
+      } else {
+        _mostrarMenu(ev, data, g);
+      }
+    });
+    g.addEventListener('contextmenu', (ev) => { ev.preventDefault(); ev.stopPropagation(); _mostrarMenu(ev, data, g); });
+    // En táctiles la etiqueta de hover no debe aparecer al tocar los marcadores.
+    if (!_esTactil) {
+      g.addEventListener('mouseenter', (ev) => _mostrarTooltipIndicador(ev, tooltipTexto));
+      g.addEventListener('mousemove', (ev) => _mostrarTooltipIndicador(ev, tooltipTexto));
+      g.addEventListener('mouseleave', () => _ocultarTooltipIndicador());
+    }
     svg.appendChild(g);
 
     // Etiqueta muy pequeña con el nombre (sin departamento) sobre el indicador.
@@ -488,7 +538,7 @@ const AltimetriaModule = (() => {
       const plotW = cont._plotW != null ? cont._plotW : 200;
       const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
       lbl.setAttribute('x', px);
-      lbl.setAttribute('y', Math.max(py - 13, 2));
+      lbl.setAttribute('y', Math.max(py - 20, 2));
       lbl.setAttribute('text-anchor', 'middle');
       lbl.setAttribute('fill', '#666');
       lbl.setAttribute('font-size', '7');
@@ -499,6 +549,7 @@ const AltimetriaModule = (() => {
         const bb = lbl.getBBox();
         if (bb.x < padLeft) lbl.setAttribute('x', lbl.getAttribute('x') - (bb.x - padLeft) - 2);
         else if (bb.x + bb.width > padLeft + plotW) lbl.setAttribute('x', lbl.getAttribute('x') - (bb.x + bb.width - padLeft - plotW) - 2);
+        if (bb.y < 1) lbl.setAttribute('y', parseFloat(lbl.getAttribute('y')) + (1 - bb.y));
       } catch (e) { /* ignorar */ }
     }
   }
@@ -712,9 +763,10 @@ const AltimetriaModule = (() => {
     if (_menuFlotante) _menuFlotante.style.display = 'none';
   }
 
-  function _mostrarMenu(ev, data) {
+  function _mostrarMenu(ev, data, target) {
     const menu = _crearMenuFlotante();
     menu._menuData = data;
+    menu._menuTarget = target || null;
     const btnInicio = menu.querySelector('[data-action="inicio"]');
     const btnFin = menu.querySelector('[data-action="fin"]');
     const btnVer = menu.querySelector('[data-action="ver"]');
@@ -725,8 +777,12 @@ const AltimetriaModule = (() => {
     const distKm = data.distKm != null ? Number(data.distKm) : null;
     const esInicioActual = _inicioAsignado && distKm != null && Math.abs(_inicioOffset - distKm) < 0.001;
     const esFinActual = _finAsignado && distKm != null && _finOffset != null && Math.abs(_finOffset - distKm) < 0.001;
-    btnInicio.style.display = (esExtremo || data.tipo === 'Z' || esInicioActual) ? 'none' : '';
-    btnFin.style.display = (esExtremo || data.tipo === 'A' || esFinActual) ? 'none' : '';
+    // Si el punto es un extremo (A/Z) o ya está asignado como inicio/fin
+    // (muestra "Quitar..."), no debe ofrecer la opción contraria de "Asignar...".
+    const asignableInicio = !esExtremo && data.tipo !== 'Z' && !esInicioActual && !esFinActual;
+    const asignableFin = !esExtremo && data.tipo !== 'A' && !esInicioActual && !esFinActual;
+    btnInicio.style.display = asignableInicio ? '' : 'none';
+    btnFin.style.display = asignableFin ? '' : 'none';
     if (btnEliminar) btnEliminar.style.display = esExtremo ? 'none' : '';
     if (btnQuitarIni) btnQuitarIni.style.display = esInicioActual ? '' : 'none';
     if (btnQuitarFin) btnQuitarFin.style.display = esFinActual ? '' : 'none';

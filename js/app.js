@@ -148,6 +148,18 @@
 
   const LETRAS_RUTA = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
+  // Overlay de prueba de sitios de frontera (tecla F para ocultarlos/mostrarlos).
+  let _fronteraVisibles = false;
+
+  function _syncFrontera() {
+    if (typeof MapModule === 'undefined' || !MapModule.setMarcadoresFrontera) return;
+    if (_fronteraVisibles) {
+      MapModule.setMarcadoresFrontera(state.sitios.filter((s) => s.frontera));
+    } else {
+      MapModule.limpiarSitiosFrontera();
+    }
+  }
+
   function etiquetaIntermedia(idx) {
     return LETRAS_RUTA[Math.min(idx + 1, LETRAS_RUTA.length - 2)];
   }
@@ -337,6 +349,17 @@
     initEscalas();
     initEventos();
     garantizarVisibilidadMovil();
+
+    // Mostrar todos los sitios de frontera (tecla F los oculta/muestra).
+    _syncFrontera();
+    document.addEventListener('keydown', (evt) => {
+      if (evt.key.toLowerCase() === 'f' && !evt.ctrlKey && !evt.metaKey && !evt.altKey) {
+        const esInput = evt.target && evt.target.tagName && /^(INPUT|TEXTAREA|SELECT)$/.test(evt.target.tagName);
+        if (esInput) return;
+        _fronteraVisibles = !_fronteraVisibles;
+        _syncFrontera();
+      }
+    });
   }
 
   // -------------------------------------------------------------------
@@ -560,6 +583,16 @@
 
     trigger.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') { cerrar(); e.preventDefault(); return; }
+      if (e.key === 'Enter' && listEl.hidden) {
+        if (trigger.dataset.selectedId) {
+          const otro = trigger.id === 'origen-input' ? state.destino : state.origen;
+          if (otro && otro.id) {
+            e.preventDefault();
+            calcularRutaPrincipal(false);
+          }
+        }
+        return;
+      }
       if (listEl.hidden) return;
       const items = [...listEl.querySelectorAll('li:not(.combo__back):not(.no-results)')];
       if (items.length === 0) return;
@@ -657,6 +690,10 @@
     row.appendChild(calcBtn);
     el.panelEscalas.appendChild(row);
     el.panelEscalas.hidden = false;
+    setTimeout(() => {
+      trigger.focus();
+      trigger.scrollIntoView({ block: 'nearest' });
+    }, 50);
 
     let seleccion = null;
 
@@ -666,6 +703,7 @@
       trigger.dataset.selectedId = m.id;
       seleccion = m;
       actualizarEscalas();
+      if (el.checkAutoOrganizar.checked) organizarAutomaticamente();
     }
 
     function resaltar(idx) {
@@ -722,6 +760,7 @@
           trigger.dataset.selectedId = 'map_' + Date.now();
           seleccion = { id: 'map_' + Date.now(), lat, lon, nombre, departamento: '' };
           actualizarEscalas();
+          if (el.checkAutoOrganizar.checked) organizarAutomaticamente();
         });
       });
       listEl.appendChild(pickLi);
@@ -789,6 +828,14 @@
     trigger.addEventListener('blur', () => { setTimeout(() => { listEl.hidden = true; }, 200); });
     trigger.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') { listEl.hidden = true; e.preventDefault(); return; }
+      if (e.key === 'Enter' && listEl.hidden) {
+        if (trigger.dataset.selectedId) {
+          e.preventDefault();
+          actualizarEscalas();
+          calcularRutaPrincipal(false, { ocultarTestigoSitios: true });
+        }
+        return;
+      }
       if (listEl.hidden) return;
       const items = [...listEl.querySelectorAll('li:not(.combo__back):not(.no-results)')];
       if (items.length === 0) return;
@@ -1633,7 +1680,9 @@
             s.tiempoDesvioMin = FiltersModule.aproximarTiempoDesvio(s.distanciaRutaKm);
           }
           if (!isFinite(s.distanciaRutaKm)) continue;
-          if (s.distanciaRutaKm > distanciaMax) continue;
+          const usarDistanciaProg = el.checkDistancia.checked || (state.categoriasSeleccionadas.length > 0 && !el.checkDistancia.checked && !el.checkTiempo.checked);
+          if (usarDistanciaProg && s.distanciaRutaKm > distanciaMax) continue;
+          if (el.checkTiempo.checked && (s.tiempoDesvioMin ?? Infinity) > Number(el.filtroTiempo.value)) continue;
           if (s.distanciaOrigenKm == null) {
             s.distanciaOrigenKm = FiltersModule.distanciaAOrigen(s, state.origen);
           }
@@ -1942,7 +1991,7 @@
 
     if (geoPerfil) {
       const routeLine = turf.lineString(geoPerfil.geometry.coordinates);
-      state.escalas.filter(e => e.lat != null).forEach(e => {
+      state.escalas.filter(e => e.lat != null && !e._dragGenerated).forEach(e => {
         const nearest = turf.nearestPointOnLine(routeLine, turf.point([e.lon, e.lat]), { units: 'kilometers' });
         e._distKm = nearest.properties.location || 0;
         AltimetriaModule.agregarParada(e.lat, e.lon, formatMunicipio(e), e._distKm, mapaEtiquetas.get('escala_' + e.id) || '', e.id, 'escala');
@@ -1986,8 +2035,24 @@
       map.setView(center, zoom, { animate: false });
       limpiarPreview();
       ejecutarFiltrado();
+      _ocultarSitioDeLaLista(sitio);
     } finally {
       if (boton) ponerEnCarga(boton, false);
+    }
+  }
+
+  /** Quita de la lista de sitios el sitio que acaba de agregarse a la ruta. */
+  function _ocultarSitioDeLaLista(sitio) {
+    const card = el.sitiosLista.querySelector(`[data-sitio-id="${String(sitio.id)}"]`);
+    if (card) card.remove();
+    const restantes = el.sitiosLista.querySelectorAll('.sitio-card').length;
+    el.sitiosContador.textContent = String(restantes);
+    if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = String(restantes);
+    if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = String(restantes);
+    if (restantes === 0) {
+      el.sitiosVacio.hidden = false;
+      el.sitiosVacio.textContent = 'Ningún sitio turístico cumple los filtros activos.';
+      el.sitiosLista.hidden = true;
     }
   }
 
@@ -2122,14 +2187,18 @@
     MapModule.setMarcadoresParadas(state.paradas);
   }
 
-  function eliminarEscala(id) {
+  function eliminarEscala(id, recalcular = true) {
     const idx = state.escalas.findIndex((e) => e.id === id);
     if (idx !== -1) state.escalas.splice(idx, 1);
     sincronizarOrden();
     if (state.rutaActual) {
-      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
-      _borrarListadoDescubre();
-      calcularRutaPrincipal(true);
+      if (recalcular) {
+        state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
+        _borrarListadoDescubre();
+        calcularRutaPrincipal(true);
+      } else {
+        renderizarParadas();
+      }
     } else {
       renderizarParadas();
     }
@@ -2300,7 +2369,9 @@
 
   /** Reemplaza un pueblo intermedio: lo quita de la ruta y abre un nuevo campo editable en el panel Ruta. */
   function cambiarPueblo(escala) {
-    eliminarEscala(escala.id);
+    // Sin recalcular: la ruta se recalcula cuando el usuario elige el nuevo pueblo,
+    // así el campo recién abierto no se elimina por la limpieza asíncrona de filas.
+    eliminarEscala(escala.id, false);
     reemplazarPuebloIntermedio();
   }
 

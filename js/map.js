@@ -22,6 +22,7 @@ const MapModule = (() => {
   let capaEscalas = null;       // L.layerGroup con marcadores de municipios intermedios
   let capaPuntosDesvio = null;  // L.layerGroup con puntos de desvío (círculos pequeños)
   let capaAlertas = null;       // L.layerGroup con advertencias de tramos peligrosos
+  let capaFrontera = null;      // L.layerGroup overlay de prueba: sitios de frontera
   let clusterSitios = null;     // L.markerClusterGroup con los sitios candidatos filtrados
   let _capaFlechas = null;      // L.layerGroup con flechas de dirección sobre la ruta
 
@@ -79,7 +80,7 @@ const MapModule = (() => {
     clusterPane.style.zIndex = 800;
 
     map.getPane('markerPane').style.zIndex = 700;
-    map.getPane('tooltipPane').style.zIndex = 780;
+    map.getPane('tooltipPane').style.zIndex = 850;
 
     // El panel de popups debe quedar sobre tooltips de sitios y clusters
     // (círculos oscuros) para que las fichas de información no queden ocultas.
@@ -104,6 +105,7 @@ const MapModule = (() => {
     capaEscalas = L.layerGroup().addTo(map);
     capaPuntosDesvio = L.layerGroup().addTo(map);
     capaAlertas = L.layerGroup().addTo(map);
+    capaFrontera = L.layerGroup().addTo(map);
 
     // El contenedor del mapa nace con un tamaño definido por CSS (flex),
     // por lo que conviene forzar un recálculo tras el primer render.
@@ -848,6 +850,23 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     if (marker.__sitioId != null) _sitioMarkers.set(marker.__sitioId, marker);
   }
 
+  /** Overlay de prueba: pinta todos los sitios de frontera (sin etiqueta permanente). */
+  function setMarcadoresFrontera(sitios) {
+    if (!capaFrontera) return;
+    capaFrontera.clearLayers();
+    sitios.forEach((s) => {
+      if (s.lat == null || s.lon == null || isNaN(Number(s.lat)) || isNaN(Number(s.lon))) return;
+      const marker = L.marker([s.lat, s.lon], { icon: iconoSitio(), zIndexOffset: 1000 });
+      marker.bindTooltip(s.nombre, { direction: 'top', offset: [0, -20], className: 'site-label' });
+      marker.on('click', () => centrarEn(s.lat, s.lon));
+      marker.addTo(capaFrontera);
+    });
+  }
+
+  function limpiarSitiosFrontera() {
+    if (capaFrontera) capaFrontera.clearLayers();
+  }
+
   function abrirPopupSitio(sitioId) {
     const marker = _sitioMarkers.get(sitioId);
     if (!marker) return;
@@ -977,6 +996,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarTodo,
     limpiarSitios,
     agregarMarcadorSitio,
+    setMarcadoresFrontera,
+    limpiarSitiosFrontera,
     toggleSitios,
     abrirPopupSitio,
     abrirPopupParada,

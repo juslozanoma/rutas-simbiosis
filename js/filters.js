@@ -152,7 +152,15 @@ const FiltersModule = (() => {
     if (!usarDistancia && !usarTiempo) return [];
 
     const idsExcluidos = new Set(excluirIds);
-    const bboxLimite = distanciaMaximaKm <= 5 ? rutaBboxConMargen(rutaGeoJSON, distanciaMaximaKm) : null;
+    // El margen del bbox se calcula según el criterio activo: para el filtro de
+    // tiempo se traduce el límite en minutos a una distancia aproximada, para no
+    // descartar sitios válidos que queden apenas fuera del bbox de distancia.
+    const margenBbox = usarDistancia
+      ? distanciaMaximaKm
+      : usarTiempo
+        ? ((tiempoMaximoMin - MINUTOS_MANIOBRA) * velocidadKmH) / 120
+        : 0;
+    const bboxLimite = margenBbox > 0 && margenBbox <= 5 ? rutaBboxConMargen(rutaGeoJSON, margenBbox) : null;
 
     return sitios
       .filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)))
@@ -188,7 +196,9 @@ const FiltersModule = (() => {
       })
       .filter((s) => {
         if (usarDistancia && s.distanciaRutaKm > distanciaMaximaKm) return false;
-        if (usarTiempo && s.tiempoDesvioMin > tiempoMaximoMin) return false;
+        // Los sitios fuera del bbox tienen distanciaRutaKm=Infinity y no
+        // guardan tiempoDesvioMin: al filtrar por tiempo deben quedar fuera.
+        if (usarTiempo && (s.tiempoDesvioMin ?? Infinity) > tiempoMaximoMin) return false;
         return true;
       })
       .sort((a, b) => (a.distanciaDestinoKm ?? a.distanciaRutaKm) - (b.distanciaDestinoKm ?? b.distanciaRutaKm) || (b.distanciaOrigenKm ?? b.distanciaRutaKm) - (a.distanciaOrigenKm ?? a.distanciaRutaKm));
