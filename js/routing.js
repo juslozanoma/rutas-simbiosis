@@ -52,7 +52,7 @@ const RoutingModule = (() => {
 
     const base = ENDPOINTS[perfil] || ENDPOINTS.driving;
     const coords = puntos.map((p) => `${p.lon},${p.lat}`).join(';');
-    const url = `${base}/${coords}?overview=full&geometries=geojson&steps=false&alternatives=false&annotations=true`;
+    const url = `${base}/${coords}?overview=full&geometries=geojson&steps=false&alternatives=false`;
 
     const respuesta = await fetch(url);
     if (!respuesta.ok) {
@@ -122,7 +122,7 @@ const RoutingModule = (() => {
     }
     const base = ENDPOINTS[perfil] || ENDPOINTS.driving;
     const coords = puntos.map((p) => `${p.lon},${p.lat}`).join(';');
-    const url = `${base}/${coords}?overview=full&geometries=geojson&steps=false&alternatives=true&annotations=true`;
+    const url = `${base}/${coords}?overview=full&geometries=geojson&steps=false&alternatives=true`;
     const respuesta = await fetch(url);
     if (!respuesta.ok) {
       throw new Error(`El servicio de ruteo respondió con error ${respuesta.status}`);

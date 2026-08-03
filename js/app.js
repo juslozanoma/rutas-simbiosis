@@ -381,18 +381,41 @@
   // Combos de búsqueda (origen / destino)
   // -------------------------------------------------------------------
   function initCombos() {
-    setupCombo(el.origenInput, el.origenList, (m) => { state.origen = m; actualizarEstadoBotonCalcular(); _actualizarTextoBotonesOrden(); }, () => {
+    setupCombo(el.origenInput, el.origenList, (m) => {
+      state.origen = m;
+      _limpiarTurfYListado();
+      actualizarEstadoBotonCalcular();
+      _actualizarTextoBotonesOrden();
+    }, () => {
       const ids = new Set();
       if (state.destino?.id) ids.add(state.destino.id);
       state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
       return ids;
     }, true);
-    setupCombo(el.destinoInput, el.destinoList, (m) => { state.destino = m; actualizarEstadoBotonCalcular(); _actualizarTextoBotonesOrden(); }, () => {
+    setupCombo(el.destinoInput, el.destinoList, (m) => {
+      state.destino = m;
+      _limpiarTurfYListado();
+      actualizarEstadoBotonCalcular();
+      _actualizarTextoBotonesOrden();
+    }, () => {
       const ids = new Set();
       if (state.origen?.id) ids.add(state.origen.id);
       state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
       return ids;
     }, false);
+  }
+
+  /** Al cambiar la ciudad de origen o destino se borran el perfil (turf) y el listado de sitios. */
+  function _limpiarTurfYListado() {
+    state.elevacion = null;
+    state.altimetriaGeo = null;
+    state.altimetriaTotalKm = 0;
+    state.sitiosFiltrados = [];
+    state.sitiosFiltradosBase = [];
+    state.modoVisibilidad = 'completa';
+    _sincronizarBotonVisibles();
+    _syncBotonSitios();
+    if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.hidden = true;
   }
 
   function setupCombo(trigger, listEl, onSelect, excluirIdsFn, showCurrentLocation) {
@@ -1010,13 +1033,8 @@
     el.btnCalcular.addEventListener('click', () => calcularRutaPrincipal());
     if (el.btnAereo) {
       el.btnAereo.addEventListener('click', () => {
-        if (state.modoAereo) {
-          state.modoAereo = false;
-          _actualizarBotonAereo();
-          calcularRutaPrincipal(false);
-        } else {
-          calcularRutaAerea();
-        }
+        // El avión siempre calcula la ruta aérea (volver a carretera = botón calcular).
+        calcularRutaAerea();
       });
     }
 
@@ -1284,28 +1302,41 @@
     }
   }
 
-  /** En móvil, los menús de los combos abren hacia abajo (≈6 items) sobre el teclado. */
+  /** En móvil, sube el cuadro seleccionado hacia la parte superior (sobre el teclado). */
   function ajustarComboAlTeclado(trigger, listEl) {
     if (!esMovil() || !listEl) return;
     const vv = window.visualViewport || null;
-    const vh = vv ? vv.height : window.innerHeight;
     if (!trigger) {
       listEl.style.maxHeight = '';
       listEl.style.top = '';
       listEl.style.bottom = '';
       return;
     }
-    // Desplazar el input para que quede espacio para ~6 elementos sobre el teclado.
-    if (vv && vv.height) {
-      const rect = trigger.getBoundingClientRect();
-      const bottomRel = rect.bottom - vv.offsetTop;
-      if (bottomRel + 210 > vv.height) {
-        window.scrollBy({ top: bottomRel + 210 - vv.height, behavior: 'smooth' });
+    // Lleva el input casi al borde superior del área visible (funciona en pantalla completa).
+    const vTop = vv ? vv.offsetTop : 0;
+    const rect = trigger.getBoundingClientRect();
+    const topVis = rect.top - vTop;
+    const delta = topVis - 10;
+    if (Math.abs(delta) > 2) {
+      let cont = trigger.parentElement;
+      let scrolleado = false;
+      while (cont && cont !== document.body && cont !== document.documentElement) {
+        const s = getComputedStyle(cont);
+        if (/(auto|scroll|hidden)/.test(s.overflowY)) {
+          cont.scrollTop += delta;
+          scrolleado = true;
+          break;
+        }
+        cont = cont.parentElement;
+      }
+      if (!scrolleado) {
+        const doc = document.scrollingElement || document.documentElement;
+        doc.scrollTop += delta;
       }
     }
     listEl.style.top = 'calc(100% + 6px)';
     listEl.style.bottom = 'auto';
-    listEl.style.maxHeight = '200px';
+    listEl.style.maxHeight = '170px'; // 5 elementos
   }
 
   window.addEventListener('resize', () => {
@@ -1359,11 +1390,14 @@
     const hay = state.sitiosFiltrados.length > 0 && !esMovil();
     el.btnMostrarSitiosCercanos.hidden = !hay;
     el.btnMostrarSitiosCercanos.disabled = !hay;
+    // El botón flotante del mapa solo aparece cuando hay un listado de sitios.
+    if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.hidden = state.sitiosFiltrados.length === 0;
   }
 
   function _habilitarMostrarSitios() {
-    // Se calcula el listado para saber si hay sitios; el botón solo aparece si hay resultados.
-    _asegurarListadoSitios(true);
+    // No se calcula el listado ni se muestran sitios al calcular la ruta:
+    // el listado se genera solo al abrir la pestaña Descubre.
+    _syncBotonSitios();
   }
 
   let _calculandoListado = false;
@@ -1561,9 +1595,17 @@
     try {
       const puntosRuta = [state.origen, ...state.escalas.filter((e) => e.lat != null), state.destino];
       const usarConParadas = puntosRuta.length > 2;
-      let ruta = usarConParadas
-        ? await RoutingModule.calcularRutaConParadas(puntosRuta, PERFIL_FIJO)
-        : await RoutingModule.calcularRuta(state.origen, state.destino, PERFIL_FIJO);
+      let ruta;
+      try {
+        ruta = usarConParadas
+          ? await RoutingModule.calcularRutaConParadas(puntosRuta, PERFIL_FIJO)
+          : await RoutingModule.calcularRuta(state.origen, state.destino, PERFIL_FIJO);
+      } catch (err) {
+        // Sin ruta por carretera (p. ej. San Andrés): se usa la ruta aérea.
+        console.warn('Ruta por carretera no disponible, usando ruta aérea:', err.message);
+        await calcularRutaAerea();
+        return;
+      }
 
       // Verificar si la ruta pasa por tramos peligrosos y buscar alternativa
       let totalKm = ruta.distanciaMetros / 1000;
@@ -1761,7 +1803,17 @@
       };
 
       state.modoAereo = true;
-      state.tramosAereo = { avion: coordsAvion, carro1: coordsCarro1, carro2: coordsCarro2, apOri, apDes };
+      state.tramosAereo = {
+        avion: coordsAvion,
+        carro1: coordsCarro1,
+        carro2: coordsCarro2,
+        apOri,
+        apDes,
+        distCarro1: rutaCarro1.distanciaMetros,
+        distCarro2: rutaCarro2.distanciaMetros,
+        distAvion,
+        durAvion,
+      };
       state.rutaBase = ruta;
       state.rutaActual = ruta;
       state.elevacion = elevacion;
@@ -1800,14 +1852,13 @@
         p._distKm = nearest.properties.location || 0;
         AltimetriaModule.agregarParada(p.lat, p.lon, p.nombre, p._distKm, mapaEtiquetas.get('parada_' + p.id) || '', p.id, 'parada');
       });
-      AltimetriaModule.renderizarVisibles();
 
       MapModule.dibujarRuta(geojsonMapa, {
         distanciaMetros: totalDist,
         duracionSegundos: totalDur,
         origenNombre: state.origen?.nombre || 'el origen',
       });
-      MapModule.dibujarTramoAereo(coordsAvion);
+      MapModule.dibujarTramoAereo(coordsAvion, { distanciaMetros: distAvion, duracionSegundos: durAvion });
       MapModule.setMarcadorOrigen(state.origen.lat, state.origen.lon, state.origen.nombre);
       MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);
       MapModule.setMarcadoresEscalas(state.escalas);
@@ -1821,6 +1872,7 @@
       if (el.statTiempoMobile) el.statTiempoMobile.textContent = durTexto;
       renderizarParadas();
       _actualizarBotonAereo();
+      sincronizarModoRutaMovil();
     } catch (err) {
       console.warn('Error al calcular ruta aérea', err);
       _mostrarNotificacion('No se pudo calcular la ruta en avión');
@@ -1989,16 +2041,20 @@
     el.sitiosContador.textContent = String(sitiosOrdenados.length);
     if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = String(sitiosOrdenados.length);
     if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = String(sitiosOrdenados.length);
+    // El botón flotante del mapa solo aparece cuando hay listado.
+    if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.hidden = sitiosOrdenados.length === 0;
 
     if (sitiosOrdenados.length === 0) {
       el.sitiosVacio.hidden = false;
       el.sitiosVacio.textContent = 'Ningún sitio turístico cumple los filtros activos.';
       el.sitiosLista.hidden = true;
+      _syncBotonSitios();
       return;
     }
 
     el.sitiosVacio.hidden = true;
     el.sitiosLista.hidden = false;
+    _syncBotonSitios();
 
     sitiosOrdenados.forEach((sitio, i) => {
       if (sitio.lat == null || sitio.lon == null || isNaN(Number(sitio.lat)) || isNaN(Number(sitio.lon))) return;
@@ -2166,7 +2222,10 @@
       origenNombre: state.origen?.nombre || 'el origen',
     });
     if (state.modoAereo && state.tramosAereo) {
-      MapModule.dibujarTramoAereo(state.tramosAereo.avion);
+      MapModule.dibujarTramoAereo(state.tramosAereo.avion, {
+        distanciaMetros: state.tramosAereo.distAvion,
+        duracionSegundos: state.tramosAereo.durAvion,
+      });
     }
 
     // Enable drag-to-reroute with current waypoints
@@ -2252,10 +2311,7 @@
         AltimetriaModule.agregarParada(p.lat, p.lon, p.nombre, p._distKm, mapaEtiquetas.get('parada_' + p.id) || '', p.id, 'parada');
       });
     }
-    // Si el perfil está visible, se actualiza en el sitio (puntos y letras) sin recargar la página.
-    if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.renderizarVisibles) {
-      AltimetriaModule.renderizarVisibles();
-    }
+    // El perfil no se reconstruye al calcular la ruta: se carga bajo demanda al abrirlo.
     MapModule.setMarcadoresEscalas(state.escalas);
     MapModule.setMarcadoresParadas(state.paradas);
     MapModule.setMarcadoresPuntosDesvio(state.escalas);
@@ -2785,6 +2841,33 @@
     });
   }
 
+  /** Centra el mapa y muestra la ficha de un aeropuerto (salida o llegada) en ruta aérea. */
+  function mostrarCuadroAeropuerto(ap, prefijo) {
+    if (!ap) return;
+    cerrarAltimetria();
+    const map = MapModule.getMap();
+    if (map) map.closePopup();
+    MapModule.centrarEn(ap.latitud, ap.longitud);
+
+    const tramos = state.tramosAereo;
+    const distTxt = (() => {
+      if (!tramos) return '';
+      const dist = prefijo === 'Salida' ? tramos.distCarro1 : tramos.distCarro2;
+      if (dist == null) return '';
+      return `${prefijo}: ${(dist / 1000).toFixed(1)} km por carretera`;
+    })();
+
+    TourismModule.mostrarCuadroInfo({
+      categoria: `Aeropuerto de ${prefijo.toLowerCase()}`,
+      color: '#4a6fa5',
+      nombre: ap.aeropuerto || '',
+      ubicacion: ap.ciudad_origen || '',
+      descripcion: ap.descripcion_ubicacion || '',
+      dist: distTxt,
+      botones: [],
+    });
+  }
+
   function renderizarParadas() {
     sincronizarOrden();
 
@@ -2872,7 +2955,7 @@
       return li;
     }
 
-    function crearFilaAeropuerto(aeropuerto, prefijo) {
+    function crearFilaAeropuerto(aeropuerto, prefijo, distKm) {
       const li = document.createElement('li');
       li.className = 'parada-item parada-item--endpoint';
       li.dataset.tipoParada = 'aeropuerto';
@@ -2882,8 +2965,33 @@
       const nombreEl = document.createElement('span');
       nombreEl.className = 'parada-item__nombre';
       nombreEl.textContent = (prefijo ? prefijo + ': ' : '') + (aeropuerto || '');
+      if (distKm != null) {
+        const distEl = document.createElement('span');
+        distEl.className = 'parada-item__dist';
+        distEl.textContent = ' — ' + distKm.toFixed(1) + ' km';
+        nombreEl.appendChild(distEl);
+      }
       li.appendChild(num);
       li.appendChild(nombreEl);
+      li.role = 'button';
+      li.tabIndex = 0;
+      return li;
+    }
+
+    function accionAeropuerto(ap, prefijo) {
+      return () => {
+        if (_suprimirProximoClic) { _suprimirProximoClic = false; return; }
+        cerrarMenuFila();
+        mostrarCuadroAeropuerto(ap, prefijo);
+      };
+    }
+
+    function construirFilaAeropuerto(tramos, ap, prefijo, distKey) {
+      const li = crearFilaAeropuerto(ap.aeropuerto, prefijo, tramos[distKey] != null ? tramos[distKey] / 1000 : null);
+      li.addEventListener('click', accionAeropuerto(ap, prefijo));
+      li.addEventListener('keydown', (evt) => {
+        if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); accionAeropuerto(ap, prefijo)(); }
+      });
       return li;
     }
 
@@ -2891,7 +2999,7 @@
       el.paradasLista.appendChild(crearFilaExtremo('A', formatMunicipio(state.origen), 'origen'));
     }
     if (state.modoAereo && state.tramosAereo && state.tramosAereo.apOri) {
-      el.paradasLista.appendChild(crearFilaAeropuerto(state.tramosAereo.apOri.aeropuerto, 'Salida'));
+      el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, state.tramosAereo.apOri, 'Salida', 'distCarro1'));
     }
 
     items.forEach((item, idx) => {
@@ -2995,7 +3103,7 @@
     });
 
     if (state.modoAereo && state.tramosAereo && state.tramosAereo.apDes) {
-      el.paradasLista.appendChild(crearFilaAeropuerto(state.tramosAereo.apDes.aeropuerto, 'Llegada'));
+      el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, state.tramosAereo.apDes, 'Llegada', 'distCarro2'));
     }
     if (incluirExtremos) {
       el.paradasLista.appendChild(crearFilaExtremo('Z', formatMunicipio(state.destino), 'destino'));
