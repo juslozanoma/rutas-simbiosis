@@ -470,6 +470,7 @@
         locLi.addEventListener('click', (e) => {
           e.stopPropagation();
           listEl.hidden = true;
+          if (trigger.id === 'origen-input') intercambiarPanel(false);
     ponerEnCargaRuta(true, opciones.silencioso);
           cerrarAltimetria();
           AltimetriaModule.limpiar();
@@ -496,6 +497,7 @@
       pickLi.addEventListener('click', (e) => {
         e.stopPropagation();
         listEl.hidden = true;
+        if (trigger.id === 'origen-input') intercambiarPanel(false);
         iniciarSeleccionMapa((lat, lon) => {
           const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
           trigger.value = nombre;
@@ -569,6 +571,7 @@
       listEl.hidden = true;
       trigger.value = formatMunicipio(m);
       trigger.dataset.selectedId = m.id;
+      if (trigger.id === 'origen-input') intercambiarPanel(false);
       onSelect(m);
     }
 
@@ -634,13 +637,7 @@
 
     trigger.addEventListener('blur', () => {
       setTimeout(() => { cerrar(); }, 200);
-      if (trigger.id === 'origen-input') {
-        // Prueba: al salir del cuadro de origen el panel vuelve a bajar,
-        // salvo que ya se haya enfocado de nuevo.
-        setTimeout(() => {
-          if (document.activeElement !== trigger) intercambiarPanel(false);
-        }, 450);
-      }
+      if (trigger.id === 'origen-input') intercambiarPanel(false);
     });
 
     trigger.addEventListener('keydown', (e) => {
