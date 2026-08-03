@@ -1373,10 +1373,10 @@
       app.classList.add('teclado-abierto');
     };
     aplicar();
-    // El bloque sube con transform (no dispara `resize`): las listas abiertas
-    // se reubican tras cada cambio del teclado para que ninguna quede cortada.
-    _ajustarListasAbiertas();
-    _reposTimer = setTimeout(() => { aplicar(); _ajustarListasAbiertas(); }, 150);
+    // Las listas se reposicionan solo cuando el teclado ya se asentó (400 ms
+    // desde el último evento): durante la animación el bloque y sus listas
+    // suben juntos con el transform (la transición suaviza el movimiento) y
+    // redecidir la dirección en cada evento haría parpadear la lista.
     _reposTimer = setTimeout(() => { aplicar(); _ajustarListasAbiertas(); }, 400);
   }
 
@@ -1437,12 +1437,34 @@
   }
 
   /** Reubica las listas de opciones abiertas tras un cambio del teclado (el
-   *  bloque sube o baja con transform, que no dispara `resize`). */
+   *  bloque sube o baja con transform, que no dispara `resize`) y asegura que
+   *  el cuadro enfocado quede dentro del área visible. */
   function _ajustarListasAbiertas() {
     document.querySelectorAll('.combo__list:not([hidden])').forEach((l) => {
       const trig = l.parentElement && l.parentElement.querySelector('.combo__trigger');
       ajustarComboAlTeclado(trig, l);
     });
+    _garantizarTriggerVisible();
+  }
+
+  /** Tras levantar el bloque, asegura que el cuadro enfocado quede dentro del
+   *  área visible (sobre el teclado) desplazando su contenedor scrolleable.
+   *  Necesario al crear un pueblo intermedio con el "+": el auto-scroll de la
+   *  fila nueva se calcula sin teclado y la fila quedaría oculta bajo él. */
+  function _garantizarTriggerVisible() {
+    const act = document.activeElement;
+    if (!esTriggerCombo(act)) return;
+    const altoVisible = window.innerHeight - _tecladoCubierto();
+    const r = act.getBoundingClientRect();
+    if (r.top >= 0 && r.bottom <= altoVisible) return;
+    let cont = act.parentElement;
+    while (cont && cont !== el.appRoot && cont !== document.body) {
+      if (cont.scrollHeight > cont.clientHeight) break;
+      cont = cont.parentElement;
+    }
+    if (!cont || cont === el.appRoot || cont === document.body) return;
+    if (r.bottom > altoVisible) cont.scrollTop += r.bottom - altoVisible + 8;
+    else if (r.top < 0) cont.scrollTop += r.top - 8;
   }
 
   /** En móvil, coloca la lista de opciones del cuadro sin que el teclado la

@@ -1297,6 +1297,10 @@ input, select{ font-family: inherit; }
     gap: 12px;
   }
 
+  /* Suaviza la subida/bajada del bloque con el teclado (ver teclado-abierto) */
+  .side-panel,
+  .mobile-tab-bar{ transition: transform 0.12s ease-out; }
+
   /* En Ruta: panel-sites muestra solo el hint, paradas crece para llenar */
   #app[data-mobile-tab="ruta"] .panel-sites{ flex: 0 0 auto; }
   #app[data-mobile-tab="ruta"] .panel-paradas{ flex: 1; min-height: 0; overflow-y: auto; }
@@ -1384,8 +1388,9 @@ input, select{ font-family: inherit; }
 
   /* Teclado abierto (cuadro de destino): la interfaz inferior sube en bloque
      (cuadros, botones y barra de navegación) justo por encima del teclado.
-     Sin transición: el bloque sigue el teclado evento a evento y no se
-     separa de él durante la animación del teclado. */
+     La transición (definida en las reglas base del panel/barra) suaviza el
+     movimiento al abrir y cerrar; los re-chequeos (400 ms) dejan el bloque
+     asentado exactamente sobre el teclado. */
   #app.teclado-abierto .side-panel,
   #app.teclado-abierto .mobile-tab-bar{
     transform: translateY(calc(-1 * var(--teclado-alto, 0px)));
