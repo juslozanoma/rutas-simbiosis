@@ -692,6 +692,8 @@ input, select{ font-family: inherit; }
 .sitio-card__add:hover:not(:disabled){ background: var(--teal-500); border-color: var(--teal-500); color: #ffffff; }
 .sitio-card__add:disabled{ opacity: 0.4; cursor: not-allowed; }
 .sitio-card__add .icon-btn__spinner{ width: 12px; height: 12px; }
+.sitio-card__add--quitar{ border-color: #d64541; color: #d64541; }
+.sitio-card__add--quitar:hover:not(:disabled){ background: #d64541; border-color: #d64541; color: #ffffff; }
 
 /* ==========================================================================
    MARCADORES Y POPUPS DEL MAPA
@@ -859,8 +861,20 @@ input, select{ font-family: inherit; }
 }
 .popup-sitio__nombre{ margin: 2px 0 3px; font-size: 0.95rem; color: var(--text-strong); }
 .popup-sitio__ubicacion{ margin: 0 0 5px; font-size: 0.76rem; color: var(--text-muted); }
-.popup-sitio__desc{ margin: 0 0 6px; font-size: 0.8rem; line-height: 1.4; color: var(--text-body); }
+.popup-sitio__desc{ margin: 0 0 6px; font-size: 0.8rem; line-height: 1.4; color: var(--text-body); max-height: 96px; overflow-y: auto; scrollbar-width: thin; }
 .popup-sitio__dist{ margin: 0 0 8px; font-size: 0.72rem; color: var(--teal-600); font-weight: 600; }
+.popup-sitio__detalles{
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 10px;
+  margin: 0 0 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #f4faf8;
+  font-size: 0.72rem;
+}
+.popup-sitio__detalle-label{ color: var(--text-muted); font-weight: 600; }
+.popup-sitio__detalle-valor{ color: var(--text-strong); text-align: right; }
 .popup-sitio__add{
   width: 100%;
   display: flex;

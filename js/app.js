@@ -417,7 +417,7 @@
         locLi.addEventListener('click', (e) => {
           e.stopPropagation();
           listEl.hidden = true;
-          ponerEnCargaRuta(true);
+    ponerEnCargaRuta(true, opciones.silencioso);
           cerrarAltimetria();
           AltimetriaModule.limpiar();
           navigator.geolocation.getCurrentPosition(
@@ -703,6 +703,7 @@
       trigger.dataset.selectedId = m.id;
       seleccion = m;
       actualizarEscalas();
+      row.style.display = 'none';
       if (el.checkAutoOrganizar.checked) organizarAutomaticamente();
     }
 
@@ -760,6 +761,7 @@
           trigger.dataset.selectedId = 'map_' + Date.now();
           seleccion = { id: 'map_' + Date.now(), lat, lon, nombre, departamento: '' };
           actualizarEscalas();
+          row.style.display = 'none';
           if (el.checkAutoOrganizar.checked) organizarAutomaticamente();
         });
       });
@@ -1299,10 +1301,12 @@
   let _soMostrarSitiosVisto = false;
 
   /** Habilita/deshabilita todos los controles de entrada durante el cálculo de ruta. */
-  function ponerEnCargaRuta(cargando) {
+  function ponerEnCargaRuta(cargando, silencioso = false) {
     if (cargando) el.btnCalcular.disabled = true;
     el.btnCalcular.setAttribute('data-loading', cargando ? 'true' : 'false');
-    if (el.loadingRuta) el.loadingRuta.hidden = !cargando;
+    // El spinner Monalisa no debe aparecer en la pestaña Descubre ni en recálculos
+    // silenciosos (p. ej. al agregar un sitio a la ruta).
+    if (el.loadingRuta) el.loadingRuta.hidden = !cargando || silencioso || estaEnPestanaDescubre();
     if (cargando && el.loadingSitios) el.loadingSitios.hidden = true;
     el.btnAgregarEscala.disabled = cargando;
     el.origenInput.disabled = cargando;
@@ -1534,7 +1538,7 @@
         }
       }
 
-      await aplicarRutaCalculada(ruta);
+      await aplicarRutaCalculada(ruta, { mantenerMapa: Boolean(conservarParadas) || opciones.mantenerMapa });
       // Clean up escala DOM rows (pasan a la lista de paradas)
       state.escalas.forEach((e) => { if (e._row && e._row.parentNode) e._row.remove(); });
       state.escalas.forEach((e) => { delete e._row; });
@@ -1593,9 +1597,9 @@
     }
   }
 
-  async function aplicarRutaCalculada(ruta) {
+  async function aplicarRutaCalculada(ruta, opciones = {}) {
     state.rutaBase = ruta;
-    await aplicarRutaConDesvios();
+    await aplicarRutaConDesvios(opciones);
   }
 
   // -------------------------------------------------------------------
@@ -1616,7 +1620,7 @@
       tiempoMaximoMin: usarTiempo ? Number(el.filtroTiempo.value) : 120,
       origen: state.origen,
       destino: state.destino,
-      excluirIds: state.paradas.map((p) => p.id),
+      excluirIds: [],
     };
     const sitiosBase = FiltersModule.filtrarSitiosPorRuta(state.sitios, rutaFiltro.geojson, opciones);
     state.sitiosFiltradosBase = sitiosBase;
@@ -1652,7 +1656,7 @@
     const rutaFiltro = state.rutaBase || state.rutaActual;
     const TAMANO_BLOQUE = 150;
     const sitios = state.sitios.filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)));
-    const idsExcluidos = new Set(state.paradas.map((p) => p.id));
+    const idsExcluidos = new Set();
     const distanciaMax = Number(el.filtroDistancia.value);
     const bbox = FiltersModule.rutaBboxConMargen(rutaFiltro.geojson, distanciaMax);
     const resultados = [];
@@ -1784,13 +1788,14 @@
 
   /** Construye la tarjeta de un sitio en la lista, con acciones de previsualizar y agregar. */
   function crearTarjetaSitio(sitio, idx) {
+    const esParada = state.paradas.some((p) => p.id === sitio.id);
     const li = Utils.crearElemento(`
-      <li class="sitio-card" data-sitio-id="${sitio.id}">
+      <li class="sitio-card${esParada ? ' sitio-card--active' : ''}" data-sitio-id="${sitio.id}">
         <div class="sitio-card__top">
           <span class="sitio-card__nombre"><span class="sitio-card__num">${idx != null ? (idx + 1) + '.' : ''}</span>&nbsp;${sitio.nombre}</span>
           <div class="sitio-card__top-right">
-            <button type="button" class="icon-btn sitio-card__add" title="Agregar a la ruta" aria-label="Agregar ${sitio.nombre} a la ruta">
-              <svg class="icon-btn__icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            <button type="button" class="icon-btn sitio-card__add${esParada ? ' sitio-card__add--quitar' : ''}" title="${esParada ? 'Quitar de la ruta' : 'Agregar a la ruta'}" aria-label="${esParada ? 'Quitar ' + sitio.nombre + ' de la ruta' : 'Agregar ' + sitio.nombre + ' a la ruta'}">
+              <svg class="icon-btn__icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">${esParada ? '<path d="M6 12h12"/>' : '<path d="M12 5v14M5 12h14"/>'}</svg>
               <span class="icon-btn__spinner" aria-hidden="true"></span>
             </button>
           </div>
@@ -1806,7 +1811,11 @@
     const btnAdd = li.querySelector('.sitio-card__add');
     btnAdd.addEventListener('click', (e) => {
       e.stopPropagation();
-      agregarParada(sitio, btnAdd);
+      if (esParada) {
+        quitarSitioDeLaRuta(sitio, li, btnAdd);
+      } else {
+        agregarParada(sitio, btnAdd);
+      }
     });
 
     li.addEventListener('click', () => previsualizarRutaHaciaSitio(sitio, li));
@@ -1906,7 +1915,7 @@
     };
   }
 
-  async function aplicarRutaConDesvios() {
+  async function aplicarRutaConDesvios(opciones = {}) {
     if (!state.rutaBase) return;
     state.rutaActual = await construirRutaConDesvios(state.rutaBase, state.paradas);
 
@@ -2005,7 +2014,8 @@
     MapModule.setMarcadoresEscalas(state.escalas);
     MapModule.setMarcadoresParadas(state.paradas);
     MapModule.setMarcadoresPuntosDesvio(state.escalas);
-    MapModule.encuadrar(state.rutaActual.geojson);
+    // Al añadir/quitar paradas el mapa no debe cambiar de posición.
+    if (!opciones.mantenerMapa) MapModule.encuadrar(state.rutaActual.geojson);
     const distTexto = Utils.formatearDistancia(state.rutaActual.distanciaMetros);
     const durTexto = Utils.formatearDuracion(state.rutaActual.duracionSegundos);
     if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = distTexto;
@@ -2029,31 +2039,38 @@
       if (el.checkAutoOrganizar.checked) {
         await organizarAutomaticamente();
       } else {
-        await aplicarRutaConDesvios();
+        await aplicarRutaConDesvios({ mantenerMapa: true });
         renderizarParadas();
       }
       map.setView(center, zoom, { animate: false });
       limpiarPreview();
-      ejecutarFiltrado();
-      _ocultarSitioDeLaLista(sitio);
+      // Actualiza la tarjeta en su lugar (resaltado + botón "−") sin recargar la lista.
+      _marcarSitioAgregadoEnLista(sitio);
+      MapModule.quitarMarcadorSitio(sitio.id);
     } finally {
       if (boton) ponerEnCarga(boton, false);
     }
   }
 
-  /** Quita de la lista de sitios el sitio que acaba de agregarse a la ruta. */
-  function _ocultarSitioDeLaLista(sitio) {
+  /** Cambia en el lugar la tarjeta de un sitio a "ya agregado" (resaltado y botón −). */
+  function _marcarSitioAgregadoEnLista(sitio) {
     const card = el.sitiosLista.querySelector(`[data-sitio-id="${String(sitio.id)}"]`);
-    if (card) card.remove();
-    const restantes = el.sitiosLista.querySelectorAll('.sitio-card').length;
-    el.sitiosContador.textContent = String(restantes);
-    if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = String(restantes);
-    if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = String(restantes);
-    if (restantes === 0) {
-      el.sitiosVacio.hidden = false;
-      el.sitiosVacio.textContent = 'Ningún sitio turístico cumple los filtros activos.';
-      el.sitiosLista.hidden = true;
-    }
+    if (!card) return;
+    card.classList.add('sitio-card--active');
+    const btn = card.querySelector('.sitio-card__add');
+    if (!btn) return;
+    btn.classList.add('sitio-card__add--quitar');
+    btn.title = 'Quitar de la ruta';
+    btn.setAttribute('aria-label', 'Quitar ' + sitio.nombre + ' de la ruta');
+    btn.innerHTML = '<svg class="icon-btn__icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 12h12"/></svg><span class="icon-btn__spinner" aria-hidden="true"></span>';
+    btn.onclick = (e) => { e.stopPropagation(); quitarSitioDeLaRuta(sitio, card, btn); };
+  }
+
+  /** Quita de la ruta un sitio agregado y restaura su tarjeta a "+" en su lugar. */
+  async function quitarSitioDeLaRuta(sitio, card, boton) {
+    if (boton) ponerEnCarga(boton, true);
+    await eliminarParada(sitio.id);
+    if (boton) ponerEnCarga(boton, false);
   }
 
   // -------------------------------------------------------------------
@@ -2174,17 +2191,36 @@
   async function eliminarParada(sitioId) {
     const idx = state.paradas.findIndex((p) => p.id === sitioId);
     if (idx === -1) return;
+    const sitio = state.paradas[idx];
     state.paradas.splice(idx, 1);
     sincronizarOrden();
+    // Quitar un sitio turístico no afecta el listado de Descubre ni los
+    // marcadores de sitios: solo se recalcula la ruta sin ese desvío.
     if (state.rutaActual) {
-      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
-      state.sitiosFiltrados = [];
-      state.sitiosFiltradosBase = [];
-      renderizarSitios([]);
-      await aplicarRutaConDesvios();
+      await aplicarRutaConDesvios({ mantenerMapa: true });
     }
     renderizarParadas();
     MapModule.setMarcadoresParadas(state.paradas);
+    if (sitio) {
+      _restaurarSitioEnLista(sitio);
+      if (sitio.lat != null && sitio.lon != null) {
+        MapModule.agregarMarcadorSitio(TourismModule.crearMarcador(sitio));
+      }
+    }
+  }
+
+  /** Restaura la tarjeta de un sitio a "agregar" (+) sin recargar el listado. */
+  function _restaurarSitioEnLista(sitio) {
+    const card = el.sitiosLista.querySelector(`[data-sitio-id="${String(sitio.id)}"]`);
+    if (!card) return;
+    card.classList.remove('sitio-card--active');
+    const btn = card.querySelector('.sitio-card__add');
+    if (!btn) return;
+    btn.classList.remove('sitio-card__add--quitar');
+    btn.title = 'Agregar a la ruta';
+    btn.setAttribute('aria-label', 'Agregar ' + sitio.nombre + ' a la ruta');
+    btn.innerHTML = '<svg class="icon-btn__icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="icon-btn__spinner" aria-hidden="true"></span>';
+    btn.onclick = (e) => { e.stopPropagation(); agregarParada(sitio, btn); };
   }
 
   function eliminarEscala(id, recalcular = true) {
@@ -2405,6 +2441,25 @@
     });
   }
 
+  /** Devuelve el municipio completo del catálogo para un punto (por id o nombre). */
+  function _datosMunicipio(punto) {
+    if (!punto || !state.municipios) return null;
+    return state.municipios.find((m) => m.id === punto.id || (punto.nombre && m.nombre === punto.nombre)) || null;
+  }
+
+  /** Detalles del municipio para la ficha informativa (temperatura, altura, población, superficies). */
+  function _detallesMunicipio(punto) {
+    const m = _datosMunicipio(punto);
+    if (!m) return [];
+    const d = [];
+    if (m.temperatura_promedio) d.push({ etiqueta: 'Temperatura', valor: m.temperatura_promedio });
+    if (m.altura) d.push({ etiqueta: 'Altura', valor: m.altura });
+    if (m.poblacion_total) d.push({ etiqueta: 'Población', valor: m.poblacion_total });
+    if (m.superficie_urbana) d.push({ etiqueta: 'Superficie urbana', valor: m.superficie_urbana });
+    if (m.superficie_total) d.push({ etiqueta: 'Superficie total', valor: m.superficie_total });
+    return d;
+  }
+
   /** Centra el mapa y muestra la ficha centrada de un pueblo intermedio. */
   function mostrarCuadroEscala(escala) {
     if (!escala || escala.lat == null || escala.lon == null) return;
@@ -2430,12 +2485,15 @@
       eliminarEscala(escala.id);
     });
 
+    const muni = _datosMunicipio(escala);
     TourismModule.mostrarCuadroInfo({
       categoria: 'Pueblo intermedio',
       color: '#4a6fa5',
       nombre: formatMunicipio(escala),
       ubicacion: escala.departamento || '',
+      descripcion: muni ? (muni.descripción || '') : '',
       dist: '',
+      detalles: _detallesMunicipio(escala),
       botones: [btnCambiar, btnEliminar],
     });
   }
@@ -2458,12 +2516,15 @@
       else irCambiarDestino();
     });
 
+    const muni = _datosMunicipio(extremo);
     TourismModule.mostrarCuadroInfo({
       categoria: tipo === 'origen' ? 'Ciudad de origen' : 'Ciudad de destino',
       color: '#2d7d68',
       nombre: nombre || '',
       ubicacion: departamento || '',
+      descripcion: muni ? (muni.descripción || '') : '',
       dist: '',
+      detalles: _detallesMunicipio(extremo),
       botones: [btnCambiar],
     });
   }
@@ -2698,7 +2759,7 @@
     state.paradas.splice(0, state.paradas.length, ...nuevasParadas);
 
     if (state.rutaActual) {
-      await calcularRutaPrincipal(true);
+      await calcularRutaPrincipal(true, { silencioso: true });
     }
     renderizarParadas();
   }
@@ -2723,7 +2784,7 @@
 
     if (movido.tipo === 'escala') {
       state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
-      await calcularRutaPrincipal(true);
+      await calcularRutaPrincipal(true, { silencioso: true });
     } else {
       await aplicarRutaConDesvios();
     }

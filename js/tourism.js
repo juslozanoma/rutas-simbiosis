@@ -202,6 +202,27 @@ const TourismModule = (() => {
     else descEl.remove();
 
     const distEl = nodo.querySelector('.popup-sitio__dist');
+    if (opciones.detalles && opciones.detalles.length) {
+      const dl = document.createElement('div');
+      dl.className = 'popup-sitio__detalles';
+      opciones.detalles.forEach((d) => {
+        const row = document.createElement('div');
+        row.className = 'popup-sitio__detalle';
+        const label = document.createElement('span');
+        label.className = 'popup-sitio__detalle-label';
+        label.textContent = d.etiqueta;
+        const valor = document.createElement('span');
+        valor.className = 'popup-sitio__detalle-valor';
+        valor.textContent = d.valor;
+        row.appendChild(label);
+        row.appendChild(valor);
+        dl.appendChild(row);
+      });
+      const popup = nodo.querySelector('.popup-sitio');
+      if (distEl) popup.insertBefore(dl, distEl);
+      else popup.appendChild(dl);
+    }
+
     if (opciones.dist) distEl.textContent = opciones.dist;
     else distEl.remove();
 
