@@ -269,7 +269,7 @@
       if (state.rutaActual) {
         el.panelParadas.hidden = false;
       }
-      const ocultarTestigo = esMovil() || !state.rutaActual || _soMostrarSitiosVisto;
+      const ocultarTestigo = !state.rutaActual || _soMostrarSitiosVisto;
       el.btnMostrarSitiosCercanos.hidden = ocultarTestigo;
       el.btnMostrarSitiosCercanos.disabled = ocultarTestigo;
       sincronizarModoRutaMovil();
@@ -765,7 +765,7 @@
       // El cuadro solo se oculta cuando los cuadros de origen/destino ya no
       // están en pantalla (ruta calculada); al inicio permanece visible.
       row.style.display = el.appRoot && el.appRoot.getAttribute('data-ruta-lista') === 'true' ? 'none' : '';
-      if (el.checkAutoOrganizar.checked) organizarAutomaticamente();
+      if (el.checkAutoOrganizar.checked) organizarAutomaticamente(true);
     }
 
     function resaltar(idx) {
@@ -824,7 +824,7 @@
           seleccion = { id: 'map_' + Date.now(), lat, lon, nombre, departamento: '' };
           actualizarEscalas();
           row.style.display = el.appRoot && el.appRoot.getAttribute('data-ruta-lista') === 'true' ? 'none' : '';
-          if (el.checkAutoOrganizar.checked) organizarAutomaticamente();
+          if (el.checkAutoOrganizar.checked) organizarAutomaticamente(true);
         });
       });
       listEl.appendChild(pickLi);
@@ -1091,7 +1091,9 @@
       el.btnAgregarIntermedio.addEventListener('click', () => agregarPuebloIntermedioDesdeLista());
     }
     el.checkAutoOrganizar.addEventListener('change', () => {
-      if (el.checkAutoOrganizar.checked) organizarAutomaticamente();
+      if (el.checkAutoOrganizar.checked) {
+        organizarAutomaticamente(state.escalas.some((e) => e.lat != null) || state.paradas.length > 0);
+      }
       renderizarParadas();
     });
     // Descubre Colombia buttons handlers
@@ -1325,11 +1327,14 @@
   }
 
   // Estado del reposicionamiento en bloque de la interfaz inferior.
-  // Con `interactive-widget=resizes-content` (meta viewport) Chrome Android
-  // encoge el layout viewport con el teclado y la barra fija sube sola: aquí
-  // cubierto queda en 0 y no se aplica ningún transform. En pantalla completa
-  // el meta no aplica, así que el bloque (cuadros, botones y barra de
-  // navegación) sube EXACTAMENTE lo que el teclado tapa del área visible.
+  // El bloque (cuadros de búsqueda, botones y barra de navegación) sube con
+  // transform EXACTAMENTE lo que el teclado tapa del área visible. Así el panel
+  // conserva su altura completa: el espacio en blanco sobre la barra inferior
+  // se mantiene y las listas de opciones de TODOS los cuadros (origen, destino
+  // y pueblos intermedios) pueden desplegarse sin cortarse.
+  // (Con interactive-widget=resizes-content o VirtualKeyboard overlayContent
+  // en falso, el panel se encoge con el teclado y las opciones quedan cortadas,
+  // por eso el teclado se superpone y el bloque se levanta con transform).
   // Se espera a que el teclado se asiente para no aplicar un transform
   // intermedio (eso dejaba un hueco en blanco bajo el bloque).
   let _reposActivo = false;
@@ -1337,7 +1342,6 @@
 
   function reposicionarInterfazTeclado(activar) {
     const app = el.appRoot;
-    const vv = window.visualViewport;
     const restaurar = () => {
       app.classList.remove('teclado-abierto');
       app.style.removeProperty('--teclado-alto');
@@ -1349,11 +1353,11 @@
       return;
     }
     const aplicar = () => {
-      if (!_reposActivo || !esMovil() || !vv) {
+      if (!_reposActivo || !esMovil()) {
         restaurar();
         return;
       }
-      const cubierto = Math.round(window.innerHeight - (vv.height + vv.offsetTop));
+      const cubierto = _tecladoCubierto();
       if (cubierto <= 0) {
         restaurar();
         return;
@@ -1365,13 +1369,30 @@
     _reposTimer = setTimeout(aplicar, 150);
   }
 
+  /** Cuánto tapa el teclado del área visible: prioriza la geometría exacta de
+   *  la VirtualKeyboard API (que también funciona en pantalla completa, donde
+   *  visualViewport puede no actualizarse) y cae al visualViewport. */
+  function _tecladoCubierto() {
+    try {
+      const vk = navigator.virtualKeyboard;
+      if (vk && typeof vk.boundingRect !== 'undefined' && vk.boundingRect && vk.boundingRect.height > 0) {
+        return Math.round(Math.max(0, window.innerHeight - vk.boundingRect.top));
+      }
+    } catch (e) { /* ignorar */ }
+    if (window.visualViewport) {
+      return Math.round(window.innerHeight - (window.visualViewport.height + window.visualViewport.offsetTop));
+    }
+    return 0;
+  }
+
   const esTriggerCombo = (t) => Boolean(t && t.classList && t.classList.contains('combo__trigger'));
 
-  // VirtualKeyboard API: en pantalla completa el meta interactive-widget y el
-  // visualViewport no encogen el layout, pero overlayContent=false sí lo hace:
-  // la barra inferior sube sola por encima del teclado sin transform.
+  // VirtualKeyboard API en modo superposición: el layout NO se encoge con el
+  // teclado (el panel conserva su altura y las opciones no se cortan) y
+  // `geometrychange` entrega la geometría real del teclado para levantar el
+  // bloque (también en pantalla completa).
   if (navigator.virtualKeyboard && typeof navigator.virtualKeyboard.overlayContent !== 'undefined') {
-    try { navigator.virtualKeyboard.overlayContent = false; } catch (e) { /* ignorar */ }
+    try { navigator.virtualKeyboard.overlayContent = true; } catch (e) { /* ignorar */ }
   }
 
   // Aplica a TODOS los cuadros de búsqueda (origen, destino y los pueblos
@@ -1391,8 +1412,18 @@
       if (esTriggerCombo(document.activeElement)) reposicionarInterfazTeclado(true);
     });
   }
+  if (navigator.virtualKeyboard && typeof navigator.virtualKeyboard.addEventListener === 'function') {
+    navigator.virtualKeyboard.addEventListener('geometrychange', () => {
+      if (esTriggerCombo(document.activeElement)) reposicionarInterfazTeclado(true);
+      else reposicionarInterfazTeclado(false);
+    });
+  }
 
-  /** En móvil, sube el cuadro seleccionado hacia la parte superior (sobre el teclado). */
+  /** En móvil, coloca la lista de opciones del cuadro sin que el teclado la
+   *  corte: se abre hacia abajo si hay sitio y hacia arriba si no. El cuadro
+   *  enfocado lo sube el bloque completo (teclado-abierto), por eso aquí no se
+   *  usa scrollIntoView: sumado al transform subiría el cuadro fuera de la
+   *  pantalla. */
   function ajustarComboAlTeclado(trigger, listEl) {
     if (!esMovil() || !listEl) return;
     if (!trigger) {
@@ -1401,17 +1432,15 @@
       listEl.style.bottom = '';
       return;
     }
-    // El shell móvil ahora es scrolleable: se centra el input en el área visible
-    // (funciona también en pantalla completa y al modificar origen/destino/pueblo).
-    // Cuando el bloque está subido por el teclado (teclado-abierto) no se centra:
-    // el transform ya coloca el cuadro sobre el teclado y scrollIntoView pelearía.
-    if (!el.appRoot.classList.contains('teclado-abierto')) {
-      try {
-        trigger.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      } catch (e) { /* ignorar */ }
+    const altoVisible = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const espacioAbajo = altoVisible - trigger.getBoundingClientRect().bottom;
+    if (espacioAbajo < 180) {
+      listEl.style.top = 'auto';
+      listEl.style.bottom = 'calc(100% + 6px)';
+    } else {
+      listEl.style.top = 'calc(100% + 6px)';
+      listEl.style.bottom = 'auto';
     }
-    listEl.style.top = 'calc(100% + 6px)';
-    listEl.style.bottom = 'auto';
     listEl.style.maxHeight = '170px'; // 5 elementos
   }
 
@@ -1455,7 +1484,9 @@
     document.querySelectorAll('.sitio-card__add').forEach((b) => { b.disabled = cargando; });
     if (esMovil()) {
       el.panelLocate.hidden = cargando;
-      el.btnMostrarSitiosCercanos.hidden = true;
+      // El testigo "Mostrar sitios" se oculta solo mientras se carga; al terminar
+      // su visibilidad la decide activarPanelTab/_habilitarMostrarSitios.
+      if (cargando) el.btnMostrarSitiosCercanos.hidden = true;
       if (el.panelParadas) el.panelParadas.hidden = cargando;
     }
   }
@@ -1556,6 +1587,7 @@
     conteoCategoriasBase = new Map();
     _sincronizarBotonVisibles();
     _actualizarEstadoBotonesDescubre();
+    _syncBotonSitios();
     if (el.panelSitios) el.panelSitios.hidden = true;
     if (el.sitiosVacio) el.sitiosVacio.textContent = '';
     if (el.sitiosContador) el.sitiosContador.textContent = '0';
@@ -3258,7 +3290,7 @@
     }
   }
 
-  async function organizarAutomaticamente() {
+  async function organizarAutomaticamente(invalidarSitios = false) {
     if (!el.checkAutoOrganizar.checked) return;
     if (!state.origen) return;
     sincronizarOrden();
@@ -3292,6 +3324,21 @@
     state.paradas.splice(0, state.paradas.length, ...nuevasParadas);
 
     if (state.rutaActual) {
+      // Si cambió el trazado (p. ej. se agregó un pueblo intermedio), el tour de
+      // Descubre queda obsoleto: se invalidan distancias cacheadas, se quitan los
+      // marcadores del mapa y se borra el listado para que se recalcule con la
+      // nueva ruta (al reabrir Descubre) en lugar de mostrar los sitios viejos.
+      if (invalidarSitios) {
+        state.sitios.forEach((s) => {
+          delete s.distanciaRutaKm;
+          delete s.tiempoDesvioMin;
+          delete s.distanciaOrigenKm;
+          delete s.distanciaDestinoKm;
+          delete s._offsetLado;
+        });
+        MapModule.limpiarSitios();
+        _borrarListadoDescubre();
+      }
       await calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
     }
     renderizarParadas();
@@ -3316,7 +3363,9 @@
     state.paradas.splice(0, state.paradas.length, ...nuevasParadas);
 
     if (movido.tipo === 'escala') {
-      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; });
+      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
+      MapModule.limpiarSitios();
+      _borrarListadoDescubre();
       await calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
     } else {
       await aplicarRutaConDesvios();
