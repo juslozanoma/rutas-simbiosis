@@ -732,6 +732,24 @@ input, select{ font-family: inherit; }
   padding: 20px;
   pointer-events: none;
 }
+/* En celular, los cuadros de pueblos/paradas aparecen en la mitad inferior de la pantalla. */
+.sitio-overlay--abajo{
+  position: fixed;
+  inset: auto 0 0 0;
+  height: 50%;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+}
+.sitio-overlay--abajo .popup-sitio{
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  border-radius: 14px 14px 0 0;
+  overflow-y: auto;
+}
 .sitio-overlay .popup-sitio{
   background: #ffffff;
   border-radius: var(--radius-md);
@@ -854,7 +872,7 @@ input, select{ font-family: inherit; }
 .popup-sitio{ font-family: var(--font-body); min-width: 190px; }
 .popup-sitio__cat{
   display: inline-block;
-  font-size: 0.6rem;
+  font-size: 0.54rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 700;
@@ -874,21 +892,21 @@ input, select{ font-family: inherit; }
 }
 .popup-sitio__head .popup-sitio__cat{ margin-bottom: 0; }
 .popup-sitio__stat{
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   font-weight: 600;
   color: var(--text-muted);
   white-space: nowrap;
 }
 .popup-sitio__datos{
   margin: 0 0 6px;
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   line-height: 1.4;
   color: var(--text-muted);
 }
-.popup-sitio__nombre{ margin: 2px 0 3px; font-size: 0.95rem; color: var(--text-strong); }
-.popup-sitio__ubicacion{ margin: 0 0 5px; font-size: 0.76rem; color: var(--text-muted); }
-.popup-sitio__desc{ margin: 0 0 6px; font-size: 0.8rem; line-height: 1.4; color: var(--text-body); text-align: justify; }
-.popup-sitio__dist{ margin: 0 0 8px; font-size: 0.72rem; color: var(--teal-600); font-weight: 600; }
+.popup-sitio__nombre{ margin: 2px 0 3px; font-size: 0.89rem; color: var(--text-strong); }
+.popup-sitio__ubicacion{ margin: 0 0 5px; font-size: 0.7rem; color: var(--text-muted); }
+.popup-sitio__desc{ margin: 0 0 6px; font-size: 0.74rem; line-height: 1.4; color: var(--text-body); text-align: justify; }
+.popup-sitio__dist{ margin: 0 0 8px; font-size: 0.66rem; color: var(--teal-600); font-weight: 600; }
 .popup-sitio__add{
   width: 100%;
   display: flex;
@@ -900,7 +918,7 @@ input, select{ font-family: inherit; }
   border: 1px solid var(--teal-500);
   background: #ffffff;
   color: var(--teal-600);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease;
@@ -919,7 +937,7 @@ input, select{ font-family: inherit; }
   flex: 1;
   width: auto;
   height: 28px;
-  font-size: 0.7rem;
+  font-size: 0.64rem;
   padding: 0 8px;
 }
 .popup-sitio__add.popup-sitio__quitar{
@@ -1141,6 +1159,9 @@ input, select{ font-family: inherit; }
   padding-bottom: 2px;
   scrollbar-width: thin;
   scrollbar-color: #9adcc8 transparent;
+}
+@media (max-width: 860px){
+  #descubre-dropdown-categorias{ max-height: 100px; } /* 3 filas en celular */
 }
 #descubre-dropdown-categorias::-webkit-scrollbar{ width: 6px; height: 6px; }
 #descubre-dropdown-categorias::-webkit-scrollbar-thumb{ background: #9adcc8; border-radius: 4px; }

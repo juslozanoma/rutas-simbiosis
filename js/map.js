@@ -196,11 +196,16 @@ const MapModule = (() => {
   // Marcadores de origen / destino
   // ---------------------------------------------------------------------
 
+  let _onClicMarcadorExtremo = null; // ('origen'|'destino') => void
+
+  function setOnClicMarcadorExtremo(fn) { _onClicMarcadorExtremo = fn; }
+
   function setMarcadorOrigen(lat, lon, etiqueta) {
     if (markerOrigen) map.removeLayer(markerOrigen);
     markerOrigen = L.marker([lat, lon], { icon: iconoOrigen(), zIndexOffset: 50 })
       .bindTooltip(`Origen: ${etiqueta}`, { direction: 'top', offset: [0, -10] })
       .addTo(map);
+    markerOrigen.on('click', () => { if (_onClicMarcadorExtremo) _onClicMarcadorExtremo('origen'); });
     _coordOrigen = [lat, lon];
   }
 
@@ -209,6 +214,7 @@ const MapModule = (() => {
     markerDestino = L.marker([lat, lon], { icon: iconoDestino(), zIndexOffset: 50 })
       .bindTooltip(`Destino: ${etiqueta}`, { direction: 'top', offset: [0, -10] })
       .addTo(map);
+    markerDestino.on('click', () => { if (_onClicMarcadorExtremo) _onClicMarcadorExtremo('destino'); });
     _coordDestino = [lat, lon];
   }
 
@@ -336,6 +342,13 @@ const MapModule = (() => {
       const marker = L.marker([e.lat, e.lon], { icon: _iconoEscala(num), zIndexOffset: 950 });
       _marcadorEscalas.set(e.id, marker);
       const muni = _municipioDe(e);
+      let nombrePop = '';
+      if (e.nombre) {
+        nombrePop = e.nombre === 'Bogotá D.C.'
+          ? 'Bogotá, D.C.'
+          : (e.departamento && e.departamento !== e.nombre ? `${e.nombre}, ${e.departamento}` : e.nombre);
+        if (muni && muni.ano_fundacion) nombrePop += ` (${muni.ano_fundacion})`;
+      }
       marker.bindPopup(`
         <div class="popup-sitio">
           <div class="popup-sitio__head">
@@ -343,7 +356,7 @@ const MapModule = (() => {
             ${muni && muni.temperatura_promedio ? `<span class="popup-sitio__stat">${muni.temperatura_promedio}</span>` : ''}
             ${muni && muni.altura ? `<span class="popup-sitio__stat">${_msnm(muni.altura)}</span>` : ''}
           </div>
-          <h3 class="popup-sitio__nombre">${e.nombre ? `${e.nombre}${e.departamento ? ', ' + e.departamento : ''}` : ''}</h3>
+          <h3 class="popup-sitio__nombre">${nombrePop}</h3>
           ${_htmlDatosMunicipio(muni)}
           ${muni && muni.descripción ? `<p class="popup-sitio__desc">${muni.descripción}</p>` : ''}
           <p class="popup-sitio__dist mono"></p>
@@ -380,7 +393,7 @@ const MapModule = (() => {
     return m ? m[1] + ' msnm' : String(altura);
   }
 
-  /** HTML de la línea de habitantes + superficie del municipio. */
+  /** HTML de la línea de datos del municipio (habitantes + superficie). */
   function _htmlDatosMunicipio(muni) {
     if (!muni) return '';
     const partes = [];
@@ -864,11 +877,12 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     capaRuta = null;
   }
 
-  /** Dibuja el tramo aéreo (línea punteada curva) entre dos aeropuertos. */
+  /** Dibuja el tramo aéreo (línea punteada curva) entre dos aeropuertos. Recibe [lon,lat]. */
   function dibujarTramoAereo(coords) {
     limpiarTramoAereo();
     if (!capaAerea || !coords || coords.length < 2) return;
-    L.polyline(coords, {
+    const latLngs = coords.map((c) => [Number(c[1]), Number(c[0])]);
+    L.polyline(latLngs, {
       color: '#4a6fa5',
       weight: 3,
       opacity: 0.9,
@@ -1039,6 +1053,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     iconoSitio,
     setMarcadorOrigen,
     setMarcadorDestino,
+    setOnClicMarcadorExtremo,
     limpiarMarcadoresRuta,
     setMarcadoresParadas,
     setOnEliminarParada,

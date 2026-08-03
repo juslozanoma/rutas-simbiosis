@@ -106,23 +106,25 @@ const TourismModule = (() => {
     }
   }
 
-  /** Monta una ficha centrada en el área visible del mapa (no bloquea la navegación). */
-  function _montarCuadroCentrado(nodo) {
+  /** Monta la ficha centrada (o en la mitad inferior en celular para pueblos/paradas). */
+  function _montarCuadroCentrado(nodo, abajo) {
     const mapContainer = (typeof MapModule !== 'undefined' && MapModule.getMap)
       ? (MapModule.getMap().getContainer())
       : null;
     if (!mapContainer) return false;
 
+    const movil = window.innerWidth <= 860;
     const overlay = document.createElement('div');
-    overlay.className = 'sitio-overlay';
+    overlay.className = 'sitio-overlay' + (movil && abajo ? ' sitio-overlay--abajo' : '');
 
-    // La barra de resumen tapa la parte superior del mapa; al centrar la ficha
-    // en todo el mapa quedaría desplazada hacia arriba, así que se compensa.
-    const sumEl = document.querySelector('.mobile-summary');
-    const topOffset = (sumEl && sumEl.offsetHeight > 0) ? sumEl.offsetHeight : 0;
-    if (topOffset > 0) {
-      overlay.style.paddingTop = `${topOffset}px`;
-      overlay.style.paddingBottom = '0';
+    if (!(movil && abajo)) {
+      // La barra de resumen tapa la parte superior del mapa; se compensa al centrar.
+      const sumEl = document.querySelector('.mobile-summary');
+      const topOffset = (sumEl && sumEl.offsetHeight > 0) ? sumEl.offsetHeight : 0;
+      if (topOffset > 0) {
+        overlay.style.paddingTop = `${topOffset}px`;
+        overlay.style.paddingBottom = '0';
+      }
     }
 
     overlay.appendChild(nodo);
@@ -225,7 +227,7 @@ const TourismModule = (() => {
     if (opciones.dist) distEl.textContent = opciones.dist;
     else distEl.remove();
 
-    // Línea de habitantes + superficie, debajo del nombre del pueblo, en gris.
+    // Línea de datos: habitantes + superficie, debajo del nombre.
     const partes = [];
     if (opciones.poblacion) partes.push(`${opciones.poblacion} habitantes`);
     if (opciones.superficie_total) partes.push(opciones.superficie_total);
@@ -260,7 +262,7 @@ const TourismModule = (() => {
       });
     }
 
-    _montarCuadroCentrado(nodo);
+    _montarCuadroCentrado(nodo, true);
   }
 
   return {

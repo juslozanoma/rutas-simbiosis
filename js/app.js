@@ -269,7 +269,7 @@
       if (state.rutaActual) {
         el.panelParadas.hidden = false;
       }
-      const ocultarTestigo = _soMostrarSitiosVisto || !state.rutaActual || state.sitiosFiltrados.length > 0;
+      const ocultarTestigo = esMovil() || !state.rutaActual || state.sitiosFiltrados.length === 0;
       el.btnMostrarSitiosCercanos.hidden = ocultarTestigo;
       el.btnMostrarSitiosCercanos.disabled = ocultarTestigo;
       sincronizarModoRutaMovil();
@@ -301,6 +301,10 @@
     MapModule.setOnMoverPuntoDesvio(moverPuntoDesvio);
     TourismModule.setOnAgregarParada((sitio, btn) => agregarParada(sitio, btn));
     MapModule.setOnTramoCompletado(onTramoMarcado);
+    MapModule.setOnClicMarcadorExtremo((tipo) => {
+      const extremo = tipo === 'origen' ? state.origen : state.destino;
+      if (extremo) mostrarCuadroExtremo(tipo, extremo.nombre || '', extremo.departamento || '');
+    });
 
     try {
       const [municipios, sitios] = await Promise.all([
@@ -1280,7 +1284,7 @@
     }
   }
 
-  /** En móvil, los menús de los combos abren siempre hacia abajo. */
+  /** En móvil, los menús de los combos abren hacia abajo (≈6 items) sobre el teclado. */
   function ajustarComboAlTeclado(trigger, listEl) {
     if (!esMovil() || !listEl) return;
     const vv = window.visualViewport || null;
@@ -1291,12 +1295,17 @@
       listEl.style.bottom = '';
       return;
     }
-    const rect = trigger.getBoundingClientRect();
-    const espacioAbajo = vh - rect.bottom - 8;
-    // Hasta 6 elementos (≈200px), sin exceder el espacio hasta el teclado.
+    // Desplazar el input para que quede espacio para ~6 elementos sobre el teclado.
+    if (vv && vv.height) {
+      const rect = trigger.getBoundingClientRect();
+      const bottomRel = rect.bottom - vv.offsetTop;
+      if (bottomRel + 210 > vv.height) {
+        window.scrollBy({ top: bottomRel + 210 - vv.height, behavior: 'smooth' });
+      }
+    }
     listEl.style.top = 'calc(100% + 6px)';
     listEl.style.bottom = 'auto';
-    listEl.style.maxHeight = Math.min(200, Math.max(espacioAbajo, 60)) + 'px';
+    listEl.style.maxHeight = '200px';
   }
 
   window.addEventListener('resize', () => {
@@ -1317,7 +1326,6 @@
 
   let ultimosValoresAplicados = { distancia: null, tiempo: null };
   let conteoCategoriasBase = null;
-  let _soMostrarSitiosVisto = false;
 
   /** Habilita/deshabilita todos los controles de entrada durante el cálculo de ruta. */
   function ponerEnCargaRuta(cargando, silencioso = false) {
@@ -1339,30 +1347,31 @@
     document.querySelectorAll('.sitio-card__add').forEach((b) => { b.disabled = cargando; });
     if (esMovil()) {
       el.panelLocate.hidden = cargando;
-      el.btnMostrarSitiosCercanos.hidden = cargando;
+      el.btnMostrarSitiosCercanos.hidden = true;
       if (el.panelParadas) el.panelParadas.hidden = cargando;
     }
   }
 
+  /** Muestra u oculta el testigo "Mostrar sitios" según haya resultados en Descubre. */
+  function _syncBotonSitios() {
+    if (!el.btnMostrarSitiosCercanos) return;
+    // En celular el botón no se usa (la pestaña Descubre cumple ese papel).
+    const hay = state.sitiosFiltrados.length > 0 && !esMovil();
+    el.btnMostrarSitiosCercanos.hidden = !hay;
+    el.btnMostrarSitiosCercanos.disabled = !hay;
+  }
+
   function _habilitarMostrarSitios() {
-    // El testigo "Mostrar sitios" solo aparece la primera vez que se calcula
-    // una ruta; en adelante (aunque cambie origen/destino) no vuelve a salir.
-    if (_soMostrarSitiosVisto) {
-      el.btnMostrarSitiosCercanos.disabled = true;
-      el.btnMostrarSitiosCercanos.hidden = true;
-      return;
-    }
-    _soMostrarSitiosVisto = true;
-    el.btnMostrarSitiosCercanos.disabled = false;
-    el.btnMostrarSitiosCercanos.hidden = false;
+    // Se calcula el listado para saber si hay sitios; el botón solo aparece si hay resultados.
+    _asegurarListadoSitios(true);
   }
 
   let _calculandoListado = false;
 
   /** Calcula el listado de sitios de la pestaña Descubre solo si aún no hay listado. */
-  function _asegurarListadoSitios() {
-    if (!state.rutaActual) return;
-    if (state.sitiosFiltrados.length > 0) return;
+  function _asegurarListadoSitios(silencioso = false) {
+    if (!state.rutaActual) { _syncBotonSitios(); return; }
+    if (state.sitiosFiltrados.length > 0) { if (silencioso) _syncBotonSitios(); return; }
     if (_calculandoListado) return;
     _calculandoListado = true;
 
@@ -1378,12 +1387,17 @@
     if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.hidden = false;
     if (el.loadingRuta) el.loadingRuta.hidden = true;
     el.loadingSitios.hidden = false;
-    el.panelSitios.hidden = false;
+    if (!silencioso) el.panelSitios.hidden = false;
     ejecutarFiltradoProgresivo(() => {
       _calculandoListado = false;
       el.loadingSitios.hidden = true;
       actualizarEstadoBotonesRetry();
-      el.panelSitios.hidden = false;
+      if (silencioso) {
+        el.panelSitios.hidden = true;
+        _syncBotonSitios();
+      } else {
+        el.panelSitios.hidden = false;
+      }
     });
   }
 
@@ -1747,7 +1761,7 @@
       };
 
       state.modoAereo = true;
-      state.tramosAereo = { avion: coordsAvion, carro1: coordsCarro1, carro2: coordsCarro2 };
+      state.tramosAereo = { avion: coordsAvion, carro1: coordsCarro1, carro2: coordsCarro2, apOri, apDes };
       state.rutaBase = ruta;
       state.rutaActual = ruta;
       state.elevacion = elevacion;
@@ -2686,6 +2700,16 @@
     return m ? m[1] + ' msnm' : String(altura);
   }
 
+  /** Nombre para la ficha: "Ciudad, Departamento (año)" (Bogotá se muestra como "Bogotá, D.C."). */
+  function _nombreParaFicha(nombre, departamento, ano) {
+    if (!nombre) return '';
+    let base;
+    if (nombre === 'Bogotá D.C.') base = 'Bogotá, D.C.';
+    else if (departamento && departamento !== nombre) base = nombre + ', ' + departamento;
+    else base = nombre;
+    return ano ? `${base} (${ano})` : base;
+  }
+
   /** Centra el mapa y muestra la ficha centrada de un pueblo intermedio. */
   function mostrarCuadroEscala(escala) {
     if (!escala || escala.lat == null || escala.lon == null) return;
@@ -2716,7 +2740,7 @@
     TourismModule.mostrarCuadroInfo({
       categoria: 'Pueblo intermedio',
       color: '#4a6fa5',
-      nombre: formatMunicipio(escala),
+      nombre: _nombreParaFicha(escala.nombre, escala.departamento, muni ? (muni.ano_fundacion || '') : ''),
       descripcion: muni ? (muni.descripción || '') : '',
       dist: '',
       altura: muni ? _formatearAltura(muni.altura) : '',
@@ -2750,7 +2774,7 @@
     TourismModule.mostrarCuadroInfo({
       categoria: tipo === 'origen' ? 'Ciudad de origen' : 'Ciudad de destino',
       color: '#2d7d68',
-      nombre: [nombre, departamento].filter(Boolean).join(', '),
+      nombre: _nombreParaFicha(nombre, departamento, muni ? (muni.ano_fundacion || '') : ''),
       descripcion: muni ? (muni.descripción || '') : '',
       dist: '',
       altura: muni ? _formatearAltura(muni.altura) : '',
@@ -2848,8 +2872,26 @@
       return li;
     }
 
+    function crearFilaAeropuerto(aeropuerto, prefijo) {
+      const li = document.createElement('li');
+      li.className = 'parada-item parada-item--endpoint';
+      li.dataset.tipoParada = 'aeropuerto';
+      const num = document.createElement('span');
+      num.className = 'parada-item__num';
+      num.textContent = '✈';
+      const nombreEl = document.createElement('span');
+      nombreEl.className = 'parada-item__nombre';
+      nombreEl.textContent = (prefijo ? prefijo + ': ' : '') + (aeropuerto || '');
+      li.appendChild(num);
+      li.appendChild(nombreEl);
+      return li;
+    }
+
     if (incluirExtremos) {
       el.paradasLista.appendChild(crearFilaExtremo('A', formatMunicipio(state.origen), 'origen'));
+    }
+    if (state.modoAereo && state.tramosAereo && state.tramosAereo.apOri) {
+      el.paradasLista.appendChild(crearFilaAeropuerto(state.tramosAereo.apOri.aeropuerto, 'Salida'));
     }
 
     items.forEach((item, idx) => {
@@ -2952,6 +2994,9 @@
       el.paradasLista.appendChild(li);
     });
 
+    if (state.modoAereo && state.tramosAereo && state.tramosAereo.apDes) {
+      el.paradasLista.appendChild(crearFilaAeropuerto(state.tramosAereo.apDes.aeropuerto, 'Llegada'));
+    }
     if (incluirExtremos) {
       el.paradasLista.appendChild(crearFilaExtremo('Z', formatMunicipio(state.destino), 'destino'));
     }
