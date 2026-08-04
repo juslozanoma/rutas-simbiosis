@@ -36,8 +36,6 @@ const MapModule = (() => {
   const _marcadorParadas = new Map(); // paradaId → L.marker (sitios ya agregados a la ruta)
   const _marcadorEscalas = new Map(); // escalaId → L.marker (municipios intermedios)
   const _marcadorPuntosDesvio = new Map(); // escalaId → L.marker (puntos de desvío arrastrados)
-  const _puertosGlobalMarkers = new Map(); // puertoId → L.marker (catálogo, tecla P)
-  const _aeropuertosGlobalMarkers = new Map(); // aeropuertoId → L.marker (catálogo, tecla A)
   let _conexionCentroId = null; // clave 'puerto_id' | 'aeropuerto_id' del marcador con líneas dibujadas
   let _coordOrigen = null; // [lat, lon]
   let _coordDestino = null; // [lat, lon]
@@ -179,15 +177,15 @@ const MapModule = (() => {
     });
   }
 
-  /** Ícono grande de puerto/aeropuerto del catálogo: símbolo blanco grande
-   *  dentro de un círculo verde sólido, sin bordes ni sombra. */
+  /** Ícono de puerto/aeropuerto del catálogo: círculo verde sólido sin
+   *  bordes de 25px, con el símbolo blanco en el centro. */
   function _iconoInfraGlobal(svgHtml) {
     return L.divIcon({
       html: `<div class="infra-global-pin">${svgHtml}</div>`,
       className: '',
-      iconSize: [40, 40],
-      iconAnchor: [20, 20],
-      popupAnchor: [0, -24],
+      iconSize: [25, 25],
+      iconAnchor: [12.5, 12.5],
+      popupAnchor: [0, -15],
     });
   }
 
@@ -1001,7 +999,6 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         iconAnchor: [15, 15],
       });
       const m = L.marker([Number(ap.latitud), Number(ap.longitud)], { icon: icono, zIndexOffset: 1450 });
-      m.bindTooltip(`${titulo}: ${ap.nombre || ''}`, { direction: 'top' });
       m.on('click', () => { if (_onClicInfraGlobal) _onClicInfraGlobal('aeropuerto', ap); });
       m.addTo(capaAerea);
       _aeropuertoMarkers.push(m);
@@ -1028,7 +1025,6 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         iconAnchor: [15, 15],
       });
       const m = L.marker([Number(p.latitud), Number(p.longitud)], { icon: icono, zIndexOffset: 1450 });
-      m.bindTooltip(`${titulo}: ${p.nombre || ''}`, { direction: 'top' });
       m.on('click', () => { if (_onClicInfraGlobal) _onClicInfraGlobal('puerto', p); });
       m.addTo(capaAerea);
       _puertoMarkers.push(m);
@@ -1047,24 +1043,14 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     lista.forEach((p) => {
       if (p.latitud == null || p.longitud == null || isNaN(Number(p.latitud)) || isNaN(Number(p.longitud))) return;
       const marker = L.marker([Number(p.latitud), Number(p.longitud)], { icon: iconoPuertoGlobal(), zIndexOffset: 1100 });
-      marker.bindTooltip(p.nombre || 'Puerto', { direction: 'top', offset: [0, -24], className: 'site-label' });
-      marker.bindPopup(`
-        <div class="popup-sitio">
-          <span class="popup-sitio__cat">Puerto fluvial</span>
-          <h3 class="popup-sitio__nombre">${p.nombre || ''}</h3>
-          ${p.ubicacion ? `<p class="popup-sitio__ubicacion">${p.ubicacion}</p>` : ''}
-          ${p.descripcion ? `<p class="popup-sitio__desc">${p.descripcion}</p>` : ''}
-        </div>
-      `);
+      marker.bindTooltip(p.nombre || 'Puerto', { direction: 'top', offset: [0, -16], className: 'site-label' });
       marker.on('click', () => { if (_onClicInfraGlobal) _onClicInfraGlobal('puerto', p); });
       marker.addTo(capaPuertosGlobal);
-      _puertosGlobalMarkers.set(String(p.id), marker);
     });
   }
 
   function limpiarPuertosGlobal() {
     if (capaPuertosGlobal) capaPuertosGlobal.clearLayers();
-    _puertosGlobalMarkers.clear();
     if (_conexionCentroId && _conexionCentroId.startsWith('puerto_')) limpiarConexiones();
   }
 
@@ -1075,24 +1061,14 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     lista.forEach((ap) => {
       if (ap.latitud == null || ap.longitud == null || isNaN(Number(ap.latitud)) || isNaN(Number(ap.longitud))) return;
       const marker = L.marker([Number(ap.latitud), Number(ap.longitud)], { icon: iconoAeropuertoGlobal(), zIndexOffset: 1100 });
-      marker.bindTooltip(ap.nombre || 'Aeropuerto', { direction: 'top', offset: [0, -24], className: 'site-label' });
-      marker.bindPopup(`
-        <div class="popup-sitio">
-          <span class="popup-sitio__cat">Aeropuerto</span>
-          <h3 class="popup-sitio__nombre">${ap.nombre || ''}</h3>
-          ${ap.ubicacion ? `<p class="popup-sitio__ubicacion">${ap.ubicacion}</p>` : ''}
-          ${ap.descripcion ? `<p class="popup-sitio__desc">${ap.descripcion}</p>` : ''}
-        </div>
-      `);
+      marker.bindTooltip(ap.nombre || 'Aeropuerto', { direction: 'top', offset: [0, -16], className: 'site-label' });
       marker.on('click', () => { if (_onClicInfraGlobal) _onClicInfraGlobal('aeropuerto', ap); });
       marker.addTo(capaAeropuertosGlobal);
-      _aeropuertosGlobalMarkers.set(String(ap.id), marker);
     });
   }
 
   function limpiarAeropuertosGlobal() {
     if (capaAeropuertosGlobal) capaAeropuertosGlobal.clearLayers();
-    _aeropuertosGlobalMarkers.clear();
     if (_conexionCentroId && _conexionCentroId.startsWith('aeropuerto_')) limpiarConexiones();
   }
 
@@ -1125,16 +1101,6 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   function limpiarConexiones() {
     if (capaConexiones) capaConexiones.clearLayers();
     _conexionCentroId = null;
-  }
-
-  /** Abre el popup de un puerto/aeropuerto del catálogo y acerca el mapa. */
-  function abrirPopupInfra(tipo, id) {
-    const mapa = tipo === 'puerto' ? _puertosGlobalMarkers : _aeropuertosGlobalMarkers;
-    const marker = mapa && mapa.get(String(id));
-    if (!marker) return;
-    marker.openPopup();
-    enfocarLugar(marker.getLatLng().lat, marker.getLatLng().lng);
-    _centrarPopupEnVista(marker);
   }
 
   function limpiarTodo() {
@@ -1299,7 +1265,6 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     setOnClicInfraGlobal,
     dibujarConexiones,
     limpiarConexiones,
-    abrirPopupInfra,
     limpiarMarcadoresRuta,
     setMarcadoresParadas,
     setOnEliminarParada,

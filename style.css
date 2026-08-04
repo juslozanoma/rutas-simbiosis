@@ -892,16 +892,15 @@ input, select{ font-family: inherit; }
 }
 
 /* Pin de puerto/aeropuerto del catálogo completo (teclas P y A): círculo
-   verde sólido sin bordes, del mismo tamaño que el botón "Calcular ruta"
-   (40px) y con el símbolo blanco del mismo tamaño que el del botón (17px). */
+   verde sólido sin bordes de 25px, con el símbolo blanco en el centro. */
 .infra-global-pin{
-  width: 40px; height: 40px;
+  width: 25px; height: 25px;
   border-radius: 50%;
   background: #2f7a6b;
   display: flex; align-items: center; justify-content: center;
 }
 .infra-global-pin img{
-  width: 17px; height: 17px;
+  width: 15px; height: 15px;
   filter: brightness(0) invert(1);
 }
 

@@ -382,6 +382,55 @@
     });
   }
 
+  /** Prefijo de la ruta activa ('Salida'|'Conexión'|'Llegada') si `ap` es un
+   *  aeropuerto de la ruta aérea en curso; null si no. */
+  function _prefijoAeropuertoRuta(ap) {
+    const t = state.tramosAereo;
+    if (!t || !ap) return null;
+    if (t.apOri && String(t.apOri.id) === String(ap.id)) return 'Salida';
+    if (t.apDes && String(t.apDes.id) === String(ap.id)) return 'Llegada';
+    if (t.hub && String(t.hub.id) === String(ap.id)) return 'Conexión';
+    return null;
+  }
+
+  /** Prefijo de la ruta activa ('Salida'|'Conexión'|'Llegada') si `p` es un
+   *  puerto de la ruta fluvial en curso; null si no. */
+  function _prefijoPuertoRuta(p) {
+    const t = state.tramosFluviales;
+    if (!t || !p) return null;
+    if (t.po && String(t.po.id) === String(p.id)) return 'Salida';
+    if (t.pd && String(t.pd.id) === String(p.id)) return 'Llegada';
+    if (t.hub && String(t.hub.id) === String(p.id)) return 'Conexión';
+    return null;
+  }
+
+  /** Centra el mapa y muestra la ficha informativa centrada de un
+   *  puerto/aeropuerto del catálogo (o de la ruta, si pertenece a ella), igual
+   *  que con los sitios turísticos. `tipo` es 'puerto' | 'aeropuerto'. */
+  function mostrarCuadroInfra(tipo, item) {
+    if (!item) return;
+    const esPuerto = tipo === 'puerto';
+    const prefijo = esPuerto ? _prefijoPuertoRuta(item) : _prefijoAeropuertoRuta(item);
+    if (prefijo) {
+      if (esPuerto) mostrarCuadroPuerto(item, prefijo);
+      else mostrarCuadroAeropuerto(item, prefijo);
+      return;
+    }
+    cerrarAltimetria();
+    const map = MapModule.getMap();
+    if (map) map.closePopup();
+    MapModule.centrarEn(item.latitud, item.longitud);
+    TourismModule.mostrarCuadroInfo({
+      categoria: esPuerto ? 'Puerto fluvial' : 'Aeropuerto',
+      color: esPuerto ? '#2f7a6b' : '#4a6fa5',
+      nombre: item.nombre || '',
+      ubicacion: item.ubicacion || '',
+      descripcion: item.descripcion || '',
+      dist: '',
+      botones: [],
+    });
+  }
+
 
   function renderizarParadas() {
     sincronizarOrden();

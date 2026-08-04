@@ -18,7 +18,8 @@
       const extremo = tipo === 'origen' ? state.origen : state.destino;
       if (extremo) mostrarCuadroExtremo(tipo, extremo.nombre || '', extremo.departamento || '');
     });
-    // Clic en un puerto/aeropuerto del mapa: líneas hacia todos sus conexiones.
+    // Clic en un puerto/aeropuerto del mapa: solo líneas hacia sus conexiones
+    // (la ficha informativa se muestra al pulsar en la lista de Descubre).
     MapModule.setOnClicInfraGlobal((tipo, item) => {
       const conexiones = tipo === 'puerto' ? _conexionesDePuerto(item) : _conexionesDeAeropuerto(item);
       MapModule.dibujarConexiones(tipo, String(item.id), Number(item.latitud), Number(item.longitud), conexiones, tipo === 'puerto' ? '#2f7a6b' : '#4a6fa5');

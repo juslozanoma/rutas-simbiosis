@@ -464,7 +464,10 @@
     li.addEventListener('click', () => {
       limpiarPreview();
       marcarTarjetaActiva(li);
-      MapModule.abrirPopupInfra(tipo, item.id);
+      const tipo = esPuerto ? 'puerto' : 'aeropuerto';
+      const conexiones = esPuerto ? _conexionesDePuerto(item) : _conexionesDeAeropuerto(item);
+      MapModule.dibujarConexiones(tipo, String(item.id), Number(item.latitud), Number(item.longitud), conexiones, esPuerto ? '#2f7a6b' : '#4a6fa5');
+      if (typeof mostrarCuadroInfra === 'function') mostrarCuadroInfra(tipo, item);
     });
     return li;
   }
