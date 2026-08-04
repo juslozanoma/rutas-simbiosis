@@ -421,69 +421,6 @@
   }
 
   // -------------------------------------------------------------------
-  // Listado del catálogo completo de puertos/aeropuertos (teclas P y A)
-  // -------------------------------------------------------------------
-
-  /** Rellena la pestaña Descubre con todos los puertos o aeropuertos del
-   *  catálogo. `tipo` es 'puerto' | 'aeropuerto'. */
-  function _renderizarInfraListado(tipo) {
-    const lista = tipo === 'puerto' ? state.puertos : state.aeropuertos;
-    limpiarPreview();
-    MapModule.limpiarSitios();
-    el.sitiosLista.innerHTML = '';
-    const items = (lista || []).filter((it) => it.latitud != null && it.longitud != null && !isNaN(Number(it.latitud)) && !isNaN(Number(it.longitud)));
-    el.sitiosContador.textContent = String(items.length);
-    if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = String(items.length);
-    if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = String(items.length);
-    if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.hidden = true;
-
-    if (items.length === 0) {
-      el.sitiosVacio.hidden = false;
-      el.sitiosVacio.textContent = tipo === 'puerto' ? 'No hay puertos con coordenadas.' : 'No hay aeropuertos con coordenadas.';
-      el.sitiosLista.hidden = true;
-      return;
-    }
-    el.sitiosVacio.hidden = true;
-    el.sitiosLista.hidden = false;
-    items.forEach((it, i) => el.sitiosLista.appendChild(_crearTarjetaInfra(it, tipo, i)));
-  }
-
-  function _crearTarjetaInfra(item, tipo, idx) {
-    const esPuerto = tipo === 'puerto';
-    const li = Utils.crearElemento(`
-      <li class="sitio-card" data-infra-id="${item.id}">
-        <div class="sitio-card__top">
-          <span class="sitio-card__nombre"><span class="sitio-card__num">${idx + 1}.</span>&nbsp;${item.nombre}</span>
-        </div>
-        <div class="sitio-card__meta">
-          <span>${(item.ubicacion || '').split('\n')[0]}</span>
-          <span class="mono">${esPuerto ? 'Puerto fluvial' : 'Aeropuerto'}</span>
-        </div>
-      </li>
-    `);
-    li.addEventListener('click', () => {
-      limpiarPreview();
-      marcarTarjetaActiva(li);
-      const tipo = esPuerto ? 'puerto' : 'aeropuerto';
-      const conexiones = esPuerto ? _conexionesDePuerto(item) : _conexionesDeAeropuerto(item);
-      MapModule.dibujarConexiones(tipo, String(item.id), Number(item.latitud), Number(item.longitud), conexiones, esPuerto ? '#2f7a6b' : '#4a6fa5');
-      if (typeof mostrarCuadroInfra === 'function') mostrarCuadroInfra(tipo, item);
-    });
-    return li;
-  }
-
-  /** Restaura el listado de sitios de la ruta (o cierra el panel) al apagar
-   *  el catálogo de puertos/aeropuertos. */
-  function _restaurarListadoDescubre() {
-    const fuente = state.sitiosFiltrados.length ? state.sitiosFiltrados : state.sitiosFiltradosBase;
-    if (state.rutaActual && fuente.length) {
-      renderizarSitios(state.modoVisibilidad === 'visibles' ? _filtrarVisibles(fuente) : fuente);
-    } else if (el.panelSitios) {
-      el.panelSitios.hidden = true;
-    }
-  }
-
-  // -------------------------------------------------------------------
   // Previsualización: ruta directa de origen a un sitio seleccionado
   // -------------------------------------------------------------------
 

@@ -392,6 +392,11 @@ input, select{ font-family: inherit; }
   flex-direction: column;
   gap: 5px;
 }
+/* Con el catálogo de puertos/aeropuertos (A/P) activo la lista de la pestaña
+   Ruta es larga: el panel ocupa el alto disponible y la lista hace scroll. */
+#app[data-infra-activa="true"] .panel-paradas{ flex: 1; min-height: 0; }
+#app[data-infra-activa="true"] .paradas-lista{ flex: 1; min-height: 0; overflow-y: auto; }
+#app[data-infra-activa="true"] .panel-paradas[hidden]{ display: none; }
 .parada-item{
   display: flex;
   align-items: center;
@@ -684,6 +689,8 @@ input, select{ font-family: inherit; }
 .sitio-card__num{ color: var(--teal-600); font-weight: 700; margin-right: 3px; }
 .sitio-card__cat{ display: none; }
 .sitio-card__meta{ font-size: 0.71rem; color: var(--text-muted); margin-top: 3px; display: flex; justify-content: space-between; gap: 8px; }
+.sitio-card__ciudad{ margin: 5px 0 0; font-size: 0.68rem; color: var(--text-muted); }
+.sitio-card__rio{ font-size: 0.62rem; font-weight: 600; color: var(--teal-600); white-space: nowrap; }
 .sitio-card__preview{
   margin: 7px 0 0;
   padding-top: 7px;
@@ -942,6 +949,13 @@ input, select{ font-family: inherit; }
   color: var(--text-muted);
   white-space: nowrap;
 }
+.popup-sitio__rio{
+  margin-left: auto;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--teal-600);
+  white-space: nowrap;
+}
 .popup-sitio__datos{
   margin: 0 0 6px;
   font-size: 0.62rem;
@@ -949,6 +963,7 @@ input, select{ font-family: inherit; }
   color: var(--text-muted);
 }
 .popup-sitio__nombre{ margin: 2px 0 3px; font-size: 0.89rem; color: var(--text-strong); }
+.popup-sitio__ciudad{ margin: 5px 0 0; font-size: 0.68rem; color: var(--text-muted); }
 .popup-sitio__ubicacion{ margin: 0 0 5px; font-size: 0.7rem; color: var(--text-muted); }
 .popup-sitio__desc{ margin: 0 0 6px; font-size: 0.74rem; line-height: 1.4; color: var(--text-body); text-align: justify; }
 .popup-sitio__dist{ margin: 0 0 8px; font-size: 0.66rem; color: var(--teal-600); font-weight: 600; }
@@ -1116,6 +1131,7 @@ input, select{ font-family: inherit; }
 .panel-tab:hover{ color: var(--text-strong); }
 .panel-tab--active{ color: var(--teal-500); border-bottom-color: var(--teal-500); }
 .panel-tab:disabled{ opacity: 0.35; cursor: default; pointer-events: none; }
+.panel-tab[hidden]{ display: none !important; }
 
 /* Íconos de las pestañas: silueta en el mismo gris del texto; verde cuando la
    pestaña está activa (mask con el archivo SVG, color exacto). */
@@ -1333,6 +1349,7 @@ input, select{ font-family: inherit; }
 .mobile-tab-btn--active,
 .mobile-tab-btn:active{ color: var(--teal-500); border-bottom-color: var(--teal-500); }
 .mobile-tab-btn:disabled{ opacity: 0.35; cursor: default; pointer-events: none; }
+.mobile-tab-btn[hidden]{ display: none !important; }
 
 /* ==========================================================================
    RESPONSIVE

@@ -179,8 +179,9 @@ const TourismModule = (() => {
   /**
    * Muestra una ficha informativa centrada (paradas, escalas o extremos) con
    * el mismo comportamiento que la ficha de un sitio turístico.
-   * opciones: { categoria, color, nombre, ubicacion, descripcion, dist,
-   *             altura, temperatura, poblacion, superficie_total, botones[] }
+   * opciones: { categoria, color, nombre, ciudad, rio, ubicacion,
+   *             descripcion, dist, altura, temperatura, poblacion,
+   *             superficie_total, botones[] }
    */
   function mostrarCuadroInfo(opciones) {
     ocultarPopupSitio();
@@ -191,16 +192,19 @@ const TourismModule = (() => {
 
     const catEl = nodo.querySelector('.popup-sitio__cat');
     const color = opciones.color || colorCategoria(opciones.categoria);
-    if (opciones.categoria) {
-      catEl.textContent = opciones.categoria;
-      catEl.style.background = `${color}22`;
-      catEl.style.color = color;
-
+    if (opciones.categoria || opciones.rio) {
       // Fila superior: categoría + altura + temperatura, a la izquierda del cerrar.
       const head = document.createElement('div');
       head.className = 'popup-sitio__head';
       popup.insertBefore(head, catEl);
-      head.appendChild(catEl);
+      if (opciones.categoria) {
+        catEl.textContent = opciones.categoria;
+        catEl.style.background = `${color}22`;
+        catEl.style.color = color;
+        head.appendChild(catEl);
+      } else {
+        catEl.remove();
+      }
       if (opciones.altura) {
         const a = document.createElement('span');
         a.className = 'popup-sitio__stat';
@@ -213,11 +217,21 @@ const TourismModule = (() => {
         t.textContent = opciones.temperatura;
         head.appendChild(t);
       }
+      if (opciones.rio) {
+        const r = document.createElement('span');
+        r.className = 'popup-sitio__rio';
+        r.textContent = opciones.rio;
+        head.appendChild(r);
+      }
     } else {
       catEl.remove();
     }
 
     nodo.querySelector('.popup-sitio__nombre').textContent = opciones.nombre || '';
+
+    const ciudadEl = nodo.querySelector('.popup-sitio__ciudad');
+    if (opciones.ciudad) ciudadEl.textContent = opciones.ciudad;
+    else ciudadEl.remove();
 
     const ubiEl = nodo.querySelector('.popup-sitio__ubicacion');
     if (opciones.ubicacion) ubiEl.textContent = opciones.ubicacion;

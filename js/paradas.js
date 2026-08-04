@@ -345,6 +345,7 @@
       categoria: `Aeropuerto de ${prefijo.toLowerCase()}`,
       color: '#4a6fa5',
       nombre: ap.nombre || '',
+      ciudad: ap.ciudad || '',
       ubicacion: ap.ubicacion || '',
       descripcion: ap.descripcion || '',
       dist: distTxt,
@@ -375,6 +376,8 @@
       categoria: `Puerto fluvial de ${prefijo.toLowerCase()}`,
       color: '#2f7a6b',
       nombre: p.nombre || '',
+      ciudad: p.ciudad || '',
+      rio: p.rio || '',
       ubicacion: p.ubicacion || '',
       descripcion: p.descripcion || '',
       dist: distTxt,
@@ -419,11 +422,12 @@
     cerrarAltimetria();
     const map = MapModule.getMap();
     if (map) map.closePopup();
-    MapModule.centrarEn(item.latitud, item.longitud);
+    MapModule.centrarEn(item.latitud, item.longitud, 13);
     TourismModule.mostrarCuadroInfo({
-      categoria: esPuerto ? 'Puerto fluvial' : 'Aeropuerto',
       color: esPuerto ? '#2f7a6b' : '#4a6fa5',
       nombre: item.nombre || '',
+      ciudad: item.ciudad || '',
+      rio: esPuerto ? item.rio || '' : '',
       ubicacion: item.ubicacion || '',
       descripcion: item.descripcion || '',
       dist: '',
@@ -431,9 +435,74 @@
     });
   }
 
+  // -------------------------------------------------------------------
+  // Listado del catálogo de puertos/aeropuertos en la pestaña Ruta (A/P)
+  // -------------------------------------------------------------------
+
+  /** Rellena la lista de la pestaña Ruta con los puertos y/o aeropuertos del
+   *  catálogo cuyas teclas (P/A) estén activas. */
+  function renderizarInfraListado() {
+    const tipos = [];
+    if (_puertosVisibles) tipos.push('puerto');
+    if (_aeropuertosVisibles) tipos.push('aeropuerto');
+    if (!tipos.length) return;
+    if (!el.paradasLista) return;
+
+    el.paradasLista.innerHTML = '';
+    let n = 0;
+    tipos.forEach((tipo) => {
+      const lista = tipo === 'puerto' ? state.puertos : state.aeropuertos;
+      (lista || []).forEach((it) => {
+        if (it.latitud == null || it.longitud == null || isNaN(Number(it.latitud)) || isNaN(Number(it.longitud))) return;
+        el.paradasLista.appendChild(_crearTarjetaInfra(it, tipo, n));
+        n++;
+      });
+    });
+    el.paradasContador.textContent = String(n);
+    if (el.paradasTitulo) {
+      el.paradasTitulo.textContent = tipos.length > 1 ? 'Aeropuertos y puertos' : (tipos[0] === 'puerto' ? 'Puertos' : 'Aeropuertos');
+    }
+    if (el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = true;
+    const lblAuto = el.checkAutoOrganizar && el.checkAutoOrganizar.closest('label');
+    if (lblAuto) lblAuto.hidden = true;
+    el.panelParadas.hidden = false;
+  }
+
+  function _crearTarjetaInfra(item, tipo, idx) {
+    const esPuerto = tipo === 'puerto';
+    const rio = esPuerto && item.rio ? `<span class="sitio-card__rio">${item.rio}</span>` : '';
+    const li = Utils.crearElemento(`
+      <li class="sitio-card" data-infra-id="${item.id}">
+        <div class="sitio-card__top">
+          <span class="sitio-card__nombre"><span class="sitio-card__num">${idx + 1}.</span>&nbsp;${item.nombre}</span>
+          ${rio}
+        </div>
+        <p class="sitio-card__ciudad">${item.ciudad || ''}</p>
+      </li>
+    `);
+    li.addEventListener('click', () => {
+      const conexiones = esPuerto ? _conexionesDePuerto(item) : _conexionesDeAeropuerto(item);
+      MapModule.dibujarConexiones(tipo, String(item.id), Number(item.latitud), Number(item.longitud), conexiones, esPuerto ? '#2f7a6b' : '#4a6fa5');
+      mostrarCuadroInfra(tipo, item);
+    });
+    return li;
+  }
+
+  /** Restaura la pestaña Ruta al apagar el catálogo de puertos/aeropuertos. */
+  function _restaurarPanelRutaInfra() {
+    if (el.paradasTitulo) el.paradasTitulo.textContent = 'Paradas';
+    if (el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = false;
+    const lblAuto = el.checkAutoOrganizar && el.checkAutoOrganizar.closest('label');
+    if (lblAuto) lblAuto.hidden = false;
+    if (el.panelEscalas) el.panelEscalas.hidden = !el.panelEscalas.children.length;
+    renderizarParadas();
+  }
 
   function renderizarParadas() {
     sincronizarOrden();
+    // Con el catálogo de puertos/aeropuertos (A/P) activo la lista de la
+    // pestaña Ruta la ocupa el listado de infraestructura; no mezclar.
+    if (_puertosVisibles || _aeropuertosVisibles) return;
 
     const items = state.orden.map((o) => {
       if (o.tipo === 'escala') {

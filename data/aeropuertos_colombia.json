@@ -11,7 +11,8 @@
       "LHC",
       "LPD",
       "TFC"
-    ]
+    ],
+    "ciudad": "Leticia (Amazonas)"
   },
   {
     "id": "EOH",
@@ -43,7 +44,8 @@
       "UIB",
       "TLU",
       "VVC"
-    ]
+    ],
+    "ciudad": "Medellín (Antioquia)"
   },
   {
     "id": "MDE",
@@ -74,7 +76,8 @@
       "PUJ",
       "SJU",
       "SCL"
-    ]
+    ],
+    "ciudad": "Rionegro (Antioquia)"
   },
   {
     "id": "TME",
@@ -86,7 +89,8 @@
     "destinos_id": [
       "BOG",
       "RVE"
-    ]
+    ],
+    "ciudad": "Tame (Arauca)"
   },
   {
     "id": "BAQ",
@@ -112,7 +116,8 @@
       "BON",
       "CUR",
       "AUA"
-    ]
+    ],
+    "ciudad": "Soledad (Atlántico)"
   },
   {
     "id": "CTG",
@@ -144,7 +149,8 @@
       "YYZ",
       "GUA",
       "MEX"
-    ]
+    ],
+    "ciudad": "Cartagena (Bolívar)"
   },
   {
     "id": "VUP",
@@ -155,7 +161,8 @@
     "descripcion": "Es el aeropuerto que conecta la tierra del vallenato con el resto del país.\nSu pista y terminal facilitan el flujo constante de pasajeros y comercio.\nPromueve el turismo cultural hacia la región norte de Colombia.\nJuega un papel estratégico en el desarrollo del departamento del Cesar.",
     "destinos_id": [
       "BOG"
-    ]
+    ],
+    "ciudad": "Valledupar (Cesar)"
   },
   {
     "id": "UIB",
@@ -175,7 +182,8 @@
       "COG",
       "BJD",
       "FLT"
-    ]
+    ],
+    "ciudad": "Quibdó (Chocó)"
   },
   {
     "id": "BOG",
@@ -233,7 +241,8 @@
       "VGZ",
       "VVC",
       "EYP"
-    ]
+    ],
+    "ciudad": "Bogotá (Cundinamarca)"
   },
   {
     "id": "SMR",
@@ -248,7 +257,8 @@
       "MDE",
       "PEI",
       "CLO"
-    ]
+    ],
+    "ciudad": "Santa Marta (Magdalena)"
   },
   {
     "id": "VVC",
@@ -268,7 +278,8 @@
       "AUC",
       "SJE",
       "LA M"
-    ]
+    ],
+    "ciudad": "Villavicencio (Meta)"
   },
   {
     "id": "ADZ",
@@ -286,7 +297,8 @@
       "MDE",
       "PEI",
       "PVA"
-    ]
+    ],
+    "ciudad": "San Andrés (San Andrés y Providencia)"
   },
   {
     "id": "BGA",
@@ -308,7 +320,8 @@
       "EYP",
       "PTY",
       "AUA"
-    ]
+    ],
+    "ciudad": "Lebrija (Santander)"
   },
   {
     "id": "IBE",
@@ -321,7 +334,8 @@
       "BOG",
       "MDE",
       "CTG"
-    ]
+    ],
+    "ciudad": "Ibagué (Tolima)"
   },
   {
     "id": "AUC",
@@ -334,7 +348,8 @@
       "BOG",
       "BGA",
       "CUC"
-    ]
+    ],
+    "ciudad": "Arauca (Arauca)"
   },
   {
     "id": "TUN",
@@ -343,7 +358,8 @@
     "longitud": -73.3457039140936,
     "ubicacion": "Se encuentra localizado dentro del perímetro urbano de Tunja.\nSu distancia es de aproximadamente 3.5 kilómetros del centro histórico.",
     "descripcion": "Actualmente no registra operaciones de aerolíneas comerciales regulares.\nSu infraestructura es utilizada principalmente para aviación general.\nRepresenta un potencial de conectividad para el altiplano cundiboyacense.\nLa altitud de la zona exige condiciones especiales de operación.",
-    "destinos_id": []
+    "destinos_id": [],
+    "ciudad": "Tunja (Boyacá)"
   },
   {
     "id": "MZL",
@@ -356,7 +372,8 @@
       "BOG",
       "MDE",
       "CTG"
-    ]
+    ],
+    "ciudad": "Manizales (Caldas)"
   },
   {
     "id": "FLA",
@@ -369,7 +386,8 @@
       "BOG",
       "CLO",
       "PFI"
-    ]
+    ],
+    "ciudad": "Florencia (Caquetá)"
   },
   {
     "id": "EYP",
@@ -381,7 +399,8 @@
     "destinos_id": [
       "BOG",
       "BGA"
-    ]
+    ],
+    "ciudad": "Yopal (Casanare)"
   },
   {
     "id": "PPN",
@@ -397,7 +416,8 @@
       "GPI",
       "LMP",
       "TMB"
-    ]
+    ],
+    "ciudad": "Popayán (Cauca)"
   },
   {
     "id": "MTR",
@@ -410,7 +430,8 @@
       "BOG",
       "BAQ",
       "MDE"
-    ]
+    ],
+    "ciudad": "Montería (Córdoba)"
   },
   {
     "id": "PDA",
@@ -422,7 +443,8 @@
     "destinos_id": [
       "BOG",
       "VVC"
-    ]
+    ],
+    "ciudad": "Inírida (Guainía)"
   },
   {
     "id": "SJE",
@@ -433,7 +455,8 @@
     "descripcion": "Este aeropuerto conecta la puerta de la amazonia con el interior del país.\nFacilita el transporte de productos agrícolas y pasajeros hacia la capital nacional.\nSu pista recibe diariamente aeronaves que desafían la geografía selvática.\nDesempeña un rol estratégico para la economía local y la integración territorial.",
     "destinos_id": [
       "BOG"
-    ]
+    ],
+    "ciudad": "San José del Guaviare (Guaviare)"
   },
   {
     "id": "NVA",
@@ -447,7 +470,8 @@
       "CLO",
       "MDE",
       "SVI"
-    ]
+    ],
+    "ciudad": "Neiva (Huila)"
   },
   {
     "id": "RCH",
@@ -460,7 +484,8 @@
       "BOG",
       "MDE",
       "BAQ"
-    ]
+    ],
+    "ciudad": "Riohacha (La Guajira)"
   },
   {
     "id": "PSO",
@@ -473,7 +498,8 @@
       "BOG",
       "CLO",
       "MDE"
-    ]
+    ],
+    "ciudad": "Chachagüí (Nariño)"
   },
   {
     "id": "CUC",
@@ -495,7 +521,8 @@
       "SMR",
       "TNB",
       "PTY"
-    ]
+    ],
+    "ciudad": "Cúcuta (Norte de Santander)"
   },
   {
     "id": "VGZ",
@@ -508,7 +535,8 @@
       "BOG",
       "PUU",
       "CLO"
-    ]
+    ],
+    "ciudad": "Villagarzón (Putumayo)"
   },
   {
     "id": "AXM",
@@ -520,7 +548,8 @@
     "destinos_id": [
       "BOG",
       "MDE"
-    ]
+    ],
+    "ciudad": "Armenia (Quindío)"
   },
   {
     "id": "PEI",
@@ -538,7 +567,8 @@
       "TLU",
       "PTY",
       "JFK"
-    ]
+    ],
+    "ciudad": "Pereira (Risaralda)"
   },
   {
     "id": "CZU",
@@ -550,7 +580,8 @@
     "destinos_id": [
       "BOG",
       "MDE"
-    ]
+    ],
+    "ciudad": "Corozal (Sucre)"
   },
   {
     "id": "CLO",
@@ -589,7 +620,8 @@
       "SCL",
       "ANF",
       "AUA"
-    ]
+    ],
+    "ciudad": "Palmira (Valle del Cauca)"
   },
   {
     "id": "MVP",
@@ -601,7 +633,8 @@
     "destinos_id": [
       "BOG",
       "VVC"
-    ]
+    ],
+    "ciudad": "Mitú (Vaupés)"
   },
   {
     "id": "PCR",
@@ -614,7 +647,8 @@
       "BOG",
       "VVC",
       "NAR"
-    ]
+    ],
+    "ciudad": "Puerto Carreño (Vichada)"
   },
   {
     "id": "ACD",
@@ -627,7 +661,8 @@
       "BOG",
       "CUC",
       "BGA"
-    ]
+    ],
+    "ciudad": "Aguachica (Cesar)"
   },
   {
     "id": "IPI",
@@ -640,7 +675,8 @@
       "BOG",
       "CLO",
       "PUU"
-    ]
+    ],
+    "ciudad": "Ipiales (Nariño)"
   },
   {
     "id": "LQM",
@@ -652,7 +688,8 @@
     "destinos_id": [
       "BOG",
       "VVC"
-    ]
+    ],
+    "ciudad": "La Macarena (Meta)"
   },
   {
     "id": "PTX",
@@ -664,7 +701,8 @@
     "destinos_id": [
       "BOG",
       "CLO"
-    ]
+    ],
+    "ciudad": "Pitalito (Huila)"
   },
   {
     "id": "PUU",
@@ -679,7 +717,8 @@
       "IPI",
       "LQM",
       "NVA"
-    ]
+    ],
+    "ciudad": "Puerto Asís (Putumayo)"
   },
   {
     "id": "SVI",
@@ -692,7 +731,8 @@
       "BOG",
       "ACR",
       "FLA"
-    ]
+    ],
+    "ciudad": "San Vicente del Caguán (Caquetá)"
   },
   {
     "id": "SKSR",
@@ -704,7 +744,8 @@
     "destinos_id": [
       "BOG",
       "BGA"
-    ]
+    ],
+    "ciudad": "Saravena (Arauca)"
   },
   {
     "id": "SKTM",
@@ -716,7 +757,8 @@
     "destinos_id": [
       "BOG",
       "CLO"
-    ]
+    ],
+    "ciudad": "Tumaco (Nariño)"
   },
   {
     "id": "SKNQ",
@@ -731,7 +773,8 @@
       "MDE",
       "BUN",
       "CRC"
-    ]
+    ],
+    "ciudad": "Nuquí (Chocó)"
   },
   {
     "id": "SKBS",
@@ -742,7 +785,8 @@
     "descripcion": "La terminal aérea facilita el acceso a uno de los destinos de biodiversidad más ricos.\nConecta directamente a los viajeros con la oferta natural del departamento de Chocó.\nRepresenta la principal vía de transporte seguro y rápido para la población local.\nImpulsa el desarrollo turístico sostenible de esta apartada región costera.",
     "destinos_id": [
       "MDE"
-    ]
+    ],
+    "ciudad": "Bahía Solano (Chocó)"
   },
   {
     "id": "SKTL",
@@ -753,7 +797,8 @@
     "descripcion": "Este aeropuerto potencia el turismo vacacional hacia las playas del golfo de Morrosquillo.\nOfrece una alternativa rápida de transporte para los visitantes provenientes de centros urbanos.\nSu cercanía con la zona urbana optimiza la llegada y salida de los pasajeros.\nContribuye significativamente al crecimiento de la infraestructura hotelera y comercial.",
     "destinos_id": [
       "MDE"
-    ]
+    ],
+    "ciudad": "Tolú (Sucre)"
   },
   {
     "id": "SKLG",
@@ -767,7 +812,8 @@
       "PIZ",
       "PUU",
       "FLA"
-    ]
+    ],
+    "ciudad": "Puerto Leguízamo (Putumayo)"
   },
   {
     "id": "SKCH",
@@ -779,7 +825,8 @@
     "destinos_id": [
       "ACR",
       "LET"
-    ]
+    ],
+    "ciudad": "La Chorrera (Amazonas)"
   },
   {
     "id": "SKCP",
@@ -790,7 +837,8 @@
     "descripcion": "El aeródromo es la puerta de entrada para turistas que buscan el mar Caribe.\nSu operación fomenta la economía local basada en la hotelería y los servicios.\nEvita largas travesías marítimas o terrestres para llegar al golfo de Urabá.\nEs una infraestructura indispensable para el turismo ecológico de la frontera.",
     "destinos_id": [
       "MDE"
-    ]
+    ],
+    "ciudad": "Acandí (Chocó)"
   },
   {
     "id": "SKAR",
@@ -803,7 +851,8 @@
       "FLA",
       "LCH",
       "LET"
-    ]
+    ],
+    "ciudad": "Solano (Caquetá)"
   },
   {
     "id": "SKPV",
@@ -815,7 +864,8 @@
     "destinos_id": [
       "ADZ",
       "MDE"
-    ]
+    ],
+    "ciudad": "Providencia (San Andrés y Providencia)"
   },
   {
     "id": "APO",
@@ -827,7 +877,8 @@
     "destinos_id": [
       "BOG",
       "MDE"
-    ]
+    ],
+    "ciudad": "Carepa (Antioquia)"
   },
   {
     "id": "BUN",
@@ -838,7 +889,8 @@
     "descripcion": "Terminal aérea clave para la conectividad de la costa pacífica.\nPermite el flujo rápido de pasajeros hacia la capital nacional.\nOpera principalmente con vuelos regionales de pasajeros.\nSu ubicación costera exige protocolos operativos especializados.",
     "destinos_id": [
       "BOG"
-    ]
+    ],
+    "ciudad": "Buenaventura (Valle del Cauca)"
   },
   {
     "id": "CRC",
@@ -852,7 +904,8 @@
       "NUI",
       "UIB",
       "MDE"
-    ]
+    ],
+    "ciudad": "Cartago (Valle del Cauca)"
   },
   {
     "id": "EJA",
@@ -863,7 +916,8 @@
     "descripcion": "Crucial para la industria de hidrocarburos en Santander.\nDispone de una torre de control propia y moderna infraestructura.\nCanaliza el tráfico ejecutivo y comercial hacia la capital.\nContribuye fuertemente al desarrollo económico regional.",
     "destinos_id": [
       "BOG"
-    ]
+    ],
+    "ciudad": "Barrancabermeja (Santander)"
   },
   {
     "id": "GPI",
@@ -877,7 +931,8 @@
       "CLO",
       "MDE",
       "TIB"
-    ]
+    ],
+    "ciudad": "Guapi (Cauca)"
   },
   {
     "id": "IMR",
@@ -888,7 +943,8 @@
     "descripcion": "Aeropuerto de carácter privado enfocado en la industria energética.\nFacilita el traslado exclusivo de personal técnico y obrero.\nOpera frecuencias estacionales acordes a la actividad del campo.\nOptimiza los tiempos logísticos de las empresas petroleras.",
     "destinos_id": [
       "BOG"
-    ]
+    ],
+    "ciudad": "Puerto Gaitán (Meta)"
   },
   {
     "id": "PTZ",
@@ -900,7 +956,8 @@
     "destinos_id": [
       "MDE",
       "EYP"
-    ]
+    ],
+    "ciudad": "Paipa (Boyacá)"
   },
   {
     "id": "ELB",
@@ -911,7 +968,8 @@
     "descripcion": "Vital para la conectividad de zonas mineras y rurales.\nPermite el flujo constante de pasajeros hacia la capital departamental.\nReduce drásticamente los tiempos de viaje por vía terrestre.\nCuenta con una pista adecuada para aeronaves de tipo turbohélice.",
     "destinos_id": [
       "MDE"
-    ]
+    ],
+    "ciudad": "El Bagre (Antioquia)"
   },
   {
     "id": "Min",
@@ -922,7 +980,8 @@
     "descripcion": "Facilita la comunicación aérea del municipio de Montelíbano.\nConecta eficientemente la zona minera con Medellín.\nOpera principalmente vuelos comerciales de corta distancia.\nEs un pilar para el desarrollo económico del sur cordobés.",
     "destinos_id": [
       "MDE"
-    ]
+    ],
+    "ciudad": "Montelíbano (Córdoba)"
   },
   {
     "id": "COG",
@@ -934,7 +993,8 @@
     "destinos_id": [
       "CLO",
       "MDE"
-    ]
+    ],
+    "ciudad": "Istmina (Chocó)"
   },
   {
     "id": "TIB",
@@ -946,7 +1006,8 @@
     "destinos_id": [
       "CLO",
       "PPN"
-    ]
+    ],
+    "ciudad": "Timbiquí (Cauca)"
   },
   {
     "id": "CAQ",
@@ -957,7 +1018,8 @@
     "descripcion": "El aeropuerto facilita la movilidad comercial y de pasajeros\nentre el bajo cauca antioqueño y la capital departamental.\nJuega un papel estratégico en el desarrollo económico\ny la integración de esta subregión colombiana.",
     "destinos_id": [
       "MDE"
-    ]
+    ],
+    "ciudad": "Caucasia (Antioquia)"
   },
   {
     "id": "LPD",
@@ -968,7 +1030,8 @@
     "descripcion": "Es una terminal vital para la conectividad de la Amazonía\ny el apoyo a misiones de vigilancia en la frontera.\nSu pista corta recibe principalmente vuelos de aerolíneas\nestatales que abastecen a pobladores indígenas locales.",
     "destinos_id": [
       "LET"
-    ]
+    ],
+    "ciudad": "La Pedrera (Amazonas)"
   },
   {
     "id": "TARA",
@@ -979,7 +1042,8 @@
     "descripcion": "Esta infraestructura conecta la densa selva amazónica\ncon los centros urbanos principales del sur del país.\nSu operación regular reduce significativamente el aislamiento\ngeográfico de los habitantes de esta zona fronteriza.",
     "destinos_id": [
       "LET"
-    ]
+    ],
+    "ciudad": "Tarapacá (Amazonas)"
   },
   {
     "id": "ACD",
@@ -990,7 +1054,8 @@
     "descripcion": "Renovado para impulsar el turismo y la economía regional,\neste aeropuerto recibe vuelos comerciales y chárter.\nEs un punto clave para acceder a las hermosas playas\ny selvas vírgenes del golfo de Urabá y sus alrededores.",
     "destinos_id": [
       "MDE"
-    ]
+    ],
+    "ciudad": "Acandí (Chocó)"
   },
   {
     "id": "MMP",
@@ -1002,7 +1067,8 @@
     "destinos_id": [
       "CTG",
       "MDE"
-    ]
+    ],
+    "ciudad": "Mompós (Bolívar)"
   },
   {
     "id": "SGZ",
@@ -1014,7 +1080,8 @@
     "destinos_id": [
       "BGA",
       "MDE"
-    ]
+    ],
+    "ciudad": "San Gil (Santander)"
   },
   {
     "id": "OCV",
@@ -1026,7 +1093,8 @@
     "destinos_id": [
       "CUC",
       "MDE"
-    ]
+    ],
+    "ciudad": "Ocaña (Norte de Santander)"
   },
   {
     "id": "TIBU",
@@ -1037,7 +1105,8 @@
     "descripcion": "Esta terminal aérea cumple una función estratégica\npara el transporte de pasajeros en zona de frontera.\nSu pista facilita la integración comercial y social\ncon la capital del departamento norte-santandereano.",
     "destinos_id": [
       "CUC"
-    ]
+    ],
+    "ciudad": "Tibú (Norte de Santander)"
   },
   {
     "id": "IGO",
@@ -1048,6 +1117,7 @@
     "descripcion": "El establecimiento de nuevas rutas aéreas comerciales\na este aeródromo ha transformado la movilidad regional.\nPermite conectar de forma rápida a los habitantes locales\ncon las principales ciudades del suroccidente colombiano.",
     "destinos_id": [
       "CLO"
-    ]
+    ],
+    "ciudad": "El Charco (Nariño)"
   }
 ]

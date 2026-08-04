@@ -7,6 +7,9 @@
  */
 
   function activarPanelTab(tab) {
+    // Con el catálogo de puertos/aeropuertos (A/P) activo la pestaña Descubre
+    // queda oculta y los cuadros de búsqueda no deben reaparecer al volver a Ruta.
+    if (tab === 'descubre' && (_puertosVisibles || _aeropuertosVisibles)) return;
     document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('panel-tab--active'));
     if (tab === 'ruta') {
       el.btnTabPanelRuta.classList.add('panel-tab--active');
@@ -14,12 +17,12 @@
       el.loadingSitios.hidden = true;
       el.panelSitios.hidden = true;
       el.panelSitios.scrollTop = 0;
-      el.panelLocate.hidden = false;
+      el.panelLocate.hidden = _puertosVisibles || _aeropuertosVisibles;
       el.panelEscalas.hidden = true;
-      if (state.rutaActual) {
+      if (state.rutaActual && !(_puertosVisibles || _aeropuertosVisibles)) {
         el.panelParadas.hidden = false;
       }
-      const ocultarTestigo = !state.rutaActual || _soMostrarSitiosVisto;
+      const ocultarTestigo = !state.rutaActual || _soMostrarSitiosVisto || (_puertosVisibles || _aeropuertosVisibles);
       el.btnMostrarSitiosCercanos.hidden = ocultarTestigo;
       el.btnMostrarSitiosCercanos.disabled = ocultarTestigo;
       sincronizarModoRutaMovil();
@@ -71,6 +74,7 @@
 
   function toggleMobileTab(tab) {
     if (tab === 'descubre' && el.btnTabDescubre && el.btnTabDescubre.disabled) return;
+    if (tab === 'descubre' && (_puertosVisibles || _aeropuertosVisibles)) return;
     const currentTab = el.appRoot.getAttribute('data-mobile-tab');
     const isCollapsed = el.appRoot.getAttribute('data-mobile-panel') === 'collapsed';
     if (currentTab === tab && !isCollapsed) {

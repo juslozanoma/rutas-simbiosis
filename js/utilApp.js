@@ -16,20 +16,20 @@
   }
 
 
+  // Pestaña que estaba activa antes de activar el catálogo de puertos/
+  // aeropuertos (A/P); se restaura al apagar ambas teclas.
+
+  let _pestanaAntesInfra = null;
+
+
   function _syncPuertos() {
     if (typeof MapModule === 'undefined' || !MapModule.setMarcadoresPuertosGlobal) return;
     if (_puertosVisibles) {
       MapModule.setMarcadoresPuertosGlobal(state.puertos);
-      if (typeof _renderizarInfraListado === 'function') {
-        if (el.panelSitios) el.panelSitios.hidden = false;
-        _renderizarInfraListado('puerto');
-      }
     } else {
       MapModule.limpiarPuertosGlobal();
-      if (!_aeropuertosVisibles && typeof _restaurarListadoDescubre === 'function') {
-        _restaurarListadoDescubre();
-      }
     }
+    _syncModoInfra();
   }
 
 
@@ -37,14 +37,49 @@
     if (typeof MapModule === 'undefined' || !MapModule.setMarcadoresAeropuertosGlobal) return;
     if (_aeropuertosVisibles) {
       MapModule.setMarcadoresAeropuertosGlobal(state.aeropuertos);
-      if (typeof _renderizarInfraListado === 'function') {
-        if (el.panelSitios) el.panelSitios.hidden = false;
-        _renderizarInfraListado('aeropuerto');
-      }
     } else {
       MapModule.limpiarAeropuertosGlobal();
-      if (!_puertosVisibles && typeof _restaurarListadoDescubre === 'function') {
-        _restaurarListadoDescubre();
+    }
+    _syncModoInfra();
+  }
+
+
+  /** Con el catálogo de puertos/aeropuertos (teclas A/P) activo se ocultan los
+   *  cuadros de búsqueda de origen/destino y la pestaña Descubre, y la lista de
+   *  la pestaña Ruta muestra el listado de infraestructura. Al apagar ambas
+   *  teclas se restaura el panel tal como estaba. */
+  function _syncModoInfra() {
+    const activo = _puertosVisibles || _aeropuertosVisibles;
+    if (el.appRoot) {
+      if (activo) el.appRoot.setAttribute('data-infra-activa', 'true');
+      else el.appRoot.removeAttribute('data-infra-activa');
+    }
+    if (activo) {
+      if (_pestanaAntesInfra == null) _pestanaAntesInfra = estaEnPestanaDescubre() ? 'descubre' : 'ruta';
+      if (estaEnPestanaDescubre()) {
+        if (esMovil()) setMobileTab('ruta');
+        else activarPanelTab('ruta');
+      }
+      if (el.panelLocate) el.panelLocate.hidden = true;
+      if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.hidden = true;
+      if (el.btnTabDescubre) el.btnTabDescubre.hidden = true;
+      if (el.btnMostrarSitiosCercanos) {
+        el.btnMostrarSitiosCercanos.hidden = true;
+        el.btnMostrarSitiosCercanos.disabled = true;
+      }
+      if (typeof renderizarInfraListado === 'function') renderizarInfraListado();
+    } else {
+      const volverA = _pestanaAntesInfra;
+      _pestanaAntesInfra = null;
+      if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.hidden = false;
+      if (el.btnTabDescubre) el.btnTabDescubre.hidden = false;
+      if (typeof _restaurarPanelRutaInfra === 'function') _restaurarPanelRutaInfra();
+      if (volverA === 'descubre' && !estaEnPestanaDescubre()) {
+        activarPanelTab('descubre');
+        if (esMovil()) setMobileTab('descubre');
+      } else {
+        activarPanelTab('ruta');
+        if (esMovil()) setMobileTab('ruta');
       }
     }
   }

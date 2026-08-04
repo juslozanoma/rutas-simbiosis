@@ -1043,7 +1043,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     lista.forEach((p) => {
       if (p.latitud == null || p.longitud == null || isNaN(Number(p.latitud)) || isNaN(Number(p.longitud))) return;
       const marker = L.marker([Number(p.latitud), Number(p.longitud)], { icon: iconoPuertoGlobal(), zIndexOffset: 1100 });
-      marker.bindTooltip(p.nombre || 'Puerto', { direction: 'top', offset: [0, -16], className: 'site-label' });
+      marker.bindTooltip([p.nombre, p.ciudad].filter(Boolean).join(' - ') || 'Puerto', { direction: 'top', offset: [0, -16], className: 'site-label' });
       marker.on('click', () => { if (_onClicInfraGlobal) _onClicInfraGlobal('puerto', p); });
       marker.addTo(capaPuertosGlobal);
     });
@@ -1061,7 +1061,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     lista.forEach((ap) => {
       if (ap.latitud == null || ap.longitud == null || isNaN(Number(ap.latitud)) || isNaN(Number(ap.longitud))) return;
       const marker = L.marker([Number(ap.latitud), Number(ap.longitud)], { icon: iconoAeropuertoGlobal(), zIndexOffset: 1100 });
-      marker.bindTooltip(ap.nombre || 'Aeropuerto', { direction: 'top', offset: [0, -16], className: 'site-label' });
+      marker.bindTooltip([ap.nombre, ap.ciudad].filter(Boolean).join(' - ') || 'Aeropuerto', { direction: 'top', offset: [0, -16], className: 'site-label' });
       marker.on('click', () => { if (_onClicInfraGlobal) _onClicInfraGlobal('aeropuerto', ap); });
       marker.addTo(capaAeropuertosGlobal);
     });
@@ -1250,8 +1250,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     if (bounds.isValid()) map.fitBounds(bounds, { padding });
   }
 
-  function centrarEn(lat, lon) {
-    map.setView([lat, lon], map.getZoom(), { animate: true });
+  function centrarEn(lat, lon, zoom) {
+    map.setView([lat, lon], zoom != null ? zoom : map.getZoom(), { animate: true });
   }
 
   return {
