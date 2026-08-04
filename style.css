@@ -229,7 +229,7 @@ input, select{ font-family: inherit; }
   border-radius: var(--radius-md);
   z-index: 900;
 }
-.combo__list--6{ max-height: 200px; } /* 6 opciones visibles (origen y pueblo intermedio) */
+.combo__list--6{ max-height: 200px; } /* 6 opciones visibles (origen); el resto con scroll */
 .combo__list li{
   padding: 8px 10px;
   border-radius: var(--radius-sm);

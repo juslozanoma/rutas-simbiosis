@@ -358,6 +358,20 @@
       return;
     }
 
+    // Configuración compartida de los cuadros de municipio (módulo único).
+    MunicipioCombo.configurar({
+      esMovil: () => esMovil(),
+      capitales: CAPITALES,
+      formatear: formatMunicipio,
+      municipios: () => state.municipios,
+      seleccionarMapa: iniciarSeleccionMapa,
+      teclado: {
+        ajustar: ajustarComboAlTeclado,
+        reencajar: reencajarConTeclado,
+        reposicionar: reposicionarInterfazTeclado,
+      },
+    });
+
     initCombos();
     state.categoriasUnicas = obtenerCategoriasUnicas();
     renderizarCategoriasMenu();
@@ -382,49 +396,84 @@
   // Combos de búsqueda (origen / destino)
   // -------------------------------------------------------------------
   function initCombos() {
-    setupCombo(el.origenInput, el.origenList, (m) => {
-      state.origen = m;
-      _limpiarTurfYListado();
-      actualizarEstadoBotonCalcular();
-      _actualizarTextoBotonesOrden();
-      // Fin del modo "solo cuadro de origen": se restaura el panel completo.
-      _modoCambiarOrigen(false);
-      // Al cambiar el origen de una ruta ya calculada: se ocultan los cuadros y
-      // los botones al instante y se recalcula la ruta (OSRM) automáticamente.
-      if (_cambioExtremoEnCurso) {
-        _cambioExtremoEnCurso = null;
-        if (el.origenInput) el.origenInput.placeholder = 'Origen';
-        sincronizarModoRutaMovil();
-        calcularRutaPrincipal();
-      }
-    }, () => {
-      const ids = new Set();
-      if (state.destino?.id) ids.add(state.destino.id);
-      state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
-      return ids;
-    }, true);
-    // El menú de origen muestra 6 opciones visibles (el resto con scroll).
-    el.origenList.classList.add('combo__list--6');
-    setupCombo(el.destinoInput, el.destinoList, (m) => {
-      state.destino = m;
-      _limpiarTurfYListado();
-      actualizarEstadoBotonCalcular();
-      _actualizarTextoBotonesOrden();
-      // Al cambiar el destino de una ruta ya calculada: se ocultan los cuadros y
-      // los botones al instante y se recalcula la ruta (OSRM) automáticamente.
-      if (_cambioExtremoEnCurso) {
-        _cambioExtremoEnCurso = null;
-        if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = false;
-        if (el.destinoInput) el.destinoInput.placeholder = 'Destino';
-        sincronizarModoRutaMovil();
-        calcularRutaPrincipal();
-      }
-    }, () => {
-      const ids = new Set();
-      if (state.origen?.id) ids.add(state.origen.id);
-      state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
-      return ids;
-    }, false);
+    let comboOrigen;
+    comboOrigen = MunicipioCombo.crear({
+      contenedor: document.querySelector('.combo[data-combo="origen"]'),
+      placeholder: 'Origen',
+      lineas: 6, // el menú de origen muestra 6 opciones visibles (el resto con scroll)
+      mostrarUbicacionActual: true,
+      excluirIds: () => {
+        const ids = new Set();
+        if (state.destino?.id) ids.add(state.destino.id);
+        state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
+        return ids;
+      },
+      onSelect: (m) => {
+        state.origen = m;
+        _limpiarTurfYListado();
+        actualizarEstadoBotonCalcular();
+        _actualizarTextoBotonesOrden();
+        // Fin del modo "solo cuadro de origen": se restaura el panel completo.
+        _modoCambiarOrigen(false);
+        // Al cambiar el origen de una ruta ya calculada: se ocultan los cuadros y
+        // los botones al instante y se recalcula la ruta (OSRM) automáticamente.
+        if (_cambioExtremoEnCurso) {
+          _cambioExtremoEnCurso = null;
+          if (el.origenInput) el.origenInput.placeholder = 'Origen';
+          sincronizarModoRutaMovil();
+          calcularRutaPrincipal();
+        }
+      },
+      onEnter: () => {
+        if (state.destino && state.destino.id) calcularRutaPrincipal(false);
+      },
+      onUbicacionActual: () => {
+        ponerEnCargaRuta(true);
+        cerrarAltimetria();
+        AltimetriaModule.limpiar();
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude: lat, longitude: lon } = pos.coords;
+            comboOrigen.aplicar({ id: 'gps_' + Date.now(), lat, lon, nombre: 'Mi ubicación', departamento: '' });
+            ponerEnCargaRuta(false);
+          },
+          () => {
+            ponerEnCargaRuta(false);
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      },
+    });
+
+    MunicipioCombo.crear({
+      contenedor: document.querySelector('.combo[data-combo="destino"]'),
+      placeholder: 'Destino',
+      lineas: 5,
+      excluirIds: () => {
+        const ids = new Set();
+        if (state.origen?.id) ids.add(state.origen.id);
+        state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
+        return ids;
+      },
+      onSelect: (m) => {
+        state.destino = m;
+        _limpiarTurfYListado();
+        actualizarEstadoBotonCalcular();
+        _actualizarTextoBotonesOrden();
+        // Al cambiar el destino de una ruta ya calculada: se ocultan los cuadros y
+        // los botones al instante y se recalcula la ruta (OSRM) automáticamente.
+        if (_cambioExtremoEnCurso) {
+          _cambioExtremoEnCurso = null;
+          if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = false;
+          if (el.destinoInput) el.destinoInput.placeholder = 'Destino';
+          sincronizarModoRutaMovil();
+          calcularRutaPrincipal();
+        }
+      },
+      onEnter: () => {
+        if (state.origen && state.origen.id) calcularRutaPrincipal(false);
+      },
+    });
   }
 
   /** Al cambiar la ciudad de origen o destino se borran el perfil (turf), los sitios
@@ -455,275 +504,6 @@
     if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = false;
   }
 
-  function setupCombo(trigger, listEl, onSelect, excluirIdsFn, showCurrentLocation) {
-    const combo = trigger.parentElement;
-    let deptoSeleccionado = null;
-    let _toqueContrae = false;
-
-    function obtenerDepartamentos() {
-      return [...new Set(state.municipios.map((m) => m.departamento))].sort((a, b) => {
-        if (a === 'Córdoba' && b === 'Cundinamarca') return -1;
-        if (a === 'Cundinamarca' && b === 'Córdoba') return 1;
-        return a.localeCompare(b, 'es');
-      });
-    }
-
-    function obtenerMunicipios(depto) {
-      const capitalNombre = CAPITALES[depto];
-      const lista = state.municipios
-        .filter((m) => m.departamento === depto)
-        .sort((a, b) => a.nombre.localeCompare(b.nombre));
-      if (capitalNombre) {
-        const capitalIdx = lista.findIndex((m) => m.nombre === capitalNombre);
-        if (capitalIdx > 0) {
-          const capital = lista.splice(capitalIdx, 1)[0];
-          lista.unshift(capital);
-        }
-      }
-      return lista;
-    }
-
-    function renderDepartamentos() {
-      deptoSeleccionado = null;
-      listEl.innerHTML = '';
-
-      if (showCurrentLocation) {
-        const locLi = document.createElement('li');
-        locLi.textContent = 'Ubicación actual';
-        locLi.addEventListener('click', (e) => {
-          e.stopPropagation();
-          listEl.hidden = true;
-          if (esMovil()) trigger.blur();
-    ponerEnCargaRuta(true, opciones.silencioso);
-          cerrarAltimetria();
-          AltimetriaModule.limpiar();
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              const { latitude: lat, longitude: lon } = pos.coords;
-              const nombre = 'Mi ubicación';
-              trigger.value = nombre;
-              trigger.dataset.selectedId = 'gps_' + Date.now();
-              onSelect({ id: 'gps_' + Date.now(), lat, lon, nombre, departamento: '' });
-              ponerEnCargaRuta(false);
-            },
-            () => {
-              ponerEnCargaRuta(false);
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
-          );
-        });
-        listEl.appendChild(locLi);
-      }
-
-      const pickLi = document.createElement('li');
-      pickLi.textContent = 'Seleccionar en el mapa';
-      pickLi.addEventListener('click', (e) => {
-        e.stopPropagation();
-        listEl.hidden = true;
-        reposicionarInterfazTeclado(false);
-        if (esMovil()) trigger.blur();
-        iniciarSeleccionMapa((lat, lon) => {
-          const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-          trigger.value = nombre;
-          trigger.dataset.selectedId = 'map_' + Date.now();
-          onSelect({ id: 'map_' + Date.now(), lat, lon, nombre, departamento: '' });
-        });
-      });
-      listEl.appendChild(pickLi);
-      const deptos = obtenerDepartamentos();
-      deptos.forEach((d) => {
-        const li = document.createElement('li');
-        li.textContent = d;
-        li.addEventListener('click', (e) => {
-          e.stopPropagation();
-          deptoSeleccionado = d;
-          const idsExcluidos = excluirIdsFn ? excluirIdsFn() : new Set();
-          const municipios = obtenerMunicipios(d).filter((m) => !idsExcluidos.has(m.id));
-          if (municipios.length === 1) {
-            seleccionar(municipios[0]);
-          } else {
-            renderMunicipios();
-          }
-        });
-        listEl.appendChild(li);
-      });
-      listEl.scrollTop = 0;
-      listEl.hidden = false;
-      resaltar(0);
-    }
-
-    function renderMunicipios() {
-      listEl.innerHTML = '';
-      const back = document.createElement('li');
-      back.className = 'combo__back';
-      back.textContent = '← Volver';
-      back.addEventListener('click', (e) => {
-        e.stopPropagation();
-        renderDepartamentos();
-      });
-      listEl.appendChild(back);
-
-      const idsExcluidos = excluirIdsFn ? excluirIdsFn() : new Set();
-      const municipios = obtenerMunicipios(deptoSeleccionado).filter((m) => !idsExcluidos.has(m.id));
-      municipios.forEach((m) => {
-        const li = document.createElement('li');
-        li.textContent = m.nombre;
-        li.addEventListener('click', (e) => {
-          e.stopPropagation();
-          seleccionar(m);
-        });
-        listEl.appendChild(li);
-      });
-      listEl.scrollTop = 0;
-      listEl.hidden = false;
-      resaltar(0);
-    }
-
-    function cerrar() {
-      listEl.hidden = true;
-      // Si el teclado sigue abierto, el bloque baja del espacio reservado
-      // del menú al lift mínimo.
-      reencajarConTeclado();
-    }
-
-    function resaltar(idx) {
-      const items = [...listEl.querySelectorAll('li:not(.combo__back):not(.no-results)')];
-      items.forEach((li, i) => {
-        if (i === idx) { li.setAttribute('aria-selected', 'true'); li.scrollIntoView({ block: 'nearest' }); }
-        else li.removeAttribute('aria-selected');
-      });
-    }
-
-    function seleccionar(m) {
-      listEl.hidden = true;
-      trigger.value = formatMunicipio(m);
-      trigger.dataset.selectedId = m.id;
-      reposicionarInterfazTeclado(false);
-      onSelect(m);
-      // En móvil ya no se escribe nada: se quita el foco para ocultar el
-      // teclado y el cursor. En escritorio se conserva el foco (Enter calcula).
-      if (esMovil()) trigger.blur();
-    }
-
-    function renderFiltrados(texto) {
-      deptoSeleccionado = null;
-      listEl.innerHTML = '';
-      const idsExcluidos = excluirIdsFn ? excluirIdsFn() : new Set();
-      const q = texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      const munis = state.municipios.filter((m) => {
-        if (idsExcluidos.has(m.id)) return false;
-        const nom = m.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        const dep = m.departamento.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        return nom.includes(q) || dep.includes(q);
-      }).slice(0, 100);
-      if (munis.length === 0) {
-        const li = document.createElement('li');
-        li.className = 'no-results';
-        li.textContent = 'Sin resultados';
-        listEl.appendChild(li);
-      } else {
-        munis.forEach((m) => {
-          const li = document.createElement('li');
-          li.textContent = m.nombre + ' (' + m.departamento + ')';
-          li.addEventListener('click', (e) => { e.stopPropagation(); seleccionar(m); });
-          listEl.appendChild(li);
-        });
-      }
-      listEl.scrollTop = 0;
-      listEl.hidden = false;
-      resaltar(0);
-    }
-
-    function abrir() {
-      const texto = trigger.value.trim();
-      if (trigger.dataset.selectedId) {
-        trigger.value = '';
-        delete trigger.dataset.selectedId;
-        renderDepartamentos();
-      } else if (texto) {
-        renderFiltrados(texto);
-      } else {
-        renderDepartamentos();
-      }
-      ajustarComboAlTeclado(trigger, listEl);
-      reencajarConTeclado();
-    }
-
-    // Toque/clic repetido en el cuadro: sin texto alterna el menú (abre si
-    // está cerrado, cierra si está abierto); con texto el toque solo ubica el
-    // cursor (se cierra el menú si estaba abierto, nunca se abre).
-    trigger.addEventListener('pointerdown', () => {
-      if (document.activeElement !== trigger) return; // el primer toque lo maneja focus
-      if (trigger.value.trim()) {
-        cerrar();
-      } else if (listEl.hidden) {
-        abrir();
-      } else {
-        cerrar();
-      }
-      _toqueContrae = true; // el focus de este toque no debe reabrir
-    });
-
-    trigger.addEventListener('focus', (e) => {
-      e.stopPropagation();
-      if (_toqueContrae) { _toqueContrae = false; return; }
-      if (trigger.value.trim()) { listEl.hidden = true; reencajarConTeclado(); return; }
-      abrir();
-    });
-
-    trigger.addEventListener('input', () => {
-      const texto = trigger.value.trim();
-      if (texto) {
-        renderFiltrados(texto);
-      } else {
-        renderDepartamentos();
-      }
-      delete trigger.dataset.selectedId;
-      reencajarConTeclado();
-    });
-
-    trigger.addEventListener('blur', () => {
-      _toqueContrae = false;
-      cerrar();
-    });
-
-    trigger.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { cerrar(); e.preventDefault(); return; }
-      if (e.key === 'Enter' && listEl.hidden) {
-        if (trigger.dataset.selectedId) {
-          const otro = trigger.id === 'origen-input' ? state.destino : state.origen;
-          if (otro && otro.id) {
-            e.preventDefault();
-            calcularRutaPrincipal(false);
-          }
-        }
-        return;
-      }
-      if (listEl.hidden) return;
-      const items = [...listEl.querySelectorAll('li:not(.combo__back):not(.no-results)')];
-      if (items.length === 0) return;
-      let cur = items.findIndex((li) => li.hasAttribute('aria-selected'));
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        cur = Math.min(cur + 1, items.length - 1);
-        resaltar(cur);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        cur = Math.max(cur - 1, 0);
-        resaltar(cur);
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        const sel = items.find((li) => li.hasAttribute('aria-selected')) || items[0];
-        if (sel) sel.click();
-      }
-    });
-
-    listEl.addEventListener('mousedown', (e) => { e.preventDefault(); });
-
-    document.addEventListener('click', (e) => {
-      if (!combo.contains(e.target)) { cerrar(); trigger.blur(); }
-    });
-  }
 
   function actualizarEstadoBotonCalcular() {
     el.btnCalcular.disabled = !(state.origen && state.destino);
@@ -760,33 +540,46 @@
     const row = document.createElement('div');
     row.className = 'escala-row';
 
-    const combo = document.createElement('div');
-    combo.className = 'combo';
-    const trigger = document.createElement('input');
-    trigger.type = 'search';
-    trigger.className = 'combo__trigger escala-trigger';
-    trigger.placeholder = 'Pueblo intermedio';
-    trigger.autocomplete = 'one-time-code';
-    trigger.autocorrect = 'off';
-    trigger.autocapitalize = 'off';
-    trigger.spellcheck = false;
-    const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    chevron.setAttribute('class', 'combo__chevron');
-    chevron.setAttribute('viewBox', '0 0 24 24');
-    chevron.setAttribute('width', '12');
-    chevron.setAttribute('height', '12');
-    chevron.setAttribute('fill', 'none');
-    chevron.setAttribute('stroke', 'currentColor');
-    chevron.setAttribute('stroke-width', '2.5');
-    chevron.setAttribute('stroke-linecap', 'round');
-    chevron.innerHTML = '<path d="M6 9l6 6 6-6"/>';
-    const listEl = document.createElement('ul');
-    listEl.className = 'combo__list'; // 5 opciones visibles (pueblo intermedio)
-    listEl.role = 'listbox';
-    listEl.hidden = true;
-    combo.appendChild(trigger);
-    combo.appendChild(chevron);
-    combo.appendChild(listEl);
+    const combo = MunicipioCombo.crear({
+      placeholder: 'Pueblo intermedio',
+      lineas: 5, // 5 opciones visibles (pueblo intermedio)
+      clases: ['escala-trigger'],
+      scope: row, // clic fuera de la fila cierra el menú
+      excluirIds: () => {
+        const ids = new Set();
+        if (state.origen?.id) ids.add(state.origen.id);
+        if (state.destino?.id) ids.add(state.destino.id);
+        state.escalas.forEach((e) => { if (e.id != null && e._row !== row) ids.add(e.id); });
+        return ids;
+      },
+      onSelect: (m) => {
+        actualizarEscalas();
+        // El cuadro solo se oculta cuando los cuadros de origen/destino ya no
+        // están en pantalla (ruta calculada); al inicio permanece visible.
+        row.style.display = el.appRoot && el.appRoot.getAttribute('data-ruta-lista') === 'true' ? 'none' : '';
+        if (el.checkAutoOrganizar.checked) organizarAutomaticamente(true);
+        // Recalcular la ruta (OSRM) automáticamente al elegir el pueblo:
+        // - Móvil: siempre (al agregar o cambiar), si auto-organizar ya no recalcó.
+        // - Cambio de pueblo en cualquier dispositivo: recalcular sin doble cálculo.
+        const recalcAuto = () => {
+          if (!state.rutaActual || !el.checkAutoOrganizar.checked) {
+            calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
+          }
+        };
+        if (_escalaEnCambio) {
+          _escalaEnCambio = false;
+          recalcAuto();
+        } else if (esMovil()) {
+          recalcAuto();
+        }
+      },
+      onEnter: () => {
+        actualizarEscalas();
+        calcularRutaPrincipal(false, { ocultarTestigoSitios: true });
+      },
+    });
+
+    row.appendChild(combo.combo);
 
     const calcBtn = document.createElement('button');
     calcBtn.type = 'button';
@@ -797,241 +590,13 @@
       <svg class="icon-btn__icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       <span class="icon-btn__spinner" aria-hidden="true"></span>`;
 
-    row.appendChild(combo);
     row.appendChild(calcBtn);
     el.panelEscalas.appendChild(row);
     el.panelEscalas.hidden = false;
     // El foco abre la lista, el teclado y el acomodo del bloque (un solo
     // movimiento instantáneo), igual que el cuadro de origen al iniciar.
-    trigger.focus();
-    trigger.scrollIntoView({ block: 'nearest' });
-
-    let seleccion = null;
-    let _toqueContrae = false;
-
-    function seleccionar(m) {
-      listEl.hidden = true;
-      trigger.value = formatMunicipio(m);
-      trigger.dataset.selectedId = m.id;
-      seleccion = m;
-      reposicionarInterfazTeclado(false);
-      actualizarEscalas();
-      // En móvil ya no se escribe nada: se quita el foco para ocultar el
-      // teclado y el cursor (igual que en origen/destino).
-      if (esMovil()) trigger.blur();
-      // El cuadro solo se oculta cuando los cuadros de origen/destino ya no
-      // están en pantalla (ruta calculada); al inicio permanece visible.
-      row.style.display = el.appRoot && el.appRoot.getAttribute('data-ruta-lista') === 'true' ? 'none' : '';
-      if (el.checkAutoOrganizar.checked) organizarAutomaticamente(true);
-      // Recalcular la ruta (OSRM) automáticamente al elegir el pueblo:
-      // - Móvil: siempre (al agregar o cambiar), si auto-organizar ya no recalcó.
-      // - Cambio de pueblo en cualquier dispositivo: recalcular sin doble cálculo.
-      const recalcAuto = () => {
-        if (!state.rutaActual || !el.checkAutoOrganizar.checked) {
-          calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
-        }
-      };
-      if (_escalaEnCambio) {
-        _escalaEnCambio = false;
-        recalcAuto();
-      } else if (esMovil()) {
-        recalcAuto();
-      }
-    }
-
-    function resaltar(idx) {
-      const items = [...listEl.querySelectorAll('li:not(.combo__back):not(.no-results)')];
-      items.forEach((li, i) => {
-        if (i === idx) { li.setAttribute('aria-selected', 'true'); li.scrollIntoView({ block: 'nearest' }); }
-        else li.removeAttribute('aria-selected');
-      });
-    }
-
-    function renderFiltrados(texto) {
-      seleccion = null;
-      listEl.innerHTML = '';
-      const idsNoDisponibles = new Set();
-      if (state.origen?.id) idsNoDisponibles.add(state.origen.id);
-      if (state.destino?.id) idsNoDisponibles.add(state.destino.id);
-      state.escalas.forEach((e) => { if (e.id != null && e._row !== row) idsNoDisponibles.add(e.id); });
-      const q = texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      const munis = state.municipios.filter((m) => {
-        if (idsNoDisponibles.has(m.id)) return false;
-        const nom = m.nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        const dep = m.departamento.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        return nom.includes(q) || dep.includes(q);
-      }).slice(0, 100);
-      if (munis.length === 0) {
-        const li = document.createElement('li');
-        li.className = 'no-results';
-        li.textContent = 'Sin resultados';
-        listEl.appendChild(li);
-      } else {
-        munis.forEach((m) => {
-          const li = document.createElement('li');
-          li.textContent = m.nombre + ' (' + m.departamento + ')';
-          li.addEventListener('click', (e) => { e.stopPropagation(); seleccionar(m); });
-          listEl.appendChild(li);
-        });
-      }
-      listEl.scrollTop = 0;
-      listEl.hidden = false;
-      resaltar(0);
-    }
-
-    function renderDeptos() {
-      seleccion = null;
-      listEl.innerHTML = '';
-      const pickLi = document.createElement('li');
-      pickLi.textContent = 'Seleccionar en el mapa';
-      pickLi.addEventListener('click', (e) => {
-        e.stopPropagation();
-        listEl.hidden = true;
-        reposicionarInterfazTeclado(false);
-        if (esMovil()) trigger.blur();
-        iniciarSeleccionMapa((lat, lon) => {
-          const nombre = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
-          trigger.value = nombre;
-          trigger.dataset.selectedId = 'map_' + Date.now();
-          seleccion = { id: 'map_' + Date.now(), lat, lon, nombre, departamento: '' };
-          actualizarEscalas();
-          row.style.display = el.appRoot && el.appRoot.getAttribute('data-ruta-lista') === 'true' ? 'none' : '';
-          if (el.checkAutoOrganizar.checked) organizarAutomaticamente(true);
-          const recalcAuto = () => {
-            if (!state.rutaActual || !el.checkAutoOrganizar.checked) {
-              calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
-            }
-          };
-          if (_escalaEnCambio) {
-            _escalaEnCambio = false;
-            recalcAuto();
-          } else if (esMovil()) {
-            recalcAuto();
-          }
-        });
-      });
-      listEl.appendChild(pickLi);
-      const deptos = [...new Set(state.municipios.map((m) => m.departamento))].sort((a, b) => {
-        if (a === 'Córdoba' && b === 'Cundinamarca') return -1;
-        if (a === 'Cundinamarca' && b === 'Córdoba') return 1;
-        return a.localeCompare(b, 'es');
-      });
-      deptos.forEach((d) => {
-        const li = document.createElement('li');
-        li.textContent = d;
-        li.addEventListener('click', (e) => { e.stopPropagation(); renderMunicipios(d); });
-        listEl.appendChild(li);
-      });
-      listEl.scrollTop = 0;
-      listEl.hidden = false;
-      resaltar(0);
-    }
-    function renderMunicipios(depto) {
-      listEl.innerHTML = '';
-      const back = document.createElement('li');
-      back.className = 'combo__back';
-      back.textContent = '← Volver';
-      back.addEventListener('click', (e) => { e.stopPropagation(); renderDeptos(); });
-      listEl.appendChild(back);
-      const idsNoDisponibles = new Set();
-      if (state.origen?.id) idsNoDisponibles.add(state.origen.id);
-      if (state.destino?.id) idsNoDisponibles.add(state.destino.id);
-      state.escalas.forEach((e) => { if (e.id != null && e._row !== row) idsNoDisponibles.add(e.id); });
-      const muns = state.municipios.filter((m) => m.departamento === depto && !idsNoDisponibles.has(m.id)).sort((a, b) => a.nombre.localeCompare(b.nombre));
-      const capNombre = CAPITALES[depto];
-      const capIdx = capNombre ? muns.findIndex((m) => m.nombre === capNombre) : -1;
-      if (capIdx > 0) { const cap = muns.splice(capIdx, 1)[0]; muns.unshift(cap); }
-      muns.forEach((m) => {
-        const li = document.createElement('li');
-        li.textContent = m.nombre;
-        li.addEventListener('click', (e) => { e.stopPropagation(); seleccionar(m); });
-        listEl.appendChild(li);
-      });
-      listEl.scrollTop = 0;
-      listEl.hidden = false;
-      resaltar(0);
-    }
-
-    function abrir() {
-      const texto = trigger.value.trim();
-      if (trigger.dataset.selectedId) {
-        trigger.value = '';
-        delete trigger.dataset.selectedId;
-        renderDeptos();
-      } else if (texto) {
-        renderFiltrados(texto);
-      } else {
-        renderDeptos();
-      }
-      ajustarComboAlTeclado(trigger, listEl);
-      reencajarConTeclado();
-    }
-
-    // Toque/clic repetido en el cuadro: sin texto alterna el menú (abre si
-    // está cerrado, cierra si está abierto); con texto el toque solo ubica el
-    // cursor (se cierra el menú si estaba abierto, nunca se abre).
-    trigger.addEventListener('pointerdown', () => {
-      if (document.activeElement !== trigger) return; // el primer toque lo maneja focus
-      if (trigger.value.trim()) {
-        listEl.hidden = true;
-        reencajarConTeclado();
-      } else if (listEl.hidden) {
-        abrir();
-      } else {
-        listEl.hidden = true;
-        reencajarConTeclado();
-      }
-      _toqueContrae = true; // el focus de este toque no debe reabrir
-    });
-
-    trigger.addEventListener('focus', (e) => {
-      e.stopPropagation();
-      if (_toqueContrae) { _toqueContrae = false; return; }
-      if (trigger.value.trim()) { listEl.hidden = true; reencajarConTeclado(); return; }
-      abrir();
-    });
-    trigger.addEventListener('input', () => {
-      const texto = trigger.value.trim();
-      if (texto) { renderFiltrados(texto); } else { renderDeptos(); }
-      delete trigger.dataset.selectedId;
-      reencajarConTeclado();
-    });
-    trigger.addEventListener('blur', () => {
-      _toqueContrae = false;
-      listEl.hidden = true;
-    });
-    trigger.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { listEl.hidden = true; reencajarConTeclado(); e.preventDefault(); return; }
-      if (e.key === 'Enter' && listEl.hidden) {
-        if (trigger.dataset.selectedId) {
-          e.preventDefault();
-          actualizarEscalas();
-          calcularRutaPrincipal(false, { ocultarTestigoSitios: true });
-        }
-        return;
-      }
-      if (listEl.hidden) return;
-      const items = [...listEl.querySelectorAll('li:not(.combo__back):not(.no-results)')];
-      if (items.length === 0) return;
-      let cur = items.findIndex((li) => li.hasAttribute('aria-selected'));
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        cur = Math.min(cur + 1, items.length - 1);
-        resaltar(cur);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        cur = Math.max(cur - 1, 0);
-        resaltar(cur);
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        const sel = items.find((li) => li.hasAttribute('aria-selected')) || items[0];
-        if (sel) sel.click();
-      }
-    });
-    listEl.addEventListener('mousedown', (e) => { e.preventDefault(); });
-    document.addEventListener('click', function onClickOutside(e) {
-      if (!row.contains(e.target)) { listEl.hidden = true; }
-    });
+    combo.trigger.focus();
+    combo.trigger.scrollIntoView({ block: 'nearest' });
 
     calcBtn.addEventListener('click', () => {
       actualizarEscalas();
