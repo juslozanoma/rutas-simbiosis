@@ -802,10 +802,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const next = turf.along(line, Math.min(km, d + 0.5), { units: 'kilometers' });
     const bearing = turf.bearing(prev, next);
     const arrowIcon = L.divIcon({
-      html: `<img src="public/car.svg" style="transform:rotate(${bearing - 90}deg);width:26px;height:26px;"/>`,
+      html: `<img src="public/car.svg" style="transform-origin:0% 100%;transform:rotate(${bearing - 90}deg);width:26px;height:26px;"/>`,
       className: '',
       iconSize: [26, 26],
-      iconAnchor: [13, 13],
+      iconAnchor: [0, 26],
     });
     L.marker([pt.geometry.coordinates[1], pt.geometry.coordinates[0]], { icon: arrowIcon, interactive: false }).addTo(_capaFlechas);
   }
