@@ -1091,11 +1091,18 @@ input, select{ font-family: inherit; }
 .panel-tab--active{ color: var(--teal-500); border-bottom-color: var(--teal-500); }
 .panel-tab:disabled{ opacity: 0.35; cursor: default; pointer-events: none; }
 
-/* Íconos de las pestañas: SVG inline que hereda el color del botón
-   (gris con texto inactivo, verde con la pestaña activa). */
+/* Íconos de las pestañas: silueta en el mismo gris del texto; verde cuando la
+   pestaña está activa (mask con el archivo SVG, color exacto). */
 .tab-icon{
   display: inline-block;
   flex-shrink: 0;
+  background-color: var(--text-muted);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
 }
 .tab-icon[hidden]{ display: none; }
 .tab-icon--16{ width: 16px; height: 16px; }
@@ -1103,6 +1110,11 @@ input, select{ font-family: inherit; }
 .tab-icon--20{ width: 20px; height: 20px; }
 .tab-icon--22{ width: 22px; height: 22px; }
 .tab-icon--26{ width: 26px; height: 26px; }
+.tab-icon--sign-post{ -webkit-mask-image: url('public/sign-post.svg'); mask-image: url('public/sign-post.svg'); }
+.tab-icon--colombia{ -webkit-mask-image: url('public/colombia.svg'); mask-image: url('public/colombia.svg'); }
+.tab-icon--bike{ -webkit-mask-image: url('public/bike.svg'); mask-image: url('public/bike.svg'); }
+.panel-tab--active .tab-icon,
+.mobile-tab-btn--active .tab-icon{ background-color: var(--teal-500); }
 
 /* Círculo contador de Descubre: gris cuando la pestaña está inactiva, verde al activarla. */
 #btn-tab-panel-descubre .badge-count,
