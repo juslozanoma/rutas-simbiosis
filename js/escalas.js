@@ -232,7 +232,9 @@
     if (state.rutaActual) {
       if (recalcular) {
         state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
-        _borrarListadoDescubre();
+        // Al borrar un pueblo intermedio se invalidan el perfil (turf) y los
+        // sitios del mapa junto con el listado de Descubre.
+        _limpiarTurfYListado();
         calcularRutaPrincipal(true);
       } else {
         renderizarParadas();
