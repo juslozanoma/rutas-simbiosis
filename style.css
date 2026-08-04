@@ -175,20 +175,20 @@ input, select{ font-family: inherit; }
 }
 .escala-row__remove:hover{ background: #fdf3f1; color: #b3402f; }
 
-/* Botón "Calcular ruta" de cada pueblo intermedio (naranja) */
+/* Botón "Calcular ruta" de cada pueblo intermedio (verde) */
 .escala-row__calc{
   width: 40px; height: 40px;
   flex-shrink: 0;
   border-radius: 50%;
-  border: 1px solid #e8590c;
-  background: #f97316;
+  border: 1px solid var(--teal-500);
+  background: var(--teal-500);
   color: #ffffff;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   padding: 0; margin: 0;
   transition: background 0.12s ease, border-color 0.12s ease, transform 0.05s ease;
 }
-.escala-row__calc:hover{ background: #ea580c; border-color: #ea580c; }
+.escala-row__calc:hover{ background: var(--teal-600); border-color: var(--teal-600); }
 .escala-row__calc:active{ transform: translateY(1px); }
 .escala-row__calc .icon-btn__spinner{ width: 14px; height: 14px; border-width: 2px; }
 .escala-row__calc[data-loading="true"] .icon-btn__icon{ visibility: hidden; }

@@ -650,7 +650,7 @@
     trigger.addEventListener('focus', (e) => {
       e.stopPropagation();
       if (_toqueContrae) { _toqueContrae = false; return; }
-      if (trigger.value.trim()) { listEl.hidden = true; return; }
+      if (trigger.value.trim()) { listEl.hidden = true; reencajarConTeclado(); return; }
       abrir();
     });
 
@@ -667,7 +667,7 @@
 
     trigger.addEventListener('blur', () => {
       _toqueContrae = false;
-      setTimeout(() => { cerrar(); }, 200);
+      cerrar();
     });
 
     trigger.addEventListener('keydown', (e) => {
@@ -764,7 +764,7 @@
     chevron.setAttribute('stroke-linecap', 'round');
     chevron.innerHTML = '<path d="M6 9l6 6 6-6"/>';
     const listEl = document.createElement('ul');
-    listEl.className = 'combo__list combo__list--6'; // 6 opciones visibles (resto con scroll)
+    listEl.className = 'combo__list'; // 5 opciones visibles (pueblo intermedio)
     listEl.role = 'listbox';
     listEl.hidden = true;
     combo.appendChild(trigger);
@@ -784,10 +784,13 @@
     row.appendChild(calcBtn);
     el.panelEscalas.appendChild(row);
     el.panelEscalas.hidden = false;
-    setTimeout(() => {
+    if (esMovil()) {
+      // Móvil: sin foco, sin teclado y sin lift; solo se despliega la lista (5 opciones).
+      abrir();
+    } else {
       trigger.focus();
       trigger.scrollIntoView({ block: 'nearest' });
-    }, 50);
+    }
 
     let seleccion = null;
     let _toqueContrae = false;
@@ -945,7 +948,7 @@
     trigger.addEventListener('focus', (e) => {
       e.stopPropagation();
       if (_toqueContrae) { _toqueContrae = false; return; }
-      if (trigger.value.trim()) { listEl.hidden = true; return; }
+      if (trigger.value.trim()) { listEl.hidden = true; reencajarConTeclado(); return; }
       abrir();
     });
     trigger.addEventListener('input', () => {
@@ -956,7 +959,7 @@
     });
     trigger.addEventListener('blur', () => {
       _toqueContrae = false;
-      setTimeout(() => { listEl.hidden = true; }, 200);
+      listEl.hidden = true;
     });
     trigger.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') { listEl.hidden = true; reencajarConTeclado(); e.preventDefault(); return; }
@@ -1420,65 +1423,47 @@
   // (Con interactive-widget=resizes-content o VirtualKeyboard overlayContent
   // en falso, el panel se encoge con el teclado y las opciones quedan cortadas,
   // por eso el teclado se superpone y el bloque se levanta con transform).
-  // Se espera a que el teclado se asiente para no aplicar un transform
-  // intermedio (eso dejaba un hueco en blanco bajo el bloque).
-  let _reposActivo = false;
-  let _reposTimer = null;
-
-  function reposicionarInterfazTeclado(activar, inmediato = false) {
+  // SIN temporizadores ni transiciones: cada evento del teclado (visualViewport
+  // o geometrychange) aplica el lift al instante, el bloque sigue la animación
+  // del teclado y las listas abiertas se reposicionan en el mismo instante.
+  function reposicionarInterfazTeclado(activar) {
     const app = el.appRoot;
     const restaurar = () => {
       app.classList.remove('teclado-abierto');
       app.style.removeProperty('--teclado-alto');
-    };
-    _reposActivo = Boolean(activar);
-    clearTimeout(_reposTimer);
-    if (!_reposActivo) {
-      restaurar();
       _ajustarListasAbiertas();
+    };
+    if (!activar || !esMovil()) {
+      restaurar();
       return;
     }
-    const aplicar = () => {
-      if (!_reposActivo || !esMovil()) {
-        restaurar();
-        return;
-      }
-      const cubierto = _tecladoCubierto();
-      if (cubierto <= 0) {
-        restaurar();
-        return;
-      }
-      // Lift MÍNIMO: el bloque sube solo lo necesario para que el cuadro
-      // enfocado quede sobre el teclado, no el teclado completo (eso los
-      // llevaba demasiado arriba). Si el cuadro ya está visible, no se sube.
-      // Con la lista del cuadro ABIERTA, se reserva además su alto para que
-      // el menú quepa desplegándose hacia abajo.
-      const altoVisible = window.innerHeight - cubierto;
-      let lift = cubierto;
-      const act = document.activeElement;
-      if (esTriggerCombo(act)) {
-        const r = act.getBoundingClientRect();
-        let extra = 0;
-        const lista = act.parentElement && act.parentElement.querySelector('.combo__list');
-        if (lista && !lista.hidden) {
-          const tope = lista.classList.contains('combo__list--6') ? 200 : 170;
-          extra = Math.min(tope, Math.max(40, lista.scrollHeight));
-        }
-        const necesario = Math.max(0, Math.round(r.bottom + 8 + extra - altoVisible));
-        lift = Math.min(cubierto, necesario);
-      }
-      app.style.setProperty('--teclado-alto', lift + 'px');
-      app.classList.add('teclado-abierto');
-    };
-    // UN SOLO SALTO: el lift no sigue la animación del teclado evento a evento
-    // (eso superponía una medida por evento + el re-chequeo final y producía el
-    // doble salto). Se aplica una única vez, 250 ms después del último evento
-    // del teclado. Solo si el teclado YA estaba abierto (p. ej. al pasar de un
-    // cuadro a otro) se aplica de inmediato: no hay animación en curso.
-    if (inmediato && _tecladoCubierto() > 0) {
-      aplicar();
+    const cubierto = _tecladoCubierto();
+    if (cubierto <= 0) {
+      restaurar();
+      return;
     }
-    _reposTimer = setTimeout(() => { aplicar(); _ajustarListasAbiertas(); }, 250);
+    // Lift MÍNIMO: el bloque sube solo lo necesario para que el cuadro
+    // enfocado quede sobre el teclado, no el teclado completo (eso los
+    // llevaba demasiado arriba). Si el cuadro ya está visible, no se sube.
+    // Con la lista del cuadro ABIERTA, se reserva además su alto para que
+    // el menú quepa desplegándose hacia abajo.
+    const altoVisible = window.innerHeight - cubierto;
+    let lift = cubierto;
+    const act = document.activeElement;
+    if (esTriggerCombo(act)) {
+      const r = act.getBoundingClientRect();
+      let extra = 0;
+      const lista = act.parentElement && act.parentElement.querySelector('.combo__list');
+      if (lista && !lista.hidden) {
+        const tope = lista.classList.contains('combo__list--6') ? 200 : 170;
+        extra = Math.min(tope, Math.max(40, lista.scrollHeight));
+      }
+      const necesario = Math.max(0, Math.round(r.bottom + 8 + extra - altoVisible));
+      lift = Math.min(cubierto, necesario);
+    }
+    app.style.setProperty('--teclado-alto', lift + 'px');
+    app.classList.add('teclado-abierto');
+    _ajustarListasAbiertas();
   }
 
   /** Cuánto tapa el teclado del área visible: prioriza la geometría exacta de
@@ -1527,8 +1512,10 @@
     if (esTriggerCombo(e.target)) {
       // Al editar un cuadro (origen, pueblo intermedio o destino) la barra
       // inferior se oculta: no sube flotando sobre el teclado.
+      // El lift del bloque NO se aplica aquí: lo disparan los manejadores de
+      // focus/toggle de cada cuadro y los eventos del teclado, usando el
+      // estado FINAL de la lista (aplicar dos veces producía el doble salto).
       el.appRoot.classList.add('combo-enfocado');
-      reposicionarInterfazTeclado(true, true);
     }
   });
   document.addEventListener('focusout', (e) => {
@@ -1586,11 +1573,11 @@
 
   /** Con el teclado abierto y un cuadro enfocado, recalcula el lift del bloque
    *  según el estado actual de su lista: reserva el espacio del menú al
-   *  abrirlo, o baja al lift mínimo al cerrarlo. El teclado ya está asentado,
-   *  por eso se aplica de inmediato (un solo salto por cambio de estado). */
+   *  abrirlo, o baja al lift mínimo al cerrarlo. Todo al instante, sin
+   *  temporizadores. */
   function reencajarConTeclado() {
     if (esMovil() && _tecladoCubierto() > 0 && esTriggerCombo(document.activeElement)) {
-      reposicionarInterfazTeclado(true, true);
+      reposicionarInterfazTeclado(true);
     }
   }
 
@@ -3007,32 +2994,16 @@
   function reemplazarPuebloIntermedio() {
     activarPanelTab('ruta');
     setMobileTab('ruta');
-    const row = agregarEscala();
-    el.panelEscalas.hidden = false;
+    agregarEscala();
     el.panelEscalas.scrollIntoView({ block: 'nearest' });
-    const input = row && row.querySelector('.combo__trigger');
-    if (input) {
-      setTimeout(() => {
-        input.focus();
-        input.scrollIntoView({ block: 'nearest' });
-      }, 50);
-    }
   }
 
   /** Lleva al usuario al panel Ruta con un nuevo campo de pueblo intermedio desplegado. */
   function agregarPuebloIntermedioDesdeLista() {
     activarPanelTab('ruta');
     setMobileTab('ruta');
-    const row = agregarEscala();
-    el.panelEscalas.hidden = false;
+    agregarEscala();
     el.panelEscalas.scrollIntoView({ block: 'nearest' });
-    const input = row && row.querySelector('.combo__trigger');
-    if (input) {
-      setTimeout(() => {
-        input.focus();
-        input.scrollIntoView({ block: 'nearest' });
-      }, 50);
-    }
   }
 
   /** Reemplaza un pueblo intermedio: lo quita de la ruta y abre un nuevo campo editable en el panel Ruta. */
