@@ -464,7 +464,8 @@
         // los botones al instante y se recalcula la ruta (OSRM) automáticamente.
         if (_cambioExtremoEnCurso) {
           _cambioExtremoEnCurso = null;
-          if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = false;
+          // Se restaura el panel completo (origen, avión y botón de calcular).
+          _modoCambiarDestino(false);
           if (el.destinoInput) el.destinoInput.placeholder = 'Destino';
           sincronizarModoRutaMovil();
           calcularRutaPrincipal();
@@ -2597,6 +2598,18 @@
     if (rowDestino) rowDestino.hidden = activo;
   }
 
+  /** Ocultar/mostrar el resto del panel Ruta al cambiar el destino: en el modo
+   *  activo solo se ve el cuadro de destino (sin el de origen, sin el avión y
+   *  sin el botón de calcular ruta). */
+  function _modoCambiarDestino(activo) {
+    if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = activo;
+    if (el.panelEscalas) el.panelEscalas.hidden = activo;
+    const rowOrigen = document.getElementById('row-origen');
+    if (rowOrigen) rowOrigen.hidden = activo;
+    if (el.btnAereo) el.btnAereo.hidden = activo;
+    if (el.btnCalcular) el.btnCalcular.hidden = activo;
+  }
+
   /** Lleva al usuario al panel Ruta con el campo de destino preparado para elegir
    *  el nuevo destino: vacío, con placeholder, sin foco (al tocar se despliega la
    *  lista normal de 5 opciones). */
@@ -2606,7 +2619,9 @@
     el.appRoot.removeAttribute('data-ruta-lista');
     // Si venía del modo "solo cuadro de origen", se restaura el panel completo.
     _modoCambiarOrigen(false);
-    if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = true;
+    // Modo "solo cuadro de destino": sin el cuadro de origen, sin el avión y
+    // sin el botón de calcular ruta; solo queda el destino desplegado.
+    _modoCambiarDestino(true);
     _cambioExtremoEnCurso = 'destino';
     if (el.destinoInput) {
       el.destinoInput.value = '';
