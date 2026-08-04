@@ -24,6 +24,26 @@
       const conexiones = tipo === 'puerto' ? _conexionesDePuerto(item) : _conexionesDeAeropuerto(item);
       MapModule.dibujarConexiones(tipo, String(item.id), Number(item.latitud), Number(item.longitud), conexiones, tipo === 'puerto' ? '#2f7a6b' : '#4a6fa5');
     });
+    // Arrastre con clic derecho de un puerto del catálogo: actualiza su
+    // coordenada en memoria y guarda el JSON de puertos en local.
+    MapModule.setOnPuertoMovidoGlobal((id, lat, lng) => {
+      const puerto = state.puertos.find((p) => String(p.id) === String(id));
+      if (!puerto) return;
+      puerto.latitud = Number(lat.toFixed(6));
+      puerto.longitud = Number(lng.toFixed(6));
+      if (MapModule.estanConexionesAbiertas('puerto', String(id))) {
+        MapModule.limpiarConexiones();
+        MapModule.dibujarConexiones('puerto', String(puerto.id), puerto.latitud, puerto.longitud, _conexionesDePuerto(puerto), '#2f7a6b');
+      }
+      if (typeof PersistenciaJsonModule === 'undefined' || typeof PersistenciaJsonModule.guardarPuertos !== 'function') return;
+      PersistenciaJsonModule.guardarPuertos(state.puertos).then((res) => {
+        if (typeof _mostrarNotificacion !== 'function') return;
+        if (res === true) _mostrarNotificacion('Puerto movido: ' + puerto.nombre + ' — JSON guardado.');
+        else if (res === false) _mostrarNotificacion('No se pudo guardar el JSON en su ubicación; se descargó una copia.');
+      });
+    });
+    // "Agregar puerto aquí" (clic derecho en el mapa): abre el formulario.
+    MapModule.setOnAgregarPuertoEn((lat, lng) => abrirDialogoNuevoPuerto(lat, lng));
 
     try {
       const [municipios, sitios] = await Promise.all([
@@ -136,5 +156,92 @@
       }
     });
   }
+
+  // -------------------------------------------------------------------
+  // Formulario "Agregar puerto" (clic derecho en el mapa)
+  // -------------------------------------------------------------------
+
+  let _npLat = null;
+  let _npLng = null;
+
+  function abrirDialogoNuevoPuerto(lat, lng) {
+    _npLat = lat;
+    _npLng = lng;
+    ['np-nombre', 'np-ciudad', 'np-rio', 'np-descripcion'].forEach((id) => {
+      const e = document.getElementById(id);
+      if (e) e.value = '';
+    });
+    const err = document.getElementById('np-error');
+    if (err) { err.hidden = true; err.textContent = ''; }
+    const dlg = document.getElementById('panel-nuevo-puerto');
+    if (dlg) dlg.hidden = false;
+    const nombre = document.getElementById('np-nombre');
+    if (nombre) setTimeout(() => nombre.focus(), 50);
+  }
+
+  function cerrarDialogoNuevoPuerto() {
+    const dlg = document.getElementById('panel-nuevo-puerto');
+    if (dlg) dlg.hidden = true;
+  }
+
+  function _generarIdPuerto(nombre) {
+    const base = String(nombre || '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .split(/\s+/).map((w) => w[0] || '').join('').toUpperCase().slice(0, 4);
+    const usado = new Set(state.puertos.map((p) => String(p.id)));
+    let id = base || 'P';
+    let n = 2;
+    while (usado.has(id)) {
+      id = (base || 'P').slice(0, 3) + n;
+      n++;
+    }
+    return id;
+  }
+
+  function guardarNuevoPuerto() {
+    const nombre = (document.getElementById('np-nombre').value || '').trim();
+    const ciudad = (document.getElementById('np-ciudad').value || '').trim();
+    const rio = (document.getElementById('np-rio').value || '').trim();
+    const descripcion = (document.getElementById('np-descripcion').value || '').trim();
+    const err = document.getElementById('np-error');
+    if (!nombre || !ciudad || !rio) {
+      if (err) { err.hidden = false; err.textContent = 'Nombre, ciudad y río son obligatorios.'; }
+      return;
+    }
+    const puerto = {
+      id: _generarIdPuerto(nombre),
+      nombre,
+      ciudad,
+      rio,
+      latitud: Number(_npLat.toFixed(6)),
+      longitud: Number(_npLng.toFixed(6)),
+      ubicacion: '',
+      descripcion,
+      destinos_id: [],
+    };
+    state.puertos.push(puerto);
+    cerrarDialogoNuevoPuerto();
+    if (typeof _syncPuertos === 'function') _syncPuertos();
+    if (typeof PersistenciaJsonModule !== 'undefined' && typeof PersistenciaJsonModule.guardarPuertos === 'function') {
+      PersistenciaJsonModule.guardarPuertos(state.puertos).then((res) => {
+        if (typeof _mostrarNotificacion !== 'function') return;
+        if (res === true) _mostrarNotificacion('Puerto agregado: ' + nombre + ' — JSON guardado.');
+        else if (res === false) _mostrarNotificacion('Puerto agregado; no se pudo sobrescribir el JSON, se descargó una copia.');
+      });
+    }
+  }
+
+  function initNuevoPuerto() {
+    const guardar = document.getElementById('np-guardar');
+    if (guardar) guardar.addEventListener('click', guardarNuevoPuerto);
+    const cancelar = document.getElementById('np-cancelar');
+    if (cancelar) cancelar.addEventListener('click', cerrarDialogoNuevoPuerto);
+    const dlg = document.getElementById('panel-nuevo-puerto');
+    if (dlg) {
+      dlg.addEventListener('click', (e) => { if (e.target === dlg) cerrarDialogoNuevoPuerto(); });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', initNuevoPuerto);
 
   document.addEventListener('DOMContentLoaded', init);

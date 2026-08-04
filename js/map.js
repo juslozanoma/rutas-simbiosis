@@ -234,6 +234,20 @@ const MapModule = (() => {
 
   function setOnClicInfraGlobal(fn) { _onClicInfraGlobal = fn; }
 
+  // Callback al soltar un puerto del catálogo arrastrado con clic derecho:
+  // recibe (idPuerto, lat, lng) con la nueva coordenada.
+
+  let _onPuertoMovidoGlobal = null;
+
+  function setOnPuertoMovidoGlobal(fn) { _onPuertoMovidoGlobal = fn; }
+
+  // Callback al elegir "Agregar puerto aquí" en el menú contextual:
+  // recibe (lat, lng) del punto del mapa donde se hizo clic derecho.
+
+  let _onAgregarPuertoEn = null;
+
+  function setOnAgregarPuertoEn(fn) { _onAgregarPuertoEn = fn; }
+
   function setMarcadorOrigen(lat, lon, etiqueta) {
     if (markerOrigen) map.removeLayer(markerOrigen);
     markerOrigen = L.marker([lat, lon], { icon: iconoOrigen(), zIndexOffset: 50 })
@@ -562,20 +576,27 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
   function _onMapContextMenu(e) {
     if (_marcandoTramo) return;
+    if (_puertoEnArrastre) return;
     if (e.originalEvent && e.originalEvent.target && e.originalEvent.target.closest && e.originalEvent.target.closest('.desvio-point')) return;
     _cerrarCtxMenu();
     const div = document.createElement('div');
     div.className = 'ctx-menu';
-    div.innerHTML = '<div class="ctx-menu__item">Marcar tramo destapado</div>';
-    div.querySelector('.ctx-menu__item').addEventListener('click', (ev) => {
+    div.innerHTML = '<div class="ctx-menu__item">Marcar tramo destapado</div><div class="ctx-menu__item">Agregar puerto aquí</div>';
+    const items = div.querySelectorAll('.ctx-menu__item');
+    items[0].addEventListener('click', (ev) => {
       ev.stopPropagation();
       _cerrarCtxMenu();
       iniciarMarcadoTramo();
     });
+    items[1].addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      _cerrarCtxMenu();
+      if (_onAgregarPuertoEn) _onAgregarPuertoEn(e.latlng.lat, e.latlng.lng);
+    });
     const container = map.getContainer();
     const point = map.latLngToContainerPoint(e.latlng);
     div.style.left = Math.min(point.x, container.offsetWidth - 190) + 'px';
-    div.style.top = Math.min(point.y, container.offsetHeight - 36) + 'px';
+    div.style.top = Math.min(point.y, container.offsetHeight - 70) + 'px';
     container.appendChild(div);
     _ctxMenu = div;
   }
@@ -1036,7 +1057,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     _puertoMarkers = [];
   }
 
-  /** Pinta TODOS los puertos del catálogo (tecla P). */
+  /** Pinta TODOS los puertos del catálogo (tecla P). Se pueden mover con un
+   *  arrastre de clic derecho (actualiza la coordenada vía _onPuertoMovidoGlobal). */
   function setMarcadoresPuertosGlobal(lista) {
     limpiarPuertosGlobal();
     if (!lista || !lista.length) return;
@@ -1045,8 +1067,59 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       const marker = L.marker([Number(p.latitud), Number(p.longitud)], { icon: iconoPuertoGlobal(), zIndexOffset: 1100 });
       marker.bindTooltip([p.nombre, p.ciudad].filter(Boolean).join(' - ') || 'Puerto', { direction: 'top', offset: [0, -16], className: 'site-label' });
       marker.on('click', () => { if (_onClicInfraGlobal) _onClicInfraGlobal('puerto', p); });
+      marker.on('contextmenu', (ev) => _iniciarArrastrePuerto(marker, p.id, ev));
       marker.addTo(capaPuertosGlobal);
     });
+  }
+
+  // ---------------------------------------------------------------------
+  // Arrastre con clic derecho de un puerto del catálogo
+  // ---------------------------------------------------------------------
+
+  let _puertoEnArrastre = null; // { marker, puertoId, inicioLat, inicioLng }
+
+  function _iniciarArrastrePuerto(marker, puertoId, ev) {
+    if (_puertoEnArrastre || _marcandoTramo) return;
+    _cerrarCtxMenu();
+    L.DomEvent.stopPropagation(ev.originalEvent);
+    ev.originalEvent.preventDefault();
+    if (map.dragging) map.dragging.disable();
+    const pos = marker.getLatLng();
+    _puertoEnArrastre = { marker, puertoId, inicioLat: pos.lat, inicioLng: pos.lng };
+    const iconEl = marker.getElement();
+    if (iconEl) iconEl.classList.add('infra-global-pin--arrastre');
+    marker.setZIndexOffset(1300);
+    map.getContainer().style.cursor = 'grabbing';
+    map.on('mousemove', _moverPuertoArrastre);
+    map.on('mouseup', _terminarArrastrePuerto);
+    document.addEventListener('mouseup', _terminarArrastrePuertoDoc);
+  }
+
+  function _moverPuertoArrastre(ev) {
+    const arr = _puertoEnArrastre;
+    if (!arr || !ev.latlng) return;
+    arr.marker.setLatLng([ev.latlng.lat, ev.latlng.lng]);
+  }
+
+  function _terminarArrastrePuerto() {
+    const arr = _puertoEnArrastre;
+    if (!arr) return;
+    _puertoEnArrastre = null;
+    map.off('mousemove', _moverPuertoArrastre);
+    map.off('mouseup', _terminarArrastrePuerto);
+    document.removeEventListener('mouseup', _terminarArrastrePuertoDoc);
+    if (map.dragging) map.dragging.enable();
+    map.getContainer().style.cursor = '';
+    const iconEl = arr.marker.getElement();
+    if (iconEl) iconEl.classList.remove('infra-global-pin--arrastre');
+    arr.marker.setZIndexOffset(1100);
+    const pos = arr.marker.getLatLng();
+    const movido = Math.abs(pos.lat - arr.inicioLat) > 1e-5 || Math.abs(pos.lng - arr.inicioLng) > 1e-5;
+    if (movido && _onPuertoMovidoGlobal) _onPuertoMovidoGlobal(arr.puertoId, pos.lat, pos.lng);
+  }
+
+  function _terminarArrastrePuertoDoc() {
+    _terminarArrastrePuerto();
   }
 
   function limpiarPuertosGlobal() {
@@ -1101,6 +1174,11 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   function limpiarConexiones() {
     if (capaConexiones) capaConexiones.clearLayers();
     _conexionCentroId = null;
+  }
+
+  /** Indica si las líneas de conexiones de un puerto/aeropuerto están visibles. */
+  function estanConexionesAbiertas(tipo, id) {
+    return _conexionCentroId === tipo + '_' + id && capaConexiones && capaConexiones.getLayers().length > 0;
   }
 
   function limpiarTodo() {
@@ -1384,8 +1462,11 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     setMarcadorDestino,
     setOnClicMarcadorExtremo,
     setOnClicInfraGlobal,
+    setOnPuertoMovidoGlobal,
+    setOnAgregarPuertoEn,
     dibujarConexiones,
     limpiarConexiones,
+    estanConexionesAbiertas,
     limpiarMarcadoresRuta,
     setMarcadoresParadas,
     setOnEliminarParada,

@@ -232,16 +232,25 @@
     return res;
   }
 
-  /** Puertos del catálogo a los que `p` llega directo (destinos_id por nombre). */
+  /** Puertos del catálogo a los que `p` llega directo (destinos_id). */
   function _conexionesDePuerto(p) {
     if (!p || !p.destinos_id) return [];
     const unicas = new Set();
     const res = [];
-    for (const nombre of p.destinos_id) {
-      const h = _puertoPorNombre(nombre);
+    for (const ref of p.destinos_id) {
+      const h = _puertoPorRef(ref);
       if (h && h !== p && !unicas.has(String(h.id))) { unicas.add(String(h.id)); res.push(h); }
     }
     return res;
+  }
+
+  /** Resuelve una referencia de destinos_id de puerto: primero por id exacto
+   *  y, si no coincide, por nombre (compatibilidad con JSONs antiguos). */
+  function _puertoPorRef(ref) {
+    if (ref == null) return null;
+    const porId = state.puertos.find((p) => String(p.id) === String(ref));
+    if (porId) return porId;
+    return _puertoPorNombre(ref);
   }
 
   /** Genera una línea curva entre dos aeropuertos para el tramo aéreo. */
@@ -460,10 +469,10 @@
    *  al destino. Devuelve [{a, b}, ...] o null. */
   function _planearTrayectoFluvial(po, pd) {
     if (!po || !pd) return null;
-    const alcanza = (lista, pd) => (lista || []).some((d) => _puertoPorNombre(d) === pd);
+    const alcanza = (lista, pd) => (lista || []).some((d) => _puertoPorRef(d) === pd);
     if (alcanza(po.destinos_id, pd)) return [{ a: po, b: pd }];
-    for (const nombre of po.destinos_id || []) {
-      const h = _puertoPorNombre(nombre);
+    for (const ref of po.destinos_id || []) {
+      const h = _puertoPorRef(ref);
       if (h && alcanza(h.destinos_id, pd)) {
         return [{ a: po, b: h }, { a: h, b: pd }];
       }
