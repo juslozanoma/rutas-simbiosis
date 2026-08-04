@@ -1286,6 +1286,8 @@ input, select{ font-family: inherit; }
   /* En móvil los pueblos intermedios solo se agregan desde las paradas: el
      "+" nunca se muestra (el avión ocupa su lugar en la fila del origen). */
   #btn-agregar-escala{ display: none !important; }
+  /* En móvil el pueblo intermedio recalcula solo al elegirlo: sin botón verde. */
+  .escala-row__calc{ display: none !important; }
   .map-full{ flex: 0 0 50%; min-height: 0; }
   #app[data-mobile-panel="collapsed"] .map-full{ flex: 1 !important; }
   #app[data-mobile-panel="collapsed"] .side-panel{ display: none !important; }

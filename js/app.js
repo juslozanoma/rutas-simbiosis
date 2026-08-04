@@ -801,13 +801,10 @@
     row.appendChild(calcBtn);
     el.panelEscalas.appendChild(row);
     el.panelEscalas.hidden = false;
-    if (esMovil()) {
-      // Móvil: sin foco, sin teclado y sin lift; solo se despliega la lista (5 opciones).
-      abrir();
-    } else {
-      trigger.focus();
-      trigger.scrollIntoView({ block: 'nearest' });
-    }
+    // El foco abre la lista, el teclado y el acomodo del bloque (un solo
+    // movimiento instantáneo), igual que el cuadro de origen al iniciar.
+    trigger.focus();
+    trigger.scrollIntoView({ block: 'nearest' });
 
     let seleccion = null;
     let _toqueContrae = false;
@@ -826,14 +823,19 @@
       // están en pantalla (ruta calculada); al inicio permanece visible.
       row.style.display = el.appRoot && el.appRoot.getAttribute('data-ruta-lista') === 'true' ? 'none' : '';
       if (el.checkAutoOrganizar.checked) organizarAutomaticamente(true);
-      // Al reemplazar un pueblo intermedio de una ruta ya calculada: se
-      // recalcula la ruta (OSRM) automáticamente (si auto-organizar está
-      // activo, organizarAutomaticamente ya recalcula con los mismos datos).
-      if (_escalaEnCambio) {
-        _escalaEnCambio = false;
-        if (!el.checkAutoOrganizar.checked) {
+      // Recalcular la ruta (OSRM) automáticamente al elegir el pueblo:
+      // - Móvil: siempre (al agregar o cambiar), si auto-organizar ya no recalcó.
+      // - Cambio de pueblo en cualquier dispositivo: recalcular sin doble cálculo.
+      const recalcAuto = () => {
+        if (!state.rutaActual || !el.checkAutoOrganizar.checked) {
           calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
         }
+      };
+      if (_escalaEnCambio) {
+        _escalaEnCambio = false;
+        recalcAuto();
+      } else if (esMovil()) {
+        recalcAuto();
       }
     }
 
@@ -895,11 +897,16 @@
           actualizarEscalas();
           row.style.display = el.appRoot && el.appRoot.getAttribute('data-ruta-lista') === 'true' ? 'none' : '';
           if (el.checkAutoOrganizar.checked) organizarAutomaticamente(true);
-          if (_escalaEnCambio) {
-            _escalaEnCambio = false;
-            if (!el.checkAutoOrganizar.checked) {
+          const recalcAuto = () => {
+            if (!state.rutaActual || !el.checkAutoOrganizar.checked) {
               calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
             }
+          };
+          if (_escalaEnCambio) {
+            _escalaEnCambio = false;
+            recalcAuto();
+          } else if (esMovil()) {
+            recalcAuto();
           }
         });
       });
@@ -1191,7 +1198,12 @@
     el.btnTabDescubre.addEventListener('click', () => toggleMobileTab('descubre'));
     el.btnTabRuta.addEventListener('click', () => toggleMobileTab('ruta'));
     if (el.btnAgregarIntermedio) {
-      el.btnAgregarIntermedio.addEventListener('click', () => agregarPuebloIntermedioDesdeLista());
+      // stopPropagation: el click que crea la fila no debe llegar al
+      // onClickOutside de la fila y cerrar su lista recién desplegada.
+      el.btnAgregarIntermedio.addEventListener('click', (e) => {
+        e.stopPropagation();
+        agregarPuebloIntermedioDesdeLista();
+      });
     }
     el.checkAutoOrganizar.addEventListener('change', () => {
       if (el.checkAutoOrganizar.checked) {
