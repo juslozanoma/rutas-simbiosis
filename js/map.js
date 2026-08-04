@@ -1255,37 +1255,40 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   }
 
   // ---------------------------------------------------------------------
-  // Ruta cargada desde archivo KML/GPX + seguimiento GPS (tecla K)
+  // Rutas cargadas desde archivos KML/GPX + seguimiento GPS (tecla K)
   // ---------------------------------------------------------------------
 
-  let capaRutaArchivo = null;   // L.layerGroup: línea visible + zona de hover/clic
-  let _rutaArchivoLine = null;  // turf lineString para cálculos de distancia
-  let _marcadorUsuario = null;  // marcador de la posición GPS del usuario
+  const COLOR_RUTA_ARCHIVO = '#2f7a6b';
+
+  const _gruposRutaArchivo = {}; // id -> { grupo: L.layerGroup, lineaTurf }
+  let _marcadorUsuario = null;   // marcador de la posición GPS del usuario
 
   /** Dibuja una ruta desde archivo (KML/GPX). `coords` es [[lat, lng], ...].
-   *  Al pasar el cursor (o tocar en móvil) muestra la distancia recorrida
-   *  hasta ese punto a lo largo de la ruta. */
-  function dibujarRutaArchivo(coords, meta = {}) {
-    limpiarRutaArchivo();
+   *  Cada ruta se guarda con su propio `id` para poder quitarla de forma
+   *  individual sin borrar las demás. Se dibuja en verde con los íconos A/Z
+   *  de inicio y fin (iguales a los de origen/destino) y, al pasar el cursor
+   *  (o tocar en móvil), muestra la distancia recorrida hasta ese punto a lo
+   *  largo de la ruta. */
+  function dibujarRutaArchivo(id, coords, meta = {}) {
     if (!coords || coords.length < 2) return;
-    _rutaArchivoLine = turf.lineString(coords.map((c) => [c[1], c[0]]));
+    quitarRutaArchivo(id);
 
-    const color = meta.color || '#b0592a';
-    capaRutaArchivo = L.layerGroup().addTo(map);
+    const color = meta.color || COLOR_RUTA_ARCHIVO;
+    const grupo = L.layerGroup().addTo(map);
+    const lineaTurf = turf.lineString(coords.map((c) => [c[1], c[0]]));
 
-    const visible = L.polyline(coords, {
-      color, weight: 5, opacity: 0.9, lineCap: 'round', lineJoin: 'round',
+    L.polyline(coords, {
+      color, weight: 4, opacity: 0.9, lineCap: 'round', lineJoin: 'round',
       interactive: false,
-    }).addTo(capaRutaArchivo);
+    }).addTo(grupo);
 
     const hover = L.polyline(coords, {
       color, weight: 20, opacity: 0.01, fillOpacity: 0.01,
       interactive: true,
-    }).addTo(capaRutaArchivo);
-    visible.bringToFront();
+    }).addTo(grupo);
 
     const textoDistancia = (latlng) => {
-      const snap = turf.nearestPointOnLine(_rutaArchivoLine, turf.point([latlng.lng, latlng.lat]), { units: 'kilometers' });
+      const snap = turf.nearestPointOnLine(lineaTurf, turf.point([latlng.lng, latlng.lat]), { units: 'kilometers' });
       const km = Math.max(0, snap.properties.location);
       return km.toFixed(1) + ' km';
     };
@@ -1299,14 +1302,30 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       hover.openTooltip(e.latlng);
     });
     hover.on('mouseout', () => hover.closeTooltip());
+
+    if (coords.length >= 2) {
+      const nombre = meta.nombre || '';
+      L.marker(coords[0], { icon: iconoOrigen(), zIndexOffset: 50 })
+        .bindTooltip('Inicio: ' + nombre, { direction: 'top', offset: [0, -10] })
+        .addTo(grupo);
+      L.marker(coords[coords.length - 1], { icon: iconoDestino(), zIndexOffset: 50 })
+        .bindTooltip('Fin: ' + nombre, { direction: 'top', offset: [0, -10] })
+        .addTo(grupo);
+    }
+
+    _gruposRutaArchivo[id] = { grupo, lineaTurf };
   }
 
-  function limpiarRutaArchivo() {
-    if (capaRutaArchivo) {
-      map.removeLayer(capaRutaArchivo);
-      capaRutaArchivo = null;
+  function quitarRutaArchivo(id) {
+    const r = _gruposRutaArchivo[id];
+    if (r) {
+      map.removeLayer(r.grupo);
+      delete _gruposRutaArchivo[id];
     }
-    _rutaArchivoLine = null;
+  }
+
+  function limpiarRutasArchivo() {
+    Object.keys(_gruposRutaArchivo).forEach(quitarRutaArchivo);
   }
 
   /** Ajusta la vista del mapa a los límites de las coordenadas dadas. */
@@ -1316,16 +1335,21 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     if (bounds.isValid()) map.fitBounds(bounds, { padding: padding || [40, 40] });
   }
 
-  /** Crea (o mueve) el marcador de la posición GPS del usuario. */
+  /** Crea (o mueve) el indicador de la posición GPS del usuario: un círculo
+   *  verde sin bordes con la etiqueta permanente "Mi ubicación". */
   function actualizarPosicionUsuario(lat, lon) {
     if (!_marcadorUsuario) {
       _marcadorUsuario = L.circleMarker([lat, lon], {
-        radius: 9,
-        color: '#4a6fa5',
-        weight: 3,
-        fillColor: '#4a6fa5',
-        fillOpacity: 0.35,
+        radius: 6,
+        color: COLOR_RUTA_ARCHIVO,
+        weight: 0,
+        fillColor: COLOR_RUTA_ARCHIVO,
+        fillOpacity: 0.9,
       }).addTo(map);
+      _marcadorUsuario.bindTooltip('Mi ubicación', {
+        permanent: true, direction: 'top', offset: [0, -8],
+        className: 'gps-ubicacion-tooltip',
+      });
     } else {
       _marcadorUsuario.setLatLng([lat, lon]);
     }
@@ -1383,7 +1407,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarRuta,
     limpiarTodo,
     dibujarRutaArchivo,
-    limpiarRutaArchivo,
+    quitarRutaArchivo,
+    limpiarRutasArchivo,
     ajustarVista,
     actualizarPosicionUsuario,
     limpiarPosicionUsuario,

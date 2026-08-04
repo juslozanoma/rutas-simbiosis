@@ -720,6 +720,21 @@ input, select{ font-family: inherit; }
 .sitio-card__add--quitar{ border-color: #d64541; color: #d64541; }
 .sitio-card__add--quitar:hover:not(:disabled){ background: #d64541; border-color: #d64541; color: #ffffff; }
 
+.sitio-card__quitar{
+  flex-shrink: 0;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--line-300);
+  background: #ffffff;
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.sitio-card__quitar:hover{ background: #d64541; border-color: #d64541; color: #ffffff; }
+
 /* ==========================================================================
    MARCADORES Y POPUPS DEL MAPA
    ========================================================================== */
@@ -1092,15 +1107,29 @@ input, select{ font-family: inherit; }
 .seguir-ruta__dot{
   width: 8px; height: 8px;
   border-radius: 50%;
-  background: #4a6fa5;
-  box-shadow: 0 0 0 3px rgba(74,111,165,0.3);
+  background: #2f7a6b;
+  box-shadow: 0 0 0 3px rgba(47,122,107,0.3);
   animation: seguir-ruta-pulso 1.6s ease-in-out infinite;
 }
 .seguir-ruta[hidden]{ display: none; }
 @keyframes seguir-ruta-pulso{
-  0%, 100%{ box-shadow: 0 0 0 3px rgba(74,111,165,0.35); }
-  50%{ box-shadow: 0 0 0 6px rgba(74,111,165,0.12); }
+  0%, 100%{ box-shadow: 0 0 0 3px rgba(47,122,107,0.35); }
+  50%{ box-shadow: 0 0 0 6px rgba(47,122,107,0.12); }
 }
+
+/* Tooltip permanente "Mi ubicación" del indicador GPS */
+.gps-ubicacion-tooltip{
+  background: var(--teal-600);
+  border: none;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(20,32,27,0.25);
+  white-space: nowrap;
+}
+.gps-ubicacion-tooltip::before{ border-top-color: var(--teal-600); }
 
 /* Botón flotante de toggle sitios en el mapa */
 .btn-toggle-sitios--float{
@@ -1857,7 +1886,7 @@ input, select{ font-family: inherit; }
   transition: background 0.12s ease;
 }
 .cargar-ruta__file:hover{ background: var(--teal-100); }
-
+.cargar-ruta__continuar{ width: 100%; margin-top: 12px; }
 /* Menú contextual de las filas de paradas (clic derecho / pulsación larga) */
 .fila-menu{
   position: fixed;

@@ -130,8 +130,8 @@
         _aeropuertosVisibles = !_aeropuertosVisibles;
         _syncAeropuertos();
       } else if (tecla === 'k') {
-        if (typeof RutaArchivoModule !== 'undefined' && typeof RutaArchivoModule.abrirDialogo === 'function') {
-          RutaArchivoModule.abrirDialogo();
+        if (typeof RutaArchivoModule !== 'undefined' && typeof RutaArchivoModule.toggleK === 'function') {
+          RutaArchivoModule.toggleK();
         }
       }
     });

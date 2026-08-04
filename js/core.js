@@ -126,7 +126,7 @@
     inputRutaArchivo: document.getElementById('input-ruta-archivo'),
     cargarRutaFileLabel: document.getElementById('cargar-ruta-file-label'),
     btnCerrarCargarRuta: document.getElementById('btn-cerrar-cargar-ruta'),
-    btnQuitarRuta: document.getElementById('btn-quitar-ruta'),
+    btnContinuarRuta: document.getElementById('btn-continuar-ruta'),
     cargarRutaError: document.getElementById('cargar-ruta-error'),
     btnGps: document.getElementById('btn-gps'),
     seguirRuta: document.getElementById('seguir-ruta'),
