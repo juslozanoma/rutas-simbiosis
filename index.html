@@ -75,8 +75,8 @@
 
     <!-- Pestañas del panel (escritorio) -->
     <div class="panel-tab-bar" id="panel-tab-bar">
-      <button type="button" id="btn-tab-panel-ruta" class="panel-tab panel-tab--active">Ruta <img src="public/sign-post.svg" alt="" width="16" height="16" style="filter: brightness(0) invert(0.5);"></button>
-      <button type="button" id="btn-tab-panel-descubre" class="panel-tab">Descubre Colombia <img src="public/colombia.svg" alt="" width="18" height="18" class="tab-descubre-icon" id="ico-descubre-tab-desktop"><span class="badge-count mono" id="sitios-contador-tab-desktop" hidden>0</span></button>
+      <button type="button" id="btn-tab-panel-ruta" class="panel-tab panel-tab--active">Ruta <span class="tab-icon tab-icon--sign-post tab-icon--16" aria-hidden="true"></span></button>
+      <button type="button" id="btn-tab-panel-descubre" class="panel-tab">Descubre Colombia <span class="tab-icon tab-icon--colombia tab-icon--18" aria-hidden="true" id="ico-descubre-tab-desktop"></span><span class="badge-count mono" id="sitios-contador-tab-desktop" hidden>0</span></button>
     </div>
 
     <!-- Ruta: origen/destino + paradas + monalisa -->
@@ -264,13 +264,13 @@
   <!-- ============ BARRA DE PESTAÑAS INFERIOR MÓVIL ============ -->
   <nav class="mobile-tab-bar" id="mobile-tab-bar">
     <button type="button" id="btn-tab-altimetria" class="mobile-tab-btn mobile-tab-btn--altimetria" title="Perfil de elevación" aria-label="Perfil de elevación">
-      <img src="public/bike.svg" alt="" width="26" height="26" style="filter: brightness(0) invert(0.5);">
+      <span class="tab-icon tab-icon--bike tab-icon--26" aria-hidden="true"></span>
     </button>
-    <button type="button" class="mobile-tab-btn mobile-tab-btn--active" data-tab="ruta" id="btn-tab-ruta">Rutas <img src="public/sign-post.svg" alt="" width="20" height="20" style="filter: brightness(0) invert(0.5);">
+    <button type="button" class="mobile-tab-btn mobile-tab-btn--active" data-tab="ruta" id="btn-tab-ruta">Rutas <span class="tab-icon tab-icon--sign-post tab-icon--20" aria-hidden="true"></span>
     </button>
     <button type="button" class="mobile-tab-btn" data-tab="descubre" id="btn-tab-descubre">
       <span>Descubre Colombia</span>
-      <img src="public/colombia.svg" alt="" width="22" height="22" class="tab-descubre-icon" id="ico-descubre-tab">
+      <span class="tab-icon tab-icon--colombia tab-icon--22" aria-hidden="true" id="ico-descubre-tab"></span>
       <span class="badge-count mono" id="sitios-contador-tab" hidden>0</span>
     </button>
   </nav>
