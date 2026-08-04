@@ -62,10 +62,18 @@
   }
 
 
+  /** El botón flotante de altimetría (PC) solo se muestra si hay una ruta
+   *  calculada (state.rutaActual); en móvil la CSS lo oculta de todos modos. */
+  function _syncBotonAltimetria() {
+    if (!el.btnAltimetria) return;
+    el.btnAltimetria.hidden = !state.rutaActual;
+  }
+
+
   function cerrarAltimetria() {
     if (!el.altimetriaPanel) return;
     el.altimetriaPanel.hidden = true;
-    if (el.btnAltimetria) el.btnAltimetria.hidden = false;
+    _syncBotonAltimetria();
   }
 
 

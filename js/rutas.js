@@ -732,6 +732,7 @@
       duracionSegundos: state.rutaActual.duracionSegundos,
       origenNombre: state.origen?.nombre || 'el origen',
     });
+    if (typeof _syncBotonAltimetria === 'function') _syncBotonAltimetria();
     if (state.modoAereo && state.tramosAereo) {
       MapModule.dibujarTramoAereo(state.tramosAereo.vuelos || []);
       const ta = state.tramosAereo;

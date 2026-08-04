@@ -106,6 +106,7 @@
     if (typeof RutaArchivoModule !== 'undefined' && typeof RutaArchivoModule.initEventos === 'function') {
       RutaArchivoModule.initEventos();
     }
+    if (typeof _syncBotonAltimetria === 'function') _syncBotonAltimetria();
     garantizarVisibilidadMovil();
     reordenarAereoMovil();
 

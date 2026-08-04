@@ -82,7 +82,10 @@
     "descripcion": "Constituye históricamente el puerto principal del Alto\nMagdalena para la navegación menor y control fluvial.\nFacilita el transporte de pasajeros ribereños y mercancías\nhacia los municipios ubicados aguas abajo en la región.",
     "destinos_id": [
       "AIP",
-      "GIR"
+      "BOG",
+      "GIR",
+      "HON",
+      "MGM"
     ]
   },
   {
@@ -95,8 +98,11 @@
     "ubicacion": "Emplazado en el municipio de Girardot en el departamento\nde Cundinamarca sobre el corredor del río Magdalena.",
     "descripcion": "Antiguo epicentro de la navegación a vapor en Colombia\nque mantiene operaciones logísticas y de turismo fluvial.\nConecta rutas de transporte de carga liviana y pasajeros\nentre los departamentos del centro y sur del país.",
     "destinos_id": [
+      "AMB",
+      "BOG",
+      "HON",
       "HRA",
-      "HON"
+      "NEI"
     ]
   },
   {
@@ -109,9 +115,11 @@
     "ubicacion": "Situado en la zona del Magdalena Medio en el límite\nentre los departamentos de Cundinamarca y Tolima.",
     "descripcion": "Representa un nodo histórico y operativo fundamental\npara el tránsito fluvial que supera los rápidos de Honda.\nPermite la articulación intermodal con las vías férreas\ny carreteras principales hacia el norte del territorio.",
     "destinos_id": [
-      "GIR",
+      "AMB",
       "DOR",
-      "AMB"
+      "GIR",
+      "PTR",
+      "SAL"
     ]
   },
   {
@@ -124,8 +132,11 @@
     "ubicacion": "Localizado en la margen occidental del río Magdalena\nen el municipio caldense de La Dorada.",
     "descripcion": "Funciona como puerto multipropósito clave dentro\ndel proyecto de reactivación de la navegabilidad.\nConcentra operaciones de cabotaje y estudios técnicos\npara el transporte masivo de carga hacia la costa.",
     "destinos_id": [
+      "BAR",
+      "BMR",
+      "GIR",
       "HON",
-      "BMR"
+      "SAL"
     ]
   },
   {
@@ -152,8 +163,11 @@
     "ubicacion": "Situado en el departamento de Santander en la zona\ncaracterística de planicie inundable del Magdalena.",
     "descripcion": "Destaca por su infraestructura para la agroindustria\nmovilizando principalmente aceite de palma y ganado.\nSirve como punto estratégico de transbordo entre\nla red fluvial central y los centros de acopio.",
     "destinos_id": [
+      "BAQ",
       "BMR",
+      "CTG",
       "MAG",
+      "PBE",
       "PBO"
     ]
   },
@@ -195,7 +209,11 @@
     "ubicacion": "Ubicado en la margen occidental del río Magdalena en el departamento de Bolívar.\nSirve como punto estratégico de confluencia con el Canal del Dique.",
     "descripcion": "Funciona como un puerto histórico de transferencia de carga y pasajeros.\nConecta el tráfico fluvial proveniente del interior con la región caribe.\nFacilita la operación de embarcaciones menores y transbordadores locales.\nEs la contraparte operacional para la conectividad vial hacia el Magdalena.",
     "destinos_id": [
-      "MAGD"
+      "CTG",
+      "MAGD",
+      "MGN",
+      "MOM",
+      "PBQ"
     ]
   },
   {
@@ -221,8 +239,12 @@
     "ubicacion": "Emplazado sobre la margen occidental del río Magdalena en el departamento de Bolívar.\nConstituye uno de los nodos logísticos fluviales más importantes de la depresión momposina.",
     "descripcion": "Concentra el mayor movimiento de pasajeros y carga del centro del río.\nCuenta con infraestructura para el atraque de planchones de ferry de gran calado.\nConecta las rutas viales de la Mojana y Bolívar con la vía hacia Sucre.\nFacilita la distribución de productos agropecuarios hacia los mercados costeños.",
     "destinos_id": [
+      "BARR",
+      "CTG",
+      "EBN",
+      "MOM",
       "MOMP",
-      "BARR"
+      "PBQ"
     ]
   },
   {
@@ -331,7 +353,10 @@
     "ubicacion": "Localizado en la margen occidental del río Magdalena en el departamento del Tolima.\nHistórico punto de confluencia para la navegación fluvial en el norte tolimense.",
     "descripcion": "Antiguo puerto tabacalero que mantiene operaciones de embarque menor y turismo.\nFunciona como escala tradicional para la navegación en el Alto Magdalena.\nArticula las veredas ribereñas con el casco urbano y centros de acopio.\nFacilita la movilidad comunitaria y el transporte de productos agrícolas locales.",
     "destinos_id": [
+      "BOG",
+      "GIR",
       "HON",
+      "NEI",
       "PSA"
     ]
   },
@@ -387,8 +412,11 @@
     "ubicacion": "Localizado en el brazo de Mompox del río Magdalena, sur del Magdalena.\nPunto histórico y geográfico de bifurcación y confluencia de ciénagas.",
     "descripcion": "Importante puerto de pasajeros y carga que abastece a la depresión momposina.\nRecibe embarcaciones provenientes de Barrancabermeja, Gamarra y Cartagena.\nCuenta con muelles flotantes y zonas de atraque para la flota fluvial comercial.\nDinamiza el comercio regional y la movilidad de habitantes entre departamentos.",
     "destinos_id": [
+      "BCB",
       "GLO",
+      "MGN",
       "MOM",
+      "PBQ",
       "TEN"
     ]
   },
@@ -444,7 +472,11 @@
     "descripcion": "Recepción de embarcaciones turísticas, transporte de pasajeros y carga local.\nConecta el municipio insular con poblaciones de Bolívar, Magdalena y Cesar.\nDispone de infraestructura para el atraque seguro de planchones y lanchas.\nEs fundamental para la economía turística y el abastecimiento de la isla.",
     "destinos_id": [
       "BAN",
-      "MAG"
+      "BCB",
+      "EBN",
+      "MAG",
+      "MGN",
+      "PBQ"
     ]
   },
   {
@@ -554,8 +586,10 @@
     "ubicacion": "Ubicado en la margen izquierda del río Meta.\nEn el casco urbano del municipio de Cabuyaro, departamento del Meta.",
     "descripcion": "Funciona como un punto histórico y comercial clave para la navegación en el río Meta.\nPermite el embarque de productos agrícolas y ganaderos hacia los Llanos Orientales.\nFacilita la conectividad fluvial de carga mediana y el tránsito de embarcaciones menores.\nOpera como un puerto artesanal y de transbordo regional esencial.",
     "destinos_id": [
+      "CBYO",
+      "PCR",
       "PLO",
-      "CBYO"
+      "PLP"
     ]
   },
   {
@@ -637,9 +671,12 @@
     "descripcion": "Concentra el acopio y la distribución de alimentos, combustibles y mercancías generales que abastecen a todo el departamento. Funciona como el nodo articulador más importante para la navegación hacia el norte y sur de la cuenca del Atrato. Moviliza pasajeros en embarcaciones menores hacia municipios ribereños apartados que carecen de vías terrestres. Cuenta con muelles artesanales de madera y concreto para el atraque de planchones y botes de motor fuera de borda.",
     "destinos_id": [
       "BOJ",
+      "GUR",
+      "IST",
+      "LUR",
       "MED",
       "RIO",
-      "LUR"
+      "TUR"
     ]
   },
   {
@@ -652,10 +689,13 @@
     "ubicacion": "Situado en el casco urbano de Istmina, sobre la ribera del caudaloso río San Juan.\nSirve como el principal puerto de cabecera para el transporte fluvial en la subregión del San Juan.",
     "descripcion": "Facilita la comunicación y el comercio entre los municipios mineros e indígenas del sur del Chocó y el centro del departamento. Es el punto de partida para lanchas rápidas y planchones que transportan carga pesada, maquinaria y víveres hacia Docordó y otras poblaciones. Conecta la dinámica fluvial con las vías terrestres precarias que comunican con el eje cafetero y el Pacífico. Su infraestructura incluye rampas de concreto improvisadas y zonas de descargue manual utilizadas intensivamente por los comerciantes locales.",
     "destinos_id": [
-      "NOV",
       "ATA",
-      "SAN",
-      "DOC"
+      "DOC",
+      "MED",
+      "NOV",
+      "PAC",
+      "QUI",
+      "SAN"
     ]
   },
   {
@@ -711,7 +751,9 @@
     "ubicacion": "Situado en Puerto Pizarro, cabecera municipal del Bajo Baudó sobre el río homónimo.\nCercano a la desembocadura del río Baudó hacia el Océano Pacífico.",
     "descripcion": "Representa el principal puerto de intercambio comercial y pesquero de toda la cuenca del río Baudó. Permite la navegación de embarcaciones medianas que conectan el interior selvático con los puertos marítimos de la costa. A través de sus muelles se movilizan productos de la pesca artesanal, madera fina y víveres para las comunidades locales. Es un punto crítico donde la navegación fluvial se transforma en marítima debido a su proximidad con el mar.",
     "destinos_id": [
-      "PIO"
+      "PAC",
+      "PIO",
+      "QUI"
     ]
   },
   {
@@ -818,7 +860,9 @@
     "ubicacion": "Ubicado en el área urbana a orillas del río Vaupés, frente a los raudales de Mitú,\nen el departamento del Vaupés.",
     "descripcion": "Terminal fluvial fluvial que complementa el abastecimiento aéreo de la capital departamental.\nPermite el tránsito de embarcaciones menores que sortean los complejos raudales de la zona.\nFacilita la movilización de comunidades indígenas asentadas a lo largo de la cuenca alta.\nConecta rutas de navegación hacia la frontera con el Brasil por medio del río Vaupés.",
     "destinos_id": [
-      "VAP1"
+      "BRA",
+      "VAP1",
+      "YUR"
     ]
   },
   {
@@ -940,8 +984,10 @@
     "ubicacion": "Ubicado en la margen izquierda del río Guaviare.\nEn el área urbana del municipio de San José del Guaviare.",
     "descripcion": "Principal puerto comercial y de carga del departamento del Guaviare.\nRecibe embarcaciones de gran calado transportando víveres y materiales de construcción.\nConecta las rutas fluviales hacia Mapiripán y Puerto Concordia.\nDispone de muelles fijos para el atraque de planchones y botes de pasajeros.",
     "destinos_id": [
+      "MAP",
+      "ORI",
       "PCO",
-      "MAP"
+      "VIL"
     ]
   },
   {
@@ -1007,6 +1053,911 @@
     "descripcion": "Puerto comunitario utilizado principalmente por las comunidades indígenas locales para su subsistencia.\nPermite el intercambio de productos de pancoger y artesanías con la cabecera municipal de Mitú.\nLas embarcaciones se adaptan a las condiciones difíciles de navegación por la presencia de raudales.\nRepresenta el punto final de rutas comerciales menores en la alta cuenca del Vaupés.",
     "destinos_id": [
       "PMIT"
+    ]
+  },
+  {
+    "id": "CTG",
+    "nombre": "Puerto de Cartagena",
+    "ciudad": "Cartagena (Bolívar)",
+    "rio": "Mar Caribe",
+    "latitud": 10.3388,
+    "longitud": -75.5071,
+    "ubicacion": "Situado estratégicamente sobre la costa del Mar Caribe en la bahía de Cartagena.\nSe conecta de forma directa con los terminales marítimos y zonas francas de la región.",
+    "descripcion": "Funciona como el principal hub de contenedores de comercio internacional de Colombia.\nManeja masivamente carga general, productos industriales y mercancías palletizadas.\nFacilita la interconexión logística hacia mercados de Asia, Europa y Norteamérica.\nIntegra servicios portuarios especializados con zonas francas industriales adyacentes.",
+    "destinos_id": [
+      "BAQ",
+      "BUN",
+      "SMR"
+    ]
+  },
+  {
+    "id": "BAQ",
+    "nombre": "Puerto de Barranquilla",
+    "ciudad": "Barranquilla (Atlántico)",
+    "rio": "Río Magdalena",
+    "latitud": 10.9666,
+    "longitud": -74.7591,
+    "ubicacion": "Ubicado en la zona de desembocadura del Río Magdalena hacia el Mar Caribe.\nSe extiende a lo largo de la ribera occidental frente al canal navegable principal.",
+    "descripcion": "Opera como un terminal multipropósito esencial para el comercio exterior nacional.\nManeja masivamente graneles sólidos, líquidos, acero y carga general diversa.\nConecta el transporte marítimo internacional con el interior fluvial del país.\nImpulsa la cadena logística mediante zonas de almacenamiento y centros de acopio.",
+    "destinos_id": [
+      "CTG",
+      "MAG",
+      "MGN",
+      "MOM",
+      "SMR"
+    ]
+  },
+  {
+    "id": "SMR",
+    "nombre": "Puerto de Santa Marta",
+    "ciudad": "Santa Marta (Magdalena)",
+    "rio": "Mar Caribe",
+    "latitud": 11.2422,
+    "longitud": -74.2056,
+    "ubicacion": "Emplazado en una bahía natural de aguas profundas sobre la costa del Mar Caribe.\nSe ubica contiguo al área urbana y facilita el atraque de buques de gran calado.",
+    "descripcion": "Destaca por su alta eficiencia en el manejo de cargas a granel y carbón.\nFacilita la exportación masiva de productos agrícolas, banano y minerales.\nConecta eficientemente las rutas marítimas hacia Norteamérica y el continente europeo.\nDispone de infraestructura especializada para almacenamiento temporal y frío.",
+    "destinos_id": [
+      "BAQ",
+      "CTG",
+      "TCO"
+    ]
+  },
+  {
+    "id": "BUN",
+    "nombre": "Puerto de Buenaventura",
+    "ciudad": "Buenaventura (Valle del Cauca)",
+    "rio": "Océano Pacífico",
+    "latitud": 3.8884,
+    "longitud": -77.0444,
+    "ubicacion": "Localizado en la bahía homónima sobre la costa del Océano Pacífico colombiano.\nCuenta con múltiples muelles especializados y conexiones viales hacia los Andes.",
+    "descripcion": "Representa el puerto marítimo más importante del país en la costa pacífica.\nManeja aproximadamente más de la mitad del comercio exterior marítimo nacional.\nProcesa masivamente contenedores, vehículos, graneles y carga general variada.\nConecta directamente la economía colombiana con los mercados de la cuenca del Pacífico.",
+    "destinos_id": [
+      "CTG",
+      "GPI",
+      "TMC"
+    ]
+  },
+  {
+    "id": "TMC",
+    "nombre": "Puerto de Tumaco",
+    "ciudad": "San Andrés de Tumaco (Nariño)",
+    "rio": "Océano Pacífico",
+    "latitud": 1.8067,
+    "longitud": -78.7647,
+    "ubicacion": "Situado en el extremo sur del litoral pacífico colombiano sobre la isla de Tumaco.\nDispone de acceso directo a aguas del océano y conexiones terrestres regionales.",
+    "descripcion": "Funciona como un nodo portuario estratégico para el sur occidente del país.\nFacilita el intercambio comercial fronterizo y el transporte de productos pesqueros.\nManeja carga general y abastecimiento para las comunidades costeras de la región.\nIntegra rutas de navegación hacia países vecinos del Pacífico suramericano.",
+    "destinos_id": [
+      "BUN",
+      "GPI",
+      "TUR"
+    ]
+  },
+  {
+    "id": "COV",
+    "nombre": "Terminal Marítimo Coveñas",
+    "ciudad": "Coveñas (Sucre)",
+    "rio": "Mar Caribe",
+    "latitud": 9.4094,
+    "longitud": -75.6916,
+    "ubicacion": "Instalado en las aguas del Golfo de Morrosquillo en el mar Caribe.\nCuenta con monoboyas y sistemas submarinos para la transferencia de crudo.",
+    "descripcion": "Opera como la terminal petrolera más relevante para la exportación de crudo.\nRecibe hidrocarburos transportados por los principales oleoductos desde el interior.\nRealiza operaciones seguras de cargue a buques tanque de gran calado.\nSustenta gran parte de la balanza comercial energética de la nación.",
+    "destinos_id": [
+      "BAQ",
+      "CTG",
+      "SMR"
+    ]
+  },
+  {
+    "id": "TUR",
+    "nombre": "Puerto de Turbo",
+    "ciudad": "Turbo (Antioquia)",
+    "rio": "Mar Caribe",
+    "latitud": 8.0833,
+    "longitud": -76.7333,
+    "ubicacion": "Emplazado en el extremo oriental del Golfo de Urabá sobre el mar Caribe.\nSirve como punto de convergencia entre las redes terrestres y las rutas marinas.",
+    "descripcion": "Actúa como eje logístico fundamental para la región del Urabá antioqueño.\nEspecializado en la salida internacional de banano, plátano y productos agrícolas.\nConecta la producción agroindustrial local con mercados del Caribe y Norteamérica.\nFacilita además la movilidad de pasajeros y carga menor en embarcaciones menores.",
+    "destinos_id": [
+      "BAQ",
+      "COV",
+      "CTG"
+    ]
+  },
+  {
+    "id": "GPI",
+    "nombre": "Puerto de Guapi",
+    "ciudad": "Guapi (Cauca)",
+    "rio": "Océano Pacífico",
+    "latitud": 2.57,
+    "longitud": -77.88,
+    "ubicacion": "Ubicado a las riveras del río Guapi en su desembocadura hacia el Océano Pacífico.\nRepresenta un punto de escala obligado para la navegación fluvial y costera.",
+    "descripcion": "Opera como un puerto menor enfocado en el cabotaje y comercio local.\nFacilita el transporte fluvial de pasajeros y mercancías hacia zonas selváticas.\nGarantiza el abastecimiento de víveres y materiales para los pobladores ribereños.\nConecta pequeñas comunidades con los centros urbanos y portuarios del Pacífico.",
+    "destinos_id": [
+      "BUN",
+      "CTG",
+      "TMC"
+    ]
+  },
+  {
+    "id": "SAP",
+    "nombre": "Puerto de San Andrés",
+    "ciudad": "San Andrés (San Andrés y Providencia)",
+    "rio": "Mar Caribe",
+    "latitud": 12.5833,
+    "longitud": -81.7,
+    "ubicacion": "Situado en la costa oriental de la isla de San Andrés en el Mar Caribe.\nDispone de muelles multipropósito para recibir tráfico marítimo insular.",
+    "descripcion": "Funciona como el principal centro de abastecimiento logístico del archipiélago.\nRecibe alimentos, combustibles y manufacturas procedentes del territorio continental.\nAtiende embarcaciones de carga general y buques dedicados al turismo regional.\nConecta a las islas con las rutas comerciales del Caribe occidental y Centroamérica.",
+    "destinos_id": [
+      "CTG",
+      "PRO",
+      "SMR"
+    ]
+  },
+  {
+    "id": "PRO",
+    "nombre": "Puerto de Providencia",
+    "ciudad": "Providencia (San Andrés y Providencia)",
+    "rio": "Mar Caribe",
+    "latitud": 13.35,
+    "longitud": -81.38,
+    "ubicacion": "Ubicado en la bahía principal de la isla de Providencia en el mar Caribe.\nCuenta con infraestructura para el atraque de embarcaciones menores y cabotaje.",
+    "descripcion": "Garantiza la conectividad marítima y el suministro de bienes para la isla.\nManeja carga de consumo básico, materiales de construcción y combustible.\nFacilita el transporte de pasajeros locales y visitantes entre islas vecinas.\nIntegra la economía insular con los flujos comerciales del Caribe colombiano.",
+    "destinos_id": [
+      "BAQ",
+      "CTG",
+      "SAP"
+    ]
+  },
+  {
+    "id": "TOL",
+    "nombre": "Puerto de Tolú",
+    "ciudad": "Tolú (Sucre)",
+    "rio": "Mar Caribe",
+    "latitud": 9.52,
+    "longitud": -75.58,
+    "ubicacion": "Ubicado sobre la costa del Golfo de Morrosquillo en el mar Caribe.\nSirve como terminal menor para la cabecera municipal de Santiago de Tolú.",
+    "descripcion": "Opera principalmente como un puerto menor de cabotaje y turismo.\nManeja embarcaciones pesqueras y de pasajeros hacia la zona insular.\nFacilita el comercio local costero y la actividad recreativa regional.\nFunciona como un punto de enlace marítimo clave para el departamento.",
+    "destinos_id": [
+      "BAQ",
+      "CTG",
+      "SMR"
+    ]
+  },
+  {
+    "id": "PBL",
+    "nombre": "Puerto Bolívar",
+    "ciudad": "Uribia (La Guajira)",
+    "rio": "Mar Caribe",
+    "latitud": 12.2333,
+    "longitud": -71.9833,
+    "ubicacion": "Situado en la alta Guajira sobre la franja costera del mar Caribe.\nEmplazado estratégicamente para atender las operaciones de exportación masiva.",
+    "descripcion": "Es el terminal carbonífero más importante del norte de Colombia.\nSe dedica exclusivamente al acopio y exportación de carbón mineral.\nRecibe barcos de gran calado tipo Panamax y buques graneleros.\nCuenta con infraestructura industrial especializada y muelle de alta capacidad.",
+    "destinos_id": [
+      "BAQ",
+      "CTG",
+      "SMR"
+    ]
+  },
+  {
+    "id": "GLR",
+    "nombre": "Puerto de La Gloria",
+    "ciudad": "La Gloria (Magdalena)",
+    "rio": "Río Magdalena",
+    "latitud": 9.0,
+    "longitud": -75.0,
+    "ubicacion": "Emplazado en la margen este del río Magdalena dentro del departamento del Magdalena.\nSirve de muelle de escala para las embarcaciones de mediano calado.",
+    "descripcion": "Su función principal es el embarque de productos agrícolas locales.\nRecibe mercancías secas y suministros básicos para la población rural.\nPermite el tránsito de pasajeros que se desplazan por el río.\nConecta comercialmente a las veredas ribereñas con los mercados mayores.",
+    "destinos_id": [
+      "MGN",
+      "MOM",
+      "PBQ"
+    ]
+  },
+  {
+    "id": "GAM",
+    "nombre": "Puerto de Gamarra",
+    "ciudad": "Gamarra (Cesar)",
+    "rio": "Río Magdalena",
+    "latitud": 8.3,
+    "longitud": -73.7,
+    "ubicacion": "Localizado en la ribera oriental del río Magdalena en el departamento del Cesar.\nActúa como la puerta de entrada fluvial para la subregión sur del departamento.",
+    "descripcion": "Concentra operaciones de carga pesada, carbón y productos agrícolas.\nDispone de muelles acondicionados para transferencia intermodal.\nConecta el transporte por carretera con la hidrovía del Magdalena.\nSuministra combustible y vísceras logísticas a los convoyes.",
+    "destinos_id": [
+      "BCB",
+      "CAP",
+      "EBN",
+      "PBQ"
+    ]
+  },
+  {
+    "id": "CAP",
+    "nombre": "Puerto de Capulco",
+    "ciudad": "Gamarra (Cesar)",
+    "rio": "Río Magdalena",
+    "latitud": 8.3,
+    "longitud": -73.7,
+    "ubicacion": "Situado en el corregimiento de Capulco, jurisdicción del municipio de Gamarra.\nEmplazado estratégicamente en la margen derecha del río Magdalena.",
+    "descripcion": "Funciona como un terminal alterno de carga y almacenamiento.\nManeja hidrocarburos, minerales y materias primas a granel.\nOptimiza los tiempos de despacho para las empresas mineras y agrícolas.\nDescongestiona las operaciones de los muelles principales de la zona.",
+    "destinos_id": [
+      "BCB",
+      "GAM",
+      "PBQ"
+    ]
+  },
+  {
+    "id": "PWI",
+    "nombre": "Puerto de Puerto Wilches",
+    "ciudad": "Puerto Wilches (Santander)",
+    "rio": "Río Magdalena",
+    "latitud": 7.3,
+    "longitud": -73.9,
+    "ubicacion": "Emplazado sobre la margen derecha del río Magdalena.\nUbicado en el casco urbano del municipio de Puerto Wilches.",
+    "descripcion": "Terminal fluvial dedicada al transporte de carga general y agrícola.\nFacilita la movilización de palma de aceite y productos de la región.\nConecta las zonas productivas con los principales centros de consumo.\nImpulsa la economía ribereña del departamento de Santander.",
+    "destinos_id": [
+      "BCB",
+      "EBN",
+      "PBE"
+    ]
+  },
+  {
+    "id": "PBE",
+    "nombre": "Puerto de Puerto Berrío",
+    "ciudad": "Puerto Berrío (Antioquia)",
+    "rio": "Río Magdalena",
+    "latitud": 6.4914,
+    "longitud": -74.3983,
+    "ubicacion": "Localizado en la zona céntrica ribereña del Magdalena Medio antioqueño.\nEmplazado estratégicamente sobre la margen occidental del río.",
+    "descripcion": "Histórico puerto fluvial con operaciones de carácter multimodal.\nConecta la red férrea y vial con la hidrovía del río Magdalena.\nMoviliza carga general, alimentos y materiales de construcción.\nSirve como despachador clave para el comercio del centro andino.",
+    "destinos_id": [
+      "BAQ",
+      "BAR",
+      "CTG"
+    ]
+  },
+  {
+    "id": "MPB",
+    "nombre": "Muelle de Pasajeros de Puerto Berrío",
+    "ciudad": "Puerto Berrío (Antioquia)",
+    "rio": "Río Magdalena",
+    "latitud": 6.492,
+    "longitud": -74.3983,
+    "ubicacion": "Ubicado en el malecón principal del municipio de Puerto Berrío.\nDispuesto sobre la orilla occidental del cauce del río Magdalena.",
+    "descripcion": "Muelle especializado en el embarque y desembarque de pasajeros.\nFacilita la movilidad de pobladores entre veredas y municipios vecinos.\nOpera embarcaciones menores dedicadas al transporte fluvial local.\nVital para la conectividad de las comunidades ribereñas aisladas.",
+    "destinos_id": [
+      "PBE",
+      "PNA",
+      "PTR"
+    ]
+  },
+  {
+    "id": "SOP",
+    "nombre": "Muelle de Carga Multimodal SOPORTUARIA",
+    "ciudad": "Puerto Berrío (Antioquia)",
+    "rio": "Río Magdalena",
+    "latitud": 6.49,
+    "longitud": -74.399,
+    "ubicacion": "Emplazado en el área industrial portuaria de Puerto Berrío.\nSituado sobre la ribera occidental del río Magdalena con acceso carretero.",
+    "descripcion": "Terminal privada enfocada en operaciones de carga pesada y graneles.\nCuenta con infraestructura moderna para transferencia intermodal.\nOptimiza los tiempos de descargue y despacho hacia el interior.\nSoporta cadenas logísticas de comercio nacional e internacional.",
+    "destinos_id": [
+      "BAQ",
+      "BAR",
+      "CTG"
+    ]
+  },
+  {
+    "id": "PNA",
+    "nombre": "Puerto de Puerto Nare",
+    "ciudad": "Puerto Nare (Antioquia)",
+    "rio": "Río Magdalena",
+    "latitud": 6.2,
+    "longitud": -74.6,
+    "ubicacion": "Situado sobre la margen occidental del río Magdalena en Antioquia.\nUbicado frente al casco urbano del municipio de Puerto Nare.",
+    "descripcion": "Puerto fluvial enfocado en la movilización de cemento y materiales.\nAtiende las necesidades industriales de la subregión del Magdalena Medio.\nPermite el intercambio comercial entre los departamentos vecinos.\nFacilita el tránsito de chalupas y carga liviana de pasajeros.",
+    "destinos_id": [
+      "DOR",
+      "PBE",
+      "PTR"
+    ]
+  },
+  {
+    "id": "PTR",
+    "nombre": "Puerto de Puerto Triunfo",
+    "ciudad": "Puerto Triunfo (Antioquia)",
+    "rio": "Río Magdalena",
+    "latitud": 5.9,
+    "longitud": -74.6,
+    "ubicacion": "Localizado en la ribera occidental del río Magdalena en Antioquia.\nConectado directamente con los ejes viales hacia Medellín y Bogotá.",
+    "descripcion": "Muelle fluvial dedicado al comercio local y transporte de pasajeros.\nImpulsa el turismo ecológico y la economía de la región antioqueña.\nPermite la navegación de embarcaciones menores de cabotaje.\nArticula el comercio ribereño con las vías terrestres principales.",
+    "destinos_id": [
+      "DOR",
+      "HON",
+      "PNA"
+    ]
+  },
+  {
+    "id": "SAL",
+    "nombre": "Puerto de Puerto Salgar",
+    "ciudad": "Puerto Salgar (Cundinamarca)",
+    "rio": "Río Magdalena",
+    "latitud": 5.4648,
+    "longitud": -74.655,
+    "ubicacion": "Situado sobre la margen oriental del río Magdalena en Cundinamarca.\nConocido históricamente como la puerta de entrada fluvial al departamento.",
+    "descripcion": "Terminal multimodal con integración ferroviaria y vial cercana.\nFacilita la distribución de carga general hacia la capital del país.\nImpulsa proyectos de reactivación de la navegación por el Magdalena.\nConecta el altiplano cundiboyacense con los puertos del norte.",
+    "destinos_id": [
+      "BAR",
+      "DOR",
+      "HON"
+    ]
+  },
+  {
+    "id": "PBY",
+    "nombre": "Puerto de Puerto Boyacá",
+    "ciudad": "Puerto Boyacá (Boyacá)",
+    "rio": "Río Magdalena",
+    "latitud": 6.0001,
+    "longitud": -74.5002,
+    "ubicacion": "Localizado en el Magdalena Medio sobre la margen oriental del río.\nConstituye la principal salida fluvial del departamento de Boyacá.",
+    "descripcion": "Eje estratégico para el transporte de hidrocarburos, ganado y alimentos.\nFacilita el comercio interdepartamental entre Boyacá, Antioquia y Santander.\nConecta con importantes centros de refinación y producción petroquímica.\nSostiene un flujo constante de chalupas y carga pesada ribereña.",
+    "destinos_id": [
+      "BAQ",
+      "PBE",
+      "TUN"
+    ]
+  },
+  {
+    "id": "PTE",
+    "nombre": "Puerto de Puerto Tejada",
+    "ciudad": "Puerto Tejada (Cauca)",
+    "rio": "Río Cauca",
+    "latitud": 3.2301,
+    "longitud": -76.4202,
+    "ubicacion": "Situado en las inmediaciones del río Cauca al norte del departamento.\nSirve como punto de articulación logística para el norte caucano.",
+    "descripcion": "Terminal fluvial menor orientada al apoyo de la agroindustria local.\nManeja principalmente insumos agrícolas, caña de azúcar y carga liviana.\nConecta las zonas de producción rural con los mercados del Valle del Cauca.\nPromueve el tránsito fluvial local y la integración regional.",
+    "destinos_id": [
+      "CAL",
+      "MAG",
+      "PAL"
+    ]
+  },
+  {
+    "id": "PAL",
+    "nombre": "Puerto de Palestina",
+    "ciudad": "Palestina (Chocó)",
+    "rio": "Río Atrato",
+    "latitud": 5.0001,
+    "longitud": -76.3002,
+    "ubicacion": "Emplazado en el área rural y ribereña de la cuenca del Atrato.\nConecta poblaciones campesinas e indígenas con los ejes de transporte.",
+    "descripcion": "Utilizado principalmente para el embarque de productos agrícolas locales.\nPermite el tránsito de chalupas y botes hacia cabeceras municipales.\nContribuye a la cohesión social y comercial de las veredas ribereñas.\nRepresenta un punto de parada técnica para la navegación regional.",
+    "destinos_id": [
+      "MED",
+      "QUI"
+    ]
+  },
+  {
+    "id": "TUM",
+    "nombre": "Puerto de Tumbo",
+    "ciudad": "Nuquí (Chocó)",
+    "rio": "Océano Pacífico",
+    "latitud": 5.5001,
+    "longitud": -77.3002,
+    "ubicacion": "Ubicado en la franja costera del Pacífico norte chocoano.\nSirve como punto de desembarco para la navegación de cabotaje.",
+    "descripcion": "Apoya las actividades de pesca artesanal y ecoturismo marino.\nFacilita la movilidad de pobladores hacia ensenadas y playas aisladas.\nConecta la oferta ecoturística local con rutas marítimas menores.\nImpulsa la economía sostenible de las comunidades afrodescendientes.",
+    "destinos_id": [
+      "PAC",
+      "QUI"
+    ]
+  },
+  {
+    "id": "PCR",
+    "nombre": "Puerto de Puerto Carreño",
+    "ciudad": "Puerto Carreño (Vichada)",
+    "rio": "Río Orinoco",
+    "latitud": 6.1903,
+    "longitud": -67.4837,
+    "ubicacion": "Situado sobre la margen occidental del río Orinoco en la frontera con Venezuela.\nConstituye el epicentro fluvial de la Orinoquía colombiana.",
+    "descripcion": "Principal terminal fluvial del departamento del Vichada para el comercio fronterizo.\nManeja carga general, alimentos y combustibles que abastecen a la región.\nFacilita el transporte de pasajeros hacia poblaciones vecinas y territorio venezolano.\nConecta la red fluvial oriental con los mercados de Villavicencio y Bogotá.",
+    "destinos_id": [
+      "BOG",
+      "PLP",
+      "VIL",
+      "VNZ"
+    ]
+  },
+  {
+    "id": "PRN",
+    "nombre": "Puerto de Puerto Nariño",
+    "ciudad": "Puerto Nariño (Vichada)",
+    "rio": "Río Orinoco",
+    "latitud": 6.2,
+    "longitud": -67.5,
+    "ubicacion": "Ubicado estratégicamente sobre las riberas del río Orinoco en zona rural.\nFunciona como un punto menor de intercambio comercial y artesanal.",
+    "descripcion": "Opera principalmente con embarcaciones menores dedicadas a la pesca local.\nFacilita la movilidad fluvial de comunidades ribereñas hacia la cabecera municipal.\nPermite el intercambio de bienes de subsistencia con poblados venezolanos cercanos.\nSu infraestructura es rústica y depende de las variaciones estacionales del caudal.",
+    "destinos_id": [
+      "PCR",
+      "VNZ"
+    ]
+  },
+  {
+    "id": "BNQ",
+    "nombre": "Puerto de La Banqueta",
+    "ciudad": "La Banqueta (Meta)",
+    "rio": "Río Meta",
+    "latitud": 4.0,
+    "longitud": -72.0,
+    "ubicacion": "Emplazado sobre la margen del río Meta en el departamento del Meta.\nSirve como punto de escala y transferencia para la navegación regional.",
+    "descripcion": "Apoya las actividades agropecuarias y el transporte de pequeños productores.\nManeja carga liviana y suministros básicos para los asentamientos cercanos.\nFacilita la movilización de pobladores que dependen de la hidrovía del Meta.\nConecta rutas de navegación comercial hacia los puertos principales del río.",
+    "destinos_id": [
+      "PCR",
+      "PLP",
+      "VIL"
+    ]
+  },
+  {
+    "id": "PLP",
+    "nombre": "Puerto de Puerto López",
+    "ciudad": "Puerto López (Meta)",
+    "rio": "Río Meta",
+    "latitud": 4.09,
+    "longitud": -72.96,
+    "ubicacion": "Ubicado en el sector de Puertouseche sobre la margen del río Meta.\nEs considerado el principal puerto multimodal del piedemonte llanero.",
+    "descripcion": "Concentra el embarque de hidrocarburos, insumos agrícolas y carga general.\nOfrece navegación permanente desde este punto hasta la desembocadura en el Orinoco.\nCuenta con muelles adecuados para recibir embarcaciones de mayor calado.\nFunciona como el nexo logístico fundamental entre Bogotá y la Orinoquía.",
+    "destinos_id": [
+      "BNQ",
+      "BOG",
+      "PCR",
+      "VIL"
+    ]
+  },
+  {
+    "id": "PGA",
+    "nombre": "Puerto de Puerto Gaitán",
+    "ciudad": "Puerto Gaitán (Meta)",
+    "rio": "Río Meta",
+    "latitud": 4.316,
+    "longitud": -72.083,
+    "ubicacion": "Situado sobre las riberas del río Meta en la altillanura colombiana.\nActúa como un nodo estratégico para la industria petrolera y agrícola.",
+    "descripcion": "Maneja maquinaria, equipos pesados y suministros para la industria energética.\nFacilita el transporte fluvial de carga hacia proyectos agroindustriales remotos.\nMoviliza pasajeros y mercancías diversas a lo largo del corredor del río Meta.\nConecta por vía terrestre y fluvial con los centros de acopio regionales.",
+    "destinos_id": [
+      "PCR",
+      "PLP",
+      "VIL"
+    ]
+  },
+  {
+    "id": "YUR",
+    "nombre": "Puerto de Yuruparí",
+    "ciudad": "Yuruparí (Vaupés)",
+    "rio": "Río Vaupés",
+    "latitud": 1.15,
+    "longitud": -70.45,
+    "ubicacion": "Localizado en el sector histórico y natural de Yuruparí sobre el río Vaupés.\nSirve como punto de tránsito para la navegación fluvial amazónica.",
+    "descripcion": "Facilita el desplazamiento de pobladores locales y pequeños comerciantes.\nPermite sortear tramos específicos de la red hídrica hacia la frontera con Brasil.\nOpera principalmente con botes de madera y motores fuera de borda.\nApoya el intercambio cultural y comercial entre comunidades ribereñas.",
+    "destinos_id": [
+      "BRA",
+      "MIT"
+    ]
+  },
+  {
+    "id": "PUC",
+    "nombre": "Puerto de Pucarón",
+    "ciudad": "Pucarón (Vaupés)",
+    "rio": "Río Vaupés",
+    "latitud": 1.45,
+    "longitud": -69.55,
+    "ubicacion": "Emplazado en el curso medio-bajo del río Vaupés hacia el oriente.\nFunciona como embarcadero de apoyo para la navegación fronteriza.",
+    "descripcion": "Utilizado por lancheros y comunidades para el transporte de productos locales.\nConecta pequeñas poblaciones selváticas con la ruta principal hacia Brasil.\nSu actividad principal es el tránsito de pasajeros y carga de subsistencia.\nCarece de infraestructura formal, dependiendo de playas naturales.",
+    "destinos_id": [
+      "BRA",
+      "MIT"
+    ]
+  },
+  {
+    "id": "CLM",
+    "nombre": "Puerto de Calamar",
+    "ciudad": "Calamar (Guaviare)",
+    "rio": "Río Guaviare",
+    "latitud": 1.5651,
+    "longitud": -72.5489,
+    "ubicacion": "Emplazado sobre la margen izquierda del caudaloso río Guaviare.\nSirve como punto estratégico de interconexión fluvial en el departamento.",
+    "descripcion": "Facilita el transporte de carga general y víveres hacia zonas remotas.\nConecta las comunidades selváticas con centros de acopio regionales.\nMoviliza pasajeros locales en embarcaciones menores de madera y fibra.\nimpulsa la economía ribereña mediante el intercambio comercial amazónico.",
+    "destinos_id": [
+      "MIT",
+      "PUM",
+      "SJG"
+    ]
+  },
+  {
+    "id": "INI",
+    "nombre": "Puerto de Puerto Inírida",
+    "ciudad": "Puerto Inírida (Guainía)",
+    "rio": "Río Inírida",
+    "latitud": 3.8653,
+    "longitud": -67.9239,
+    "ubicacion": "Situado estratégicamente sobre las márgenes del río Inírida cerca de su desembocadura.\nActúa como el principal nodo de comercio fluvial en la frontera oriental colombiana.",
+    "descripcion": "Opera como muelle internacional para el intercambio comercial con Venezuela.\nRecibe embarcaciones de mediana escala con combustibles y alimentos.\nMoviliza pasajeros hacia comunidades indígenas y capitales departamentales.\nVital para el abastecimiento de la región nororiental de la Amazonía.",
+    "destinos_id": [
+      "MIT",
+      "SJG",
+      "VEN"
+    ]
+  },
+  {
+    "id": "ORC",
+    "nombre": "Puerto de Orocué",
+    "ciudad": "Orocué (Casanare)",
+    "rio": "Río Meta",
+    "latitud": 4.8083,
+    "longitud": -71.3361,
+    "ubicacion": "Ubicado sobre la margen izquierda del extenso y navegable río Meta.\nRepresenta un hito histórico para la navegación comercial en los Llanos Orientales.",
+    "descripcion": "Permite la salida de productos agrícolas e insumos pecuarios regionales.\nCanaliza el tráfico fluvial comercial hacia los departamentos orientales.\nRecibe embarcaciones de carga liviana durante las épocas de creciente.\nFunciona como escala fundamental para la navegación en el eje del Meta.",
+    "destinos_id": [
+      "PCR",
+      "PLP"
+    ]
+  },
+  {
+    "id": "PRV",
+    "nombre": "Puerto de Primavera",
+    "ciudad": "Primavera (Vichada)",
+    "rio": "Río Meta",
+    "latitud": 5.4833,
+    "longitud": -70.4167,
+    "ubicacion": "Emplazado en el municipio de Santa Rosalía sobre el majestuoso río Meta.\nConecta las extensas sabanas de Vichada con las rutas fluviales del oriente.",
+    "descripcion": "Facilita la movilización de ganado y cosechas hacia mercados centrales.\nSirve de muelle de transferencia para carga pesada y suministros básicos.\nMoviliza pobladores locales a través de rutas fluviales intermunicipales.\nDinamiza la economía agropecuaria de la altillanura colombiana.",
+    "destinos_id": [
+      "PCR",
+      "PLP"
+    ]
+  },
+  {
+    "id": "ARA",
+    "nombre": "Puerto de Arauca",
+    "ciudad": "Arauca (Arauca)",
+    "rio": "Río Arauca",
+    "latitud": 7.0847,
+    "longitud": -70.7591,
+    "ubicacion": "Situado sobre la margen derecha del río Arauca en la frontera colombo-venezolana.\nConstituye la principal puerta de entrada fluvial y terrestre del departamento.",
+    "descripcion": "Gestiona el intercambio comercial binacional de mercancías y víveres.\nPermite el tránsito de pasajeros entre las poblaciones fronterizas vecinas.\nRecibe embarcaciones menores dedicadas al comercio informal y formal.\nSostiene la actividad económica de una zona de alta sensibilidad geopolítica.",
+    "destinos_id": [
+      "BOG",
+      "CUC",
+      "VEN"
+    ]
+  },
+  {
+    "id": "ARQ",
+    "nombre": "Puerto de Arauquita",
+    "ciudad": "Arauquita (Arauca)",
+    "rio": "Río Arauca",
+    "latitud": 7.0278,
+    "longitud": -71.4319,
+    "ubicacion": "Ubicado en la ribera del río Arauca en una zona de alta producción agrícola.\nFunciona como un punto clave de comunicación fluvial binacional y local.",
+    "descripcion": "Facilita el transporte de plátano, cacao y otros productos agrícolas locales.\nConecta comunidades rurales ribereñas con el casco urbano principal.\nMoviliza pasajeros que cruzan habitualmente hacia territorio venezolano.\nImpulsa el comercio fronterizo y la economía campesina de la región.",
+    "destinos_id": [
+      "ARA",
+      "VEN"
+    ]
+  },
+  {
+    "id": "VRE",
+    "nombre": "Muelle Internacional Victoria Regia",
+    "ciudad": "Leticia (Amazonas)",
+    "rio": "Río Amazonas",
+    "latitud": -4.2236,
+    "longitud": -69.9456,
+    "ubicacion": "Emplazado en la ribera noroccidental del gran río Amazonas en Leticia.\nFunciona como el principal terminal fluvial internacional de la triple frontera.",
+    "descripcion": "Recibe barcos de gran calado procedentes de Brasil y del Perú.\nCentraliza el ingreso de carga internacional, combustible y mercancías.\nFacilita el control migratorio y aduanero de la navegación comercial.\nArticula el comercio exterior colombiano en la cuenca amazónica.",
+    "destinos_id": [
+      "PTN",
+      "SRO",
+      "TAB"
+    ]
+  },
+  {
+    "id": "MLC",
+    "nombre": "Malecón Turístico de Leticia",
+    "ciudad": "Leticia (Amazonas)",
+    "rio": "Río Amazonas",
+    "latitud": -4.2161,
+    "longitud": -69.945,
+    "ubicacion": "Situado frente al malecón urbano en el extremo sur del municipio de Leticia.\nRepresenta el epicentro del movimiento turístico y de pasajeros de la zona.",
+    "descripcion": "Gestiona el embarque y desembarque masivo de turistas y locales.\nConecta la ciudad con reservas naturales, islas y comunidades vecinas.\nPromueve el ecoturismo fluvial hacia la Isla de los Micos y lagos.\nDinamiza la economía local a través de prestadores de servicios turísticos.",
+    "destinos_id": [
+      "ISM",
+      "PTN",
+      "YAH"
+    ]
+  },
+  {
+    "id": "PTN",
+    "nombre": "Puerto de Puerto Nariño",
+    "ciudad": "Puerto Nariño (Amazonas)",
+    "rio": "Río Loretoyacu",
+    "latitud": -3.7781,
+    "longitud": -70.3831,
+    "ubicacion": "Ubicado sobre la margen del río Loretoyacu cerca de su desembocadura al Amazonas.\nSirve como el único puerto de acceso a este municipio de turismo sostenible.",
+    "descripcion": "Recibe únicamente embarcaciones fluviales turísticas y de carga menor.\nProhíbe el uso de vehículos motorizados tradicionales en el municipio.\nFacilita el transporte de artesanías y productos de sustento indígena.\nGarantiza la conectividad fluvial con Leticia y comunidades nativas.",
+    "destinos_id": [
+      "MLC",
+      "PER",
+      "TAR"
+    ]
+  },
+  {
+    "id": "PAS",
+    "nombre": "Puerto de Puerto Asís",
+    "ciudad": "Puerto Asís (Putumayo)",
+    "rio": "Río Putumayo",
+    "latitud": 0.5086,
+    "longitud": -76.4981,
+    "ubicacion": "Emplazado sobre las márgenes del río Putumayo en el sur del país.\nActúa como la principal terminal fluvial comercial del departamento.",
+    "descripcion": "Conecta el sur de Colombia con poblaciones fronterizas del Perú.\nMoviliza carga pesada, víveres y combustibles hacia la selva baja.\nFacilita el transporte de pasajeros y mercancías en naves medianas.\nSustenta la cadena logística de abastecimiento en la Amazonía occidental.",
+    "destinos_id": [
+      "ECU",
+      "LET",
+      "MOC"
+    ]
+  },
+  {
+    "id": "LEG",
+    "nombre": "Puerto de Puerto Leguízamo",
+    "ciudad": "Puerto Leguízamo (Putumayo)",
+    "rio": "Río Putumayo",
+    "latitud": -0.1936,
+    "longitud": -74.7781,
+    "ubicacion": "Emplazado sobre la margen izquierda del río Putumayo en el área urbana del municipio.\nConstituye el principal nodo fluvial fronterizo en la región sur del departamento.",
+    "descripcion": "Facilita el transporte de carga general, suministros y pasajeros hacia localidades ribereñas.\nConecta activamente con poblaciones en territorio amazónico y fronteras vecinas.\nFunciona como base logística y de abastecimiento para las comunidades locales.\nSoporta la movilidad fluvial esencial en una zona de difícil acceso terrestre.",
+    "destinos_id": [
+      "ECU",
+      "LET",
+      "MOC"
+    ]
+  },
+  {
+    "id": "TRP",
+    "nombre": "Puerto de Tarapacá",
+    "ciudad": "Tarapacá (Amazonas)",
+    "rio": "Río Amazonas",
+    "latitud": -2.8667,
+    "longitud": -69.75,
+    "ubicacion": "Situado sobre la margen derecha del río Amazonas en el extremo sur del departamento.\nSirve como punto estratégico de conectividad para el corregimiento y la región.",
+    "descripcion": "Permite el movimiento de carga comercial básica y pasajeros en embarcaciones menores.\nIntegra las comunidades indígenas y rurales con los centros urbanos amazónicos.\nImpulsa el intercambio comercial menor con zonas ribereñas de países vecinos.\nRepresenta la única vía eficiente de comunicación en la extensa selva amazónica.",
+    "destinos_id": [
+      "BRA",
+      "LET",
+      "NAR"
+    ]
+  },
+  {
+    "id": "TAG",
+    "nombre": "Puerto de La Tagua",
+    "ciudad": "La Tagua (Putumayo)",
+    "rio": "Río Putumayo",
+    "latitud": -0.3667,
+    "longitud": -74.6667,
+    "ubicacion": "Localizado sobre la margen del río Putumayo en el suroriente del departamento.\nActúa como puerto de escala y transferencia para la navegación fluvial amazónica.",
+    "descripcion": "Canaliza el transporte de productos agrícolas, viveres y pasajeros de la región.\nConecta el comercio interno entre los municipios ribereños del departamento.\nFacilita la salida de materias primas hacia centros de acopio más grandes.\nPromueve la integración económica de poblaciones apartadas a lo largo del río.",
+    "destinos_id": [
+      "ASI",
+      "LEG",
+      "LET"
+    ]
+  },
+  {
+    "id": "PED",
+    "nombre": "Puerto de La Pedrera",
+    "ciudad": "La Pedrera (Amazonas)",
+    "rio": "Río Caquetá",
+    "latitud": -1.3167,
+    "longitud": -69.5833,
+    "ubicacion": "Ubicado estratégicamente sobre el río Caquetá cerca de su desembocadura al Amazonas.\nSirve de puerta de entrada fluvial en el nororiente del departamento del Amazonas.",
+    "descripcion": "Maneja el flujo de mercancías, alimentos y pasajeros en el eje amazónico.\nConecta el tráfico fluvial proveniente de las cuencas del Caquetá y el Amazonas.\nSostiene la actividad comercial básica frente al aislamiento vial de la zona.\nPermite el tránsito fronterizo y el intercambio cultural con la región vecina.",
+    "destinos_id": [
+      "BRA",
+      "FLO",
+      "LET"
+    ]
+  },
+  {
+    "id": "MGS",
+    "nombre": "Puerto de Magangué San Jorge",
+    "ciudad": "Magangué (Bolívar)",
+    "rio": "Río San Jorge",
+    "latitud": 9.245,
+    "longitud": -74.753,
+    "ubicacion": "Emplazado sobre las riberas del río San Jorge en las inmediaciones de su confluencia.\nConecta la red fluvial de la subregión con el sistema principal del río Magdalena.",
+    "descripcion": "Operado para el embarque de productos agrícolas y ganaderos de la región.\nFacilita el transporte mixto de pasajeros y carga general hacia municipios vecinos.\nArticula el comercio interior de los departamentos de Bolívar y Córdoba.\nFunciona como terminal complementaria al sistema portuario principal del Magdalena.",
+    "destinos_id": [
+      "BAN",
+      "COR",
+      "MOM"
+    ]
+  },
+  {
+    "id": "PUM",
+    "nombre": "Puente Pumarejo",
+    "ciudad": "Barranquilla (Atlántico)",
+    "rio": "Río Magdalena",
+    "latitud": 10.952,
+    "longitud": -74.748,
+    "ubicacion": "Atraviesa el cauce principal del río Magdalena en el sector oriental de Barranquilla.\nConecta estructuralmente al departamento del Atlántico con el departamento del Magdalena.",
+    "descripcion": "Garantiza el flujo continuo de transporte pesado, carga y vehículos particulares.\nOptimiza la conectividad logística hacia los puertos marítimos del Caribe colombiano.\nPermite el cruce vial sin interrumpir la navegación de embarcaciones mayores.\nImpulsa el comercio regional y el tránsito de pasajeros entre ambas riberas.",
+    "destinos_id": [
+      "BAQ",
+      "SIT",
+      "SMR"
+    ]
+  },
+  {
+    "id": "RON",
+    "nombre": "Puente Roncador",
+    "ciudad": "Santa Cruz de Mompós (Bolívar)",
+    "rio": "Río Magdalena",
+    "latitud": 9.215,
+    "longitud": -74.425,
+    "ubicacion": "Estructura vial construida sobre el brazo principal del río Magdalena en Mompox.\nUne físicamente el municipio momposino con la Transversal de la Depresión.",
+    "descripcion": "Elimina la dependencia de transbordadores para el cruce vehicular y de pasajeros.\nFacilita el transporte de carga agrícola entre el sur de Bolívar y el Cesar.\nReduce significativamente los tiempos de viaje en la troncal oriental andina.\nPromueve el desarrollo turístico y comercial de la Depresión Momposina.",
+    "destinos_id": [
+      "BAN",
+      "MOM",
+      "TAM"
+    ]
+  },
+  {
+    "id": "REG",
+    "nombre": "Ferry de Regidor",
+    "ciudad": "Regidor (Bolívar)",
+    "rio": "Río Magdalena",
+    "latitud": 8.915,
+    "longitud": -74.225,
+    "ubicacion": "Opera mediante sistema de planchón sobre las aguas del río Magdalena.\nEstablece un punto de paso obligado en la zona ribereña del sur de Bolívar.",
+    "descripcion": "Permite el transporte fluvial de vehículos de carga y pasajeros de orilla a orilla.\nConecta de manera directa los municipios ribereños del departamento de Bolívar.\nGarantiza la continuidad de la cadena logística local y el tránsito regional.\nMitiga la ausencia de puentes vehiculares permanentes en este sector del río.",
+    "destinos_id": [
+      "BAN",
+      "MOM",
+      "SMD"
+    ]
+  },
+  {
+    "id": "CAR",
+    "nombre": "Muelle Internacional sobre el río Orinoco",
+    "ciudad": "Puerto Carreño (Vichada)",
+    "rio": "Río Orinoco",
+    "latitud": 6.1903,
+    "longitud": -67.4837,
+    "ubicacion": "Situado sobre la margen occidental del río Orinoco frente a territorio venezolano.\nFunciona como terminal fluvial fronteriza en el extremo oriental de la Orinoquía.",
+    "descripcion": "Regula el tráfico fluvial internacional de pasajeros y mercancías entre países.\nFacilita el comercio bilateral y el abastecimiento de la capital vichadense.\nManeja el transporte de víveres, combustibles y materiales de construcción.\nRepresenta el principal punto de soberanía y conectividad fluvial en la frontera.",
+    "destinos_id": [
+      "INP",
+      "PAZ",
+      "PTC"
+    ]
+  },
+  {
+    "id": "INR",
+    "nombre": "Muelle para pasajeros y carga - río Inírida",
+    "ciudad": "Inírida (Guainía)",
+    "rio": "Río Inírida",
+    "latitud": 3.87,
+    "longitud": -67.92,
+    "ubicacion": "Situado sobre la margen derecha del río Inírida en la cabecera municipal.\nFacilita la conectividad fluvial fronteriza en el extremo oriental del país.",
+    "descripcion": "Opera como un punto estratégico para el intercambio comercial y de pasajeros.\nPermite el tránsito fluvial internacional entre Colombia y Venezuela.\nManeja carga general y abastecimiento para comunidades ribereñas.\nFunciona como puerto clave para la integración amazónica y llanera.",
+    "destinos_id": [
+      "VEN"
+    ]
+  },
+  {
+    "id": "VQA",
+    "nombre": "Vados del río Atrato",
+    "ciudad": "Quibdó (Chocó)",
+    "rio": "Río Atrato",
+    "latitud": 5.692,
+    "longitud": -76.658,
+    "ubicacion": "Localizados a lo largo del cauce medio y bajo del río Atrato en el departamento del Chocó.\nConectan las riberas opuestas mediante pasos tradicionales y embarcaciones menores.",
+    "descripcion": "Sirven como alternativa de comunicación para las comunidades locales aisladas.\nPermiten el transporte de pasajeros y carga agrícola a pequeña escala.\nFacilitan el cruce de personas y mercancías entre municipios selváticos.\nMitigan la carencia de infraestructura vial formal en la región.",
+    "destinos_id": [
+      "IST",
+      "MAT"
+    ]
+  },
+  {
+    "id": "VSJ",
+    "nombre": "Vados del río San Jorge",
+    "ciudad": "Montelíbano (Córdoba)",
+    "rio": "Río San Jorge",
+    "latitud": 7.988,
+    "longitud": -75.405,
+    "ubicacion": "Emplazados en el curso alto del río San Jorge y sectores rurales del sur de Córdoba.\nUtilizan puentes colgantes artesanales y planchalones para superar el cauce.",
+    "descripcion": "Garantizan la movilidad terrestre y de carga entre las subregiones de la Mojana y el San Jorge.\nPermiten el cruce vehicular de ganado, productos agrícolas y pasajeros locales.\nArticulan la economía ganadera con los mercados municipales vecinos.\nFacilitan la conectividad durante las épocas de crecientes y sequías fluviales.",
+    "destinos_id": [
+      "MAJ",
+      "SMA",
+      "SUC"
+    ]
+  },
+  {
+    "id": "VSI",
+    "nombre": "Vados del río Sinú",
+    "ciudad": "Montería (Córdoba)",
+    "rio": "Río Sinú",
+    "latitud": 8.754,
+    "longitud": -75.888,
+    "ubicacion": "Distribuidos a lo largo del valle del río Sinú desde la zona urbana hasta el bajo Sinú.\nComunican ambas márgenes fluviales mediante infraestructura vial y pasos informales.",
+    "descripcion": "Facilitan el tránsito vehicular intermunicipal y el transporte de cosechas.\nConectan importantes centros de producción agrícola con los mercados de consumo.\nPermiten el desplazamiento diario de pasajeros y transporte liviano.\nJuegan un papel vital en la integración económica del departamento de Córdoba.",
+    "destinos_id": [
+      "CER",
+      "LOR",
+      "SPE"
+    ]
+  },
+  {
+    "id": "VMT",
+    "nombre": "Vados del río Meta",
+    "ciudad": "Puerto López (Meta)",
+    "rio": "Río Meta",
+    "latitud": 4.091,
+    "longitud": -72.957,
+    "ubicacion": "Situados en los cruces estratégicos del río Meta en los Llanos Orientales.\nEmplean sistemas de planchalones y balsas para el transporte de automotores.",
+    "descripcion": "Vitales para la conectividad vial de la altillanura colombiana con el centro del país.\nPermiten el paso de camiones de carga pesada, insumos agrícolas y ganado.\nTransportan pasajeros y vehículos particulares en rutas interdepartamentales.\nSustituyen temporalmente la falta de grandes puentes sobre el río.",
+    "destinos_id": [
+      "BAN",
+      "ORC",
+      "PGA"
+    ]
+  },
+  {
+    "id": "VGV",
+    "nombre": "Vados del río Guaviare",
+    "ciudad": "San José del Guaviare (Guaviare)",
+    "rio": "Río Guaviare",
+    "latitud": 2.573,
+    "longitud": -72.643,
+    "ubicacion": "Ubicados sobre el caudaloso río Guaviare en la puerta de la Amazonía colombiana.\nOperan mediante balsas y chalupas adaptadas para el transporte mixto.",
+    "descripcion": "Facilitan la integración territorial entre departamentos de la Orinoquía y Amazonía.\nPermiten el cruce de comunidades indígenas, campesinos y colonos.\nTransportan carga de subsistencia, víveres y vehículos de carga mediana.\nConstituyen un punto neurálgico para la economía de la colonización.",
+    "destinos_id": [
+      "BAR",
+      "CAL"
+    ]
+  },
+  {
+    "id": "VPT",
+    "nombre": "Vados del río Putumayo",
+    "ciudad": "Puerto Asís (Putumayo)",
+    "rio": "Río Putumayo",
+    "latitud": 0.509,
+    "longitud": -76.498,
+    "ubicacion": "Emplazados en el alto Putumayo y zonas de frontera sur con Ecuador y Perú.\nUtilizan embarcaciones fluviales y pasos de balsa autorizados.",
+    "descripcion": "Permiten el tránsito fronterizo internacional de personas y mercancías.\nConectan nodos de comercio amazónico y facilitan el aprovisionamiento regional.\nTransportan pasajeros locales y carga general en trayectos fluviales largos.\nFortalecen la soberanía y la integración binacional en la cuenca sur.",
+    "destinos_id": [
+      "MCO",
+      "PLG"
+    ]
+  },
+  {
+    "id": "VAM",
+    "nombre": "Vados del río Amazonas",
+    "ciudad": "Leticia (Amazonas)",
+    "rio": "Río Amazonas",
+    "latitud": -4.215,
+    "longitud": -69.94,
+    "ubicacion": "Localizados en el extremo sur del trapecio amazónico sobre el río Amazonas.\nOperan mediante lanchas rápidas y botes de madera para navegación internacional.",
+    "descripcion": "Garantizan la conectividad trinacional entre Colombia, Perú y Brasil.\nTransportan turistas, residentes fronterizos y carga ligera de consumo.\nFacilitan el intercambio comercial diario en la triple frontera.\nSon la principal vía de comunicación en una zona carente de carreteras.",
+    "destinos_id": [
+      "PNR",
+      "TAR"
+    ]
+  },
+  {
+    "id": "VAR",
+    "nombre": "Vados del río Arauca",
+    "ciudad": "Arauca (Arauca)",
+    "rio": "Río Arauca",
+    "latitud": 7.085,
+    "longitud": -70.759,
+    "ubicacion": "Situados en la frontera nororiental de Colombia sobre el río Arauca.\nComunican la red vial nacional con los pasos fronterizos hacia Venezuela.",
+    "descripcion": "Facilitan el comercio bilateral y el tránsito formal e informal de personas.\nPermiten el paso vehicular y de carga comercial en épocas de aguas bajas.\nArticulan la economía ganadera y petrolera de la región llanera.\nSirven como puntos de control para la movilidad humana en la zona.",
+    "destinos_id": [
+      "AQT",
+      "SRV"
     ]
   }
 ]
