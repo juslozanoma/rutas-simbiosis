@@ -1351,6 +1351,9 @@
     if (_map) {
       _map.on('moveend', () => {
         if (state.modoVisibilidad === 'visibles' && state.sitiosFiltrados.length > 0) {
+          // Si hay una ficha de sitio abierta no re-renderizar: al tocar un
+          // marcador el mapa se centra (moveend) y el re-render cerraría el cuadro.
+          if (document.querySelector('.sitio-overlay')) return;
           renderizarSitios(_filtrarVisibles(state.sitiosFiltrados));
         }
       });

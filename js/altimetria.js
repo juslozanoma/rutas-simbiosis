@@ -51,6 +51,19 @@ const AltimetriaModule = (() => {
   document.addEventListener('mousemove', _onPerfilDragMove);
   document.addEventListener('mouseup', _onPerfilDragEnd);
 
+  // Al redimensionar la ventana (PC) o girar el celular el perfil quedaría
+  // estirado con el ancho anterior; se re-renderiza con el tamaño actual.
+  let _rafReRender = null;
+  function _reRenderPorResize() {
+    if (_rafReRender != null) return;
+    _rafReRender = requestAnimationFrame(() => {
+      _rafReRender = null;
+      renderizarVisibles();
+    });
+  }
+  window.addEventListener('resize', _reRenderPorResize);
+  window.addEventListener('orientationchange', _reRenderPorResize);
+
   const MIN_SPAN_ZOOM = 0.5;   // km mínimos de rango visible al hacer zoom horizontal
 
   let _tooltipIndicador = null;

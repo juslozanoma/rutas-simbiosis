@@ -81,6 +81,10 @@ const TourismModule = (() => {
     marker.__sitioId = sitio.id;
 
     marker.on('click', () => {
+      // En táctil el clic puede dispararse dos veces (tap sintético + clic nativo);
+      // si la ficha del mismo sitio ya está abierta no se vuelve a centrar ni a
+      // re-montar, porque re-montar la cierra y el centrado repite el moveend.
+      if (_popupSitioId === sitio.id && _popupOverlay) return;
       if (typeof MapModule !== 'undefined' && MapModule.centrarEn) {
         MapModule.centrarEn(sitio.lat, sitio.lon);
       }
