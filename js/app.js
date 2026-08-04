@@ -389,6 +389,14 @@
       _actualizarTextoBotonesOrden();
       // Fin del modo "solo cuadro de origen": se restaura el panel completo.
       _modoCambiarOrigen(false);
+      // Al cambiar el origen de una ruta ya calculada: se ocultan los cuadros y
+      // los botones al instante y se recalcula la ruta (OSRM) automáticamente.
+      if (_cambioExtremoEnCurso) {
+        _cambioExtremoEnCurso = null;
+        if (el.origenInput) el.origenInput.placeholder = 'Origen';
+        sincronizarModoRutaMovil();
+        calcularRutaPrincipal();
+      }
     }, () => {
       const ids = new Set();
       if (state.destino?.id) ids.add(state.destino.id);
@@ -402,6 +410,15 @@
       _limpiarTurfYListado();
       actualizarEstadoBotonCalcular();
       _actualizarTextoBotonesOrden();
+      // Al cambiar el destino de una ruta ya calculada: se ocultan los cuadros y
+      // los botones al instante y se recalcula la ruta (OSRM) automáticamente.
+      if (_cambioExtremoEnCurso) {
+        _cambioExtremoEnCurso = null;
+        if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = false;
+        if (el.destinoInput) el.destinoInput.placeholder = 'Destino';
+        sincronizarModoRutaMovil();
+        calcularRutaPrincipal();
+      }
     }, () => {
       const ids = new Set();
       if (state.origen?.id) ids.add(state.origen.id);
@@ -809,6 +826,15 @@
       // están en pantalla (ruta calculada); al inicio permanece visible.
       row.style.display = el.appRoot && el.appRoot.getAttribute('data-ruta-lista') === 'true' ? 'none' : '';
       if (el.checkAutoOrganizar.checked) organizarAutomaticamente(true);
+      // Al reemplazar un pueblo intermedio de una ruta ya calculada: se
+      // recalcula la ruta (OSRM) automáticamente (si auto-organizar está
+      // activo, organizarAutomaticamente ya recalcula con los mismos datos).
+      if (_escalaEnCambio) {
+        _escalaEnCambio = false;
+        if (!el.checkAutoOrganizar.checked) {
+          calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
+        }
+      }
     }
 
     function resaltar(idx) {
@@ -869,6 +895,12 @@
           actualizarEscalas();
           row.style.display = el.appRoot && el.appRoot.getAttribute('data-ruta-lista') === 'true' ? 'none' : '';
           if (el.checkAutoOrganizar.checked) organizarAutomaticamente(true);
+          if (_escalaEnCambio) {
+            _escalaEnCambio = false;
+            if (!el.checkAutoOrganizar.checked) {
+              calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
+            }
+          }
         });
       });
       listEl.appendChild(pickLi);
@@ -2949,7 +2981,16 @@
     });
   }
 
-  /** Lleva al usuario al panel Ruta con el campo de origen seleccionado y su lista desplegada. */
+  /** Modo "cambiar origen/destino": mientras está activo, al seleccionar el nuevo
+   *  extremo se ocultan los cuadros al instante y se recalcula la ruta (OSRM). */
+  let _cambioExtremoEnCurso = null; // 'origen' | 'destino' | null
+
+  /** La próxima escala creada reemplaza un pueblo intermedio (recalcular al elegir). */
+  let _escalaEnCambio = false;
+
+  /** Lleva al usuario al panel Ruta con el campo de origen preparado para elegir
+   *  el nuevo origen: vacío, con placeholder, sin foco (al tocar se despliega la
+   *  lista normal, como al iniciar la página). */
   function irCambiarOrigen() {
     activarPanelTab('ruta');
     setMobileTab('ruta');
@@ -2957,12 +2998,14 @@
     // Modo "solo cuadro de origen": se ocultan el "+", el cuadro de destino y
     // sus botones (avión y calcular ruta); solo queda el origen desplegado.
     _modoCambiarOrigen(true);
+    _cambioExtremoEnCurso = 'origen';
+    if (el.origenInput) {
+      el.origenInput.value = '';
+      delete el.origenInput.dataset.selectedId;
+      el.origenInput.placeholder = 'Seleccionar nuevo origen';
+    }
     const row = document.getElementById('row-origen');
     if (row) row.scrollIntoView({ block: 'nearest' });
-    if (el.origenInput) {
-      el.origenInput.focus();
-      el.origenInput.scrollIntoView({ block: 'nearest' });
-    }
   }
 
   /** Ocultar/mostrar el resto del panel Ruta al cambiar el origen: en el modo
@@ -2974,7 +3017,9 @@
     if (rowDestino) rowDestino.hidden = activo;
   }
 
-  /** Lleva para usuario al panel Ruta con el campo de destino seleccionado y su lista desplegada. */
+  /** Lleva al usuario al panel Ruta con el campo de destino preparado para elegir
+   *  el nuevo destino: vacío, con placeholder, sin foco (al tocar se despliega la
+   *  lista normal de 5 opciones). */
   function irCambiarDestino() {
     activarPanelTab('ruta');
     setMobileTab('ruta');
@@ -2982,18 +3027,21 @@
     // Si venía del modo "solo cuadro de origen", se restaura el panel completo.
     _modoCambiarOrigen(false);
     if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = true;
+    _cambioExtremoEnCurso = 'destino';
+    if (el.destinoInput) {
+      el.destinoInput.value = '';
+      delete el.destinoInput.dataset.selectedId;
+      el.destinoInput.placeholder = 'Seleccionar nuevo destino';
+    }
     const row = document.getElementById('row-destino');
     if (row) row.scrollIntoView({ block: 'nearest' });
-    if (el.destinoInput) {
-      el.destinoInput.focus();
-      el.destinoInput.scrollIntoView({ block: 'nearest' });
-    }
   }
 
   /** Lleva al usuario al panel Ruta con un nuevo campo de pueblo intermedio desplegado. */
   function reemplazarPuebloIntermedio() {
     activarPanelTab('ruta');
     setMobileTab('ruta');
+    _escalaEnCambio = true;
     agregarEscala();
     el.panelEscalas.scrollIntoView({ block: 'nearest' });
   }
