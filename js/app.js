@@ -66,6 +66,13 @@
         const resAer = await fetch('data/aeropuertos_colombia.json');
         if (resAer.ok) state.aeropuertos = await resAer.json();
       } catch {}
+
+      // Cargar puertos fluviales (opción de desplazamiento por río)
+      state.puertos = [];
+      try {
+        const resPue = await fetch('data/puertos_fluviales_colombia.json');
+        if (resPue.ok) state.puertos = await resPue.json();
+      } catch {}
     } catch (err) {
       el.sitiosVacio.textContent = 'Error cargando los datos base: ' + err.message;
       return;

@@ -94,6 +94,12 @@
         calcularRutaAerea();
       });
     }
+    if (el.btnFluvial) {
+      el.btnFluvial.addEventListener('click', () => {
+        // El barco siempre calcula la ruta por río (volver a carretera = botón calcular).
+        calcularRutaFluvial();
+      });
+    }
 
     function toggleSitiosHandler() {
       const visible = MapModule.toggleSitios();

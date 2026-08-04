@@ -878,18 +878,19 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   }
 
   /**
-   * Dibuja los tramos aéreos (líneas punteadas curvas). Recibe un arreglo de
-   * tramos: [{ coords:[lon,lat], distanciaMetros, duracionSegundos }, ...].
+   * Dibuja tramos de transporte en línea punteada (avión o río). Recibe un
+   * arreglo de tramos [{ coords:[lon,lat], distanciaMetros, duracionSegundos },
+   * ...] y un estilo { color, iconoEmoji, iconoHtml(bearing) }.
    */
-  function dibujarTramoAereo(tramos) {
-    limpiarTramoAereo();
+  function _dibujarTramo(tramos, estilo) {
+    if (capaAerea) capaAerea.clearLayers();
     if (!capaAerea || !tramos || !tramos.length) return;
     tramos.forEach((t) => {
       const coords = t.coords;
       if (!coords || coords.length < 2) return;
       const latLngs = coords.map((c) => [Number(c[1]), Number(c[0])]);
       const linea = L.polyline(latLngs, {
-        color: '#4a6fa5',
+        color: estilo.color,
         weight: 3,
         opacity: 0.9,
         dashArray: '8 8',
@@ -902,10 +903,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         const h = Math.floor(seg / 3600);
         const min = Math.round((seg % 3600) / 60);
         const durStr = h > 0 ? `${h} h ${min} min` : `${min} min`;
-        linea.bindTooltip(`✈ ${km.toFixed(1)} km · ${durStr}`, { sticky: true, direction: 'top', className: 'altimetria-map-tooltip' });
+        linea.bindTooltip(`${estilo.iconoEmoji} ${km.toFixed(1)} km · ${durStr}`, { sticky: true, direction: 'top', className: 'altimetria-map-tooltip' });
       }
 
-      // Ícono de avión blanco en la mitad de la trayectoria, apuntando al destino del tramo.
+      // Ícono en la mitad de la trayectoria.
       const midIdx = Math.floor(coords.length / 2);
       const mid = coords[midIdx];
       const dest = coords[coords.length - 1] || mid;
@@ -914,7 +915,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         bearing = turf.bearing(turf.point(mid), turf.point(dest));
       } catch (e) { /* ignorar */ }
       const icono = L.divIcon({
-        html: `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid #ffffff;box-shadow:0 1px 4px rgba(20,32,27,0.55);"><img src="public/airplane.svg" style="width:16px;height:16px;transform:rotate(${bearing - 90}deg);filter:brightness(0) saturate(100%) invert(40%) sepia(11%) saturate(716%) hue-rotate(118deg) brightness(94%) contrast(92%);"/></div>`,
+        html: estilo.iconoHtml(bearing),
         className: '',
         iconSize: [26, 26],
         iconAnchor: [13, 13],
@@ -923,7 +924,29 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     });
   }
 
+  /** Dibuja los tramos aéreos (líneas punteadas curvas). */
+  function dibujarTramoAereo(tramos) {
+    _dibujarTramo(tramos, {
+      color: '#4a6fa5',
+      iconoEmoji: '✈',
+      iconoHtml: (bearing) => `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid #ffffff;box-shadow:0 1px 4px rgba(20,32,27,0.55);"><img src="public/airplane.svg" style="width:16px;height:16px;transform:rotate(${bearing - 90}deg);filter:brightness(0) saturate(100%) invert(40%) sepia(11%) saturate(716%) hue-rotate(118deg) brightness(94%) contrast(92%);"/></div>`,
+    });
+  }
+
+  /** Dibuja los tramos fluviales (líneas punteadas sobre el río). */
+  function dibujarTramoFluvial(tramos) {
+    _dibujarTramo(tramos, {
+      color: '#2f7a6b',
+      iconoEmoji: '🚢',
+      iconoHtml: () => `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid #ffffff;box-shadow:0 1px 4px rgba(20,32,27,0.55);font-size:13px;">🚢</div>`,
+    });
+  }
+
   function limpiarTramoAereo() {
+    if (capaAerea) capaAerea.clearLayers();
+  }
+
+  function limpiarTramoFluvial() {
     if (capaAerea) capaAerea.clearLayers();
   }
 
@@ -942,7 +965,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         iconAnchor: [15, 15],
       });
       const m = L.marker([Number(ap.latitud), Number(ap.longitud)], { icon: icono, zIndexOffset: 1450 });
-      m.bindTooltip(`${titulo}: ${ap.aeropuerto || ''}`, { direction: 'top' });
+      m.bindTooltip(`${titulo}: ${ap.nombre || ''}`, { direction: 'top' });
       m.addTo(capaAerea);
       _aeropuertoMarkers.push(m);
     });
@@ -951,6 +974,32 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   function limpiarMarcadoresAeropuertos() {
     _aeropuertoMarkers.forEach((m) => { if (capaAerea) capaAerea.removeLayer(m); });
     _aeropuertoMarkers = [];
+  }
+
+  let _puertoMarkers = [];
+
+  /** Pinta los marcadores de los puertos de la ruta fluvial. Recibe [{p, titulo}, ...]. */
+  function setMarcadoresPuertos(lista) {
+    limpiarMarcadoresPuertos();
+    if (!capaAerea || !lista || !lista.length) return;
+    lista.forEach(({ p, titulo }) => {
+      if (!p) return;
+      const icono = L.divIcon({
+        html: '<div class="puerto-pin">🚢</div>',
+        className: '',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
+      });
+      const m = L.marker([Number(p.latitud), Number(p.longitud)], { icon: icono, zIndexOffset: 1450 });
+      m.bindTooltip(`${titulo}: ${p.nombre || ''}`, { direction: 'top' });
+      m.addTo(capaAerea);
+      _puertoMarkers.push(m);
+    });
+  }
+
+  function limpiarMarcadoresPuertos() {
+    _puertoMarkers.forEach((m) => { if (capaAerea) capaAerea.removeLayer(m); });
+    _puertoMarkers = [];
   }
 
   function limpiarTodo() {
@@ -1132,6 +1181,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarTramoAereo,
     setMarcadoresAeropuertos,
     limpiarMarcadoresAeropuertos,
+    dibujarTramoFluvial,
+    limpiarTramoFluvial,
+    setMarcadoresPuertos,
+    limpiarMarcadoresPuertos,
     dibujarRutaPreview,
     limpiarRutaPreview,
     limpiarRuta,

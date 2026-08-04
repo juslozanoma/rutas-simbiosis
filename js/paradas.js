@@ -344,9 +344,39 @@
     TourismModule.mostrarCuadroInfo({
       categoria: `Aeropuerto de ${prefijo.toLowerCase()}`,
       color: '#4a6fa5',
-      nombre: ap.aeropuerto || '',
-      ubicacion: ap.ciudad_origen || '',
-      descripcion: ap.descripcion_ubicacion || '',
+      nombre: ap.nombre || '',
+      ubicacion: ap.ubicacion || '',
+      descripcion: ap.descripcion || '',
+      dist: distTxt,
+      botones: [],
+    });
+  }
+
+  /** Centra el mapa y muestra la ficha de un puerto fluvial (salida o llegada) en ruta por río. */
+  function mostrarCuadroPuerto(p, prefijo) {
+    if (!p) return;
+    cerrarAltimetria();
+    const map = MapModule.getMap();
+    if (map) map.closePopup();
+    MapModule.centrarEn(p.latitud, p.longitud);
+
+    const tramos = state.tramosFluviales;
+    const distTxt = (() => {
+      if (!tramos) return '';
+      let dist = null;
+      if (prefijo === 'Salida') dist = tramos.distCarro1;
+      else if (prefijo === 'Llegada') dist = tramos.distCarro2;
+      else if (tramos.tramos && tramos.tramos[0]) dist = tramos.tramos[0].distanciaMetros;
+      if (dist == null) return '';
+      return `${prefijo}: ${(dist / 1000).toFixed(1)} km`;
+    })();
+
+    TourismModule.mostrarCuadroInfo({
+      categoria: `Puerto fluvial de ${prefijo.toLowerCase()}`,
+      color: '#2f7a6b',
+      nombre: p.nombre || '',
+      ubicacion: p.ubicacion || '',
+      descripcion: p.descripcion || '',
       dist: distTxt,
       botones: [],
     });
@@ -474,10 +504,50 @@
     }
 
     function construirFilaAeropuerto(tramos, ap, prefijo, distMetros) {
-      const li = crearFilaAeropuerto(ap.aeropuerto, prefijo, distMetros != null ? distMetros / 1000 : null);
+      const li = crearFilaAeropuerto(ap.nombre, prefijo, distMetros != null ? distMetros / 1000 : null);
       li.addEventListener('click', accionAeropuerto(ap, prefijo));
       li.addEventListener('keydown', (evt) => {
         if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); accionAeropuerto(ap, prefijo)(); }
+      });
+      return li;
+    }
+
+    function crearFilaPuerto(puerto, prefijo, distKm) {
+      const li = document.createElement('li');
+      li.className = 'parada-item parada-item--endpoint';
+      li.dataset.tipoParada = 'puerto';
+      const num = document.createElement('span');
+      num.className = 'parada-item__num';
+      num.textContent = '🚢';
+      const nombreEl = document.createElement('span');
+      nombreEl.className = 'parada-item__nombre';
+      nombreEl.textContent = (prefijo ? prefijo + ': ' : '') + (puerto || '');
+      if (distKm != null) {
+        const distEl = document.createElement('span');
+        distEl.className = 'parada-item__dist';
+        distEl.textContent = ' — ' + distKm.toFixed(1) + ' km';
+        nombreEl.appendChild(distEl);
+      }
+      li.appendChild(num);
+      li.appendChild(nombreEl);
+      li.role = 'button';
+      li.tabIndex = 0;
+      return li;
+    }
+
+    function accionPuerto(p, prefijo) {
+      return () => {
+        if (_suprimirProximoClic) { _suprimirProximoClic = false; return; }
+        cerrarMenuFila();
+        mostrarCuadroPuerto(p, prefijo);
+      };
+    }
+
+    function construirFilaPuerto(tramos, p, prefijo, distMetros) {
+      const li = crearFilaPuerto(p.nombre, prefijo, distMetros != null ? distMetros / 1000 : null);
+      li.addEventListener('click', accionPuerto(p, prefijo));
+      li.addEventListener('keydown', (evt) => {
+        if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); accionPuerto(p, prefijo)(); }
       });
       return li;
     }
@@ -490,6 +560,12 @@
     }
     if (state.modoAereo && state.tramosAereo && state.tramosAereo.hub && state.tramosAereo.vuelos && state.tramosAereo.vuelos[0]) {
       el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, state.tramosAereo.hub, 'Conexión', state.tramosAereo.vuelos[0].distanciaMetros));
+    }
+    if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.po) {
+      el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.po, 'Salida', state.tramosFluviales.distCarro1));
+    }
+    if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.hub && state.tramosFluviales.tramos && state.tramosFluviales.tramos[0]) {
+      el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.hub, 'Conexión', state.tramosFluviales.tramos[0].distanciaMetros));
     }
 
     items.forEach((item, idx) => {
@@ -594,6 +670,9 @@
 
     if (state.modoAereo && state.tramosAereo && state.tramosAereo.apDes) {
       el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, state.tramosAereo.apDes, 'Llegada', state.tramosAereo.distCarro2));
+    }
+    if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.pd) {
+      el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.pd, 'Llegada', state.tramosFluviales.distCarro2));
     }
     if (incluirExtremos) {
       el.paradasLista.appendChild(crearFilaExtremo('Z', formatMunicipio(state.destino), 'destino'));

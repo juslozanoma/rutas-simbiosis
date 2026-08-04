@@ -282,6 +282,7 @@
     const rowOrigen = document.getElementById('row-origen');
     if (rowOrigen) rowOrigen.hidden = activo;
     if (el.btnAereo) el.btnAereo.hidden = activo;
+    if (el.btnFluvial) el.btnFluvial.hidden = activo;
     if (el.btnCalcular) el.btnCalcular.hidden = activo;
   }
 

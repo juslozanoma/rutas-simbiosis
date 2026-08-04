@@ -62,8 +62,10 @@
     if (!el.btnAereo || !filaOrigen || !filaDestino) return;
     if (esMovil()) {
       if (el.btnAereo.parentElement !== filaOrigen) filaOrigen.appendChild(el.btnAereo);
-    } else if (el.btnAereo.parentElement !== filaDestino) {
-      filaDestino.insertBefore(el.btnAereo, el.btnCalcular);
+      if (el.btnFluvial && el.btnFluvial.parentElement !== filaOrigen) filaOrigen.appendChild(el.btnFluvial);
+    } else {
+      if (el.btnAereo.parentElement !== filaDestino) filaDestino.insertBefore(el.btnAereo, el.btnCalcular);
+      if (el.btnFluvial && el.btnFluvial.parentElement !== filaDestino) filaDestino.insertBefore(el.btnFluvial, el.btnCalcular);
     }
   }
 
@@ -105,6 +107,7 @@
     if (cargando) el.btnCalcular.disabled = true;
     el.btnCalcular.setAttribute('data-loading', cargando ? 'true' : 'false');
     if (el.btnAereo) el.btnAereo.disabled = cargando;
+    if (el.btnFluvial) el.btnFluvial.disabled = cargando;
     // El spinner Monalisa no debe aparecer en la pestaña Descubre ni en recálculos
     // silenciosos (p. ej. al agregar un sitio a la ruta).
     if (el.loadingRuta) el.loadingRuta.hidden = !cargando || silencioso || estaEnPestanaDescubre();
