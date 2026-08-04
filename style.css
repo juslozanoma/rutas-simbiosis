@@ -397,6 +397,10 @@ input, select{ font-family: inherit; }
 #app[data-infra-activa="true"] .panel-paradas{ flex: 1; min-height: 0; }
 #app[data-infra-activa="true"] .paradas-lista{ flex: 1; min-height: 0; overflow-y: auto; }
 #app[data-infra-activa="true"] .panel-paradas[hidden]{ display: none; }
+/* Igual para la ruta cargada desde archivo (tecla K). */
+#app[data-ruta-archivo="true"] .panel-paradas{ flex: 1; min-height: 0; }
+#app[data-ruta-archivo="true"] .paradas-lista{ flex: 1; min-height: 0; overflow-y: auto; }
+#app[data-ruta-archivo="true"] .panel-paradas[hidden]{ display: none; }
 .parada-item{
   display: flex;
   align-items: center;
@@ -1065,6 +1069,39 @@ input, select{ font-family: inherit; }
 .mobile-summary strong{ color: #ffffff; font-weight: 700; }
 .stat-mobile--sep{ color: rgba(255,255,255,0.35); font-size: 0.9rem; }
 
+/* Etiqueta flotante "Seguir ruta" (parte superior del mapa) */
+.seguir-ruta{
+  position: absolute;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--ink-900);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.seguir-ruta__dot{
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #4a6fa5;
+  box-shadow: 0 0 0 3px rgba(74,111,165,0.3);
+  animation: seguir-ruta-pulso 1.6s ease-in-out infinite;
+}
+.seguir-ruta[hidden]{ display: none; }
+@keyframes seguir-ruta-pulso{
+  0%, 100%{ box-shadow: 0 0 0 3px rgba(74,111,165,0.35); }
+  50%{ box-shadow: 0 0 0 6px rgba(74,111,165,0.12); }
+}
+
 /* Botón flotante de toggle sitios en el mapa */
 .btn-toggle-sitios--float{
   display: flex;
@@ -1180,6 +1217,7 @@ input, select{ font-family: inherit; }
   flex-direction: column;
   gap: 6px;
 }
+.btns-map--gps{ left: auto; right: 12px; }
 .btn-map-icon{
   width: 34px;
   height: 34px;
@@ -1194,6 +1232,7 @@ input, select{ font-family: inherit; }
   transition: background 0.12s;
 }
 .btn-map-icon:hover{ background: var(--teal-600); }
+.btn-map-icon[hidden]{ display: none; }
 
 
 /* Panel acciones Descubre Colombia (móvil) */
@@ -1398,6 +1437,9 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="descubre"] .sitios-sort{ display: none !important; }
   .panel-tab-bar{ display: none !important; }
   .btns-map{ display: none !important; }
+  /* El botón GPS de la ruta desde archivo sí se muestra en móvil, sobre la
+     barra de pestañas inferior. */
+  .btns-map--gps{ display: flex !important; bottom: 74px; }
   .mobile-tab-bar{
     display: flex !important;
     position: fixed;
@@ -1752,6 +1794,7 @@ input, select{ font-family: inherit; }
   display: flex; align-items: center; justify-content: center;
   z-index: 20000;
 }
+.dialog-overlay[hidden]{ display: none; }
 .dialog{
   background: #ffffff;
   border-radius: var(--radius-lg);
@@ -1789,6 +1832,31 @@ input, select{ font-family: inherit; }
   border-color: var(--teal-500);
 }
 .dialog__btn--save:hover{ background: var(--teal-600); border-color: var(--teal-600); }
+.dialog__title{ margin: 0 0 6px; font-size: 0.95rem; color: var(--text-strong); }
+.dialog__error{
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  color: #b23b2e;
+  text-align: center;
+}
+.cargar-ruta__file{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 16px;
+  border: 1px dashed var(--teal-500);
+  border-radius: var(--radius-sm);
+  background: var(--teal-50);
+  color: var(--teal-600);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.12s ease;
+}
+.cargar-ruta__file:hover{ background: var(--teal-100); }
 
 /* Menú contextual de las filas de paradas (clic derecho / pulsación larga) */
 .fila-menu{

@@ -500,9 +500,9 @@
 
   function renderizarParadas() {
     sincronizarOrden();
-    // Con el catálogo de puertos/aeropuertos (A/P) activo la lista de la
-    // pestaña Ruta la ocupa el listado de infraestructura; no mezclar.
-    if (_puertosVisibles || _aeropuertosVisibles) return;
+    // Con el catálogo de puertos/aeropuertos (A/P) o la ruta desde archivo (K)
+    // activos, la lista de la pestaña Ruta la ocupa otro contenido; no mezclar.
+    if (_puertosVisibles || _aeropuertosVisibles || _rutaArchivoActiva) return;
 
     const items = state.orden.map((o) => {
       if (o.tipo === 'escala') {

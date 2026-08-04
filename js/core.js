@@ -122,6 +122,15 @@
     btnAltimetria: document.getElementById('btn-altimetria'),
     btnTabAltimetria: document.getElementById('btn-tab-altimetria'),
     btnCerrarAltimetria: document.getElementById('btn-cerrar-altimetria'),
+    panelCargarRuta: document.getElementById('panel-cargar-ruta'),
+    inputRutaArchivo: document.getElementById('input-ruta-archivo'),
+    cargarRutaFileLabel: document.getElementById('cargar-ruta-file-label'),
+    btnCerrarCargarRuta: document.getElementById('btn-cerrar-cargar-ruta'),
+    btnQuitarRuta: document.getElementById('btn-quitar-ruta'),
+    cargarRutaError: document.getElementById('cargar-ruta-error'),
+    btnGps: document.getElementById('btn-gps'),
+    seguirRuta: document.getElementById('seguir-ruta'),
+    seguirRutaContenido: document.getElementById('seguir-ruta-contenido'),
     btnSeguimientoAltimetria: document.getElementById('btn-seguimiento-altimetria'),
     btnSeguimientoAltimetriaMovil: document.getElementById('btn-seguimiento-altimetria-panel'),
     altimetriaPanel: document.getElementById('altimetria'),
@@ -142,6 +151,11 @@
 
   let _puertosVisibles = false;
   let _aeropuertosVisibles = false;
+
+  // Ruta cargada desde archivo KML/GPX (tecla K): oculta el panel como los
+  // aeropuertos/puertos mientras esté activa.
+
+  let _rutaArchivoActiva = false;
 
 
   let ultimosValoresAplicados = { distancia: null, tiempo: null };

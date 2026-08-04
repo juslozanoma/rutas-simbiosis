@@ -1254,6 +1254,90 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     map.setView([lat, lon], zoom != null ? zoom : map.getZoom(), { animate: true });
   }
 
+  // ---------------------------------------------------------------------
+  // Ruta cargada desde archivo KML/GPX + seguimiento GPS (tecla K)
+  // ---------------------------------------------------------------------
+
+  let capaRutaArchivo = null;   // L.layerGroup: línea visible + zona de hover/clic
+  let _rutaArchivoLine = null;  // turf lineString para cálculos de distancia
+  let _marcadorUsuario = null;  // marcador de la posición GPS del usuario
+
+  /** Dibuja una ruta desde archivo (KML/GPX). `coords` es [[lat, lng], ...].
+   *  Al pasar el cursor (o tocar en móvil) muestra la distancia recorrida
+   *  hasta ese punto a lo largo de la ruta. */
+  function dibujarRutaArchivo(coords, meta = {}) {
+    limpiarRutaArchivo();
+    if (!coords || coords.length < 2) return;
+    _rutaArchivoLine = turf.lineString(coords.map((c) => [c[1], c[0]]));
+
+    const color = meta.color || '#b0592a';
+    capaRutaArchivo = L.layerGroup().addTo(map);
+
+    const visible = L.polyline(coords, {
+      color, weight: 5, opacity: 0.9, lineCap: 'round', lineJoin: 'round',
+      interactive: false,
+    }).addTo(capaRutaArchivo);
+
+    const hover = L.polyline(coords, {
+      color, weight: 20, opacity: 0.01, fillOpacity: 0.01,
+      interactive: true,
+    }).addTo(capaRutaArchivo);
+    visible.bringToFront();
+
+    const textoDistancia = (latlng) => {
+      const snap = turf.nearestPointOnLine(_rutaArchivoLine, turf.point([latlng.lng, latlng.lat]), { units: 'kilometers' });
+      const km = Math.max(0, snap.properties.location);
+      return km.toFixed(1) + ' km';
+    };
+
+    hover.bindTooltip('', { sticky: true, direction: 'top', className: 'altimetria-map-tooltip' });
+    hover.on('mousemove', (e) => {
+      hover.setTooltipContent(textoDistancia(e.latlng));
+    });
+    hover.on('click', (e) => {
+      hover.setTooltipContent(textoDistancia(e.latlng));
+      hover.openTooltip(e.latlng);
+    });
+    hover.on('mouseout', () => hover.closeTooltip());
+  }
+
+  function limpiarRutaArchivo() {
+    if (capaRutaArchivo) {
+      map.removeLayer(capaRutaArchivo);
+      capaRutaArchivo = null;
+    }
+    _rutaArchivoLine = null;
+  }
+
+  /** Ajusta la vista del mapa a los límites de las coordenadas dadas. */
+  function ajustarVista(coords, padding) {
+    if (!coords || !coords.length) return;
+    const bounds = L.latLngBounds(coords);
+    if (bounds.isValid()) map.fitBounds(bounds, { padding: padding || [40, 40] });
+  }
+
+  /** Crea (o mueve) el marcador de la posición GPS del usuario. */
+  function actualizarPosicionUsuario(lat, lon) {
+    if (!_marcadorUsuario) {
+      _marcadorUsuario = L.circleMarker([lat, lon], {
+        radius: 9,
+        color: '#4a6fa5',
+        weight: 3,
+        fillColor: '#4a6fa5',
+        fillOpacity: 0.35,
+      }).addTo(map);
+    } else {
+      _marcadorUsuario.setLatLng([lat, lon]);
+    }
+  }
+
+  function limpiarPosicionUsuario() {
+    if (_marcadorUsuario) {
+      map.removeLayer(_marcadorUsuario);
+      _marcadorUsuario = null;
+    }
+  }
+
   return {
     init,
     getMap,
@@ -1298,6 +1382,11 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarRutaPreview,
     limpiarRuta,
     limpiarTodo,
+    dibujarRutaArchivo,
+    limpiarRutaArchivo,
+    ajustarVista,
+    actualizarPosicionUsuario,
+    limpiarPosicionUsuario,
     limpiarSitios,
     agregarMarcadorSitio,
     quitarMarcadorSitio,

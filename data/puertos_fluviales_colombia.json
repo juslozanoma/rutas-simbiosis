@@ -38,7 +38,10 @@
     "descripcion": "Conecta al departamento del Caquetá con la región amazónica y los límites con el Amazonas.\nMoviliza carga pesada, combustible y pasajeros a través de embarcaciones de gran calado.\nArticula la economía ribereña permitiendo la salida de productos agrícolas de la zona.\nEs un punto estratégico para la logística fluvial y la presencia institucional en la selva.",
     "destinos_id": [
       "PARG",
-      "PSAN"
+      "PSAN",
+      "PMIL",
+      "PCUR",
+      "PVAL"
     ]
   },
   {
@@ -51,7 +54,8 @@
     "ubicacion": "Localizado en el Alto Magdalena, conecta el municipio de Aipe\ncon la zona rural de Villavieja en el departamento del Huila.",
     "descripcion": "Funciona mediante un sistema de planchón para el transbordo\nde vehículos livianos, pasajeros y carga local entre orillas.\nEvita largos rodeos viales facilitando el intercambio comercial\nagrícola y la conectividad regional entre ambas poblaciones.",
     "destinos_id": [
-      "VLV"
+      "VLV",
+      "HRA"
     ]
   },
   {
@@ -106,7 +110,8 @@
     "descripcion": "Representa un nodo histórico y operativo fundamental\npara el tránsito fluvial que supera los rápidos de Honda.\nPermite la articulación intermodal con las vías férreas\ny carreteras principales hacia el norte del territorio.",
     "destinos_id": [
       "GIR",
-      "DOR"
+      "DOR",
+      "AMB"
     ]
   },
   {
@@ -148,7 +153,8 @@
     "descripcion": "Destaca por su infraestructura para la agroindustria\nmovilizando principalmente aceite de palma y ganado.\nSirve como punto estratégico de transbordo entre\nla red fluvial central y los centros de acopio.",
     "destinos_id": [
       "BMR",
-      "MAG"
+      "MAG",
+      "PBO"
     ]
   },
   {
@@ -162,7 +168,8 @@
     "descripcion": "Paso crítico de transbordo para conectar las rutas\ndel bajo Magdalena con el sistema de transporte vial.\nFacilita el cruce de vehículos y pasajeros que transitan\nhacia el departamento del Magdalena y la costa norte.",
     "destinos_id": [
       "BAR",
-      "BQR"
+      "BQR",
+      "MOM"
     ]
   },
   {
@@ -241,7 +248,8 @@
     "ubicacion": "Ubicado en el departamento de Santander sobre la margen derecha del río Magdalena.\nRepresenta el puerto petrolero y multimodal más importante del centro del país.",
     "descripcion": "Dispone de muelles especializados para hidrocarburos y carga general.\nArticula el transporte de mercancías desde el interior hacia los puertos del Caribe.\nRecibe convoyes de planchones y remolcadores de gran capacidad logística.\nEs fundamental para la cadena de suministro industrial de la región.",
     "destinos_id": [
-      "GAMM"
+      "GAMM",
+      "MAGA"
     ]
   },
   {
@@ -267,7 +275,9 @@
     "ubicacion": "Ubicado en la confluencia de los ríos Orinoco y Meta en el departamento del Vichada.\nFunciona como el principal centro de operaciones fluviales en la frontera oriental.",
     "descripcion": "Conecta el oriente colombiano con los puertos fluviales de Venezuela.\nRecibe embarcaciones de carga general y pasajeros que navegan el Orinoco.\nEs vital para el abastecimiento de combustibles y víveres a la región.\nFacilita la integración comercial y social del departamento amazónico-orinoquense.",
     "destinos_id": [
-      "PTOP"
+      "PTOP",
+      "INIR",
+      "PUAT"
     ]
   },
   {
@@ -280,7 +290,8 @@
     "ubicacion": "Emplazado a orillas del río Meta en el departamento del Meta, sector conocido como Puerto Porfía.\nRepresenta el inicio de la navegabilidad comercial en la Orinoquía colombiana.",
     "descripcion": "Conecta por vía fluvial los Llanos Orientales con la cuenca del Orinoco.\nOperan remolcadores y planchones que transportan materiales de construcción y crudo.\nEs un centro nodal para la agroindustria y el transporte de ganado.\nPermite la navegación continua hacia territorio venezolano durante el invierno.",
     "destinos_id": [
-      "PUER"
+      "PUER",
+      "PUAT"
     ]
   },
   {
@@ -293,7 +304,8 @@
     "ubicacion": "Situado sobre la margen izquierda del río Putumayo en el departamento del Amazonas.\nConstituye un enclave estratégico en la zona fronteriza con el Brasil.",
     "descripcion": "Sirve como muelle fluvial para el atraque de embarcaciones fluviales menores.\nPermite el intercambio comercial y de pasajeros entre comunidades indígenas.\nFacilita la presencia institucional y logística en el extremo sur del país.\nEs un punto clave de navegación para el abastecimiento de la selva.",
     "destinos_id": [
-      "LETI"
+      "LETI",
+      "PTAP"
     ]
   },
   {
@@ -333,7 +345,8 @@
     "ubicacion": "Situado sobre la margen oriental del río Magdalena en el centro del Huila.\nConecta las zonas rurales productivas del municipio con el eje fluvial.",
     "descripcion": "Infraestructura ribereña utilizada principalmente para el cruce y pesca artesanal.\nPermite la comunicación entre poblados apartados y fincas productoras de café.\nApoya la economía local mediante el tránsito de pequeños botes y planchones.\nFunciona como punto estratégico para el monitoreo del caudal en el sur.",
     "destinos_id": [
-      "NEI"
+      "NEI",
+      "GARG"
     ]
   },
   {
@@ -445,7 +458,9 @@
     "descripcion": "Funciona como un puerto fluvial esencial para la movilización de pasajeros y carga general.\nConecta las comunidades rurales y ribereñas del sur del departamento del Caquetá.\nFacilita la salida de productos agrícolas locales hacia los centros de consumo de Florencia.\nOpera con embarcaciones menores y planchones para el transporte de vehículos y mercancías.",
     "destinos_id": [
       "PSOL",
-      "PCC"
+      "PCC",
+      "PALA",
+      "PLBR"
     ]
   },
   {
@@ -458,7 +473,8 @@
     "ubicacion": "Emplazado en el casco urbano de Cartagena del Chairá sobre el río Caguán.\nConstituye la puerta de entrada a la subregión del bajo y medio Caguán.",
     "descripcion": "Concentra la actividad de transporte fluvial de carga y pasajeros del norte caqueteño.\nFacilita el intercambio comercial entre la zona rural selvática y la capital departamental.\nOpera mediante muelles artesanales flotantes que se adaptan a las crecientes del río.\nEs indispensable para la economía maderera, agrícola y de ganadería extensiva local.",
     "destinos_id": [
-      "PSVC"
+      "PSVC",
+      "PMIL"
     ]
   },
   {
@@ -471,7 +487,8 @@
     "ubicacion": "Situado en el municipio de Curillo en el extremo sur occidental del Caquetá.\nSe encuentra en la margen del río Caquetá cerca de los límites con el departamento del Cauca.",
     "descripcion": "Actúa como un puerto de cabotaje fluvial que dinamiza la economía del piedemonte amazónico.\nPermite el cruce de personas y mercancías entre los departamentos de Caquetá y Cauca.\nUtiliza canoas a motor y lanchas rápidas para los desplazamientos diarios de los pobladores.\nJuega un papel clave en las rutas de comercio intermunicipal del sur colombiano.",
     "destinos_id": [
-      "PSOL"
+      "PSOL",
+      "PVAL"
     ]
   },
   {
@@ -537,7 +554,8 @@
     "ubicacion": "Ubicado en la margen izquierda del río Meta.\nEn el casco urbano del municipio de Cabuyaro, departamento del Meta.",
     "descripcion": "Funciona como un punto histórico y comercial clave para la navegación en el río Meta.\nPermite el embarque de productos agrícolas y ganaderos hacia los Llanos Orientales.\nFacilita la conectividad fluvial de carga mediana y el tránsito de embarcaciones menores.\nOpera como un puerto artesanal y de transbordo regional esencial.",
     "destinos_id": [
-      "PLO"
+      "PLO",
+      "CBYO"
     ]
   },
   {
@@ -550,7 +568,9 @@
     "ubicacion": "Situado sobre la margen derecha del río Guayabero.\nEn la zona urbana del municipio de Puerto Concordia, Meta.",
     "descripcion": "Es el principal atracadero fluvial que conecta al departamento del Meta con Guaviare.\nUtilizado intensamente para el transporte de pasajeros, alimentos y suministros básicos.\nFacilita la comunicación entre comunidades ribereñas aisladas por falta de vías terrestres.\nSoporta la economía local permitiendo el flujo comercial mediante canoas y planchones.",
     "destinos_id": [
-      "MAP"
+      "MAP",
+      "MAC",
+      "SJG"
     ]
   },
   {
@@ -576,7 +596,8 @@
     "ubicacion": "Emplazado en la margen del río Guaviare.\nEn la cabecera municipal de Mapiripán, departamento del Meta.",
     "descripcion": "Principal infraestructura fluvial para el acceso a este municipio incomunicado por tierra.\nRecibe embarcaciones medianas y planchones provenientes de San José del Guaviare.\nPermite el ingreso de maquinaria, combustibles y mercancías de abastecimiento general.\nActúa como nodo integrador para el comercio fluvial en la altillanura colombiana.",
     "destinos_id": [
-      "PCO"
+      "PCO",
+      "SJG"
     ]
   },
   {
@@ -617,7 +638,8 @@
     "destinos_id": [
       "BOJ",
       "MED",
-      "RIO"
+      "RIO",
+      "LUR"
     ]
   },
   {
@@ -630,7 +652,10 @@
     "ubicacion": "Situado en el casco urbano de Istmina, sobre la ribera del caudaloso río San Juan.\nSirve como el principal puerto de cabecera para el transporte fluvial en la subregión del San Juan.",
     "descripcion": "Facilita la comunicación y el comercio entre los municipios mineros e indígenas del sur del Chocó y el centro del departamento. Es el punto de partida para lanchas rápidas y planchones que transportan carga pesada, maquinaria y víveres hacia Docordó y otras poblaciones. Conecta la dinámica fluvial con las vías terrestres precarias que comunican con el eje cafetero y el Pacífico. Su infraestructura incluye rampas de concreto improvisadas y zonas de descargue manual utilizadas intensivamente por los comerciantes locales.",
     "destinos_id": [
-      "NOV"
+      "NOV",
+      "ATA",
+      "SAN",
+      "DOC"
     ]
   },
   {
@@ -685,7 +710,9 @@
     "longitud": -77.2957814,
     "ubicacion": "Situado en Puerto Pizarro, cabecera municipal del Bajo Baudó sobre el río homónimo.\nCercano a la desembocadura del río Baudó hacia el Océano Pacífico.",
     "descripcion": "Representa el principal puerto de intercambio comercial y pesquero de toda la cuenca del río Baudó. Permite la navegación de embarcaciones medianas que conectan el interior selvático con los puertos marítimos de la costa. A través de sus muelles se movilizan productos de la pesca artesanal, madera fina y víveres para las comunidades locales. Es un punto crítico donde la navegación fluvial se transforma en marítima debido a su proximidad con el mar.",
-    "destinos_id": []
+    "destinos_id": [
+      "PIO"
+    ]
   },
   {
     "id": "NOV",
@@ -763,7 +790,8 @@
     "ubicacion": "Emplazado en el malecón sobre la margen derecha del río Inírida frente a la capital,\nen el departamento del Guainía.",
     "descripcion": "Principal puerto comercial y de pasajeros de la Orinoquía y Amazonía nororiental.\nRecibe carga pesada transportada en planchones desde Puerto Carreño y el río Orinoco.\nFacilita la salida de productos agrícolas locales y el ingreso de víveres hacia la región.\nEs un punto neurálgico para la navegación turística hacia los Cerros de Mavicure.",
     "destinos_id": [
-      "PBAR"
+      "PBAR",
+      "PCAR"
     ]
   },
   {
@@ -776,7 +804,8 @@
     "ubicacion": "Situado en la ribera del río Inírida en el municipio de Barrancominas,\nen el occidente del departamento del Guainía.",
     "descripcion": "Muelle fluvial esencial para la integración de comunidades indígenas y campesinas.\nPermite la recepción de embarcaciones medianas que ascienden y descienden por el río Inírida.\nImpulsa el intercambio comercial básico entre el departamento del Guainía y Vichada.\nFunciona como refugio y base logística para el transporte fluvial en la altillanura.",
     "destinos_id": [
-      "PINI"
+      "PINI",
+      "COCO"
     ]
   },
   {
@@ -788,7 +817,9 @@
     "longitud": -70.0586879,
     "ubicacion": "Ubicado en el área urbana a orillas del río Vaupés, frente a los raudales de Mitú,\nen el departamento del Vaupés.",
     "descripcion": "Terminal fluvial fluvial que complementa el abastecimiento aéreo de la capital departamental.\nPermite el tránsito de embarcaciones menores que sortean los complejos raudales de la zona.\nFacilita la movilización de comunidades indígenas asentadas a lo largo de la cuenca alta.\nConecta rutas de navegación hacia la frontera con el Brasil por medio del río Vaupés.",
-    "destinos_id": []
+    "destinos_id": [
+      "VAP1"
+    ]
   },
   {
     "id": "PASI",
@@ -831,6 +862,151 @@
     "destinos_id": [
       "PASI",
       "PLEG"
+    ]
+  },
+  {
+    "id": "INIR",
+    "nombre": "Puerto Inírida",
+    "ciudad": "Inírida (Guainía)",
+    "rio": "Río Inírida",
+    "latitud": 3.8653,
+    "longitud": -67.9239,
+    "ubicacion": "Situado a orillas del río Inírida en el departamento de Guainía.\nFunciona como eje de transporte para la región amazónica y oriental.",
+    "descripcion": "Conecta comunidades indígenas y caseríos remotos con la capital departamental.\nRecibe lanchas rápidas y botes de carga que navegan los ríos Guaviare e Inírida.\nEs vital para el abastecimiento de víveres, combustible y materiales.\nPromueve el ecoturismo hacia las formaciones de los Cerros de Mavicure.",
+    "destinos_id": [
+      "PUER"
+    ]
+  },
+  {
+    "id": "PUAT",
+    "nombre": "Puerto Ojo de Agua",
+    "ciudad": "Puerto Gaitán (Meta)",
+    "rio": "Río Meta",
+    "latitud": 4.3131,
+    "longitud": -72.0844,
+    "ubicacion": "Ubicado en la ribera del río Meta en jurisdicción de Puerto Gaitán.\nSirve como punto logístico intermedio en la altillanura colombiana.",
+    "descripcion": "Facilita el transporte fluvial de insumos agrícolas y maquinaria pesada.\nConecta las explotaciones petroleras de la región con la ruta principal.\nPermite la navegación de embarcaciones comerciales durante el invierno.\nEs soporte para las comunidades ribereñas dedicadas a la pesca.",
+    "destinos_id": [
+      "PTOP",
+      "PUER"
+    ]
+  },
+  {
+    "id": "PTAP",
+    "nombre": "Embarcadero Frente Tarapacá",
+    "ciudad": "Tarapacá (Amazonas)",
+    "rio": "Río Putumayo",
+    "latitud": -2.534,
+    "longitud": -70.274,
+    "ubicacion": "Situado en la orilla opuesta al casco urbano principal de Tarapacá.\nFacilita el cruce local de ribera a ribera sobre el cauce del río Putumayo.",
+    "descripcion": "Funciona como punto de llegada alternativo para botes y canoas locales.\nConecta directamente con los senderos y asentamientos de la margen derecha.\nPermite el tránsito de pobladores rurales y productos de subsistencia.\nOpera como puerto espejo para equilibrar el tráfico de embarcaciones menores.",
+    "destinos_id": [
+      "TARA"
+    ]
+  },
+  {
+    "id": "GARG",
+    "nombre": "Embarcadero Frente Garzón",
+    "ciudad": "El Pital (Huila)",
+    "rio": "Río Magdalena",
+    "latitud": 2.217,
+    "longitud": -75.632,
+    "ubicacion": "Ubicado en la margen occidental del río Magdalena frente al municipio de Garzón.\nSirve como plataforma de contraparte para las actividades de cruce fluvial.",
+    "descripcion": "Permite el atraque de pequeñas embarcaciones que transportan agricultores.\nFacilita el intercambio comercial entre las veredas de ambas orillas del río.\nActúa como paso obligado para conectar la zona con la red vial principal.\nFunciona como puerto espejo esencial para la movilidad ribereña local.",
+    "destinos_id": [
+      "GAR"
+    ]
+  },
+  {
+    "id": "CBYO",
+    "nombre": "Embarcadero Frente Cabuyaro",
+    "ciudad": "Cabuyaro (Meta)",
+    "rio": "Río Meta",
+    "latitud": 4.28,
+    "longitud": -72.782,
+    "ubicacion": "Situado en la margen derecha del río Meta en contraparte al puerto principal.\nConecta las rutas de navegación con las sabanas orientales del departamento.",
+    "descripcion": "Facilita el atraque de planchones y botes de transporte mixto regional.\nPermite la salida de ganado y cultivos hacia los centros de acopio urbanos.\nSirve como punto de descanso y abastecimiento para navegantes fluviales.\nOpera como puerto espejo indispensable para el cruce seguro del río.",
+    "destinos_id": [
+      "CBY"
+    ]
+  },
+  {
+    "id": "SJG",
+    "nombre": "Puerto San José del Guaviare",
+    "ciudad": "San José del Guaviare (Guaviare)",
+    "rio": "Río Guaviare",
+    "latitud": 2.5742,
+    "longitud": -72.6456,
+    "ubicacion": "Ubicado en la margen izquierda del río Guaviare.\nEn el área urbana del municipio de San José del Guaviare.",
+    "descripcion": "Principal puerto comercial y de carga del departamento del Guaviare.\nRecibe embarcaciones de gran calado transportando víveres y materiales de construcción.\nConecta las rutas fluviales hacia Mapiripán y Puerto Concordia.\nDispone de muelles fijos para el atraque de planchones y botes de pasajeros.",
+    "destinos_id": [
+      "PCO",
+      "MAP"
+    ]
+  },
+  {
+    "id": "DOC",
+    "nombre": "Puerto de Docordó",
+    "ciudad": "Litoral del San Juan (Chocó)",
+    "rio": "Río San Juan",
+    "latitud": 4.3512,
+    "longitud": -77.1023,
+    "ubicacion": "Situado en la zona del Bajo San Juan cerca al Litoral.\nEn el departamento del Chocó, ribera del río San Juan.",
+    "descripcion": "Terminal fluvial clave para la salida de productos hacia la desembocadura en el Pacífico.\nPermite el tránsito de pasajeros y mercancías desde e hacia Istmina.\nCuenta con facilidades portuarias rústicas adaptadas a las mareas del río bajo.\nArticula las comunidades afrodescendientes e indígenas de la región.",
+    "destinos_id": [
+      "IST"
+    ]
+  },
+  {
+    "id": "PIO",
+    "nombre": "Puerto Pizarro Opuesto",
+    "ciudad": "Baudó (Chocó)",
+    "rio": "Río Baudó",
+    "latitud": 4.6021051,
+    "longitud": -77.2917814,
+    "ubicacion": "Situado en la margen opuesta del río Baudó frente a Puerto Pizarro.\nEn la zona rural del municipio de Bajo Baudó, Chocó.",
+    "descripcion": "Puerto espejo creado para facilitar el cruce transversal de pobladores.\nPermite desahogar el tráfico de pasajeros que llegan desde las veredas ribereñas.\nCuenta con un atracadero artesanal en madera para canoas y botes menores.\nConecta de forma directa con la otra orilla del río Baudó.",
+    "destinos_id": [
+      "PIZ"
+    ]
+  },
+  {
+    "id": "PCAR",
+    "nombre": "Puerto Carreño (Orinoco)",
+    "ciudad": "Puerto Carreño (Vichada)",
+    "rio": "Río Orinoco",
+    "latitud": 6.189,
+    "longitud": -67.485,
+    "ubicacion": "Emplazado en la ribera colombiana del río Orinoco cerca de la desembocadura del Meta,\nen la capital del departamento del Vichada.",
+    "descripcion": "Es el puerto fronterizo y fluvial más importante de la Orinoquía colombiana con conexiones internacionales. Recibe embarcaciones de gran calado procedentes de Venezuela y otros puntos del eje Orinoco-Meta. Facilita la recepción de carga pesada, combustibles y víveres destinados al interior de la altillanura. Cuenta con infraestructura de atraque semi-industrial para el comercio binacional y de cabotaje.",
+    "destinos_id": [
+      "PINI"
+    ]
+  },
+  {
+    "id": "COCO",
+    "nombre": "Puertoillanas",
+    "ciudad": "Calamar (Guaviare)",
+    "rio": "Río Inírida",
+    "latitud": 3.05,
+    "longitud": -70.55,
+    "ubicacion": "Localizado en la zona de transición fluvial entre los ríos Guaviare e Inírida,\nen los límites departamentales.",
+    "descripcion": "Punto logístico intermedio que sirve para el reabastecimiento de combustible en rutas largas.\nPermite la interconexión entre las comunidades ribereñas aisladas del Guaviare y el Guainía.\nFacilita el tráfico menor de canoas con motor fuera de borda y botes de carga liviana.\nDesempeña un rol estratégico en la vigilancia y control fluvial de la región.",
+    "destinos_id": [
+      "PBAR"
+    ]
+  },
+  {
+    "id": "VAP1",
+    "nombre": "Puerto Vaupés Arriba",
+    "ciudad": "Papunaua (Vaupés)",
+    "rio": "Río Vaupés",
+    "latitud": 0.95,
+    "longitud": -70.25,
+    "ubicacion": "Ubicado aguas arriba de Mitú, sobre los márgenes selváticos del río Vaupés.\nEnclave estratégico en el departamento del Vaupés.",
+    "descripcion": "Puerto comunitario utilizado principalmente por las comunidades indígenas locales para su subsistencia.\nPermite el intercambio de productos de pancoger y artesanías con la cabecera municipal de Mitú.\nLas embarcaciones se adaptan a las condiciones difíciles de navegación por la presencia de raudales.\nRepresenta el punto final de rutas comerciales menores en la alta cuenca del Vaupés.",
+    "destinos_id": [
+      "PMIT"
     ]
   }
 ]

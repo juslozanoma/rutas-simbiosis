@@ -7,9 +7,10 @@
  */
 
   function activarPanelTab(tab) {
-    // Con el catálogo de puertos/aeropuertos (A/P) activo la pestaña Descubre
-    // queda oculta y los cuadros de búsqueda no deben reaparecer al volver a Ruta.
-    if (tab === 'descubre' && (_puertosVisibles || _aeropuertosVisibles)) return;
+    // Con el catálogo de puertos/aeropuertos (A/P) o la ruta desde archivo (K)
+    // activos, la pestaña Descubre queda oculta y los cuadros de búsqueda no
+    // deben reaparecer al volver a Ruta.
+    if (tab === 'descubre' && (_puertosVisibles || _aeropuertosVisibles || _rutaArchivoActiva)) return;
     document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('panel-tab--active'));
     if (tab === 'ruta') {
       el.btnTabPanelRuta.classList.add('panel-tab--active');
@@ -17,12 +18,12 @@
       el.loadingSitios.hidden = true;
       el.panelSitios.hidden = true;
       el.panelSitios.scrollTop = 0;
-      el.panelLocate.hidden = _puertosVisibles || _aeropuertosVisibles;
+      el.panelLocate.hidden = _puertosVisibles || _aeropuertosVisibles || _rutaArchivoActiva;
       el.panelEscalas.hidden = true;
-      if (state.rutaActual && !(_puertosVisibles || _aeropuertosVisibles)) {
+      if (state.rutaActual && !(_puertosVisibles || _aeropuertosVisibles || _rutaArchivoActiva)) {
         el.panelParadas.hidden = false;
       }
-      const ocultarTestigo = !state.rutaActual || _soMostrarSitiosVisto || (_puertosVisibles || _aeropuertosVisibles);
+      const ocultarTestigo = !state.rutaActual || _soMostrarSitiosVisto || (_puertosVisibles || _aeropuertosVisibles || _rutaArchivoActiva);
       el.btnMostrarSitiosCercanos.hidden = ocultarTestigo;
       el.btnMostrarSitiosCercanos.disabled = ocultarTestigo;
       sincronizarModoRutaMovil();
@@ -74,7 +75,7 @@
 
   function toggleMobileTab(tab) {
     if (tab === 'descubre' && el.btnTabDescubre && el.btnTabDescubre.disabled) return;
-    if (tab === 'descubre' && (_puertosVisibles || _aeropuertosVisibles)) return;
+    if (tab === 'descubre' && (_puertosVisibles || _aeropuertosVisibles || _rutaArchivoActiva)) return;
     const currentTab = el.appRoot.getAttribute('data-mobile-tab');
     const isCollapsed = el.appRoot.getAttribute('data-mobile-panel') === 'collapsed';
     if (currentTab === tab && !isCollapsed) {

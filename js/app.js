@@ -103,6 +103,9 @@
     renderizarCategoriasMenu();
     initEscalas();
     initEventos();
+    if (typeof RutaArchivoModule !== 'undefined' && typeof RutaArchivoModule.initEventos === 'function') {
+      RutaArchivoModule.initEventos();
+    }
     garantizarVisibilidadMovil();
     reordenarAereoMovil();
 
@@ -125,6 +128,10 @@
       } else if (tecla === 'a') {
         _aeropuertosVisibles = !_aeropuertosVisibles;
         _syncAeropuertos();
+      } else if (tecla === 'k') {
+        if (typeof RutaArchivoModule !== 'undefined' && typeof RutaArchivoModule.abrirDialogo === 'function') {
+          RutaArchivoModule.abrirDialogo();
+        }
       }
     });
   }

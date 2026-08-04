@@ -74,6 +74,10 @@
       if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.hidden = false;
       if (el.btnTabDescubre) el.btnTabDescubre.hidden = false;
       if (typeof _restaurarPanelRutaInfra === 'function') _restaurarPanelRutaInfra();
+      // Si la ruta desde archivo (K) sigue activa, reponer su tarjeta en la lista.
+      if (_rutaArchivoActiva && typeof RutaArchivoModule !== 'undefined' && typeof RutaArchivoModule.refrescarPanel === 'function') {
+        RutaArchivoModule.refrescarPanel();
+      }
       if (volverA === 'descubre' && !estaEnPestanaDescubre()) {
         activarPanelTab('descubre');
         if (esMovil()) setMobileTab('descubre');
