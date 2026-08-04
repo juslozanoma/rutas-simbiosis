@@ -891,6 +891,20 @@ input, select{ font-family: inherit; }
   font-size: 0.85rem;
 }
 
+/* Pin de puerto/aeropuerto del catálogo completo (teclas P y A): círculo
+   verde sólido sin bordes, del mismo tamaño que el botón "Calcular ruta"
+   (40px) y con el símbolo blanco del mismo tamaño que el del botón (17px). */
+.infra-global-pin{
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: #2f7a6b;
+  display: flex; align-items: center; justify-content: center;
+}
+.infra-global-pin img{
+  width: 17px; height: 17px;
+  filter: brightness(0) invert(1);
+}
+
 .sitio-pin{
   width: 34px; height: 34px;
   display: flex;

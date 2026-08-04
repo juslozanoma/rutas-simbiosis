@@ -16,6 +16,40 @@
   }
 
 
+  function _syncPuertos() {
+    if (typeof MapModule === 'undefined' || !MapModule.setMarcadoresPuertosGlobal) return;
+    if (_puertosVisibles) {
+      MapModule.setMarcadoresPuertosGlobal(state.puertos);
+      if (typeof _renderizarInfraListado === 'function') {
+        if (el.panelSitios) el.panelSitios.hidden = false;
+        _renderizarInfraListado('puerto');
+      }
+    } else {
+      MapModule.limpiarPuertosGlobal();
+      if (!_aeropuertosVisibles && typeof _restaurarListadoDescubre === 'function') {
+        _restaurarListadoDescubre();
+      }
+    }
+  }
+
+
+  function _syncAeropuertos() {
+    if (typeof MapModule === 'undefined' || !MapModule.setMarcadoresAeropuertosGlobal) return;
+    if (_aeropuertosVisibles) {
+      MapModule.setMarcadoresAeropuertosGlobal(state.aeropuertos);
+      if (typeof _renderizarInfraListado === 'function') {
+        if (el.panelSitios) el.panelSitios.hidden = false;
+        _renderizarInfraListado('aeropuerto');
+      }
+    } else {
+      MapModule.limpiarAeropuertosGlobal();
+      if (!_puertosVisibles && typeof _restaurarListadoDescubre === 'function') {
+        _restaurarListadoDescubre();
+      }
+    }
+  }
+
+
   function etiquetaIntermedia(idx) {
     return LETRAS_RUTA[Math.min(idx + 1, LETRAS_RUTA.length - 2)];
   }

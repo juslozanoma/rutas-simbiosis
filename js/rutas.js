@@ -190,29 +190,17 @@
     return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
-  /** ¿El aeropuerto `ap` puede llegar a `apDes` directo o con una conexión? */
-  function _puedeLlegarAeropuerto(ap, apDes) {
-    if (!ap || !apDes) return false;
-    const destinos = (ap.destinos_id || []).map((d) => String(d));
-    if (destinos.includes(String(apDes.id))) return true;
-    for (const id of destinos) {
-      const h = state.aeropuertos.find((a) => String(a.id) === String(id));
-      if (h && (h.destinos_id || []).map((d) => String(d)).includes(String(apDes.id))) return true;
-    }
-    return false;
-  }
-
-  /** Devuelve el aeropuerto más cercano a un punto (si `debeLlegarA` se pasa,
-   *  solo considera aeropuertos que puedan llegar a él, directo o con conexión). */
-  function _aeropuertoMasCercano(punto, debeLlegarA = null) {
-    if (!punto || !state.aeropuertos || !state.aeropuertos.length) return null;
-    let mejor = null, mejorDist = Infinity;
-    for (const ap of state.aeropuertos) {
-      if (debeLlegarA && !_puedeLlegarAeropuerto(ap, debeLlegarA)) continue;
-      const dist = turf.distance(turf.point([punto.lon, punto.lat]), turf.point([ap.longitud, ap.latitud]), { units: 'kilometers' });
-      if (dist < mejorDist) { mejorDist = dist; mejor = ap; }
-    }
-    return mejor;
+  /** Los `k` aeropuertos o puertos más cercanos a un punto, ordenados por
+   *  distancia. Se usan como candidatos al buscar conexión, porque el más
+   *  cercano puede no tener ruta hacia el otro extremo (p. ej. Medellín se
+   *  sirve por EOH y por MDE). */
+  function _infraCercanos(punto, lista, k) {
+    if (!punto || !lista || !lista.length) return [];
+    return lista
+      .map((p) => ({ p, d: turf.distance(turf.point([punto.lon, punto.lat]), turf.point([p.longitud, p.latitud]), { units: 'kilometers' }) }))
+      .sort((a, b) => a.d - b.d)
+      .slice(0, k)
+      .map((x) => x.p);
   }
 
   /** Planifica los tramos de vuelo entre dos aeropuertos usando `destinos_id`:
@@ -230,6 +218,30 @@
       }
     }
     return null;
+  }
+
+  /** Aeropuertos del catálogo a los que `ap` llega directo (destinos_id). */
+  function _conexionesDeAeropuerto(ap) {
+    if (!ap || !ap.destinos_id) return [];
+    const unicas = new Set();
+    const res = [];
+    for (const id of ap.destinos_id) {
+      const h = state.aeropuertos.find((a) => String(a.id) === String(id));
+      if (h && h !== ap && !unicas.has(String(h.id))) { unicas.add(String(h.id)); res.push(h); }
+    }
+    return res;
+  }
+
+  /** Puertos del catálogo a los que `p` llega directo (destinos_id por nombre). */
+  function _conexionesDePuerto(p) {
+    if (!p || !p.destinos_id) return [];
+    const unicas = new Set();
+    const res = [];
+    for (const nombre of p.destinos_id) {
+      const h = _puertoPorNombre(nombre);
+      if (h && h !== p && !unicas.has(String(h.id))) { unicas.add(String(h.id)); res.push(h); }
+    }
+    return res;
   }
 
   /** Genera una línea curva entre dos aeropuertos para el tramo aéreo. */
@@ -267,16 +279,17 @@
       return;
     }
     cerrarAltimetria();
-    // Aeropuerto más cercano al destino y, para el origen, el más cercano que
-    // pueda llegar hasta él (directo o con una conexión).
-    const apDes = _aeropuertoMasCercano(state.destino);
-    let apOri = _aeropuertoMasCercano(state.origen, apDes);
-    let pares = apOri ? _planearVuelos(apOri, apDes) : null;
-    if (!apOri || !pares) {
-      // Ningún aeropuerto cercano al origen puede llegar al aeropuerto elegido
-      // para el destino: se cae al más cercano sin filtro y se vuelve a planear.
-      apOri = _aeropuertoMasCercano(state.origen);
-      pares = apOri ? _planearVuelos(apOri, apDes) : null;
+    // Se prueban los aeropuertos más cercanos de cada extremo (hasta K) y se
+    // elige el primer par con conexión; el más cercano puede no tener vuelos
+    // hacia el otro extremo (p. ej. Bogotá→Medellín cae por EOH y sí por MDE).
+    const K_AEROPUERTOS = 5;
+    let apOri = null, apDes = null, pares = null;
+    for (const candDes of _infraCercanos(state.destino, state.aeropuertos, K_AEROPUERTOS)) {
+      for (const candOri of _infraCercanos(state.origen, state.aeropuertos, K_AEROPUERTOS)) {
+        const p = _planearVuelos(candOri, candDes);
+        if (p && p.length) { apOri = candOri; apDes = candDes; pares = p; break; }
+      }
+      if (pares) break;
     }
     if (!apOri || !apDes || !pares || !pares.length) {
       _mostrarNotificacion('No se encontró una conexión aérea entre el origen y el destino');
@@ -295,7 +308,7 @@
       const coordsCarro2 = rutaCarro2.geojson.geometry.coordinates;
 
       // Tramos de vuelo: directo o con conexión (definido por destinos_id).
-      const vuelos = pares.map(([a, b]) => {
+      const vuelos = pares.map(({ a, b }) => {
         const coords = _arcCoords(a, b);
         const dist = turf.length(turf.lineString(coords), { units: 'kilometers' }) * 1000;
         const dur = (dist / 1000) / 750 * 3600;
@@ -430,18 +443,7 @@
   // -------------------------------------------------------------------
 
 
-  /** Devuelve el puerto fluvial más cercano a un punto. */
-  function _puertoMasCercano(punto) {
-    if (!punto || !state.puertos || !state.puertos.length) return null;
-    let mejor = null, mejorDist = Infinity;
-    for (const p of state.puertos) {
-      const dist = turf.distance(turf.point([punto.lon, punto.lat]), turf.point([p.longitud, p.latitud]), { units: 'kilometers' });
-      if (dist < mejorDist) { mejorDist = dist; mejor = p; }
-    }
-    return mejor;
-  }
-
-  /** Devuelve un puerto por su nombre (los destinos_id de los puertos usan el
+/** Devuelve un puerto por su nombre (los destinos_id de los puertos usan el
    *  formato "Ciudad (Departamento)"; el puerto puede llamarse "Puerto de ...",
    *  "Malecón de ...", etc.). */
   function _puertoPorNombre(nombre) {
@@ -489,9 +491,18 @@
     state.tramosAereo = null;
     _actualizarBotonAereo();
 
-    const pd = _puertoMasCercano(state.destino);
-    const po = _puertoMasCercano(state.origen);
-    const pares = po ? _planearTrayectoFluvial(po, pd) : null;
+    // Se prueban los puertos más cercanos de cada extremo (hasta K) y se elige
+    // el primer par conectado por `destinos_id` (directo o con una conexión);
+    // el más cercano puede estar en otra cuenca sin ruta al otro extremo.
+    const K_PUERTOS = 6;
+    let po = null, pd = null, pares = null;
+    for (const candPd of _infraCercanos(state.destino, state.puertos, K_PUERTOS)) {
+      for (const candPo of _infraCercanos(state.origen, state.puertos, K_PUERTOS)) {
+        const p = _planearTrayectoFluvial(candPo, candPd);
+        if (p && p.length) { po = candPo; pd = candPd; pares = p; break; }
+      }
+      if (pares) break;
+    }
     if (!po || !pd || !pares || !pares.length) {
       _mostrarNotificacion('No se encontró un trayecto fluvial entre el origen y el destino');
       return;
@@ -509,7 +520,7 @@
       const coordsCarro2 = rutaCarro2.geojson.geometry.coordinates;
 
       // Tramos fluviales: directo o con conexión (definido por destinos_id).
-      const tramos = pares.map(([a, b]) => {
+      const tramos = pares.map(({ a, b }) => {
         const coords = _arcCoords(a, b);
         const dist = turf.length(turf.lineString(coords), { units: 'kilometers' }) * 1000;
         const dur = (dist / 1000) / 25 * 3600; // río ≈ 25 km/h

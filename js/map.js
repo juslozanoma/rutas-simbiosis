@@ -24,6 +24,9 @@ const MapModule = (() => {
   let capaAlertas = null;       // L.layerGroup con advertencias de tramos peligrosos
   let capaAerea = null;         // L.layerGroup con el tramo aéreo (avión)
   let capaFrontera = null;      // L.layerGroup overlay de prueba: sitios de frontera
+  let capaPuertosGlobal = null;     // L.layerGroup con todos los puertos del catálogo (tecla P)
+  let capaAeropuertosGlobal = null; // L.layerGroup con todos los aeropuertos del catálogo (tecla A)
+  let capaConexiones = null;    // L.layerGroup con las líneas de conexión de un puerto/aeropuerto
   let clusterSitios = null;     // L.markerClusterGroup con los sitios candidatos filtrados
   let _capaFlechas = null;      // L.layerGroup con flechas de dirección sobre la ruta
 
@@ -33,6 +36,9 @@ const MapModule = (() => {
   const _marcadorParadas = new Map(); // paradaId → L.marker (sitios ya agregados a la ruta)
   const _marcadorEscalas = new Map(); // escalaId → L.marker (municipios intermedios)
   const _marcadorPuntosDesvio = new Map(); // escalaId → L.marker (puntos de desvío arrastrados)
+  const _puertosGlobalMarkers = new Map(); // puertoId → L.marker (catálogo, tecla P)
+  const _aeropuertosGlobalMarkers = new Map(); // aeropuertoId → L.marker (catálogo, tecla A)
+  let _conexionCentroId = null; // clave 'puerto_id' | 'aeropuerto_id' del marcador con líneas dibujadas
   let _coordOrigen = null; // [lat, lon]
   let _coordDestino = null; // [lat, lon]
 
@@ -108,6 +114,9 @@ const MapModule = (() => {
     capaAlertas = L.layerGroup().addTo(map);
     capaAerea = L.layerGroup().addTo(map);
     capaFrontera = L.layerGroup().addTo(map);
+    capaPuertosGlobal = L.layerGroup().addTo(map);
+    capaAeropuertosGlobal = L.layerGroup().addTo(map);
+    capaConexiones = L.layerGroup().addTo(map);
 
     // El contenedor del mapa nace con un tamaño definido por CSS (flex),
     // por lo que conviene forzar un recálculo tras el primer render.
@@ -170,6 +179,26 @@ const MapModule = (() => {
     });
   }
 
+  /** Ícono grande de puerto/aeropuerto del catálogo: símbolo blanco grande
+   *  dentro de un círculo verde sólido, sin bordes ni sombra. */
+  function _iconoInfraGlobal(svgHtml) {
+    return L.divIcon({
+      html: `<div class="infra-global-pin">${svgHtml}</div>`,
+      className: '',
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
+      popupAnchor: [0, -24],
+    });
+  }
+
+  function iconoPuertoGlobal() {
+    return _iconoInfraGlobal('<img src="public/boat.svg" alt="Puerto"/>');
+  }
+
+  function iconoAeropuertoGlobal() {
+    return _iconoInfraGlobal('<img src="public/airplane.svg" alt="Aeropuerto"/>');
+  }
+
   /** Ícono numerado para un sitio agregado como parada de la ruta. */
   function _iconoParada(numero) {
     return L.divIcon({
@@ -199,6 +228,13 @@ const MapModule = (() => {
   let _onClicMarcadorExtremo = null; // ('origen'|'destino') => void
 
   function setOnClicMarcadorExtremo(fn) { _onClicMarcadorExtremo = fn; }
+
+  // Callback al hacer clic en un puerto/aeropuerto del mapa (catálogo o ruta):
+  // recibe ('puerto'|'aeropuerto', item) para dibujar sus conexiones.
+
+  let _onClicInfraGlobal = null;
+
+  function setOnClicInfraGlobal(fn) { _onClicInfraGlobal = fn; }
 
   function setMarcadorOrigen(lat, lon, etiqueta) {
     if (markerOrigen) map.removeLayer(markerOrigen);
@@ -966,6 +1002,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       });
       const m = L.marker([Number(ap.latitud), Number(ap.longitud)], { icon: icono, zIndexOffset: 1450 });
       m.bindTooltip(`${titulo}: ${ap.nombre || ''}`, { direction: 'top' });
+      m.on('click', () => { if (_onClicInfraGlobal) _onClicInfraGlobal('aeropuerto', ap); });
       m.addTo(capaAerea);
       _aeropuertoMarkers.push(m);
     });
@@ -992,6 +1029,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       });
       const m = L.marker([Number(p.latitud), Number(p.longitud)], { icon: icono, zIndexOffset: 1450 });
       m.bindTooltip(`${titulo}: ${p.nombre || ''}`, { direction: 'top' });
+      m.on('click', () => { if (_onClicInfraGlobal) _onClicInfraGlobal('puerto', p); });
       m.addTo(capaAerea);
       _puertoMarkers.push(m);
     });
@@ -1002,6 +1040,103 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     _puertoMarkers = [];
   }
 
+  /** Pinta TODOS los puertos del catálogo (tecla P). */
+  function setMarcadoresPuertosGlobal(lista) {
+    limpiarPuertosGlobal();
+    if (!lista || !lista.length) return;
+    lista.forEach((p) => {
+      if (p.latitud == null || p.longitud == null || isNaN(Number(p.latitud)) || isNaN(Number(p.longitud))) return;
+      const marker = L.marker([Number(p.latitud), Number(p.longitud)], { icon: iconoPuertoGlobal(), zIndexOffset: 1100 });
+      marker.bindTooltip(p.nombre || 'Puerto', { direction: 'top', offset: [0, -24], className: 'site-label' });
+      marker.bindPopup(`
+        <div class="popup-sitio">
+          <span class="popup-sitio__cat">Puerto fluvial</span>
+          <h3 class="popup-sitio__nombre">${p.nombre || ''}</h3>
+          ${p.ubicacion ? `<p class="popup-sitio__ubicacion">${p.ubicacion}</p>` : ''}
+          ${p.descripcion ? `<p class="popup-sitio__desc">${p.descripcion}</p>` : ''}
+        </div>
+      `);
+      marker.on('click', () => { if (_onClicInfraGlobal) _onClicInfraGlobal('puerto', p); });
+      marker.addTo(capaPuertosGlobal);
+      _puertosGlobalMarkers.set(String(p.id), marker);
+    });
+  }
+
+  function limpiarPuertosGlobal() {
+    if (capaPuertosGlobal) capaPuertosGlobal.clearLayers();
+    _puertosGlobalMarkers.clear();
+    if (_conexionCentroId && _conexionCentroId.startsWith('puerto_')) limpiarConexiones();
+  }
+
+  /** Pinta TODOS los aeropuertos del catálogo (tecla A). */
+  function setMarcadoresAeropuertosGlobal(lista) {
+    limpiarAeropuertosGlobal();
+    if (!lista || !lista.length) return;
+    lista.forEach((ap) => {
+      if (ap.latitud == null || ap.longitud == null || isNaN(Number(ap.latitud)) || isNaN(Number(ap.longitud))) return;
+      const marker = L.marker([Number(ap.latitud), Number(ap.longitud)], { icon: iconoAeropuertoGlobal(), zIndexOffset: 1100 });
+      marker.bindTooltip(ap.nombre || 'Aeropuerto', { direction: 'top', offset: [0, -24], className: 'site-label' });
+      marker.bindPopup(`
+        <div class="popup-sitio">
+          <span class="popup-sitio__cat">Aeropuerto</span>
+          <h3 class="popup-sitio__nombre">${ap.nombre || ''}</h3>
+          ${ap.ubicacion ? `<p class="popup-sitio__ubicacion">${ap.ubicacion}</p>` : ''}
+          ${ap.descripcion ? `<p class="popup-sitio__desc">${ap.descripcion}</p>` : ''}
+        </div>
+      `);
+      marker.on('click', () => { if (_onClicInfraGlobal) _onClicInfraGlobal('aeropuerto', ap); });
+      marker.addTo(capaAeropuertosGlobal);
+      _aeropuertosGlobalMarkers.set(String(ap.id), marker);
+    });
+  }
+
+  function limpiarAeropuertosGlobal() {
+    if (capaAeropuertosGlobal) capaAeropuertosGlobal.clearLayers();
+    _aeropuertosGlobalMarkers.clear();
+    if (_conexionCentroId && _conexionCentroId.startsWith('aeropuerto_')) limpiarConexiones();
+  }
+
+  // ---------------------------------------------------------------------
+  // Conexiones de un puerto/aeropuerto (líneas punteadas al hacer clic)
+  // ---------------------------------------------------------------------
+
+  /** Dibuja líneas desde el punto central hacia cada destino conectado. Si se
+   *  vuelve a hacer clic sobre el mismo punto, las líneas se ocultan. */
+  function dibujarConexiones(tipo, id, lat, lon, destinos, color) {
+    const clave = tipo + '_' + id;
+    if (_conexionCentroId === clave && capaConexiones && capaConexiones.getLayers().length) {
+      limpiarConexiones();
+      return;
+    }
+    limpiarConexiones();
+    _conexionCentroId = clave;
+    if (!capaConexiones || !destinos || !destinos.length) return;
+    destinos.forEach((d) => {
+      if (d.latitud == null || d.longitud == null || isNaN(Number(d.latitud)) || isNaN(Number(d.longitud))) return;
+      L.polyline([[Number(lat), Number(lon)], [Number(d.latitud), Number(d.longitud)]], {
+        color: color || '#4a6fa5',
+        weight: 2,
+        opacity: 0.85,
+        dashArray: '6 6',
+      }).bindTooltip(d.nombre, { sticky: true }).addTo(capaConexiones);
+    });
+  }
+
+  function limpiarConexiones() {
+    if (capaConexiones) capaConexiones.clearLayers();
+    _conexionCentroId = null;
+  }
+
+  /** Abre el popup de un puerto/aeropuerto del catálogo y acerca el mapa. */
+  function abrirPopupInfra(tipo, id) {
+    const mapa = tipo === 'puerto' ? _puertosGlobalMarkers : _aeropuertosGlobalMarkers;
+    const marker = mapa && mapa.get(String(id));
+    if (!marker) return;
+    marker.openPopup();
+    enfocarLugar(marker.getLatLng().lat, marker.getLatLng().lng);
+    _centrarPopupEnVista(marker);
+  }
+
   function limpiarTodo() {
     limpiarRuta();
     limpiarRutaPreview();
@@ -1010,6 +1145,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarEscalas();
     limpiarPuntosDesvio();
     limpiarAlertas();
+    limpiarConexiones();
     clusterSitios.clearLayers();
   }
 
@@ -1160,6 +1296,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     setMarcadorOrigen,
     setMarcadorDestino,
     setOnClicMarcadorExtremo,
+    setOnClicInfraGlobal,
+    dibujarConexiones,
+    limpiarConexiones,
+    abrirPopupInfra,
     limpiarMarcadoresRuta,
     setMarcadoresParadas,
     setOnEliminarParada,
@@ -1185,6 +1325,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarTramoFluvial,
     setMarcadoresPuertos,
     limpiarMarcadoresPuertos,
+    setMarcadoresPuertosGlobal,
+    limpiarPuertosGlobal,
+    setMarcadoresAeropuertosGlobal,
+    limpiarAeropuertosGlobal,
     dibujarRutaPreview,
     limpiarRutaPreview,
     limpiarRuta,

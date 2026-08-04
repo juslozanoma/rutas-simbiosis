@@ -18,6 +18,11 @@
       const extremo = tipo === 'origen' ? state.origen : state.destino;
       if (extremo) mostrarCuadroExtremo(tipo, extremo.nombre || '', extremo.departamento || '');
     });
+    // Clic en un puerto/aeropuerto del mapa: líneas hacia todos sus conexiones.
+    MapModule.setOnClicInfraGlobal((tipo, item) => {
+      const conexiones = tipo === 'puerto' ? _conexionesDePuerto(item) : _conexionesDeAeropuerto(item);
+      MapModule.dibujarConexiones(tipo, String(item.id), Number(item.latitud), Number(item.longitud), conexiones, tipo === 'puerto' ? '#2f7a6b' : '#4a6fa5');
+    });
 
     try {
       const [municipios, sitios] = await Promise.all([
@@ -100,14 +105,25 @@
     garantizarVisibilidadMovil();
     reordenarAereoMovil();
 
-    // Mostrar todos los sitios de frontera (tecla F los oculta/muestra).
+    // Mostrar todos los sitios de frontera (tecla F los oculta/muestra),
+    // todos los puertos del catálogo (tecla P) y aeropuertos (tecla A).
     _syncFrontera();
+    _syncPuertos();
+    _syncAeropuertos();
     document.addEventListener('keydown', (evt) => {
-      if (evt.key.toLowerCase() === 'f' && !evt.ctrlKey && !evt.metaKey && !evt.altKey) {
-        const esInput = evt.target && evt.target.tagName && /^(INPUT|TEXTAREA|SELECT)$/.test(evt.target.tagName);
-        if (esInput) return;
+      if (evt.ctrlKey || evt.metaKey || evt.altKey) return;
+      const esInput = evt.target && evt.target.tagName && /^(INPUT|TEXTAREA|SELECT)$/.test(evt.target.tagName);
+      if (esInput) return;
+      const tecla = evt.key.toLowerCase();
+      if (tecla === 'f') {
         _fronteraVisibles = !_fronteraVisibles;
         _syncFrontera();
+      } else if (tecla === 'p') {
+        _puertosVisibles = !_puertosVisibles;
+        _syncPuertos();
+      } else if (tecla === 'a') {
+        _aeropuertosVisibles = !_aeropuertosVisibles;
+        _syncAeropuertos();
       }
     });
   }

@@ -134,6 +134,12 @@
 
   let _fronteraVisibles = false;
 
+  // Todos los puertos del catálogo (tecla P) y aeropuertos (tecla A):
+  // ocultos por defecto, se muestran/ocultan con su tecla.
+
+  let _puertosVisibles = false;
+  let _aeropuertosVisibles = false;
+
 
   let ultimosValoresAplicados = { distancia: null, tiempo: null };
 
