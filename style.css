@@ -678,6 +678,7 @@ input, select{ font-family: inherit; }
   gap: 8px;
 }
 .sitio-card{
+  position: relative;
   border: 1px solid var(--line-200);
   border-radius: var(--radius-md);
   padding: 10px 12px;
@@ -721,19 +722,22 @@ input, select{ font-family: inherit; }
 .sitio-card__add--quitar:hover:not(:disabled){ background: #d64541; border-color: #d64541; color: #ffffff; }
 
 .sitio-card__quitar{
-  flex-shrink: 0;
-  width: 24px; height: 24px;
-  border-radius: 50%;
-  border: 1px solid var(--line-300);
-  background: #ffffff;
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  min-width: 22px;
+  height: 22px;
+  background: transparent;
+  border: none;
   color: var(--text-muted);
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   line-height: 1;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  transition: color 0.12s ease;
 }
-.sitio-card__quitar:hover{ background: #d64541; border-color: #d64541; color: #ffffff; }
+.sitio-card__quitar:hover{ color: #d64541; }
+.sitio-card--ruta-oculta{ opacity: 0.45; }
 
 /* ==========================================================================
    MARCADORES Y POPUPS DEL MAPA

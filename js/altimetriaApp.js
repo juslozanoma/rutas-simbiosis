@@ -101,5 +101,53 @@
   }
 
   // -------------------------------------------------------------------
+  // Altimetría de una ruta cargada desde archivo (K): se muestra al pulsar
+  // su ficha en la lista. Usa datos propios para no pisar la altimetría de
+  // la ruta calculada (state.altimetriaGeo / state.elevacion).
+  // -------------------------------------------------------------------
+
+  let _geoRutaArchivo = null;      // geojson LineString de la ruta de archivo
+  let _kmRutaArchivo = 0;
+  let _elevacionRutaArchivo = null;
+
+  async function _cargarElevacionRutaArchivo(containerId) {
+    if (!_geoRutaArchivo || !_geoRutaArchivo.geometry) return;
+    const chart = document.getElementById(containerId);
+    if (!chart) return;
+    chart.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text-muted);font-size:0.85rem;"><svg class="spinner-bike" viewBox="0 0 48 30" style="width:120px;height:75px;"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1"><g transform="translate(9.5,19)"><circle class="spinner-bike_tire" r="9" stroke-dasharray="56.549 56.549"></circle><g class="spinner-bike_spokes-spin" stroke-dasharray="31.416 31.416" stroke-dashoffset="-23.562"><circle class="spinner-bike_spokes" r="5"></circle><circle class="spinner-bike_spokes" r="5" transform="rotate(180,0,0)"></circle></g></g><g transform="translate(24,19)"><g class="spinner-bike_pedals-spin" stroke-dasharray="25.133 25.133" stroke-dashoffset="-21.991" transform="rotate(67.5,0,0)"><circle class="spinner-bike_pedals" r="4"></circle><circle class="spinner-bike_pedals" r="4" transform="rotate(180,0,0)"></circle></g></g><g transform="translate(38.5,19)"><circle class="spinner-bike_tire" r="9" stroke-dasharray="56.549 56.549"></circle><g class="spinner-bike_spokes-spin" stroke-dasharray="31.416 31.416" stroke-dashoffset="-23.562"><circle class="spinner-bike_spokes" r="5"></circle><circle class="spinner-bike_spokes" r="5" transform="rotate(180,0,0)"></circle></g></g><polyline class="spinner-bike_seat" points="14 3,18 3" stroke-dasharray="5 5"></polyline><polyline class="spinner-bike_body" points="16 3,24 19,9.5 19,18 8,34 7,24 19" stroke-dasharray="79 79"></polyline><path class="spinner-bike_handlebars" d="m30,2h6s1,0,1,1-1,1-1,1" stroke-dasharray="10 10"></path><polyline class="spinner-bike_front" points="32.5 2,38.5 19" stroke-dasharray="19 19"></polyline></g></svg><span>Consultando datos de elevación…</span></div>';
+    if (!_elevacionRutaArchivo || !_elevacionRutaArchivo.some((e) => e != null)) {
+      try {
+        const coords = _geoRutaArchivo.geometry.coordinates;
+        const { coordenadas, indices } = _prepararCoordenadasParaElevacion(coords);
+        const elevBatch = await Utils.obtenerElevacionBatch(coordenadas);
+        if (elevBatch.some((e) => e != null)) {
+          _elevacionRutaArchivo = _reconstruirElevacion(elevBatch, indices, coords.length);
+        }
+      } catch (err) {
+        console.warn('[ALT] Error al cargar elevación de la ruta de archivo:', err.message);
+      }
+    }
+    AltimetriaModule.setDatos(_geoRutaArchivo, _elevacionRutaArchivo, _kmRutaArchivo, true);
+    AltimetriaModule.setExtremos('Inicio de la ruta', 'Final de la ruta');
+    AltimetriaModule.renderizar(containerId);
+  }
+
+  /** Muestra el perfil de elevación de una ruta cargada desde archivo (K):
+   *  en escritorio abre el panel sobre el mapa y en móvil la pestaña. */
+  function mostrarAltimetriaRutaArchivo(geo, totalKm) {
+    _geoRutaArchivo = geo;
+    _kmRutaArchivo = totalKm;
+    _elevacionRutaArchivo = null;
+    if (esMovil()) {
+      setMobileTab('altimetria');
+      _cargarElevacionRutaArchivo('altimetria-chart-panel');
+    } else {
+      if (el.altimetriaPanel) el.altimetriaPanel.hidden = false;
+      if (el.btnAltimetria) el.btnAltimetria.hidden = true;
+      _cargarElevacionRutaArchivo('altimetria-chart');
+    }
+  }
+
+  // -------------------------------------------------------------------
   // Cálculo de la ruta principal (solo al pulsar el botón)
   // -------------------------------------------------------------------

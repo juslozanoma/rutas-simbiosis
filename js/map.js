@@ -1304,16 +1304,29 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     hover.on('mouseout', () => hover.closeTooltip());
 
     if (coords.length >= 2) {
-      const nombre = meta.nombre || '';
       L.marker(coords[0], { icon: iconoOrigen(), zIndexOffset: 50 })
-        .bindTooltip('Inicio: ' + nombre, { direction: 'top', offset: [0, -10] })
+        .bindTooltip('Inicio de la ruta', { direction: 'top', offset: [0, -10] })
         .addTo(grupo);
       L.marker(coords[coords.length - 1], { icon: iconoDestino(), zIndexOffset: 50 })
-        .bindTooltip('Fin: ' + nombre, { direction: 'top', offset: [0, -10] })
+        .bindTooltip('Final de la ruta', { direction: 'top', offset: [0, -10] })
         .addTo(grupo);
     }
 
     _gruposRutaArchivo[id] = { grupo, lineaTurf };
+  }
+
+  /** Muestra u oculta una ruta de archivo ya dibujada (sin quitarla).
+   *  Devuelve el estado visible resultante. */
+  function toggleRutaArchivo(id, visible) {
+    const r = _gruposRutaArchivo[id];
+    if (!r) return null;
+    if (visible == null) visible = !map.hasLayer(r.grupo);
+    if (visible) {
+      if (!map.hasLayer(r.grupo)) r.grupo.addTo(map);
+    } else if (map.hasLayer(r.grupo)) {
+      map.removeLayer(r.grupo);
+    }
+    return visible;
   }
 
   function quitarRutaArchivo(id) {
@@ -1408,6 +1421,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarTodo,
     dibujarRutaArchivo,
     quitarRutaArchivo,
+    toggleRutaArchivo,
     limpiarRutasArchivo,
     ajustarVista,
     actualizarPosicionUsuario,

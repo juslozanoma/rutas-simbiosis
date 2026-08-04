@@ -17,6 +17,7 @@ const RutaArchivoModule = (() => {
   let _modoActivo = false;       // modo ruta de archivo (panel oculto, rutas en el mapa)
   let _rutaActualId = null;      // ruta "actual" (la más reciente) para el GPS
   let _rutas = [];               // [{ id, nombre, coords, km, seg }]
+  const _rutasOcultas = new Set(); // ids de rutas ocultas del mapa (clic en su ficha)
   let _secuencia = 0;            // generador de ids
   let _watcherId = null;
 
@@ -136,6 +137,7 @@ const RutaArchivoModule = (() => {
   function _activarModo() {
     _modoActivo = true;
     _rutaArchivoActiva = true;
+    _rutasOcultas.clear();
     _dibujarTodas();
     _actualizarStats();
     if (el.btnGps) el.btnGps.hidden = false;
@@ -144,7 +146,41 @@ const RutaArchivoModule = (() => {
   }
 
   function _dibujarTodas() {
-    _rutas.forEach((r) => MapModule.dibujarRutaArchivo(r.id, r.coords, { nombre: r.nombre }));
+    _rutas.forEach((r) => {
+      if (_rutasOcultas.has(r.id)) return;
+      MapModule.dibujarRutaArchivo(r.id, r.coords, { nombre: r.nombre });
+    });
+  }
+
+  function _geojsonRuta(ruta) {
+    return {
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: ruta.coords.map((c) => [c[1], c[0]]),
+      },
+    };
+  }
+
+  /** Clic en la ficha de una ruta: primero la oculta del mapa y, al pulsarla
+   *  de nuevo, la muestra centrando la vista y abriendo su altimetría. */
+  function _clicTarjeta(id, tarjeta) {
+    const ruta = _rutas.find((r) => r.id === id);
+    if (!ruta) return;
+    const oculta = _rutasOcultas.has(id);
+    if (!oculta) {
+      _rutasOcultas.add(id);
+      MapModule.toggleRutaArchivo(id, false);
+      if (tarjeta) tarjeta.classList.add('sitio-card--ruta-oculta');
+      return;
+    }
+    _rutasOcultas.delete(id);
+    MapModule.toggleRutaArchivo(id, true);
+    MapModule.ajustarVista(ruta.coords);
+    if (tarjeta) tarjeta.classList.remove('sitio-card--ruta-oculta');
+    if (typeof mostrarAltimetriaRutaArchivo === 'function') {
+      mostrarAltimetriaRutaArchivo(_geojsonRuta(ruta), ruta.km);
+    }
   }
 
   function _totalKm() {
@@ -376,11 +412,11 @@ const RutaArchivoModule = (() => {
   function _renderTarjetas() {
     if (!el.paradasLista) return;
     el.paradasLista.innerHTML = '';
-    _rutas.forEach((r) => {
+    _rutas.forEach((r, i) => {
       const li = Utils.crearElemento(`
-        <li class="sitio-card">
+        <li class="sitio-card${_rutasOcultas.has(r.id) ? ' sitio-card--ruta-oculta' : ''}" data-ruta-archivo-id="${r.id}">
           <div class="sitio-card__top">
-            <span class="sitio-card__nombre">${_escapeHtml(r.nombre)}</span>
+            <span class="sitio-card__nombre"><span class="sitio-card__num">${i + 1}.</span>${_escapeHtml(r.nombre)}</span>
             <button type="button" class="sitio-card__quitar" data-quitar-ruta="${r.id}" title="Quitar ruta de la memoria" aria-label="Quitar ruta de la memoria">&times;</button>
           </div>
           <p class="sitio-card__ciudad">${r.km.toFixed(1)} km totales</p>
@@ -440,7 +476,15 @@ const RutaArchivoModule = (() => {
     if (el.paradasLista) {
       el.paradasLista.addEventListener('click', (e) => {
         const btn = e.target.closest('[data-quitar-ruta]');
-        if (btn) quitarRuta(btn.getAttribute('data-quitar-ruta'));
+        if (btn) {
+          e.stopPropagation();
+          quitarRuta(btn.getAttribute('data-quitar-ruta'));
+          return;
+        }
+        const tarjeta = e.target.closest('[data-ruta-archivo-id]');
+        if (tarjeta) {
+          _clicTarjeta(tarjeta.getAttribute('data-ruta-archivo-id'), tarjeta);
+        }
       });
     }
   }
