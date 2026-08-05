@@ -884,6 +884,8 @@ const RutaArchivoModule = (() => {
   // Centra el botón "Subir tu propia ruta" (solo móvil) entre la fila del
   // destino y la barra de pestañas inferior. Funciona también después de
   // calcular la ruta, cuando la fila del destino deja de estar visible.
+  // La posición se acota al panel lateral para que el botón nunca quede
+  // flotando sobre el mapa (p. ej. al hacer scroll en el app-shell).
   function _posicionarBotonSubirRuta() {
     const btn = el.btnSubirRutaPropia;
     if (!btn || !esMovil()) return;
@@ -896,7 +898,10 @@ const RutaArchivoModule = (() => {
       ? panelTop + _offsetFilaDestino
       : panelTop + 140;
     const barraTop = barra.getBoundingClientRect().top;
-    const centro = filaBottom + (barraTop - filaBottom) / 2;
+    let centro = filaBottom + (barraTop - filaBottom) / 2;
+    const bordeSuperior = panelTop + btn.offsetHeight / 2 + 4;
+    const bordeInferior = barraTop - btn.offsetHeight / 2 - 4;
+    centro = Math.max(bordeSuperior, Math.min(bordeInferior, centro));
     btn.style.top = Math.round(centro - btn.offsetHeight / 2) + 'px';
   }
 
@@ -940,6 +945,11 @@ const RutaArchivoModule = (() => {
     _posicionarBotonSubirRuta();
     window.addEventListener('resize', _posicionarBotonSubirRuta);
     window.addEventListener('orientationchange', _posicionarBotonSubirRuta);
+    // En móvil el app-shell puede desplazarse (p. ej. con paradas largas); al
+    // hacer scroll el botón flotante debe seguir al panel y no quedar sobre el
+    // mapa. La función ya acota la posición dentro del panel lateral.
+    const appShellScroll = document.querySelector('.app-shell');
+    if (appShellScroll) appShellScroll.addEventListener('scroll', _posicionarBotonSubirRuta, { passive: true });
     // X roja junto a la pestaña Rutas (móvil y PC): cierra las rutas de archivo
     // y vuelve al menú normal de Rutas y Descubre Colombia.
     if (el.btnCerrarRutasArchivo) el.btnCerrarRutasArchivo.addEventListener('click', salirModo);

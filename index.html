@@ -164,6 +164,8 @@
         <button type="button" id="btn-agregar-intermedio" class="btn-agregar-intermedio" title="Agregar pueblo intermedio" aria-label="Agregar pueblo intermedio">
           <svg class="icon-btn__icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
         </button>
+        <button type="button" id="btn-auto-organizar" class="auto-organizar-btn" title="Ordenar automáticamente pueblos y paradas por su distancia al origen" aria-label="Ordenar automáticamente pueblos y paradas" aria-pressed="true">Organizar</button>
+        <button type="button" id="btn-reiniciar-pc" class="btn-reiniciar-pc" title="Reiniciar desde cero (borra las rutas subidas y el viaje)" aria-label="Reiniciar desde cero">Reiniciar</button>
       </h2>
       <ul class="paradas-lista" id="paradas-lista"></ul>
     </section>
@@ -274,9 +276,6 @@
   </aside>
 
   </div><!-- /app-body -->
-
-  <!-- Botón "Reiniciar desde cero" (solo móvil): sobre la barra de pestañas inferior -->
-  <button type="button" id="btn-reiniciar-todo" class="btn-reiniciar-todo">Reiniciar desde cero</button>
 
   <!-- ============ BARRA DE PESTAÑAS INFERIOR MÓVIL ============ -->
   <nav class="mobile-tab-bar" id="mobile-tab-bar">

@@ -99,6 +99,7 @@
     rowOrigen: document.getElementById('row-origen'),
     rowDestino: document.getElementById('row-destino'),
     paradasTitulo: document.getElementById('paradas-titulo'),
+    btnAutoOrganizar: document.getElementById('btn-auto-organizar'),
     btnTabPanelRuta: document.getElementById('btn-tab-panel-ruta'),
     btnTabPanelRutaLabel: document.getElementById('btn-tab-panel-ruta-label'),
     btnAnadirRutaDesktop: document.getElementById('btn-anadir-ruta-desktop'),

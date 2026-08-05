@@ -155,7 +155,8 @@ input, select{ font-family: inherit; }
 .btn-subir-ruta-propia:active{ transform: translateY(1px); }
 .btn-subir-ruta-propia[hidden]{ display: none; }
 #app[data-ruta-archivo="true"] .btn-subir-ruta-propia,
-#app[data-infra-activa="true"] .btn-subir-ruta-propia{ display: none; }
+#app[data-infra-activa="true"] .btn-subir-ruta-propia,
+#app[data-ruta-lista="true"] .btn-subir-ruta-propia{ display: none; }
 
 /* --- Barra de acciones post-cálculo (Cambiar ruta / Añadir parada) --- */
 .panel-route-bar{
@@ -366,6 +367,50 @@ input, select{ font-family: inherit; }
   flex-wrap: wrap;
   padding-left: 2px;
 }
+/* Botón "Organizar" del título de paradas: activo por defecto (verde, igual
+   que Reiniciar pero verde); al desactivarlo se pone con borde y letra gris. */
+.auto-organizar-btn{
+  margin-left: auto;
+  padding: 3px 10px;
+  border: 1px solid var(--teal-500);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--teal-600);
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-family: inherit;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.auto-organizar-btn:hover{ background: var(--teal-50); }
+.auto-organizar-btn[aria-pressed="false"]{
+  border-color: var(--line-300);
+  color: var(--text-muted);
+  background: #ffffff;
+}
+.auto-organizar-btn[aria-pressed="false"]:hover{ background: var(--bg-subtle); }
+/* Botón "Reiniciar" (PC): pequeño, con borde y letras rojas, a la derecha del
+   título de paradas. En móvil no se muestra (ahí vive el botón flotante). */
+.btn-reiniciar-pc{
+  margin-left: 4px;
+  padding: 3px 10px;
+  border: 1px solid #d64545;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #d64545;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-family: inherit;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.btn-reiniciar-pc:hover{ background: #fdf0f0; }
 /* Botón "+" para añadir pueblo intermedio */
 .btn-agregar-intermedio{
   width: 22px; height: 22px;
@@ -905,6 +950,24 @@ input, select{ font-family: inherit; }
   border-top-color: rgba(255,255,255,0.92);
   pointer-events: none;
 }
+/* Etiqueta con el número del listado de Descubre: insignia circular verde */
+.site-label--num{
+  background: var(--teal-500);
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(20,32,27,0.3);
+  line-height: 1;
+}
+.site-label--num::before{ border-top-color: var(--teal-500); }
 
 /* Tooltip que sigue al cursor sobre la ruta (distancia y tiempo desde el origen) */
 .route-tooltip{
@@ -1517,10 +1580,6 @@ input, select{ font-family: inherit; }
 #app[data-ruta-archivo="true"] .panel-tab--cerrar-rutas,
 #app[data-ruta-archivo="true"] .mobile-tab-btn--cerrar-rutas{ display: flex; }
 
-/* "Reiniciar desde cero": oculto en escritorio, solo se muestra en móvil
-   sobre la barra inferior (reglas dentro del media query móvil). */
-.btn-reiniciar-todo{ display: none; }
-
 /* ==========================================================================
    RESPONSIVE
    ========================================================================== */
@@ -1596,29 +1655,6 @@ input, select{ font-family: inherit; }
     right: 0;
     z-index: 1100;
   }
-
-  /* Botón "Reiniciar desde cero": pequeño, con borde y letras rojas, justo
-     sobre la barra de pestañas inferior y solo en la pestaña Ruta. */
-  .btn-reiniciar-todo{
-    display: none;
-    position: fixed;
-    right: 12px;
-    bottom: 56px;
-    z-index: 1200;
-    padding: 5px 12px;
-    border: 1px solid #d64545;
-    border-radius: 6px;
-    background: #ffffff;
-    color: #d64545;
-    font-size: 0.72rem;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-  }
-  .btn-reiniciar-todo:hover{ background: #fdf0f0; }
-  #app[data-mobile-tab="ruta"] .btn-reiniciar-todo{ display: block; }
-  #app.combo-enfocado .btn-reiniciar-todo{ display: none !important; }
 
   /* Ocultar elementos de escritorio en móvil */
   #btn-categorias{ display: none !important; }

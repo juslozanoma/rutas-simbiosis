@@ -66,16 +66,19 @@ const TourismModule = (() => {
 
   /**
    * Construye un marcador Leaflet para un sitio turístico ya enriquecido
-   * con `distanciaCorredorKm` (calculado en filters.js).
+   * con `distanciaCorredorKm` (calculado en filters.js). Si se pasa `etiqueta`
+   * (p. ej. el número en el listado de Descubre), la etiqueta permanente del
+   * mapa muestra ese número; si no, muestra el nombre del sitio.
    */
-  function crearMarcador(sitio) {
+  function crearMarcador(sitio, etiqueta) {
     const icono = MapModule.iconoSitio();
     const marker = L.marker([sitio.lat, sitio.lon], { icon: icono });
-    marker.bindTooltip(sitio.nombre, {
+    const numero = etiqueta != null && String(etiqueta) !== '' ? String(etiqueta) : null;
+    marker.bindTooltip(numero || sitio.nombre, {
       permanent: true,
       direction: 'top',
       offset: [0, -22],
-      className: 'site-label',
+      className: numero ? 'site-label site-label--num' : 'site-label',
     });
 
     marker.__sitioId = sitio.id;

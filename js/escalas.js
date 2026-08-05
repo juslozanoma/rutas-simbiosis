@@ -10,6 +10,15 @@
     el.btnAgregarEscala.addEventListener('click', () => {
       agregarEscala();
     });
+    // El botón "Organizar" alterna la ordenación automática de pueblos y
+    // paradas; al activarlo se ordenan al instante.
+    if (el.btnAutoOrganizar) {
+      el.btnAutoOrganizar.addEventListener('click', () => {
+        const activo = el.btnAutoOrganizar.getAttribute('aria-pressed') === 'true';
+        el.btnAutoOrganizar.setAttribute('aria-pressed', String(!activo));
+        if (!activo) organizarAutomaticamente();
+      });
+    }
   }
 
 
@@ -34,7 +43,14 @@
         // El cuadro solo se oculta cuando los cuadros de origen/destino ya no
         // están en pantalla (ruta calculada); al inicio permanece visible.
         row.style.display = el.appRoot && el.appRoot.getAttribute('data-ruta-lista') === 'true' ? 'none' : '';
-        organizarAutomaticamente(true);
+        const autoOrganizar = !el.btnAutoOrganizar || el.btnAutoOrganizar.getAttribute('aria-pressed') === 'true';
+        if (autoOrganizar) {
+          organizarAutomaticamente(true);
+        } else if (state.rutaActual) {
+          // Sin "Organizar": el pueblo se inserta en su lugar y la ruta se
+          // recalcula igual (sin reordenar las demás paradas).
+          calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
+        }
         // Recalcular la ruta (OSRM) automáticamente al elegir el pueblo:
         // - Móvil: siempre (al agregar o cambiar), si organizarAutomaticamente ya no recalcó.
         // - Cambio de pueblo en cualquier dispositivo: recalcular sin doble cálculo.
@@ -340,6 +356,9 @@
   /** Centra el mapa y muestra la ficha centrada de una parada (como la de un sitio). */
 
   async function organizarAutomaticamente(invalidarSitios = false) {
+    // Con el botón "Organizar" desactivado no se reordena nada: cada parada o
+    // pueblo se inserta en el orden que se agrega (la ruta se recalcula igual).
+    if (el.btnAutoOrganizar && el.btnAutoOrganizar.getAttribute('aria-pressed') !== 'true') return;
     if (!state.origen) return;
     sincronizarOrden();
     const itemsConDistancia = state.orden.map((o) => {

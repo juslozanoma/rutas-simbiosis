@@ -2685,5 +2685,49 @@
     "ubicacion": "",
     "descripcion": "",
     "destinos_id": []
+  },
+  {
+    "id": "PFRV",
+    "nombre": "Puerto Ferry Río Viejo",
+    "ciudad": "La Gloria",
+    "rio": "magdalena",
+    "latitud": 8.634182,
+    "longitud": -73.815296,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "TDT2",
+    "nombre": "Terminal de transportes fluvial de Río Viejo",
+    "ciudad": "Rio Viejo",
+    "rio": "magdalena",
+    "latitud": 8.586653,
+    "longitud": -73.838993,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "PFB",
+    "nombre": "Puerto ferry Buenavita",
+    "ciudad": "x",
+    "rio": "Brazo Morales",
+    "latitud": 8.47416,
+    "longitud": -73.882071,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "FLP",
+    "nombre": "Ferry La Palma",
+    "ciudad": "x",
+    "rio": "Brazo Morales",
+    "latitud": 8.474151,
+    "longitud": -73.878679,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
   }
 ]

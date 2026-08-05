@@ -382,7 +382,7 @@
   }
 
   function initReiniciar() {
-    const btn = document.getElementById('btn-reiniciar-todo');
+    const btn = document.getElementById('btn-reiniciar-pc');
     if (btn) btn.addEventListener('click', reiniciarDesdeCero);
   }
 

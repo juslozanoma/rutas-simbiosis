@@ -13,7 +13,12 @@
     const center = map.getCenter();
     const zoom = map.getZoom();
     try {
-      await organizarAutomaticamente();
+      if (!el.btnAutoOrganizar || el.btnAutoOrganizar.getAttribute('aria-pressed') === 'true') {
+        await organizarAutomaticamente();
+      } else {
+        await aplicarRutaConDesvios();
+        renderizarParadas();
+      }
       map.setView(center, zoom, { animate: false });
       limpiarPreview();
       // Actualiza la tarjeta en su lugar (resaltado + botón "−") sin recargar la lista.
@@ -52,6 +57,16 @@
   // -------------------------------------------------------------------
 
 
+  /** Número que muestra la tarjeta del sitio en el listado de Descubre (o null). */
+  function _numeroListaSitio(sitio) {
+    const card = el.sitiosLista.querySelector(`[data-sitio-id="${String(sitio.id)}"]`);
+    if (!card) return null;
+    const num = card.querySelector('.sitio-card__num');
+    if (!num) return null;
+    const texto = (num.textContent || '').replace(/[.\s]/g, '');
+    return texto === '' ? null : texto;
+  }
+
   async function eliminarParada(sitioId) {
     const idx = state.paradas.findIndex((p) => p.id === sitioId);
     if (idx === -1) return;
@@ -68,7 +83,7 @@
     if (sitio) {
       _restaurarSitioEnLista(sitio);
       if (sitio.lat != null && sitio.lon != null) {
-        MapModule.agregarMarcadorSitio(TourismModule.crearMarcador(sitio));
+        MapModule.agregarMarcadorSitio(TourismModule.crearMarcador(sitio, _numeroListaSitio(sitio)));
       }
     }
   }

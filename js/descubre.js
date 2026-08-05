@@ -371,7 +371,7 @@
 
     sitiosOrdenados.forEach((sitio, i) => {
       if (sitio.lat == null || sitio.lon == null || isNaN(Number(sitio.lat)) || isNaN(Number(sitio.lon))) return;
-      const marker = TourismModule.crearMarcador(sitio);
+      const marker = TourismModule.crearMarcador(sitio, i + 1);
       // Viceversa: hover en marcador del mapa → destacar en perfil
       if (sitio._distKm != null) {
         marker.on('mouseover', () => { AltimetriaModule.mostrarHoverEn(sitio._distKm); });
