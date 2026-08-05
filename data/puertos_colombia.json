@@ -2714,5 +2714,148 @@
     "ubicacion": "",
     "descripcion": "",
     "destinos_id": []
+  },
+  {
+    "id": "PFDM",
+    "nombre": "Puerto ferry de Morales",
+    "ciudad": "x",
+    "rio": "Brazo Morales",
+    "latitud": 8.281875,
+    "longitud": -73.870178,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "PFD5",
+    "nombre": "Puerto ferry de Moralito",
+    "ciudad": "x",
+    "rio": "brazo morales",
+    "latitud": 8.2811,
+    "longitud": -73.873504,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "FOED",
+    "nombre": "Ferry Ororia El Delirio",
+    "ciudad": "x",
+    "rio": "brazo simití",
+    "latitud": 8.14896,
+    "longitud": -73.905009,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "FOE2",
+    "nombre": "Ferry Ororia El Delirio 2",
+    "ciudad": "x",
+    "rio": "brazo simití",
+    "latitud": 8.148561,
+    "longitud": -73.903121,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "FPC1",
+    "nombre": "Ferry Piedra Canela 1",
+    "ciudad": "x",
+    "rio": "brazo simití",
+    "latitud": 8.037913,
+    "longitud": -73.913968,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "FPC2",
+    "nombre": "Ferry Piedra Canela 2",
+    "ciudad": "x",
+    "rio": "brazo simití",
+    "latitud": 8.036531,
+    "longitud": -73.91229,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "PCDB",
+    "nombre": "Puerto Cerro de Burgos",
+    "ciudad": "x",
+    "rio": "brazo simití",
+    "latitud": 7.97736,
+    "longitud": -73.899644,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "PBDS",
+    "nombre": "Puerto Brazo de Simití",
+    "ciudad": "x",
+    "rio": "brazo simití",
+    "latitud": 7.978258,
+    "longitud": -73.895836,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "PDP3",
+    "nombre": "Puerto de Palenquillo",
+    "ciudad": "x",
+    "rio": "maagdalena",
+    "latitud": 8.441625,
+    "longitud": -73.747103,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "PIT",
+    "nombre": "Puerto Impala Taparaca",
+    "ciudad": "x",
+    "rio": "magdalena",
+    "latitud": 8.403479,
+    "longitud": -73.746893,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "PB",
+    "nombre": "Puerto Bolívar",
+    "ciudad": "Gamarra (Cesar)",
+    "rio": "magdalena",
+    "latitud": 8.323961,
+    "longitud": -73.754012,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "PFDG",
+    "nombre": "Puerto ferry de Gamarra",
+    "ciudad": "Gamarra (Cesar)",
+    "rio": "magdaLENA",
+    "latitud": 8.322457,
+    "longitud": -73.747311,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "PDG4",
+    "nombre": "Puerto de Gamarra",
+    "ciudad": "Gamarra (Cesar)",
+    "rio": "magdalena",
+    "latitud": 8.318348,
+    "longitud": -73.745246,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
   }
 ]

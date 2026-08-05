@@ -111,6 +111,7 @@
     // ---- Estado local ---------------------------------------------------------
     let deptoSeleccionado = null;
     let _toqueContrae = false;
+    let _limpiandoTexto = false;
 
     // ---- Datos ----------------------------------------------------------------
     function obtenerDepartamentos() {
@@ -282,8 +283,10 @@
 
     /** Borra el texto del cuadro (también se hace al oprimir, según el requisito). */
     function limpiarTexto() {
+      _limpiandoTexto = true;
       trigger.value = '';
       delete trigger.dataset.selectedId;
+      _limpiandoTexto = false;
     }
 
     /** Aplica un municipio (desde la lista, el mapa o la ubicación): cierra el
@@ -315,6 +318,7 @@
     });
 
     trigger.addEventListener('input', () => {
+      if (_limpiandoTexto) return; // evita doble render tras limpiarTexto
       const texto = trigger.value.trim();
       if (texto) renderFiltrados(texto); else renderDepartamentos();
       delete trigger.dataset.selectedId;

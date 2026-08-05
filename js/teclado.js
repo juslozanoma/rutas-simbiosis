@@ -45,7 +45,11 @@
     }
     app.style.setProperty('--teclado-alto', lift + 'px');
     app.classList.add('teclado-abierto');
-    _ajustarListasAbiertas();
+    // El transform del lift se aplica en el siguiente frame de layout; la
+    // medición de la lista se difiere para leer los rects ya transformados
+    // (si no, maxHeight se calculaba con la posición vieja del trigger y
+    // la lista quedaba cortada mostrando solo una o dos opciones).
+    requestAnimationFrame(() => { _ajustarListasAbiertas(); });
   }
 
   /** Cuánto tapa el teclado del área visible: prioriza la geometría exacta de
