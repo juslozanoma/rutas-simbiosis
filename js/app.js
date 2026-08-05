@@ -107,9 +107,17 @@
       // Cargar puertos fluviales (opción de desplazamiento por río)
       state.puertos = [];
       try {
-        const resPue = await fetch('data/puertos_fluviales_colombia.json');
+        const resPue = await fetch('data/puertos_colombia.json');
         if (resPue.ok) state.puertos = await resPue.json();
       } catch {}
+      // Si hay una copia guardada en el navegador (OPFS, de cuando el servidor
+      // no pudo escribir el archivo), se usa esa, que es la más reciente.
+      if (typeof PersistenciaJsonModule !== 'undefined' && typeof PersistenciaJsonModule.leerPuertosGuardados === 'function') {
+        try {
+          const guardados = await PersistenciaJsonModule.leerPuertosGuardados();
+          if (Array.isArray(guardados) && guardados.length) state.puertos = guardados;
+        } catch {}
+      }
     } catch (err) {
       el.sitiosVacio.textContent = 'Error cargando los datos base: ' + err.message;
       return;
@@ -386,7 +394,22 @@
     if (btn) btn.addEventListener('click', reiniciarDesdeCero);
   }
 
+  // Recarga automática SOLO cuando el servidor lo anuncia (server.js), y ese
+  // servidor solo avisa cuando cambian .html o .js. No recarga al guardar
+  // puertos (JSON), ni por cambios de CSS/SVG.
+  function initRecargaPorServidor() {
+    fetch('/__server_info__')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((info) => {
+        if (!info || !info.events) return;
+        const es = new EventSource('/events');
+        es.onmessage = () => { location.reload(); };
+      })
+      .catch(() => {});
+  }
+
   document.addEventListener('DOMContentLoaded', initNuevoPuerto);
   document.addEventListener('DOMContentLoaded', initReiniciar);
+  document.addEventListener('DOMContentLoaded', initRecargaPorServidor);
 
   document.addEventListener('DOMContentLoaded', init);

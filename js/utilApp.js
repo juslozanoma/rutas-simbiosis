@@ -50,6 +50,29 @@
    *  cuadros de búsqueda de origen/destino y la pestaña Descubre, y la lista de
    *  la pestaña Ruta muestra el listado de infraestructura. Al apagar ambas
    *  teclas se restaura el panel tal como estaba. */
+  /** Etiqueta de la pestaña Ruta cuando el catálogo de puertos/aeropuertos
+   *  (P/A) está activo: "PUERTOS", "AEROPUERTOS" o "PUERTOS Y AEROPUERTOS". */
+  function _etiquetaInfra() {
+    if (!_puertosVisibles && !_aeropuertosVisibles) return null;
+    if (_puertosVisibles && _aeropuertosVisibles) return 'PUERTOS Y AEROPUERTOS';
+    return _puertosVisibles ? 'PUERTOS' : 'AEROPUERTOS';
+  }
+
+  /** Renombra la pestaña Ruta (móvil y PC) según el catálogo activo (P/A). */
+  function _actualizarEtiquetaPestanaRutaInfra() {
+    const etiqueta = _etiquetaInfra();
+    if (!etiqueta) return;
+    if (el.btnTabPanelRutaLabel) el.btnTabPanelRutaLabel.textContent = etiqueta;
+    if (el.btnTabRutaLabel) el.btnTabRutaLabel.textContent = etiqueta;
+  }
+
+  /** Restaura el nombre de la pestaña Ruta al apagar el catálogo (P/A). */
+  function _restaurarEtiquetaPestanaRuta() {
+    const enModoK = _rutaArchivoActiva;
+    if (el.btnTabPanelRutaLabel) el.btnTabPanelRutaLabel.textContent = enModoK ? 'MIS RUTAS' : 'Ruta';
+    if (el.btnTabRutaLabel) el.btnTabRutaLabel.textContent = enModoK ? 'Mis rutas' : 'Rutas';
+  }
+
   function _syncModoInfra() {
     const activo = _puertosVisibles || _aeropuertosVisibles;
     if (el.appRoot) {
@@ -70,6 +93,7 @@
         el.btnMostrarSitiosCercanos.disabled = true;
       }
       if (typeof renderizarInfraListado === 'function') renderizarInfraListado();
+      _actualizarEtiquetaPestanaRutaInfra();
     } else {
       const volverA = _pestanaAntesInfra;
       _pestanaAntesInfra = null;
@@ -80,6 +104,7 @@
       if (_rutaArchivoActiva && typeof RutaArchivoModule !== 'undefined' && typeof RutaArchivoModule.refrescarPanel === 'function') {
         RutaArchivoModule.refrescarPanel();
       }
+      _restaurarEtiquetaPestanaRuta();
       if (volverA === 'descubre' && !estaEnPestanaDescubre()) {
         activarPanelTab('descubre');
         if (esMovil()) setMobileTab('descubre');

@@ -1,59 +1,82 @@
 /**
  * persistenciaJson.js
  * ---------------------------------------------------------------------------
- * Guardado de los JSON de datos en local: usa la API File System Access
- * (Chrome/Edge) para sobrescribir el archivo elegido por el usuario; si no
- * está disponible o falla, descarga una copia del archivo modificado.
+ * Guardado de los JSON de datos en local, SIN ventanas ni descargas:
+ *  - Si la app se sirve con server.js (que expone POST /api/puertos), escribe
+ *    directamente en data/puertos_colombia.json (el archivo real del proyecto).
+ *  - Si no hay servidor de guardado (p. ej. Live Server), guarda una copia en
+ *    el almacenamiento privado del navegador (OPFS), que se conserva entre
+ *    sesiones y se usa al cargar. Cero selectores, cero descargas.
  * ---------------------------------------------------------------------------
  */
 const PersistenciaJsonModule = (() => {
 
-  let _archivoHandle = null;
+  const RUTA_PUERTOS = 'data/puertos_colombia.json';
 
-  /** Sobrescribe el JSON de puertos fluviales con los datos dados.
-   *  Devuelve: true = guardado en el archivo original, false = se descargó
-   *  una copia, null = el usuario canceló el selector de archivo. */
-  async function guardarPuertos(puertos) {
-    return guardarTexto('data/puertos_fluviales_colombia.json', JSON.stringify(puertos, null, 2));
-  }
+  // -------------------------------------------------------------------
+  // Guardado por servidor (server.js): POST /api/puertos
+  // -------------------------------------------------------------------
 
-  /** Sobrescribe (o descarga como copia) un archivo de texto. */
-  async function guardarTexto(nombreSugerido, texto) {
-    if (window.showOpenFilePicker) {
-      try {
-        if (!_archivoHandle) {
-          const [h] = await window.showOpenFilePicker({
-            description: 'Selecciona el JSON a sobrescribir',
-            types: [{ description: 'Archivo JSON', accept: { 'application/json': ['.json'] } }],
-            multiple: false,
-          });
-          _archivoHandle = h;
-        }
-        const writable = await _archivoHandle.createWritable();
-        await writable.write(texto);
-        await writable.close();
-        return true;
-      } catch (err) {
-        if (err && err.name === 'AbortError') return null; // cancelado por el usuario
-        _archivoHandle = null;
-        console.warn('[JSON] No se pudo escribir el archivo, se descargará una copia:', err);
-      }
+  async function _guardarPorServidor(puertos) {
+    try {
+      const res = await fetch('/api/puertos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(puertos),
+      });
+      return res.ok;
+    } catch (err) {
+      return false;
     }
-    _descargar(nombreSugerido, texto);
-    return false;
   }
 
-  function _descargar(nombre, texto) {
-    const blob = new Blob([texto], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = nombre;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  // -------------------------------------------------------------------
+  // Respaldo local sin ventanas: OPFS (almacenamiento privado del navegador)
+  // -------------------------------------------------------------------
+
+  async function _escribirOPFS(puertos) {
+    try {
+      const dir = await navigator.storage.getDirectory();
+      const sub = await dir.getDirectoryHandle('data', { create: true });
+      const fh = await sub.getFileHandle('puertos_colombia.json', { create: true });
+      const w = await fh.createWritable();
+      await w.write(JSON.stringify({ guardadoEn: Date.now(), puertos }, null, 2));
+      await w.close();
+      return true;
+    } catch (err) {
+      console.warn('[JSON] No se pudo guardar la copia local:', err);
+      return false;
+    }
   }
 
-  return { guardarPuertos, guardarTexto };
+  /** Devuelve los puertos guardados en el navegador (OPFS) o null si no hay. */
+  async function leerPuertosGuardados() {
+    try {
+      const dir = await navigator.storage.getDirectory();
+      const sub = await dir.getDirectoryHandle('data');
+      const fh = await sub.getFileHandle('puertos_colombia.json');
+      const f = await fh.getFile();
+      const datos = JSON.parse(await f.text());
+      return Array.isArray(datos) ? datos : (datos && datos.puertos) || null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  // -------------------------------------------------------------------
+  // API pública
+  // -------------------------------------------------------------------
+
+  /** Guarda los puertos: primero intenta escribir el archivo real vía el
+   *  servidor (server.js) y, si no es posible, guarda en el navegador (OPFS).
+   *  Nunca abre selectores ni descarga archivos. No recarga la página (la
+   *  recarga solo se dispara desde el servidor cuando cambian .html o .js).
+   *  Devuelve true si se pudo guardar, false en caso contrario. */
+  async function guardarPuertos(puertos) {
+    let ok = await _guardarPorServidor(puertos);
+    if (!ok) ok = await _escribirOPFS(puertos);
+    return ok;
+  }
+
+  return { guardarPuertos, leerPuertosGuardados };
 })();

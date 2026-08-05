@@ -49,8 +49,8 @@
     "nombre": "Paso de Río Aipe - Villavieja",
     "ciudad": "Aipe (Huila)",
     "rio": "Río Magdalena",
-    "latitud": 3.2275,
-    "longitud": -75.2342,
+    "latitud": 3.222206,
+    "longitud": -75.224929,
     "ubicacion": "Localizado en el Alto Magdalena, conecta el municipio de Aipe\ncon la zona rural de Villavieja en el departamento del Huila.",
     "descripcion": "Funciona mediante un sistema de planchón para el transbordo\nde vehículos livianos, pasajeros y carga local entre orillas.\nEvita largos rodeos viales facilitando el intercambio comercial\nagrícola y la conectividad regional entre ambas poblaciones.",
     "destinos_id": [
@@ -63,8 +63,8 @@
     "nombre": "Puerto Fluvial Villavieja",
     "ciudad": "Villavieja (Huila)",
     "rio": "Río Magdalena",
-    "latitud": 3.2291,
-    "longitud": -75.2315,
+    "latitud": 3.223011,
+    "longitud": -75.223829,
     "ubicacion": "Situado en la ribera oriental del río Magdalena en jurisdicción\ndel municipio de Villavieja frente al sector de Aipe.",
     "descripcion": "Opera como terminal de recepción para el planchón de cruce\ny embarcaciones menores dedicadas a la pesca y turismo.\nPermite el acceso directo desde el desierto hacia\nla troncal vial occidental del departamento del Huila.",
     "destinos_id": [
@@ -1785,21 +1785,6 @@
       "BAQ",
       "SIT",
       "SMR"
-    ]
-  },
-  {
-    "id": "RON",
-    "nombre": "Puente Roncador",
-    "ciudad": "Santa Cruz de Mompós (Bolívar)",
-    "rio": "Río Magdalena",
-    "latitud": 9.215,
-    "longitud": -74.425,
-    "ubicacion": "Estructura vial construida sobre el brazo principal del río Magdalena en Mompox.\nUne físicamente el municipio momposino con la Transversal de la Depresión.",
-    "descripcion": "Elimina la dependencia de transbordadores para el cruce vehicular y de pasajeros.\nFacilita el transporte de carga agrícola entre el sur de Bolívar y el Cesar.\nReduce significativamente los tiempos de viaje en la troncal oriental andina.\nPromueve el desarrollo turístico y comercial de la Depresión Momposina.",
-    "destinos_id": [
-      "BAN",
-      "MOM",
-      "TAM"
     ]
   },
   {

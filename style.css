@@ -411,6 +411,10 @@ input, select{ font-family: inherit; }
   transition: background 0.12s ease;
 }
 .btn-reiniciar-pc:hover{ background: #fdf0f0; }
+
+/* En modo infraestructura (P/A) el listado de puertos/aeropuertos no lleva la
+   fila de título (la palabra Puertos/Aeropuertos, ni Organizar ni Reiniciar). */
+#app[data-infra-activa="true"] .panel-paradas__title{ display: none; }
 /* Botón "+" para añadir pueblo intermedio */
 .btn-agregar-intermedio{
   width: 22px; height: 22px;
