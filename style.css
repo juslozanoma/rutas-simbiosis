@@ -129,11 +129,12 @@ input, select{ font-family: inherit; }
 .panel-locate__escalas:empty{ display: none; }
 .panel-locate__escalas[hidden]{ display: none; }
 
-/* Botón "Subir tu propia ruta" (solo móvil): entre la fila del destino y la
-   barra inferior. Blanco con texto y borde grises; abre el diálogo del atajo K. */
+/* Botón "Subir tu propia ruta" (solo móvil): flotante, centrado entre la
+   fila del destino y la barra de pestañas inferior. Blanco con texto y borde
+   grises; abre el diálogo del atajo K. La posición vertical exacta (centrada
+   entre ambos) la calcula JS (ver _posicionarBotonSubirRuta). */
 .btn-subir-ruta-propia{
   display: none;
-  width: 100%;
   align-items: center;
   justify-content: center;
   gap: 6px;
@@ -149,7 +150,7 @@ input, select{ font-family: inherit; }
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 .btn-subir-ruta-propia:hover{ background: var(--bg-subtle); border-color: var(--text-muted); color: var(--text-soft); }
-.btn-subir-ruta-propia:active{ transform: translateY(1px); }
+.btn-subir-ruta-propia:active{ transform: translateX(-50%) translateY(1px); }
 
 /* --- Barra de acciones post-cálculo (Cambiar ruta / Añadir parada) --- */
 .panel-route-bar{
@@ -360,26 +361,7 @@ input, select{ font-family: inherit; }
   flex-wrap: wrap;
   padding-left: 2px;
 }
-.auto-organizar-label{
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 500;
-  font-size: 0.68rem;
-  color: var(--text-muted);
-  cursor: pointer;
-  margin-left: auto;
-  white-space: nowrap;
-  padding-right: 2px;
-}
-.auto-organizar-label input[type="checkbox"]{
-  width: 13px; height: 13px;
-  accent-color: var(--teal-500);
-  cursor: pointer;
-}
-/* Botón "+" junto a "Organizar automáticamente" para añadir pueblo intermedio */
+/* Botón "+" para añadir pueblo intermedio */
 .btn-agregar-intermedio{
   width: 22px; height: 22px;
   flex-shrink: 0;
@@ -711,9 +693,17 @@ input, select{ font-family: inherit; }
 .sitio-card--active{ background: #f2f6f4; border-color: var(--teal-500); }
 .sitio-card--loading{ opacity: 0.6; pointer-events: none; }
 .sitio-card__top{ display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.sitio-card__top-right{ display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.sitio-card__nombre{ font-size: 0.85rem; font-weight: 600; color: var(--text-strong); }
+.sitio-card__top-right{ display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.sitio-card__nombre{ font-size: 0.85rem; font-weight: 600; color: var(--text-strong); display: flex; align-items: center; min-width: 0; }
 .sitio-card__num{ color: var(--teal-600); font-weight: 700; margin-right: 3px; }
+/* Punto de color de cada ruta cargada (coincide con su línea en el mapa) */
+.sitio-card__dot{
+  display: inline-block;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
 .sitio-card__cat{ display: none; }
 .sitio-card__meta{ font-size: 0.71rem; color: var(--text-muted); margin-top: 3px; display: flex; justify-content: space-between; gap: 8px; }
 .sitio-card__ciudad{ margin: 5px 0 0; font-size: 0.68rem; color: var(--text-muted); }
@@ -743,12 +733,27 @@ input, select{ font-family: inherit; }
 .sitio-card__add--quitar{ border-color: #d64541; color: #d64541; }
 .sitio-card__add--quitar:hover:not(:disabled){ background: #d64541; border-color: #d64541; color: #ffffff; }
 
+/* Ojo de las fichas de rutas cargadas: mostrar/ocultar en el mapa */
+.sitio-card__ojo{
+  width: 24px; height: 24px;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--line-300);
+  border-radius: 50%;
+  color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+.sitio-card__ojo:hover{ color: var(--teal-600); border-color: var(--teal-500); background: var(--teal-50); }
+.sitio-card__ojo[aria-pressed="false"]{ color: #d64541; border-color: #d64541; }
+.sitio-card__ojo[aria-pressed="false"]:hover{ background: rgba(214, 69, 65, 0.08); }
+
 .sitio-card__quitar{
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  min-width: 22px;
-  height: 22px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 2px 0 6px; /* separación a la izquierda: el texto no choca con la X */
   background: transparent;
   border: none;
   color: var(--text-muted);
@@ -1507,9 +1512,22 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="ruta"][data-ruta-lista="true"] #row-origen,
   #app[data-mobile-tab="ruta"][data-ruta-lista="true"] #row-destino{ display: none; }
 
-  /* "Subir tu propia ruta" visible solo en móvil, tras la fila del destino */
-  .btn-subir-ruta-propia{ display: flex; }
-  #app[data-ruta-archivo="true"] .btn-subir-ruta-propia{ display: none; }
+  /* "Subir tu propia ruta" flotante en móvil: centrado horizontal y entre la
+     fila del destino y la barra inferior (la altura exacta la fija JS). */
+  .btn-subir-ruta-propia{
+    display: flex;
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 1090;
+  }
+  #app[data-mobile-tab="descubre"] .btn-subir-ruta-propia,
+  #app[data-mobile-tab="altimetria"] .btn-subir-ruta-propia,
+  #app[data-mobile-panel="collapsed"] .btn-subir-ruta-propia,
+  #app[data-ruta-archivo="true"] .btn-subir-ruta-propia,
+  #app[data-infra-activa="true"] .btn-subir-ruta-propia,
+  #app.combo-enfocado .btn-subir-ruta-propia{ display: none; }
 
   /* En Descubre: panel-sites llena el panel, hint y desvíos ocultos */
   #app[data-mobile-tab="descubre"] .panel-sites{ flex: 1; min-height: 0; }

@@ -34,12 +34,12 @@
         // El cuadro solo se oculta cuando los cuadros de origen/destino ya no
         // están en pantalla (ruta calculada); al inicio permanece visible.
         row.style.display = el.appRoot && el.appRoot.getAttribute('data-ruta-lista') === 'true' ? 'none' : '';
-        if (el.checkAutoOrganizar.checked) organizarAutomaticamente(true);
+        organizarAutomaticamente(true);
         // Recalcular la ruta (OSRM) automáticamente al elegir el pueblo:
-        // - Móvil: siempre (al agregar o cambiar), si auto-organizar ya no recalcó.
+        // - Móvil: siempre (al agregar o cambiar), si organizarAutomaticamente ya no recalcó.
         // - Cambio de pueblo en cualquier dispositivo: recalcular sin doble cálculo.
         const recalcAuto = () => {
-          if (!state.rutaActual || !el.checkAutoOrganizar.checked) {
+          if (!state.rutaActual) {
             calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
           }
         };
@@ -340,7 +340,6 @@
   /** Centra el mapa y muestra la ficha centrada de una parada (como la de un sitio). */
 
   async function organizarAutomaticamente(invalidarSitios = false) {
-    if (!el.checkAutoOrganizar.checked) return;
     if (!state.origen) return;
     sincronizarOrden();
     const itemsConDistancia = state.orden.map((o) => {

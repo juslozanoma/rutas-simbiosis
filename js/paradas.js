@@ -13,12 +13,7 @@
     const center = map.getCenter();
     const zoom = map.getZoom();
     try {
-      if (el.checkAutoOrganizar.checked) {
-        await organizarAutomaticamente();
-      } else {
-        await aplicarRutaConDesvios({ mantenerMapa: true });
-        renderizarParadas();
-      }
+      await organizarAutomaticamente();
       map.setView(center, zoom, { animate: false });
       limpiarPreview();
       // Actualiza la tarjeta en su lugar (resaltado + botón "−") sin recargar la lista.
@@ -463,8 +458,6 @@
       el.paradasTitulo.textContent = tipos.length > 1 ? 'Aeropuertos y puertos' : (tipos[0] === 'puerto' ? 'Puertos' : 'Aeropuertos');
     }
     if (el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = true;
-    const lblAuto = el.checkAutoOrganizar && el.checkAutoOrganizar.closest('label');
-    if (lblAuto) lblAuto.hidden = true;
     el.panelParadas.hidden = false;
   }
 
@@ -492,8 +485,6 @@
   function _restaurarPanelRutaInfra() {
     if (el.paradasTitulo) el.paradasTitulo.textContent = 'Paradas';
     if (el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = false;
-    const lblAuto = el.checkAutoOrganizar && el.checkAutoOrganizar.closest('label');
-    if (lblAuto) lblAuto.hidden = false;
     if (el.panelEscalas) el.panelEscalas.hidden = !el.panelEscalas.children.length;
     renderizarParadas();
   }
@@ -709,23 +700,6 @@
 
       const acciones = document.createElement('div');
       acciones.className = 'parada-item__acciones';
-
-      if (!el.checkAutoOrganizar.checked) {
-        if (idx > 0) {
-          const btnUp = btnIcono('<polyline points="18 15 12 9 6 15"/>');
-          btnUp.title = 'Subir';
-          btnUp.addEventListener('click', (evt) => { evt.stopPropagation(); reordenar(idx, idx - 1); });
-          btnUp.addEventListener('contextmenu', (evt) => evt.stopPropagation());
-          acciones.appendChild(btnUp);
-        }
-        if (idx < total - 1) {
-          const btnDown = btnIcono('<polyline points="6 9 12 15 18 9"/>');
-          btnDown.title = 'Bajar';
-          btnDown.addEventListener('click', (evt) => { evt.stopPropagation(); reordenar(idx, idx + 1); });
-          btnDown.addEventListener('contextmenu', (evt) => evt.stopPropagation());
-          acciones.appendChild(btnDown);
-        }
-      }
 
       const btnDel = document.createElement('button');
       btnDel.type = 'button';

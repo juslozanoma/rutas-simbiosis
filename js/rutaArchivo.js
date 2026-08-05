@@ -14,12 +14,23 @@ const RutaArchivoModule = (() => {
   const VELOCIDAD_CAMINATA_KMH = 4.5; // ritmo promedio caminando
   const CLAVE_STORAGE = 'rutas-simbiosis:rutas-archivo';
 
+  // Paleta de colores de las rutas cargadas: cada ruta recibe uno distinto
+  // (preferentemente no repetido) para no confundirlas en el mapa.
+  const PALETA_RUTAS = ['#2f7a6b', '#d64541', '#4a6fa5', '#9c5fb5', '#d98a2b', '#3a8f4f', '#b05f8f', '#5f7ab0'];
+
   let _modoActivo = false;       // modo ruta de archivo (panel oculto, rutas en el mapa)
   let _rutaActualId = null;      // ruta "actual" (la más reciente) para el GPS
   let _rutas = [];               // [{ id, nombre, coords, km, seg }]
   const _rutasOcultas = new Set(); // ids de rutas ocultas del mapa (clic en su ficha)
   let _secuencia = 0;            // generador de ids
   let _watcherId = null;
+
+  // Offset vertical (px) entre el borde superior del side-panel y el borde
+  // inferior de la fila del destino. Se mide mientras la fila está visible
+  // (antes de calcular la ruta); después se reutiliza porque la fila se
+  // oculta con data-ruta-lista y el botón debe quedar centrado entre el
+  // cuadro de destino y la barra de pestañas inferior.
+  let _offsetFilaDestino = null;
 
   // -------------------------------------------------------------------
   // Persistencia en localStorage
@@ -42,7 +53,16 @@ const RutaArchivoModule = (() => {
       const m = /^ruta-(\d+)$/.exec(r.id);
       if (m) _secuencia = Math.max(_secuencia, Number(m[1]));
       if (typeof r.seg !== 'number') r.seg = Math.round((r.km / VELOCIDAD_CAMINATA_KMH) * 3600);
+      if (!r.color || typeof r.color !== 'string') r.color = PALETA_RUTAS[_rutas.indexOf(r) % PALETA_RUTAS.length];
     });
+  }
+
+  /** Devuelve un color de la paleta que ninguna ruta actual esté usando;
+   *  si todos están ocupados, cicla sobre el total. */
+  function _colorParaRutaNueva() {
+    const usados = new Set(_rutas.map((r) => r.color).filter(Boolean));
+    for (const c of PALETA_RUTAS) if (!usados.has(c)) return c;
+    return PALETA_RUTAS[_rutas.length % PALETA_RUTAS.length];
   }
 
   function _guardar() {
@@ -52,6 +72,7 @@ const RutaArchivoModule = (() => {
         nombre: r.nombre,
         km: r.km,
         seg: r.seg,
+        color: r.color,
         coords: r.coords.map((c) => [Math.round(c[0] * 1e6) / 1e6, Math.round(c[1] * 1e6) / 1e6]),
       }));
       localStorage.setItem(CLAVE_STORAGE, JSON.stringify(compactas));
@@ -112,6 +133,7 @@ const RutaArchivoModule = (() => {
         coords: parseado.coords,
         km: _distanciaTotal(parseado.coords),
         seg: 0,
+        color: _colorParaRutaNueva(),
       };
       ruta.seg = Math.round((ruta.km / VELOCIDAD_CAMINATA_KMH) * 3600);
       _rutas.push(ruta);
@@ -148,7 +170,7 @@ const RutaArchivoModule = (() => {
   function _dibujarTodas() {
     _rutas.forEach((r) => {
       if (_rutasOcultas.has(r.id)) return;
-      MapModule.dibujarRutaArchivo(r.id, r.coords, { nombre: r.nombre });
+      MapModule.dibujarRutaArchivo(r.id, r.coords, { nombre: r.nombre, color: r.color });
     });
   }
 
@@ -162,25 +184,30 @@ const RutaArchivoModule = (() => {
     };
   }
 
-  /** Clic en la ficha de una ruta: primero la oculta del mapa y, al pulsarla
-   *  de nuevo, la muestra centrando la vista y abriendo su altimetría. */
-  function _clicTarjeta(id, tarjeta) {
+  /** Clic en la ficha de una ruta: asegura que esté visible, centra el mapa
+   *  en su recorrido y abre su altimetría (no cambia su visibilidad). */
+  function _clicTarjeta(id) {
     const ruta = _rutas.find((r) => r.id === id);
     if (!ruta) return;
-    const oculta = _rutasOcultas.has(id);
-    if (!oculta) {
-      _rutasOcultas.add(id);
-      MapModule.toggleRutaArchivo(id, false);
-      if (tarjeta) tarjeta.classList.add('sitio-card--ruta-oculta');
-      return;
-    }
-    _rutasOcultas.delete(id);
     MapModule.toggleRutaArchivo(id, true);
     MapModule.ajustarVista(ruta.coords);
-    if (tarjeta) tarjeta.classList.remove('sitio-card--ruta-oculta');
     if (typeof mostrarAltimetriaRutaArchivo === 'function') {
       mostrarAltimetriaRutaArchivo(_geojsonRuta(ruta), ruta.km);
     }
+  }
+
+  /** Ojo de la ficha: muestra u oculta la ruta en el mapa sin quitarla. */
+  function _alternarVisibilidadRuta(id) {
+    const ruta = _rutas.find((r) => r.id === id);
+    if (!ruta) return;
+    if (_rutasOcultas.has(id)) {
+      _rutasOcultas.delete(id);
+      MapModule.toggleRutaArchivo(id, true);
+    } else {
+      _rutasOcultas.add(id);
+      MapModule.toggleRutaArchivo(id, false);
+    }
+    _renderTarjetas();
   }
 
   function _totalKm() {
@@ -413,11 +440,18 @@ const RutaArchivoModule = (() => {
     if (!el.paradasLista) return;
     el.paradasLista.innerHTML = '';
     _rutas.forEach((r, i) => {
+      const oculta = _rutasOcultas.has(r.id);
+      const ojoSvg = oculta
+        ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+        : '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
       const li = Utils.crearElemento(`
-        <li class="sitio-card${_rutasOcultas.has(r.id) ? ' sitio-card--ruta-oculta' : ''}" data-ruta-archivo-id="${r.id}">
+        <li class="sitio-card${oculta ? ' sitio-card--ruta-oculta' : ''}" data-ruta-archivo-id="${r.id}">
           <div class="sitio-card__top">
-            <span class="sitio-card__nombre"><span class="sitio-card__num">${i + 1}.</span>${_escapeHtml(r.nombre)}</span>
-            <button type="button" class="sitio-card__quitar" data-quitar-ruta="${r.id}" title="Quitar ruta de la memoria" aria-label="Quitar ruta de la memoria">&times;</button>
+            <span class="sitio-card__nombre"><span class="sitio-card__dot" style="background:${r.color || '#2f7a6b'}"></span><span class="sitio-card__num">${i + 1}.</span>${_escapeHtml(r.nombre)}</span>
+            <div class="sitio-card__top-right">
+              <button type="button" class="sitio-card__ojo" data-toggle-ruta="${r.id}" title="${oculta ? 'Mostrar en el mapa' : 'Ocultar del mapa'}" aria-label="${oculta ? 'Mostrar en el mapa' : 'Ocultar del mapa'}" aria-pressed="${oculta ? 'false' : 'true'}">${ojoSvg}</button>
+              <button type="button" class="sitio-card__quitar" data-quitar-ruta="${r.id}" title="Quitar ruta de la memoria" aria-label="Quitar ruta de la memoria">&times;</button>
+            </div>
           </div>
           <p class="sitio-card__ciudad">${r.km.toFixed(1)} km totales</p>
         </li>
@@ -427,8 +461,6 @@ const RutaArchivoModule = (() => {
     _actualizarStats();
     if (el.paradasTitulo) el.paradasTitulo.textContent = 'Ruta';
     if (el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = true;
-    const lblAuto = el.checkAutoOrganizar && el.checkAutoOrganizar.closest('label');
-    if (lblAuto) lblAuto.hidden = true;
     if (el.panelParadas) el.panelParadas.hidden = false;
   }
 
@@ -449,6 +481,35 @@ const RutaArchivoModule = (() => {
     return String(texto == null ? '' : texto)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // Mide el offset de la fila del destino mientras esté visible (ver
+  // _offsetFilaDestino).
+  function _medirOffsetFilaDestino() {
+    const fila = document.getElementById('row-destino');
+    const panel = document.querySelector('.side-panel');
+    if (!fila || !panel) return;
+    if (getComputedStyle(fila).display === 'none') return;
+    _offsetFilaDestino = fila.getBoundingClientRect().bottom - panel.getBoundingClientRect().top;
+  }
+
+  // Centra el botón "Subir tu propia ruta" (solo móvil) entre la fila del
+  // destino y la barra de pestañas inferior. Funciona también después de
+  // calcular la ruta, cuando la fila del destino deja de estar visible.
+  function _posicionarBotonSubirRuta() {
+    const btn = el.btnSubirRutaPropia;
+    if (!btn || !esMovil()) return;
+    _medirOffsetFilaDestino();
+    const panel = document.querySelector('.side-panel');
+    const barra = el.mobileTabBar;
+    if (!panel || !barra) return;
+    const panelTop = panel.getBoundingClientRect().top;
+    const filaBottom = _offsetFilaDestino != null
+      ? panelTop + _offsetFilaDestino
+      : panelTop + 140;
+    const barraTop = barra.getBoundingClientRect().top;
+    const centro = filaBottom + (barraTop - filaBottom) / 2;
+    btn.style.top = Math.round(centro - btn.offsetHeight / 2) + 'px';
   }
 
   // -------------------------------------------------------------------
@@ -475,12 +536,24 @@ const RutaArchivoModule = (() => {
     if (el.btnGps) el.btnGps.addEventListener('click', toggleSeguimiento);
     // "Subir tu propia ruta" (solo móvil): mismo comportamiento que la tecla K.
     if (el.btnSubirRutaPropia) el.btnSubirRutaPropia.addEventListener('click', toggleK);
+    // Centrar el botón entre la fila del destino y la barra inferior, y
+    // re-posicionarlo cuando cambia el alto del viewport (fullscreen, teclado,
+    // rotación) o el ancho cruza el umbral de escritorio/móvil.
+    _posicionarBotonSubirRuta();
+    window.addEventListener('resize', _posicionarBotonSubirRuta);
+    window.addEventListener('orientationchange', _posicionarBotonSubirRuta);
     // X roja junto a la pestaña Rutas (móvil y PC): cierra las rutas de archivo
     // y vuelve al menú normal de Rutas y Descubre Colombia.
     if (el.btnCerrarRutasArchivo) el.btnCerrarRutasArchivo.addEventListener('click', salirModo);
     if (el.btnCerrarRutasArchivoDesktop) el.btnCerrarRutasArchivoDesktop.addEventListener('click', salirModo);
     if (el.paradasLista) {
       el.paradasLista.addEventListener('click', (e) => {
+        const ojo = e.target.closest('[data-toggle-ruta]');
+        if (ojo) {
+          e.stopPropagation();
+          _alternarVisibilidadRuta(ojo.getAttribute('data-toggle-ruta'));
+          return;
+        }
         const btn = e.target.closest('[data-quitar-ruta]');
         if (btn) {
           e.stopPropagation();
@@ -489,7 +562,7 @@ const RutaArchivoModule = (() => {
         }
         const tarjeta = e.target.closest('[data-ruta-archivo-id]');
         if (tarjeta) {
-          _clicTarjeta(tarjeta.getAttribute('data-ruta-archivo-id'), tarjeta);
+          _clicTarjeta(tarjeta.getAttribute('data-ruta-archivo-id'));
         }
       });
     }

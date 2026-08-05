@@ -65,8 +65,6 @@
     btnCalcular: document.getElementById('btn-calcular'),
     btnAereo: document.getElementById('btn-aereo'),
     btnFluvial: document.getElementById('btn-fluvial'),
-    checkAutoOrganizar: document.getElementById('check-auto-organizar'),
-    checkDistancia: document.getElementById('check-distancia'),
     filtroDistancia: document.getElementById('filtro-distancia'),
     filtroDistanciaValor: document.getElementById('filtro-distancia-valor'),
     sitiosVacio: document.getElementById('sitios-vacio'),

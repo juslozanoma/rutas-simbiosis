@@ -141,12 +141,6 @@
         agregarPuebloIntermedioDesdeLista();
       });
     }
-    el.checkAutoOrganizar.addEventListener('change', () => {
-      if (el.checkAutoOrganizar.checked) {
-        organizarAutomaticamente(state.escalas.some((e) => e.lat != null) || state.paradas.length > 0);
-      }
-      renderizarParadas();
-    });
     // Descubre Colombia buttons handlers
     let desplegandoDescubre = null; // 'categorias' | 'desvios' | 'ordenar'
     if (el.btnDescubreCategorias) {
