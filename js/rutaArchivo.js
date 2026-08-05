@@ -32,6 +32,10 @@ const RutaArchivoModule = (() => {
   // cuadro de destino y la barra de pestañas inferior.
   let _offsetFilaDestino = null;
 
+  // Ruta elegida con "Unir esta ruta con otra": su ficha queda resaltada
+  // hasta elegir la segunda ruta, momento en que se unen en una sola.
+  let _rutaUnirSeleccionada = null;
+
   // -------------------------------------------------------------------
   // Persistencia en localStorage
   // -------------------------------------------------------------------
@@ -184,16 +188,27 @@ const RutaArchivoModule = (() => {
     };
   }
 
-  /** Clic en la ficha de una ruta: asegura que esté visible, centra el mapa
-   *  en su recorrido y abre su altimetría (no cambia su visibilidad). */
+  /** Clic en la ficha de una ruta: primero abre su altimetría (en móvil la
+   *  pestaña cambia el tamaño del mapa) y, una vez el mapa tiene su tamaño
+   *  definitivo, centra la vista en la ruta para que quede visible. Si la
+   *  ficha estaba oculta, se reactiva la ruta y su ficha (ojo activo). */
   function _clicTarjeta(id) {
     const ruta = _rutas.find((r) => r.id === id);
     if (!ruta) return;
+    if (_rutasOcultas.has(id)) {
+      _rutasOcultas.delete(id);
+      _renderTarjetas();
+    }
     MapModule.toggleRutaArchivo(id, true);
-    MapModule.ajustarVista(ruta.coords);
     if (typeof mostrarAltimetriaRutaArchivo === 'function') {
       mostrarAltimetriaRutaArchivo(_geojsonRuta(ruta), ruta.km);
     }
+    // El cambio de pestaña invalida el tamaño del mapa a los ~220 ms
+    // (ver setMobileTab); centrar después de eso para usar el tamaño real.
+    setTimeout(() => {
+      MapModule.invalidateSize();
+      MapModule.ajustarVista(ruta.coords);
+    }, 240);
   }
 
   /** Ojo de la ficha: muestra u oculta la ruta en el mapa sin quitarla. */
@@ -210,6 +225,218 @@ const RutaArchivoModule = (() => {
     _renderTarjetas();
   }
 
+  // -------------------------------------------------------------------
+  // Menú contextual de las fichas: renombrar y unir rutas
+  // -------------------------------------------------------------------
+
+  /** Menú contextual (clic derecho / pulsación larga) de una ficha de ruta. */
+  function _abrirMenuTarjeta(id, clientX, clientY) {
+    if (typeof abrirMenuFila !== 'function') return;
+    abrirMenuFila([
+      { etiqueta: 'Cambiar nombre de la ruta', accion: () => _renombrarRuta(id) },
+      { etiqueta: 'Unir esta ruta con otra', accion: () => _unirRutaDesdeTarjeta(id) },
+    ], clientX, clientY);
+  }
+
+  /** Pide el nuevo nombre de la ruta y lo guarda (mapa + lista + storage). */
+  function _renombrarRuta(id) {
+    const ruta = _rutas.find((r) => r.id === id);
+    if (!ruta) return;
+    _pedirNombre('Nombre de la ruta', ruta.nombre, (nombre) => {
+      if (!nombre || nombre === ruta.nombre) return;
+      ruta.nombre = nombre;
+      _guardar();
+      _renderTarjetas();
+      if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Ruta renombrada: ' + nombre);
+    });
+  }
+
+  /** "Unir esta ruta con otra": la primera elección resalta la ficha y la
+   *  segunda ejecuta la unión (concatenando el final de la primera con el
+   *  inicio de la segunda) pidiendo el nombre de la ruta resultante. */
+  function _unirRutaDesdeTarjeta(id) {
+    if (_rutaUnirSeleccionada == null) {
+      if (_rutas.length < 2) {
+        if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Necesitas al menos dos rutas para unirlas.');
+        return;
+      }
+      _rutaUnirSeleccionada = id;
+      _renderTarjetas();
+      if (typeof _mostrarNotificacion === 'function') {
+        _mostrarNotificacion('Ruta seleccionada. Elige la segunda y pulsa "Unir esta ruta con otra".');
+      }
+      return;
+    }
+    if (_rutaUnirSeleccionada === id) {
+      if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Esta ruta ya está seleccionada para unirse.');
+      return;
+    }
+    const r1 = _rutas.find((r) => r.id === _rutaUnirSeleccionada);
+    const r2 = _rutas.find((r) => r.id === id);
+    if (!r1 || !r2) {
+      _rutaUnirSeleccionada = null;
+      _renderTarjetas();
+      return;
+    }
+    _pedirNombre('Nombre de la ruta unida', r1.nombre + ' + ' + r2.nombre, (nombre) => {
+      if (!nombre) return; // cancelado: se mantiene la ficha resaltada
+      _rutas = _rutas.filter((r) => r.id !== r1.id && r.id !== r2.id);
+      _rutasOcultas.delete(r1.id);
+      _rutasOcultas.delete(r2.id);
+      const unida = {
+        id: 'ruta-' + (++_secuencia),
+        nombre: nombre,
+        coords: r1.coords.concat(r2.coords),
+        km: r1.km + r2.km,
+        seg: r1.seg + r2.seg,
+        color: _colorParaRutaNueva(),
+      };
+      _rutas.push(unida);
+      if (_rutaActualId === r1.id || _rutaActualId === r2.id) _rutaActualId = unida.id;
+      MapModule.quitarRutaArchivo(r1.id);
+      MapModule.quitarRutaArchivo(r2.id);
+      _guardar();
+      _rutaUnirSeleccionada = null;
+      _dibujarTodas();
+      _renderTarjetas();
+      _actualizarStats();
+      if (_watcherId != null) { _desactivarSeguimiento(); activarSeguimiento(); }
+      if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Rutas unidas: ' + nombre);
+    });
+  }
+
+  /** Diálogo genérico con un campo de texto (reutiliza los estilos de los
+   *  diálogos y del input del puerto). alAceptar recibe el texto o null. */
+  function _pedirNombre(titulo, valorInicial, alAceptar) {
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    overlay.innerHTML = `
+      <div class="dialog">
+        <h3 class="dialog__title">${_escapeHtml(titulo)}</h3>
+        <input type="text" id="pedir-nombre-input" class="nuevo-puerto__input" placeholder="Nombre de la ruta" autocomplete="off" maxlength="80">
+        <p class="dialog__error" id="pedir-nombre-error" hidden></p>
+        <div class="dialog__actions">
+          <button type="button" class="dialog__btn dialog__btn--cancel" id="pedir-nombre-cancelar">Cancelar</button>
+          <button type="button" class="dialog__btn dialog__btn--save" id="pedir-nombre-guardar">Guardar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector('#pedir-nombre-input');
+    const error = overlay.querySelector('#pedir-nombre-error');
+    input.value = valorInicial || '';
+
+    function limpiar() {
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+    }
+    function aceptar() {
+      const nombre = input.value.trim();
+      if (!nombre) {
+        error.textContent = 'Escribe un nombre para la ruta.';
+        error.hidden = false;
+        input.focus();
+        return;
+      }
+      limpiar();
+      alAceptar(nombre);
+    }
+    function cancelar() {
+      limpiar();
+      alAceptar(null);
+    }
+    function onKey(e) {
+      if (e.key === 'Enter') { e.preventDefault(); aceptar(); }
+      else if (e.key === 'Escape') cancelar();
+    }
+    document.addEventListener('keydown', onKey);
+    overlay.querySelector('#pedir-nombre-guardar').addEventListener('click', aceptar);
+    overlay.querySelector('#pedir-nombre-cancelar').addEventListener('click', cancelar);
+    overlay.querySelector('.dialog').addEventListener('click', (e) => e.stopPropagation());
+    overlay.addEventListener('click', cancelar);
+    input.focus();
+    input.select();
+  }
+
+  // -------------------------------------------------------------------
+  // Menú contextual sobre un punto de la ruta (en el mapa)
+  // -------------------------------------------------------------------
+
+  /** Clic derecho (o pulsación larga) sobre un punto de la ruta: ofrece
+   *  cambiar el punto de inicio, el de finalización o el sentido (intercambia
+   *  inicio por fin). Ambas opciones de extremo requieren un vértice intermedio
+   *  (la ruta resultante debe conservar al menos 2 puntos), así que en una
+   *  ruta de 2 puntos solo se ofrece cambiar el sentido. */
+  function _abrirMenuPuntoRuta(id, latlng, clientX, clientY) {
+    const ruta = _rutas.find((r) => r.id === id);
+    if (!ruta || ruta.coords.length < 2) return;
+    const indice = _indicePuntoMasCercano(ruta.coords, latlng);
+    const esIntermedio = indice > 0 && indice < ruta.coords.length - 1;
+    const opciones = [];
+    if (esIntermedio) {
+      opciones.push({ etiqueta: 'Cambiar punto de inicio', accion: () => _cambiarPuntoInicio(id, indice) });
+      opciones.push({ etiqueta: 'Cambiar punto de finalización', accion: () => _cambiarPuntoFin(id, indice) });
+    }
+    opciones.push({ etiqueta: 'Cambiar sentido de la ruta', accion: () => _cambiarSentido(id) });
+    if (typeof abrirMenuFila === 'function') abrirMenuFila(opciones, clientX, clientY);
+  }
+
+  /** Índice del vértice de la ruta más cercano al punto tocado (aproximación
+   *  equirectangular rápida, suficiente para elegir el punto en la línea). */
+  function _indicePuntoMasCercano(coords, latlng) {
+    const cosLat = Math.cos(latlng.lat * Math.PI / 180);
+    let mejor = 0;
+    let mejorD = Infinity;
+    for (let i = 0; i < coords.length; i++) {
+      const dLat = coords[i][0] - latlng.lat;
+      const dLng = (coords[i][1] - latlng.lng) * cosLat;
+      const d = dLat * dLat + dLng * dLng;
+      if (d < mejorD) { mejorD = d; mejor = i; }
+    }
+    return mejor;
+  }
+
+  function _cambiarPuntoInicio(id, indice) {
+    const ruta = _rutas.find((r) => r.id === id);
+    if (!ruta || ruta.coords.length < 3) return;
+    if (indice <= 0 || indice >= ruta.coords.length - 1) return;
+    ruta.coords = ruta.coords.slice(indice);
+    _redibujarRutaModificada(id);
+    if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Punto de inicio actualizado.');
+  }
+
+  function _cambiarPuntoFin(id, indice) {
+    const ruta = _rutas.find((r) => r.id === id);
+    if (!ruta || ruta.coords.length < 3) return;
+    if (indice <= 0 || indice >= ruta.coords.length - 1) return;
+    ruta.coords = ruta.coords.slice(0, indice + 1);
+    _redibujarRutaModificada(id);
+    if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Punto de finalización actualizado.');
+  }
+
+  function _cambiarSentido(id) {
+    const ruta = _rutas.find((r) => r.id === id);
+    if (!ruta || ruta.coords.length < 2) return;
+    ruta.coords = ruta.coords.slice().reverse();
+    _redibujarRutaModificada(id);
+    if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Sentido de la ruta cambiado.');
+  }
+
+  /** Recalcula km/duración, redibuja la ruta, reinicia el seguimiento GPS si
+   *  estaba activo y guarda + refresca la lista. */
+  function _redibujarRutaModificada(id) {
+    const ruta = _rutas.find((r) => r.id === id);
+    if (!ruta) return;
+    ruta.km = _distanciaTotal(ruta.coords);
+    ruta.seg = Math.round((ruta.km / VELOCIDAD_CAMINATA_KMH) * 3600);
+    if (!_rutasOcultas.has(id)) {
+      MapModule.dibujarRutaArchivo(id, ruta.coords, { nombre: ruta.nombre, color: ruta.color });
+    }
+    if (_watcherId != null) { _desactivarSeguimiento(); activarSeguimiento(); }
+    _guardar();
+    _renderTarjetas();
+    _actualizarStats();
+  }
+
   function _totalKm() {
     return _rutas.reduce((acc, r) => acc + r.km, 0);
   }
@@ -223,6 +450,7 @@ const RutaArchivoModule = (() => {
     const idx = _rutas.findIndex((r) => r.id === id);
     if (idx === -1) return;
     _rutas.splice(idx, 1);
+    if (_rutaUnirSeleccionada === id) _rutaUnirSeleccionada = null;
     MapModule.quitarRutaArchivo(id);
     _guardar();
 
@@ -249,6 +477,7 @@ const RutaArchivoModule = (() => {
     _modoActivo = false;
     _rutaArchivoActiva = false;
     _rutaActualId = null;
+    _rutaUnirSeleccionada = null;
     if (el.btnGps) el.btnGps.hidden = true;
     if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = '—';
     if (el.statTiempoMobile) el.statTiempoMobile.textContent = '—';
@@ -445,7 +674,7 @@ const RutaArchivoModule = (() => {
         ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
         : '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
       const li = Utils.crearElemento(`
-        <li class="sitio-card${oculta ? ' sitio-card--ruta-oculta' : ''}" data-ruta-archivo-id="${r.id}">
+        <li class="sitio-card${oculta ? ' sitio-card--ruta-oculta' : ''}${_rutaUnirSeleccionada === r.id ? ' sitio-card--unir-seleccionada' : ''}" data-ruta-archivo-id="${r.id}">
           <div class="sitio-card__top">
             <span class="sitio-card__nombre"><span class="sitio-card__dot" style="background:${r.color || '#2f7a6b'}"></span><span class="sitio-card__num">${i + 1}.</span>${_escapeHtml(r.nombre)}</span>
             <div class="sitio-card__top-right">
@@ -456,6 +685,15 @@ const RutaArchivoModule = (() => {
           <p class="sitio-card__ciudad">${r.km.toFixed(1)} km totales</p>
         </li>
       `);
+      // Clic derecho (o pulsación larga en táctil) sobre la ficha: menú con
+      // "Cambiar nombre de la ruta" y "Unir esta ruta con otra".
+      li.addEventListener('contextmenu', (evt) => {
+        evt.preventDefault();
+        _abrirMenuTarjeta(r.id, evt.clientX, evt.clientY);
+      });
+      if (typeof engancharLongPress === 'function') {
+        engancharLongPress(li, (evt) => _abrirMenuTarjeta(r.id, evt.clientX, evt.clientY));
+      }
       el.paradasLista.appendChild(li);
     });
     _actualizarStats();
@@ -534,6 +772,12 @@ const RutaArchivoModule = (() => {
       });
     }
     if (el.btnGps) el.btnGps.addEventListener('click', toggleSeguimiento);
+    // Clic derecho / pulsación larga sobre un punto de una ruta en el mapa.
+    if (typeof MapModule.setOnMenuPuntoRutaArchivo === 'function') {
+      MapModule.setOnMenuPuntoRutaArchivo((id, latlng, clientX, clientY) => {
+        _abrirMenuPuntoRuta(id, latlng, clientX, clientY);
+      });
+    }
     // "Subir tu propia ruta" (solo móvil): mismo comportamiento que la tecla K.
     if (el.btnSubirRutaPropia) el.btnSubirRutaPropia.addEventListener('click', toggleK);
     // Centrar el botón entre la fila del destino y la barra inferior, y

@@ -123,23 +123,17 @@
     return window.matchMedia(MEDIA_MOVIL).matches;
   }
 
-  /** En móvil el "+" de agregar pueblo intermedio no existe desde el inicio y
-   *  el avión sube a la fila del origen: la fila de origen y la de cada pueblo
-   *  intermedio quedan con un botón de 40px y los cuadros tienen el mismo
-   *  ancho. En escritorio el "+" permanece desde el inicio y el avión vuelve a
-   *  la fila del destino (junto al botón de calcular ruta). */
+  /** El "+" de agregar pueblo intermedio no existe (se oculta con CSS) y el
+   *  botón de avión vive en la fila del origen, igual en móvil y escritorio:
+   *  la fila del origen y la de cada pueblo intermedio quedan con un botón
+   *  de 40px y los cuadros tienen el mismo ancho. */
 
   function reordenarAereoMovil() {
     const filaOrigen = document.getElementById('row-origen');
     const filaDestino = document.getElementById('row-destino');
     if (!el.btnAereo || !filaOrigen || !filaDestino) return;
-    if (esMovil()) {
-      if (el.btnAereo.parentElement !== filaOrigen) filaOrigen.appendChild(el.btnAereo);
-      if (el.btnFluvial && el.btnFluvial.parentElement !== filaOrigen) filaOrigen.appendChild(el.btnFluvial);
-    } else {
-      if (el.btnAereo.parentElement !== filaDestino) filaDestino.insertBefore(el.btnAereo, el.btnCalcular);
-      if (el.btnFluvial && el.btnFluvial.parentElement !== filaDestino) filaDestino.insertBefore(el.btnFluvial, el.btnCalcular);
-    }
+    if (el.btnAereo.parentElement !== filaOrigen) filaOrigen.appendChild(el.btnAereo);
+    if (el.btnFluvial && el.btnFluvial.parentElement !== filaOrigen) filaOrigen.appendChild(el.btnFluvial);
   }
 
   window.addEventListener('resize', reordenarAereoMovil);

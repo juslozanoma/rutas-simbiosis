@@ -2631,4 +2631,59 @@
     "descripcion": "Terminal portuaria industrial orientada a la carga de graneles y mercancías.\nConecta la industria manufacturera del Atlántico con las rutas de exportación.\nOptimiza la cadena logística mediante el uso del río Magdalena.\nEs un motor fundamental para el desarrollo económico y portuario del departamento.",
     "destinos_id": []
   }
+  {
+    "id": "MDP",
+    "nombre": "Muelle de Peñoncito",
+    "ciudad": "Peñon",
+    "rio": "magalena",
+    "latitud": 8.978011,
+    "longitud": -73.928643,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "MPB2",
+    "nombre": "Malecón Puerto Bocas",
+    "ciudad": "x",
+    "rio": "magdalena",
+    "latitud": 8.859124,
+    "longitud": -73.834061,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "PCDR",
+    "nombre": "Puerto chalupa de Regidor",
+    "ciudad": "Regidor",
+    "rio": "magdalena",
+    "latitud": 8.665244,
+    "longitud": -73.821167,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "PFD4",
+    "nombre": "Puerto Ferry de Regidor 2",
+    "ciudad": "Regidor",
+    "rio": "magdalena",
+    "latitud": 8.662618,
+    "longitud": -73.817889,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  },
+  {
+    "id": "PPMR",
+    "nombre": "Puerto para motos Regidor",
+    "ciudad": "Regidor",
+    "rio": "magdalena",
+    "latitud": 8.656535,
+    "longitud": -73.820443,
+    "ubicacion": "",
+    "descripcion": "",
+    "destinos_id": []
+  }
 ]

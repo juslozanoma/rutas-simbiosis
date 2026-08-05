@@ -129,15 +129,17 @@ input, select{ font-family: inherit; }
 .panel-locate__escalas:empty{ display: none; }
 .panel-locate__escalas[hidden]{ display: none; }
 
-/* Botón "Subir tu propia ruta" (solo móvil): flotante, centrado entre la
-   fila del destino y la barra de pestañas inferior. Blanco con texto y borde
-   grises; abre el diálogo del atajo K. La posición vertical exacta (centrada
-   entre ambos) la calcula JS (ver _posicionarBotonSubirRuta). */
+/* Botón "Subir tu propia ruta": visible en PC (centrado, apenas más ancho que
+   su texto, tras los cuadros de origen/destino) y en móvil (flotante, centrado
+   entre la fila del destino y la barra de pestañas inferior, ver media query).
+   Blanco con texto y borde grises; abre el diálogo del atajo K. */
 .btn-subir-ruta-propia{
-  display: none;
+  display: flex;
+  width: auto;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  margin: 10px auto 0;
   padding: 10px 14px;
   font-size: 0.85rem;
   font-weight: 600;
@@ -150,7 +152,10 @@ input, select{ font-family: inherit; }
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 .btn-subir-ruta-propia:hover{ background: var(--bg-subtle); border-color: var(--text-muted); color: var(--text-soft); }
-.btn-subir-ruta-propia:active{ transform: translateX(-50%) translateY(1px); }
+.btn-subir-ruta-propia:active{ transform: translateY(1px); }
+.btn-subir-ruta-propia[hidden]{ display: none; }
+#app[data-ruta-archivo="true"] .btn-subir-ruta-propia,
+#app[data-infra-activa="true"] .btn-subir-ruta-propia{ display: none; }
 
 /* --- Barra de acciones post-cálculo (Cambiar ruta / Añadir parada) --- */
 .panel-route-bar{
@@ -379,6 +384,10 @@ input, select{ font-family: inherit; }
 .btn-agregar-intermedio:hover{ background: var(--teal-500); color: #ffffff; }
 .btn-agregar-intermedio{ display: none; }
 .btn-agregar-intermedio[hidden]{ display: none; }
+/* El "+" junto al cuadro de Origen no existe (igual en móvil y PC): el avión
+   ocupa su lugar en la fila del origen. Los pueblos intermedios se agregan
+   desde las paradas (botón "+" del título de la lista). */
+#btn-agregar-escala{ display: none !important; }
 
 /* Tras calcular la ruta: se ocultan los cuadros de origen y destino y aparece el botón "+" */
 #app[data-ruta-lista="true"] #row-origen,
@@ -691,11 +700,29 @@ input, select{ font-family: inherit; }
 }
 .sitio-card:hover{ border-color: var(--teal-500); }
 .sitio-card--active{ background: #f2f6f4; border-color: var(--teal-500); }
+/* Ficha elegida con "Unir esta ruta con otra": resaltado ligero (fondo y
+   anillo suave) hasta que se elija la segunda ruta y se confirme la unión. */
+.sitio-card--unir-seleccionada{
+  background: #f2f6f4;
+  border-color: var(--teal-500);
+  box-shadow: 0 0 0 2px rgba(47, 122, 107, 0.18);
+}
 .sitio-card--loading{ opacity: 0.6; pointer-events: none; }
 .sitio-card__top{ display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .sitio-card__top-right{ display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-.sitio-card__nombre{ font-size: 0.85rem; font-weight: 600; color: var(--text-strong); display: flex; align-items: center; min-width: 0; }
+.sitio-card__nombre{ font-size: 0.85rem; font-weight: 600; color: var(--text-strong); display: flex; align-items: baseline; min-width: 0; }
 .sitio-card__num{ color: var(--teal-600); font-weight: 700; margin-right: 3px; }
+/* Fichas de rutas cargadas: ojo y X anclados arriba a la derecha de la ficha,
+   título sin negrilla (solo el número) y margen derecho para el título. */
+.sitio-card[data-ruta-archivo-id] .sitio-card__top-right{
+  position: absolute;
+  top: 2px;
+  right: 4px;
+}
+.sitio-card[data-ruta-archivo-id] .sitio-card__nombre{
+  font-weight: 400;
+  padding-right: 58px;
+}
 /* Punto de color de cada ruta cargada (coincide con su línea en el mapa) */
 .sitio-card__dot{
   display: inline-block;
@@ -733,22 +760,22 @@ input, select{ font-family: inherit; }
 .sitio-card__add--quitar{ border-color: #d64541; color: #d64541; }
 .sitio-card__add--quitar:hover:not(:disabled){ background: #d64541; border-color: #d64541; color: #ffffff; }
 
-/* Ojo de las fichas de rutas cargadas: mostrar/ocultar en el mapa */
+/* Ojo de las fichas de rutas cargadas: mostrar/ocultar en el mapa.
+   Sin círculo: activo (ruta visible) en verde, inactivo (oculta) en gris. */
 .sitio-card__ojo{
   width: 24px; height: 24px;
   flex-shrink: 0;
   background: transparent;
-  border: 1px solid var(--line-300);
-  border-radius: 50%;
-  color: var(--text-muted);
+  border: none;
+  color: var(--teal-600);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   padding: 0;
-  transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+  transition: color 0.12s ease;
 }
-.sitio-card__ojo:hover{ color: var(--teal-600); border-color: var(--teal-500); background: var(--teal-50); }
-.sitio-card__ojo[aria-pressed="false"]{ color: #d64541; border-color: #d64541; }
-.sitio-card__ojo[aria-pressed="false"]:hover{ background: rgba(214, 69, 65, 0.08); }
+.sitio-card__ojo:hover{ color: var(--teal-500); }
+.sitio-card__ojo[aria-pressed="false"]{ color: var(--text-muted); }
+.sitio-card__ojo[aria-pressed="false"]:hover{ color: var(--text-soft); }
 
 .sitio-card__quitar{
   min-width: 24px;
@@ -1480,7 +1507,6 @@ input, select{ font-family: inherit; }
   .btn-agregar-intermedio{ display: inline-flex; }
   /* En móvil los pueblos intermedios solo se agregan desde las paradas: el
      "+" nunca se muestra (el avión ocupa su lugar en la fila del origen). */
-  #btn-agregar-escala{ display: none !important; }
   /* En móvil el pueblo intermedio recalcula solo al elegirlo: sin botón verde. */
   .escala-row__calc{ display: none !important; }
   .map-full{ flex: 0 0 50%; min-height: 0; }
@@ -1515,18 +1541,18 @@ input, select{ font-family: inherit; }
   /* "Subir tu propia ruta" flotante en móvil: centrado horizontal y entre la
      fila del destino y la barra inferior (la altura exacta la fija JS). */
   .btn-subir-ruta-propia{
-    display: flex;
     position: fixed;
     left: 50%;
     transform: translateX(-50%);
+    width: auto;
+    margin: 0;
     white-space: nowrap;
     z-index: 1090;
   }
+  .btn-subir-ruta-propia:active{ transform: translateX(-50%) translateY(1px); }
   #app[data-mobile-tab="descubre"] .btn-subir-ruta-propia,
   #app[data-mobile-tab="altimetria"] .btn-subir-ruta-propia,
   #app[data-mobile-panel="collapsed"] .btn-subir-ruta-propia,
-  #app[data-ruta-archivo="true"] .btn-subir-ruta-propia,
-  #app[data-infra-activa="true"] .btn-subir-ruta-propia,
   #app.combo-enfocado .btn-subir-ruta-propia{ display: none; }
 
   /* En Descubre: panel-sites llena el panel, hint y desvíos ocultos */

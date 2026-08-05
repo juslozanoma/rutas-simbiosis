@@ -248,6 +248,12 @@ const MapModule = (() => {
 
   function setOnAgregarPuertoEn(fn) { _onAgregarPuertoEn = fn; }
 
+  // Callback al pulsar con el botón derecho (o mantener presionado en táctil)
+  // sobre un punto de una ruta de archivo: recibe (id, latlng, clientX, clientY).
+
+  let _onMenuPuntoRutaArchivo = null;
+
+  function setOnMenuPuntoRutaArchivo(fn) { _onMenuPuntoRutaArchivo = fn; }
   function setMarcadorOrigen(lat, lon, etiqueta) {
     if (markerOrigen) map.removeLayer(markerOrigen);
     markerOrigen = L.marker([lat, lon], { icon: iconoOrigen(), zIndexOffset: 50 })
@@ -1385,6 +1391,53 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
    *  de inicio y fin (iguales a los de origen/destino) y, al pasar el cursor
    *  (o tocar en móvil), muestra la distancia recorrida hasta ese punto a lo
    *  largo de la ruta. */
+  /** Pulsación larga (≈550 ms) sobre la línea de una ruta de archivo en
+   *  pantallas táctiles: equivale al clic derecho y abre el menú contextual
+   *  del punto tocado (y suprime el clic posterior, que abriría el tooltip). */
+  function _engancharPulsacionLargaRuta(hover, id) {
+    const elt = hover.getElement();
+    if (!elt) return;
+    let timer = null;
+    let disparado = false;
+    let startX = 0;
+    let startY = 0;
+
+    elt.addEventListener('touchstart', (evt) => {
+      if (evt.touches.length !== 1) return;
+      const t = evt.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+      disparado = false;
+      timer = setTimeout(() => {
+        disparado = true;
+        navigator.vibrate && navigator.vibrate(20);
+        if (!_onMenuPuntoRutaArchivo) return;
+        const pos = L.DomEvent.getMousePosition(t, map.getContainer());
+        const latlng = map.containerPointToLatLng(pos);
+        _onMenuPuntoRutaArchivo(id, latlng, t.clientX, t.clientY);
+      }, 550);
+    }, { passive: true });
+
+    elt.addEventListener('touchmove', (evt) => {
+      if (!timer) return;
+      const t = evt.touches[0];
+      if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    }, { passive: true });
+
+    elt.addEventListener('touchend', (evt) => {
+      if (timer) { clearTimeout(timer); timer = null; }
+      if (disparado) evt.preventDefault();
+    }, { passive: false });
+
+    elt.addEventListener('touchcancel', () => {
+      if (timer) { clearTimeout(timer); timer = null; }
+      disparado = false;
+    });
+  }
+
   function dibujarRutaArchivo(id, coords, meta = {}) {
     if (!coords || coords.length < 2) return;
     quitarRutaArchivo(id);
@@ -1418,6 +1471,15 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       hover.openTooltip(e.latlng);
     });
     hover.on('mouseout', () => hover.closeTooltip());
+
+    // Clic secundario sobre la ruta: el menú contextual del punto (sin que se
+    // abra además el menú del mapa con "Marcar tramo destapado / Agregar puerto").
+    hover.on('contextmenu', (e) => {
+      if (!_onMenuPuntoRutaArchivo) return;
+      L.DomEvent.stop(e.originalEvent);
+      _onMenuPuntoRutaArchivo(id, e.latlng, e.originalEvent.clientX, e.originalEvent.clientY);
+    });
+    _engancharPulsacionLargaRuta(hover, id);
 
     if (coords.length >= 2) {
       L.marker(coords[0], { icon: iconoOrigen(), zIndexOffset: 50 })
@@ -1502,6 +1564,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     setOnClicInfraGlobal,
     setOnPuertoMovidoGlobal,
     setOnAgregarPuertoEn,
+    setOnMenuPuntoRutaArchivo,
     dibujarConexiones,
     limpiarConexiones,
     estanConexionesAbiertas,

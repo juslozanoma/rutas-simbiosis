@@ -27,6 +27,7 @@
       el.btnMostrarSitiosCercanos.hidden = ocultarTestigo;
       el.btnMostrarSitiosCercanos.disabled = ocultarTestigo;
       sincronizarModoRutaMovil();
+      if (el.btnSubirRutaPropia) el.btnSubirRutaPropia.hidden = false;
     } else {
       el.btnTabPanelDescubre.classList.add('panel-tab--active');
       el.panelLocate.hidden = true;
@@ -35,6 +36,7 @@
       el.panelDescubreActions.hidden = false;
       el.panelSitios.hidden = false;
       el.btnMostrarSitiosCercanos.hidden = true;
+      if (el.btnSubirRutaPropia) el.btnSubirRutaPropia.hidden = true;
       if (!state.rutaActual && el.sitiosVacio) {
         el.sitiosVacio.hidden = false;
         el.sitiosVacio.textContent = 'Calcula una ruta para descubrir sitios turísticos.';
