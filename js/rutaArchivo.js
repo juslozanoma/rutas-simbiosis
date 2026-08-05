@@ -473,6 +473,12 @@ const RutaArchivoModule = (() => {
       });
     }
     if (el.btnGps) el.btnGps.addEventListener('click', toggleSeguimiento);
+    // "Subir tu propia ruta" (solo móvil): mismo comportamiento que la tecla K.
+    if (el.btnSubirRutaPropia) el.btnSubirRutaPropia.addEventListener('click', toggleK);
+    // X roja junto a la pestaña Rutas (móvil y PC): cierra las rutas de archivo
+    // y vuelve al menú normal de Rutas y Descubre Colombia.
+    if (el.btnCerrarRutasArchivo) el.btnCerrarRutasArchivo.addEventListener('click', salirModo);
+    if (el.btnCerrarRutasArchivoDesktop) el.btnCerrarRutasArchivoDesktop.addEventListener('click', salirModo);
     if (el.paradasLista) {
       el.paradasLista.addEventListener('click', (e) => {
         const btn = e.target.closest('[data-quitar-ruta]');

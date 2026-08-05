@@ -129,6 +129,28 @@ input, select{ font-family: inherit; }
 .panel-locate__escalas:empty{ display: none; }
 .panel-locate__escalas[hidden]{ display: none; }
 
+/* Botón "Subir tu propia ruta" (solo móvil): entre la fila del destino y la
+   barra inferior. Blanco con texto y borde grises; abre el diálogo del atajo K. */
+.btn-subir-ruta-propia{
+  display: none;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-muted);
+  background: #ffffff;
+  border: 1.5px solid var(--line-300);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.btn-subir-ruta-propia:hover{ background: var(--bg-subtle); border-color: var(--text-muted); color: var(--text-soft); }
+.btn-subir-ruta-propia:active{ transform: translateY(1px); }
+
 /* --- Barra de acciones post-cálculo (Cambiar ruta / Añadir parada) --- */
 .panel-route-bar{
   display: flex;
@@ -1429,6 +1451,22 @@ input, select{ font-family: inherit; }
 .mobile-tab-btn:disabled{ opacity: 0.35; cursor: default; pointer-events: none; }
 .mobile-tab-btn[hidden]{ display: none !important; }
 
+/* Pestaña de cerrar rutas subidas (X roja): solo visible con rutas de archivo
+   activas (data-ruta-archivo), en el extremo derecho junto a la pestaña Rutas. */
+.panel-tab--cerrar-rutas,
+.mobile-tab-btn--cerrar-rutas{
+  display: none;
+  flex: 0 0 44px;
+  color: #d64545;
+  border-bottom-color: transparent;
+}
+.panel-tab--cerrar-rutas:hover,
+.mobile-tab-btn--cerrar-rutas:hover{ color: #b33a3a; }
+.panel-tab--cerrar-rutas svg,
+.mobile-tab-btn--cerrar-rutas svg{ display: block; flex-shrink: 0; }
+#app[data-ruta-archivo="true"] .panel-tab--cerrar-rutas,
+#app[data-ruta-archivo="true"] .mobile-tab-btn--cerrar-rutas{ display: flex; }
+
 /* ==========================================================================
    RESPONSIVE
    ========================================================================== */
@@ -1468,6 +1506,10 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="ruta"][data-ruta-lista="true"] .panel-locate{ padding: 0; }
   #app[data-mobile-tab="ruta"][data-ruta-lista="true"] #row-origen,
   #app[data-mobile-tab="ruta"][data-ruta-lista="true"] #row-destino{ display: none; }
+
+  /* "Subir tu propia ruta" visible solo en móvil, tras la fila del destino */
+  .btn-subir-ruta-propia{ display: flex; }
+  #app[data-ruta-archivo="true"] .btn-subir-ruta-propia{ display: none; }
 
   /* En Descubre: panel-sites llena el panel, hint y desvíos ocultos */
   #app[data-mobile-tab="descubre"] .panel-sites{ flex: 1; min-height: 0; }
