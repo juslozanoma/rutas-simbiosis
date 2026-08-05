@@ -36,6 +36,16 @@ const RutaArchivoModule = (() => {
   // hasta elegir la segunda ruta, momento en que se unen en una sola.
   let _rutaUnirSeleccionada = null;
 
+  // Copia de las coordenadas originales de cada ruta (id -> coords) para
+  // poder "Revertir cambios" tras modificar inicio/fin/sentido, y conjunto de
+  // ids con modificaciones aún no revertidas.
+  const _coordsOriginales = new Map();
+  const _rutaModificada = new Set();
+
+  // Última ruta "activada" en el mapa (clic en su ficha, ojo mostrado o recién
+  // cargada): la barra superior muestra su distancia y tiempo.
+  let _ultimaRutaActivadaId = null;
+
   // -------------------------------------------------------------------
   // Persistencia en localStorage
   // -------------------------------------------------------------------
@@ -58,6 +68,7 @@ const RutaArchivoModule = (() => {
       if (m) _secuencia = Math.max(_secuencia, Number(m[1]));
       if (typeof r.seg !== 'number') r.seg = Math.round((r.km / VELOCIDAD_CAMINATA_KMH) * 3600);
       if (!r.color || typeof r.color !== 'string') r.color = PALETA_RUTAS[_rutas.indexOf(r) % PALETA_RUTAS.length];
+      _coordsOriginales.set(r.id, r.coords.map((c) => c.slice()));
     });
   }
 
@@ -141,9 +152,11 @@ const RutaArchivoModule = (() => {
       };
       ruta.seg = Math.round((ruta.km / VELOCIDAD_CAMINATA_KMH) * 3600);
       _rutas.push(ruta);
+      _coordsOriginales.set(ruta.id, ruta.coords.map((c) => c.slice()));
       _guardar();
 
       _rutaActualId = ruta.id;
+      _ultimaRutaActivadaId = ruta.id;
       _activarModo();
       if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Ruta cargada: ' + ruta.nombre);
       return true;
@@ -157,6 +170,7 @@ const RutaArchivoModule = (() => {
   function continuar() {
     if (!_rutas.length) return;
     _rutaActualId = _rutas[_rutas.length - 1].id;
+    _ultimaRutaActivadaId = _rutas[_rutas.length - 1].id;
     _activarModo();
   }
 
@@ -200,8 +214,10 @@ const RutaArchivoModule = (() => {
       _renderTarjetas();
     }
     MapModule.toggleRutaArchivo(id, true);
+    _ultimaRutaActivadaId = id;
+    _actualizarStats();
     if (typeof mostrarAltimetriaRutaArchivo === 'function') {
-      mostrarAltimetriaRutaArchivo(_geojsonRuta(ruta), ruta.km);
+      mostrarAltimetriaRutaArchivo(_geojsonRuta(ruta), ruta.km, ruta.id);
     }
     // El cambio de pestaña invalida el tamaño del mapa a los ~220 ms
     // (ver setMobileTab); centrar después de eso para usar el tamaño real.
@@ -218,11 +234,24 @@ const RutaArchivoModule = (() => {
     if (_rutasOcultas.has(id)) {
       _rutasOcultas.delete(id);
       MapModule.toggleRutaArchivo(id, true);
+      _ultimaRutaActivadaId = id;
     } else {
       _rutasOcultas.add(id);
       MapModule.toggleRutaArchivo(id, false);
+      if (_ultimaRutaActivadaId === id) _ultimaRutaActivadaId = _ultimaVisibleSin(id);
     }
     _renderTarjetas();
+    _actualizarStats();
+  }
+
+  /** Última ruta visible (para la barra superior) descartando `exceptoId`:
+   *  si ninguna, null (la barra muestra "—"). */
+  function _ultimaVisibleSin(exceptoId) {
+    for (let i = _rutas.length - 1; i >= 0; i--) {
+      const r = _rutas[i];
+      if (r.id !== exceptoId && !_rutasOcultas.has(r.id)) return r.id;
+    }
+    return null;
   }
 
   // -------------------------------------------------------------------
@@ -280,9 +309,12 @@ const RutaArchivoModule = (() => {
     }
     _pedirNombre('Nombre de la ruta unida', r1.nombre + ' + ' + r2.nombre, (nombre) => {
       if (!nombre) return; // cancelado: se mantiene la ficha resaltada
-      _rutas = _rutas.filter((r) => r.id !== r1.id && r.id !== r2.id);
-      _rutasOcultas.delete(r1.id);
-      _rutasOcultas.delete(r2.id);
+      // Las dos originales se ocultan del mapa y de la lista, pero se
+      // conservan en la memoria (se pueden volver a mostrar con su ojo).
+      _rutasOcultas.add(r1.id);
+      _rutasOcultas.add(r2.id);
+      MapModule.toggleRutaArchivo(r1.id, false);
+      MapModule.toggleRutaArchivo(r2.id, false);
       const unida = {
         id: 'ruta-' + (++_secuencia),
         nombre: nombre,
@@ -292,15 +324,24 @@ const RutaArchivoModule = (() => {
         color: _colorParaRutaNueva(),
       };
       _rutas.push(unida);
+      _coordsOriginales.set(unida.id, unida.coords.map((c) => c.slice()));
       if (_rutaActualId === r1.id || _rutaActualId === r2.id) _rutaActualId = unida.id;
-      MapModule.quitarRutaArchivo(r1.id);
-      MapModule.quitarRutaArchivo(r2.id);
+      _ultimaRutaActivadaId = unida.id;
       _guardar();
       _rutaUnirSeleccionada = null;
       _dibujarTodas();
       _renderTarjetas();
       _actualizarStats();
       if (_watcherId != null) { _desactivarSeguimiento(); activarSeguimiento(); }
+      // Si el perfil visible era de una de las rutas unidas, se refresca
+      // con la ruta nueva.
+      if (typeof perfilRutaArchivoVisibleId === 'function'
+          && typeof mostrarAltimetriaRutaArchivo === 'function') {
+        const visibleId = perfilRutaArchivoVisibleId();
+        if (visibleId === r1.id || visibleId === r2.id) {
+          mostrarAltimetriaRutaArchivo(_geojsonRuta(unida), unida.km, unida.id);
+        }
+      }
       if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Rutas unidas: ' + nombre);
     });
   }
@@ -377,7 +418,22 @@ const RutaArchivoModule = (() => {
       opciones.push({ etiqueta: 'Cambiar punto de finalización', accion: () => _cambiarPuntoFin(id, indice) });
     }
     opciones.push({ etiqueta: 'Cambiar sentido de la ruta', accion: () => _cambiarSentido(id) });
+    if (_rutaModificada.has(id)) {
+      opciones.push({ etiqueta: 'Revertir cambios', accion: () => _revertirCambiosRuta(id) });
+    }
+    opciones.push({ etiqueta: 'Unir esta ruta con otra', accion: () => _unirRutaDesdeTarjeta(id) });
     if (typeof abrirMenuFila === 'function') abrirMenuFila(opciones, clientX, clientY);
+  }
+
+  /** Vuelve la ruta a sus coordenadas originales (las de cuando se cargó o
+   *  se creó), deshaciendo todos los cambios de inicio/fin/sentido. */
+  function _revertirCambiosRuta(id) {
+    const ruta = _rutas.find((r) => r.id === id);
+    if (!ruta || !_coordsOriginales.has(id)) return;
+    ruta.coords = _coordsOriginales.get(id).map((c) => c.slice());
+    _rutaModificada.delete(id);
+    _redibujarRutaModificada(id);
+    if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Cambios revertidos en la ruta.');
   }
 
   /** Índice del vértice de la ruta más cercano al punto tocado (aproximación
@@ -400,6 +456,7 @@ const RutaArchivoModule = (() => {
     if (!ruta || ruta.coords.length < 3) return;
     if (indice <= 0 || indice >= ruta.coords.length - 1) return;
     ruta.coords = ruta.coords.slice(indice);
+    _rutaModificada.add(id);
     _redibujarRutaModificada(id);
     if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Punto de inicio actualizado.');
   }
@@ -409,6 +466,7 @@ const RutaArchivoModule = (() => {
     if (!ruta || ruta.coords.length < 3) return;
     if (indice <= 0 || indice >= ruta.coords.length - 1) return;
     ruta.coords = ruta.coords.slice(0, indice + 1);
+    _rutaModificada.add(id);
     _redibujarRutaModificada(id);
     if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Punto de finalización actualizado.');
   }
@@ -417,6 +475,7 @@ const RutaArchivoModule = (() => {
     const ruta = _rutas.find((r) => r.id === id);
     if (!ruta || ruta.coords.length < 2) return;
     ruta.coords = ruta.coords.slice().reverse();
+    _rutaModificada.add(id);
     _redibujarRutaModificada(id);
     if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Sentido de la ruta cambiado.');
   }
@@ -435,14 +494,15 @@ const RutaArchivoModule = (() => {
     _guardar();
     _renderTarjetas();
     _actualizarStats();
+    if (typeof altimetriaVisibleDeRutaArchivo === 'function'
+        && typeof mostrarAltimetriaRutaArchivo === 'function'
+        && altimetriaVisibleDeRutaArchivo()) {
+      mostrarAltimetriaRutaArchivo(_geojsonRuta(ruta), ruta.km, ruta.id);
+    }
   }
 
   function _totalKm() {
     return _rutas.reduce((acc, r) => acc + r.km, 0);
-  }
-
-  function _totalSeg() {
-    return _rutas.reduce((acc, r) => acc + r.seg, 0);
   }
 
   /** Quita una ruta de la memoria (mapa + lista + localStorage). */
@@ -451,12 +511,17 @@ const RutaArchivoModule = (() => {
     if (idx === -1) return;
     _rutas.splice(idx, 1);
     if (_rutaUnirSeleccionada === id) _rutaUnirSeleccionada = null;
+    _coordsOriginales.delete(id);
+    _rutaModificada.delete(id);
     MapModule.quitarRutaArchivo(id);
     _guardar();
 
     if (_rutaActualId === id) {
       _desactivarSeguimiento();
       _rutaActualId = _rutas.length ? _rutas[_rutas.length - 1].id : null;
+    }
+    if (_ultimaRutaActivadaId === id) {
+      _ultimaRutaActivadaId = _ultimaVisibleSin(null);
     }
 
     if (!_rutas.length) {
@@ -478,6 +543,7 @@ const RutaArchivoModule = (() => {
     _rutaArchivoActiva = false;
     _rutaActualId = null;
     _rutaUnirSeleccionada = null;
+    _ultimaRutaActivadaId = null;
     if (el.btnGps) el.btnGps.hidden = true;
     if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = '—';
     if (el.statTiempoMobile) el.statTiempoMobile.textContent = '—';
@@ -659,10 +725,12 @@ const RutaArchivoModule = (() => {
   }
 
   function _actualizarStats() {
-    const km = _totalKm();
-    if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = km.toFixed(1) + ' km';
-    if (el.statTiempoMobile) el.statTiempoMobile.textContent = _formatearTiempo(_totalSeg());
-    if (el.paradasContador) el.paradasContador.textContent = km.toFixed(1) + ' km';
+    const ruta = _ultimaRutaActivadaId != null
+      ? _rutas.find((r) => r.id === _ultimaRutaActivadaId)
+      : null;
+    if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = ruta ? ruta.km.toFixed(1) + ' km' : '—';
+    if (el.statTiempoMobile) el.statTiempoMobile.textContent = ruta ? _formatearTiempo(ruta.seg) : '—';
+    if (el.paradasContador) el.paradasContador.textContent = _totalKm().toFixed(1) + ' km';
   }
 
   function _renderTarjetas() {
@@ -792,6 +860,9 @@ const RutaArchivoModule = (() => {
     if (el.btnCerrarRutasArchivoDesktop) el.btnCerrarRutasArchivoDesktop.addEventListener('click', salirModo);
     if (el.paradasLista) {
       el.paradasLista.addEventListener('click', (e) => {
+        // Clic sintético tras una pulsación larga (menú contextual abierto):
+        // se ignora para que no cierre el menú ni abra la altimetría.
+        if (_suprimirProximoClic) return;
         const ojo = e.target.closest('[data-toggle-ruta]');
         if (ojo) {
           e.stopPropagation();

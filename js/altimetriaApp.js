@@ -78,6 +78,7 @@
 
 
   async function _cargarElevacionAltimetria(containerId) {
+    _perfilVisibleEsRutaArchivo = false;
     const chart = document.getElementById(containerId);
     if (!chart) return;
     if (!state.elevacion || !state.elevacion.some((e) => e != null)) {
@@ -109,8 +110,11 @@
   let _geoRutaArchivo = null;      // geojson LineString de la ruta de archivo
   let _kmRutaArchivo = 0;
   let _elevacionRutaArchivo = null;
+  let _perfilRutaArchivoId = null; // id de la ruta de archivo del perfil visible
+  let _perfilVisibleEsRutaArchivo = false; // ¿la altimetría visible es de una ruta de archivo (K)?
 
   async function _cargarElevacionRutaArchivo(containerId) {
+    _perfilVisibleEsRutaArchivo = true;
     if (!_geoRutaArchivo || !_geoRutaArchivo.geometry) return;
     const chart = document.getElementById(containerId);
     if (!chart) return;
@@ -134,9 +138,10 @@
 
   /** Muestra el perfil de elevación de una ruta cargada desde archivo (K):
    *  en escritorio abre el panel sobre el mapa y en móvil la pestaña. */
-  function mostrarAltimetriaRutaArchivo(geo, totalKm) {
+  function mostrarAltimetriaRutaArchivo(geo, totalKm, idRuta) {
     _geoRutaArchivo = geo;
     _kmRutaArchivo = totalKm;
+    _perfilRutaArchivoId = idRuta || null;
     _elevacionRutaArchivo = null;
     if (esMovil()) {
       setMobileTab('altimetria');
@@ -146,6 +151,23 @@
       if (el.btnAltimetria) el.btnAltimetria.hidden = true;
       _cargarElevacionRutaArchivo('altimetria-chart');
     }
+  }
+
+  /** ¿La altimetría visible corresponde a una ruta de archivo (K)? Sirve para
+   *  refrescarla al instante cuando cambia la geometría (sentido, inicio/fin). */
+  function altimetriaVisibleDeRutaArchivo() {
+    return perfilRutaArchivoVisibleId() != null;
+  }
+
+  /** id de la ruta de archivo cuyo perfil está visible en este momento
+   *  (null si no hay perfil de ruta de archivo visible). */
+  function perfilRutaArchivoVisibleId() {
+    if (!_perfilVisibleEsRutaArchivo || _geoRutaArchivo == null) return null;
+    if (esMovil()) {
+      const app = document.getElementById('app');
+      return app && app.getAttribute('data-mobile-tab') === 'altimetria' ? _perfilRutaArchivoId : null;
+    }
+    return el.altimetriaPanel && !el.altimetriaPanel.hidden ? _perfilRutaArchivoId : null;
   }
 
   // -------------------------------------------------------------------

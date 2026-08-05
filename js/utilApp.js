@@ -265,11 +265,12 @@
     const el = document.createElement('div');
     el.textContent = texto;
     Object.assign(el.style, {
-      position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
+      // Parte superior del mapa, justo debajo de la barra de distancia/tiempo.
+      position: 'fixed', top: '48px', left: '50%', transform: 'translateX(-50%)',
       background: 'var(--verde-500, #22c55e)', color: '#fff',
       padding: '8px 20px', borderRadius: '8px', zIndex: '10000',
       fontSize: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-      transition: 'opacity 0.3s',
+      transition: 'opacity 0.3s', pointerEvents: 'none',
     });
     document.body.appendChild(el);
     setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 2000);

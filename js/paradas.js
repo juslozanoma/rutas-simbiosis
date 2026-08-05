@@ -130,6 +130,10 @@
 
 
   document.addEventListener('click', (evt) => {
+    // Clic sintético posterior a una pulsación larga (iOS): se ignora para
+    // que no cierre el menú contextual recién abierto. La bandera se limpia
+    // sola a los 700 ms (ver engancharLongPress y map.js).
+    if (_suprimirProximoClic) return;
     if (_menuFila && !_menuFila.contains(evt.target)) cerrarMenuFila();
   });
 

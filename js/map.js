@@ -583,7 +583,13 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   function _onMapContextMenu(e) {
     if (_marcandoTramo) return;
     if (_puertoEnArrastre) return;
-    if (e.originalEvent && e.originalEvent.target && e.originalEvent.target.closest && e.originalEvent.target.closest('.desvio-point')) return;
+    // Sobre una ruta cargada por el usuario (KML/GPX) el clic secundario abre
+    // su propio menú (cambiar inicio/fin/sentido, revertir, unir): aquí no se
+    // muestra el menú del mapa ("Marcar tramo destapado / Agregar puerto").
+    if (e.layer && e.layer.options && e.layer.options._rutaArchivoId) return;
+    const objetivo = e.originalEvent && e.originalEvent.target;
+    if (objetivo && objetivo.closest && objetivo.closest('.ruta-archivo-hover')) return;
+    if (objetivo && objetivo.closest && objetivo.closest('.desvio-point')) return;
     _cerrarCtxMenu();
     const div = document.createElement('div');
     div.className = 'ctx-menu';
@@ -1410,6 +1416,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       disparado = false;
       timer = setTimeout(() => {
         disparado = true;
+        _suprimirProximoClic = true;
+        setTimeout(() => { _suprimirProximoClic = false; }, 700);
         navigator.vibrate && navigator.vibrate(20);
         if (!_onMenuPuntoRutaArchivo) return;
         const pos = L.DomEvent.getMousePosition(t, map.getContainer());
@@ -1454,7 +1462,16 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const hover = L.polyline(coords, {
       color, weight: 20, opacity: 0.01, fillOpacity: 0.01,
       interactive: true,
-    }).addTo(grupo);
+      _rutaArchivoId: id,
+    });
+    // Marca el elemento SVG del hover para que el menú contextual del mapa
+    // ("Marcar tramo destapado / Agregar puerto") lo reconozca y no se abra
+    // encima del menú de opciones de la ruta.
+    hover.once('add', () => {
+      const el = hover.getElement();
+      if (el) el.classList.add('ruta-archivo-hover');
+    });
+    hover.addTo(grupo);
 
     const textoDistancia = (latlng) => {
       const snap = turf.nearestPointOnLine(lineaTurf, turf.point([latlng.lng, latlng.lat]), { units: 'kilometers' });
