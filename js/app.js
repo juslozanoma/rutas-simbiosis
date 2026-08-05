@@ -367,7 +367,7 @@
     if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = '0';
     if (el.paradasLista) el.paradasLista.innerHTML = '';
     if (el.paradasContador) el.paradasContador.textContent = '0';
-    if (el.paradasTitulo) el.paradasTitulo.textContent = '';
+    if (el.paradasTitulo) el.paradasTitulo.textContent = 'Paradas';
     if (el.panelEscalas) el.panelEscalas.innerHTML = '';
     if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = false;
 

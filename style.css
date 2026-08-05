@@ -1620,7 +1620,9 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="ruta"][data-ruta-lista="true"] #row-destino{ display: none; }
 
   /* "Subir tu propia ruta" flotante en móvil: centrado horizontal y entre la
-     fila del destino y la barra inferior (la altura exacta la fija JS). */
+     fila del destino y la barra de pestañas inferior. La altura exacta la
+     fija JS (se re-mide al cambiar el layout y se acota al panel para que
+     nunca quede sobre el mapa). */
   .btn-subir-ruta-propia{
     position: fixed;
     left: 50%;
