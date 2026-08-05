@@ -710,7 +710,7 @@ input, select{ font-family: inherit; }
 .sitio-card--loading{ opacity: 0.6; pointer-events: none; }
 .sitio-card__top{ display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .sitio-card__top-right{ display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-.sitio-card__nombre{ font-size: 0.85rem; font-weight: 600; color: var(--text-strong); display: flex; align-items: baseline; min-width: 0; }
+.sitio-card__nombre{ font-size: 0.78rem; font-weight: 600; color: var(--text-strong); display: flex; align-items: baseline; min-width: 0; }
 .sitio-card__num{ color: var(--teal-600); font-weight: 700; margin-right: 3px; }
 /* Fichas de rutas cargadas: ojo y X anclados arriba a la derecha de la ficha,
    título sin negrilla (solo el número) y margen derecho para el título. */
@@ -1285,6 +1285,7 @@ input, select{ font-family: inherit; }
 .tab-icon--sign-post{ -webkit-mask-image: url('public/sign-post.svg'); mask-image: url('public/sign-post.svg'); }
 .tab-icon--colombia{ -webkit-mask-image: url('public/colombia.svg'); mask-image: url('public/colombia.svg'); }
 .tab-icon--bike{ -webkit-mask-image: url('public/bike.svg'); mask-image: url('public/bike.svg'); }
+.tab-icon--hiking{ -webkit-mask-image: url('public/hiking.svg'); mask-image: url('public/hiking.svg'); }
 .panel-tab--active .tab-icon,
 .mobile-tab-btn--active .tab-icon{ background-color: var(--teal-500); }
 
@@ -1326,6 +1327,17 @@ input, select{ font-family: inherit; }
 }
 .btn-map-icon:hover{ background: var(--teal-600); }
 .btn-map-icon[hidden]{ display: none; }
+/* GPS activo: el icono (blanco por defecto) pasa a rojo y el círculo a
+   blanco, sin borde. */
+#btn-gps.activo{ background: #ffffff; border: none; }
+#btn-gps.activo img{
+  filter: invert(17%) sepia(93%) saturate(7488%) hue-rotate(358deg) brightness(92%) contrast(119%) !important;
+}
+/* Botón "+" para añadir una nueva ruta desde la barra de pestañas móvil */
+.mobile-tab-btn--anadir{ flex: 0 0 44px; color: var(--teal-500); }
+/* Botón "+" de la barra de pestañas de escritorio */
+.panel-tab--anadir{ flex: 0 0 44px; color: var(--teal-500); }
+.panel-tab--anadir svg{ display: block; flex-shrink: 0; }
 
 
 /* Panel acciones Descubre Colombia (móvil) */
@@ -1450,7 +1462,7 @@ input, select{ font-family: inherit; }
 }
 
 /* Tab altimetría en móvil */
-.mobile-tab-btn--altimetria{ flex: 0 0 36px; padding: 0 4px; }
+.mobile-tab-btn--altimetria{ flex: 0 0 44px; padding: 0 4px; }
 .mobile-tab-btn--altimetria svg{ display: block; }
 .mobile-tab-btn--altimetria img{ display: block; }
 
@@ -1483,6 +1495,12 @@ input, select{ font-family: inherit; }
 .mobile-tab-btn:disabled{ opacity: 0.35; cursor: default; pointer-events: none; }
 .mobile-tab-btn[hidden]{ display: none !important; }
 
+/* Ancho de 44px de las pestañas altimetría y añadir (igual que el botón de
+   cerrar). Van después del ancho base flex:auto de .mobile-tab-btn para que
+   la regla de mayor flex-basis gane por orden de cascada. */
+.mobile-tab-btn--altimetria{ flex: 0 0 44px; padding: 0 4px; }
+.mobile-tab-btn--anadir{ flex: 0 0 44px; color: var(--teal-500); }
+
 /* Pestaña de cerrar rutas subidas (X roja): solo visible con rutas de archivo
    activas (data-ruta-archivo), en el extremo derecho junto a la pestaña Rutas. */
 .panel-tab--cerrar-rutas,
@@ -1498,6 +1516,10 @@ input, select{ font-family: inherit; }
 .mobile-tab-btn--cerrar-rutas svg{ display: block; flex-shrink: 0; }
 #app[data-ruta-archivo="true"] .panel-tab--cerrar-rutas,
 #app[data-ruta-archivo="true"] .mobile-tab-btn--cerrar-rutas{ display: flex; }
+
+/* "Reiniciar desde cero": oculto en escritorio, solo se muestra en móvil
+   sobre la barra inferior (reglas dentro del media query móvil). */
+.btn-reiniciar-todo{ display: none; }
 
 /* ==========================================================================
    RESPONSIVE
@@ -1562,9 +1584,10 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="descubre"] .sitios-sort{ display: none !important; }
   .panel-tab-bar{ display: none !important; }
   .btns-map{ display: none !important; }
-  /* El botón GPS de la ruta desde archivo sí se muestra en móvil, sobre la
-     barra de pestañas inferior. */
-  .btns-map--gps{ display: flex !important; bottom: 74px; }
+  /* El botón GPS de la ruta desde archivo sí se muestra en móvil, arriba a
+     la izquierda: a la misma distancia de la barra superior que el botón de
+     pantalla completa (top: 36px, ver .btn-fullscreen). */
+  .btns-map--gps{ display: flex !important; top: 36px; bottom: auto; left: 12px; right: auto; }
   .mobile-tab-bar{
     display: flex !important;
     position: fixed;
@@ -1573,6 +1596,29 @@ input, select{ font-family: inherit; }
     right: 0;
     z-index: 1100;
   }
+
+  /* Botón "Reiniciar desde cero": pequeño, con borde y letras rojas, justo
+     sobre la barra de pestañas inferior y solo en la pestaña Ruta. */
+  .btn-reiniciar-todo{
+    display: none;
+    position: fixed;
+    right: 12px;
+    bottom: 56px;
+    z-index: 1200;
+    padding: 5px 12px;
+    border: 1px solid #d64545;
+    border-radius: 6px;
+    background: #ffffff;
+    color: #d64545;
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  }
+  .btn-reiniciar-todo:hover{ background: #fdf0f0; }
+  #app[data-mobile-tab="ruta"] .btn-reiniciar-todo{ display: block; }
+  #app.combo-enfocado .btn-reiniciar-todo{ display: none !important; }
 
   /* Ocultar elementos de escritorio en móvil */
   #btn-categorias{ display: none !important; }

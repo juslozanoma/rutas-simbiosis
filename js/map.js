@@ -147,10 +147,10 @@ const MapModule = (() => {
   // Íconos
   // ---------------------------------------------------------------------
 
-  function _pinDivIcon(letra) {
+  function _pinDivIcon(letra, color = '#2f7a6b') {
     const svg = `
       <svg class="pin-svg" width="28" height="38" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg">
-        <path d="M15 0C6.7 0 0 6.7 0 15c0 10.5 15 25 15 25s15-14.5 15-25c0-8.3-6.7-15-15-15z" fill="#2f7a6b"/>
+        <path d="M15 0C6.7 0 0 6.7 0 15c0 10.5 15 25 15 25s15-14.5 15-25c0-8.3-6.7-15-15-15z" fill="${color}"/>
         <text class="pin-letter" x="15" y="19.5" text-anchor="middle" fill="#ffffff">${letra}</text>
       </svg>`;
     return L.divIcon({
@@ -162,8 +162,8 @@ const MapModule = (() => {
     });
   }
 
-  function iconoOrigen() { return _pinDivIcon('A'); }
-  function iconoDestino() { return _pinDivIcon('Z'); }
+  function iconoOrigen(color) { return _pinDivIcon('A', color); }
+  function iconoDestino(color) { return _pinDivIcon('Z', color); }
 
   function iconoSitio() {
     return L.divIcon({
@@ -240,6 +240,14 @@ const MapModule = (() => {
   let _onPuertoMovidoGlobal = null;
 
   function setOnPuertoMovidoGlobal(fn) { _onPuertoMovidoGlobal = fn; }
+
+  // Callback al pulsar con el botón derecho sobre un puerto del catálogo:
+  // recibe (puerto, marker, clientX, clientY) para abrir su menú contextual.
+  // Si no hay callback se conserva el arrastre directo con clic derecho.
+
+  let _onMenuPuertoGlobal = null;
+
+  function setOnMenuPuertoGlobal(fn) { _onMenuPuertoGlobal = fn; }
 
   // Callback al elegir "Agregar puerto aquí" en el menú contextual:
   // recibe (lat, lng) del punto del mapa donde se hizo clic derecho.
@@ -591,19 +599,36 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     if (objetivo && objetivo.closest && objetivo.closest('.ruta-archivo-hover')) return;
     if (objetivo && objetivo.closest && objetivo.closest('.desvio-point')) return;
     _cerrarCtxMenu();
+    // "Marcar tramo destapado" solo cuando no están visibles ni los puertos
+    // (P), ni los aeropuertos (A), ni la opción de subir tu propia ruta.
+    // "Agregar puerto aquí" solo cuando el catálogo de puertos está activo.
+    const raiz = document.getElementById('app');
+    const puertosActivos = raiz && raiz.getAttribute('data-puertos-activos') === 'true';
+    const aeropuertosActivos = raiz && raiz.getAttribute('data-aeropuertos-activos') === 'true';
+    const btnSubir = document.getElementById('btn-subir-ruta-propia');
+    const subirVisible = btnSubir
+      ? !btnSubir.hidden && getComputedStyle(btnSubir).display !== 'none'
+      : true;
+    const items = [];
+    if (!puertosActivos && !aeropuertosActivos && !subirVisible) {
+      items.push({ texto: 'Marcar tramo destapado', accion: () => iniciarMarcadoTramo() });
+    }
+    if (puertosActivos) {
+      items.push({
+        texto: 'Agregar puerto aquí',
+        accion: () => { if (_onAgregarPuertoEn) _onAgregarPuertoEn(e.latlng.lat, e.latlng.lng); },
+      });
+    }
+    if (!items.length) return;
     const div = document.createElement('div');
     div.className = 'ctx-menu';
-    div.innerHTML = '<div class="ctx-menu__item">Marcar tramo destapado</div><div class="ctx-menu__item">Agregar puerto aquí</div>';
-    const items = div.querySelectorAll('.ctx-menu__item');
-    items[0].addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      _cerrarCtxMenu();
-      iniciarMarcadoTramo();
-    });
-    items[1].addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      _cerrarCtxMenu();
-      if (_onAgregarPuertoEn) _onAgregarPuertoEn(e.latlng.lat, e.latlng.lng);
+    div.innerHTML = items.map((i) => '<div class="ctx-menu__item">' + i.texto + '</div>').join('');
+    div.querySelectorAll('.ctx-menu__item').forEach((item, idx) => {
+      item.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        _cerrarCtxMenu();
+        items[idx].accion();
+      });
     });
     const container = map.getContainer();
     const point = map.latLngToContainerPoint(e.latlng);
@@ -1112,7 +1137,16 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         _alternarTooltipFijo(marker);
         if (_onClicInfraGlobal) _onClicInfraGlobal('puerto', p);
       });
-      marker.on('contextmenu', (ev) => _iniciarArrastrePuerto(marker, p.id, ev));
+      marker.on('contextmenu', (ev) => {
+        if (_onMenuPuertoGlobal) {
+          ev.originalEvent.preventDefault();
+          L.DomEvent.stopPropagation(ev.originalEvent);
+          _cerrarCtxMenu();
+          _onMenuPuertoGlobal(p, marker, ev.originalEvent.clientX, ev.originalEvent.clientY);
+          return;
+        }
+        _iniciarArrastrePuerto(marker, p.id, ev);
+      });
       marker.addTo(capaPuertosGlobal);
     });
   }
@@ -1126,8 +1160,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   function _iniciarArrastrePuerto(marker, puertoId, ev) {
     if (_puertoEnArrastre || _marcandoTramo) return;
     _cerrarCtxMenu();
-    L.DomEvent.stopPropagation(ev.originalEvent);
-    ev.originalEvent.preventDefault();
+    if (ev) {
+      L.DomEvent.stopPropagation(ev.originalEvent);
+      if (ev.originalEvent && typeof ev.originalEvent.preventDefault === 'function') ev.originalEvent.preventDefault();
+    }
     if (map.dragging) map.dragging.disable();
     const pos = marker.getLatLng();
     _puertoEnArrastre = { marker, puertoId, inicioLat: pos.lat, inicioLng: pos.lng };
@@ -1138,6 +1174,12 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     map.on('mousemove', _moverPuertoArrastre);
     map.on('mouseup', _terminarArrastrePuerto);
     document.addEventListener('mouseup', _terminarArrastrePuertoDoc);
+  }
+
+  /** Inicia el arrastre de un puerto desde el menú contextual (sin evento de
+   *  clic derecho directo sobre el marcador). */
+  function iniciarArrastrePuerto(marker, puertoId) {
+    _iniciarArrastrePuerto(marker, puertoId, null);
   }
 
   function _moverPuertoArrastre(ev) {
@@ -1499,10 +1541,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     _engancharPulsacionLargaRuta(hover, id);
 
     if (coords.length >= 2) {
-      L.marker(coords[0], { icon: iconoOrigen(), zIndexOffset: 50 })
+      L.marker(coords[0], { icon: iconoOrigen(color), zIndexOffset: 50 })
         .bindTooltip('Inicio de la ruta', { direction: 'top', offset: [0, -10] })
         .addTo(grupo);
-      L.marker(coords[coords.length - 1], { icon: iconoDestino(), zIndexOffset: 50 })
+      L.marker(coords[coords.length - 1], { icon: iconoDestino(color), zIndexOffset: 50 })
         .bindTooltip('Final de la ruta', { direction: 'top', offset: [0, -10] })
         .addTo(grupo);
     }
@@ -1580,6 +1622,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     setOnClicMarcadorExtremo,
     setOnClicInfraGlobal,
     setOnPuertoMovidoGlobal,
+    setOnMenuPuertoGlobal,
+    iniciarArrastrePuerto,
     setOnAgregarPuertoEn,
     setOnMenuPuntoRutaArchivo,
     dibujarConexiones,

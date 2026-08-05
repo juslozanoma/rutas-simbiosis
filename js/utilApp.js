@@ -24,6 +24,7 @@
 
   function _syncPuertos() {
     if (typeof MapModule === 'undefined' || !MapModule.setMarcadoresPuertosGlobal) return;
+    if (el.appRoot) el.appRoot.setAttribute('data-puertos-activos', _puertosVisibles ? 'true' : 'false');
     if (_puertosVisibles) {
       MapModule.setMarcadoresPuertosGlobal(state.puertos);
     } else {
@@ -35,6 +36,7 @@
 
   function _syncAeropuertos() {
     if (typeof MapModule === 'undefined' || !MapModule.setMarcadoresAeropuertosGlobal) return;
+    if (el.appRoot) el.appRoot.setAttribute('data-aeropuertos-activos', _aeropuertosVisibles ? 'true' : 'false');
     if (_aeropuertosVisibles) {
       MapModule.setMarcadoresAeropuertosGlobal(state.aeropuertos);
     } else {
@@ -263,16 +265,22 @@
 
   function _mostrarNotificacion(texto) {
     const el = document.createElement('div');
+    el.className = 'notificacion-toast';
     el.textContent = texto;
+    // Anclada al contenedor del mapa (no a toda la ventana): queda centrada
+    // sobre el mapa, sin importar el panel lateral, justo debajo de la barra
+    // superior de distancia/tiempo.
+    const contenedor = document.querySelector('.map-full') || document.body;
     Object.assign(el.style, {
-      // Parte superior del mapa, justo debajo de la barra de distancia/tiempo.
-      position: 'fixed', top: '48px', left: '50%', transform: 'translateX(-50%)',
-      background: 'var(--verde-500, #22c55e)', color: '#fff',
-      padding: '8px 20px', borderRadius: '8px', zIndex: '10000',
-      fontSize: '14px', boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+      position: 'absolute',
+      top: '48px', left: '50%', transform: 'translateX(-50%)',
+      background: 'var(--teal-500, #2f7a6b)', color: '#fff',
+      padding: '6px 14px', borderRadius: '8px', zIndex: '10000',
+      fontSize: '12.5px', boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
       transition: 'opacity 0.3s', pointerEvents: 'none',
+      whiteSpace: 'nowrap',
     });
-    document.body.appendChild(el);
+    contenedor.appendChild(el);
     setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 2000);
   }
 

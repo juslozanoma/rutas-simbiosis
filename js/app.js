@@ -45,6 +45,17 @@
     // "Agregar puerto aquí" (clic derecho en el mapa): abre el formulario.
     MapModule.setOnAgregarPuertoEn((lat, lng) => abrirDialogoNuevoPuerto(lat, lng));
 
+    // Clic derecho sobre un puerto del catálogo: menú contextual propio
+    // (borrar / mover / editar / ver más información) en vez del arrastre directo.
+    MapModule.setOnMenuPuertoGlobal((p, marker, clientX, clientY) => {
+      abrirMenuFila([
+        { etiqueta: 'Borrar puerto', accion: () => borrarPuerto(p) },
+        { etiqueta: 'Mover puerto', accion: () => MapModule.iniciarArrastrePuerto(marker, p.id) },
+        { etiqueta: 'Editar información', accion: () => abrirDialogoEditarPuerto(p) },
+        { etiqueta: 'Ver más información', accion: () => mostrarCuadroInfra('puerto', p) },
+      ], clientX, clientY);
+    });
+
     try {
       const [municipios, sitios] = await Promise.all([
         TourismModule.cargarMunicipios(),
@@ -163,10 +174,20 @@
 
   let _npLat = null;
   let _npLng = null;
+  let _npEditandoId = null;
+
+  function _npFijarTitulo(editando) {
+    const titulo = document.getElementById('np-titulo');
+    if (titulo) titulo.textContent = editando ? 'Editar puerto' : 'Agregar puerto';
+    const guardar = document.getElementById('np-guardar');
+    if (guardar) guardar.textContent = editando ? 'Guardar cambios' : 'Guardar puerto';
+  }
 
   function abrirDialogoNuevoPuerto(lat, lng) {
     _npLat = lat;
     _npLng = lng;
+    _npEditandoId = null;
+    _npFijarTitulo(false);
     ['np-nombre', 'np-ciudad', 'np-rio', 'np-descripcion'].forEach((id) => {
       const e = document.getElementById(id);
       if (e) e.value = '';
@@ -179,7 +200,26 @@
     if (nombre) setTimeout(() => nombre.focus(), 50);
   }
 
+  function abrirDialogoEditarPuerto(p) {
+    _npLat = Number(p.latitud);
+    _npLng = Number(p.longitud);
+    _npEditandoId = p.id;
+    _npFijarTitulo(true);
+    const valores = { 'np-nombre': p.nombre, 'np-ciudad': p.ciudad, 'np-rio': p.rio, 'np-descripcion': p.descripcion };
+    Object.keys(valores).forEach((id) => {
+      const e = document.getElementById(id);
+      if (e) e.value = valores[id] || '';
+    });
+    const err = document.getElementById('np-error');
+    if (err) { err.hidden = true; err.textContent = ''; }
+    const dlg = document.getElementById('panel-nuevo-puerto');
+    if (dlg) dlg.hidden = false;
+    const nombre = document.getElementById('np-nombre');
+    if (nombre) setTimeout(() => nombre.focus(), 50);
+  }
+
   function cerrarDialogoNuevoPuerto() {
+    _npEditandoId = null;
     const dlg = document.getElementById('panel-nuevo-puerto');
     if (dlg) dlg.hidden = true;
   }
@@ -208,6 +248,27 @@
       if (err) { err.hidden = false; err.textContent = 'Nombre, ciudad y río son obligatorios.'; }
       return;
     }
+
+    // Edición de un puerto existente: conserva su id y coordenadas.
+    if (_npEditandoId) {
+      const idx = state.puertos.findIndex((x) => String(x.id) === String(_npEditandoId));
+      if (idx >= 0) {
+        Object.assign(state.puertos[idx], { nombre, ciudad, rio, descripcion });
+        const puerto = state.puertos[idx];
+        cerrarDialogoNuevoPuerto();
+        if (typeof _syncPuertos === 'function') _syncPuertos();
+        if (typeof renderizarInfraListado === 'function') renderizarInfraListado();
+        if (typeof PersistenciaJsonModule !== 'undefined' && typeof PersistenciaJsonModule.guardarPuertos === 'function') {
+          PersistenciaJsonModule.guardarPuertos(state.puertos).then((res) => {
+            if (typeof _mostrarNotificacion !== 'function') return;
+            if (res === true) _mostrarNotificacion('Puerto actualizado: ' + nombre + ' — JSON guardado.');
+            else if (res === false) _mostrarNotificacion('Puerto actualizado; no se pudo sobrescribir el JSON, se descargó una copia.');
+          });
+        }
+      }
+      return;
+    }
+
     const puerto = {
       id: _generarIdPuerto(nombre),
       nombre,
@@ -222,11 +283,27 @@
     state.puertos.push(puerto);
     cerrarDialogoNuevoPuerto();
     if (typeof _syncPuertos === 'function') _syncPuertos();
+    if (typeof renderizarInfraListado === 'function') renderizarInfraListado();
     if (typeof PersistenciaJsonModule !== 'undefined' && typeof PersistenciaJsonModule.guardarPuertos === 'function') {
       PersistenciaJsonModule.guardarPuertos(state.puertos).then((res) => {
         if (typeof _mostrarNotificacion !== 'function') return;
         if (res === true) _mostrarNotificacion('Puerto agregado: ' + nombre + ' — JSON guardado.');
         else if (res === false) _mostrarNotificacion('Puerto agregado; no se pudo sobrescribir el JSON, se descargó una copia.');
+      });
+    }
+  }
+
+  /** Borra un puerto del catálogo (menú contextual del marcador): memoria,
+   *  mapa, listado y JSON de puertos. */
+  function borrarPuerto(p) {
+    state.puertos = state.puertos.filter((x) => String(x.id) !== String(p.id));
+    if (typeof _syncPuertos === 'function') _syncPuertos();
+    if (typeof renderizarInfraListado === 'function') renderizarInfraListado();
+    if (typeof PersistenciaJsonModule !== 'undefined' && typeof PersistenciaJsonModule.guardarPuertos === 'function') {
+      PersistenciaJsonModule.guardarPuertos(state.puertos).then((res) => {
+        if (typeof _mostrarNotificacion !== 'function') return;
+        if (res === true) _mostrarNotificacion('Puerto borrado: ' + p.nombre + ' — JSON guardado.');
+        else if (res === false) _mostrarNotificacion('Puerto borrado; no se pudo sobrescribir el JSON, se descargó una copia.');
       });
     }
   }
@@ -242,6 +319,74 @@
     }
   }
 
+  // -------------------------------------------------------------------
+  // "Reiniciar desde cero" (pestaña Ruta, móvil)
+  // -------------------------------------------------------------------
+
+  /** Vuelve todo al estado inicial: borra las rutas subidas (memoria, mapa,
+   *  listado y localStorage) y reinicia el viaje (origen, destino, pueblos
+   *  intermedios, paradas y ruta calculada). */
+  function reiniciarDesdeCero() {
+    if (typeof RutaArchivoModule !== 'undefined' && typeof RutaArchivoModule.reiniciar === 'function') {
+      RutaArchivoModule.reiniciar();
+    }
+
+    state.origen = null;
+    state.destino = null;
+    state.escalas = [];
+    state.orden = [];
+    state.paradas = [];
+    state.rutaBase = null;
+    state.rutaActual = null;
+    state.modoAereo = false;
+    state.tramosAereo = null;
+    state.modoFluvial = false;
+    state.tramosFluviales = null;
+    state.elevacion = null;
+    state.altimetriaGeo = null;
+    state.altimetriaTotalKm = 0;
+    state.previewSitioId = null;
+    state.categoriasSeleccionadas = [];
+
+    if (typeof _limpiarCombos === 'function') _limpiarCombos();
+    if (el.origenInput) el.origenInput.value = '';
+    if (el.destinoInput) el.destinoInput.value = '';
+    document.querySelectorAll('.combo--seleccionado').forEach((c) => c.classList.remove('combo--seleccionado'));
+
+    if (typeof MapModule !== 'undefined' && typeof MapModule.limpiarTodo === 'function') MapModule.limpiarTodo();
+    if (typeof MapModule.limpiarSitios === 'function') MapModule.limpiarSitios();
+    if (typeof MapModule.limpiarSitiosFrontera === 'function') MapModule.limpiarSitiosFrontera();
+    if (typeof AltimetriaModule !== 'undefined' && typeof AltimetriaModule.limpiar === 'function') AltimetriaModule.limpiar();
+    if (typeof cerrarAltimetria === 'function') cerrarAltimetria();
+
+    if (typeof _limpiarTurfYListado === 'function') _limpiarTurfYListado();
+    if (el.sitiosLista) { el.sitiosLista.innerHTML = ''; el.sitiosLista.hidden = true; }
+    if (el.sitiosVacio) { el.sitiosVacio.hidden = true; el.sitiosVacio.textContent = ''; }
+    if (el.sitiosContador) el.sitiosContador.textContent = '0';
+    if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = '0';
+    if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = '0';
+    if (el.paradasLista) el.paradasLista.innerHTML = '';
+    if (el.paradasContador) el.paradasContador.textContent = '0';
+    if (el.paradasTitulo) el.paradasTitulo.textContent = '';
+    if (el.panelEscalas) el.panelEscalas.innerHTML = '';
+    if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = false;
+
+    if (typeof renderizarParadas === 'function') renderizarParadas();
+    if (typeof sincronizarModoRutaMovil === 'function') sincronizarModoRutaMovil();
+    if (typeof actualizarEstadoBotonCalcular === 'function') actualizarEstadoBotonCalcular();
+    if (typeof _actualizarTextoBotonesOrden === 'function') _actualizarTextoBotonesOrden();
+    if (typeof reordenarAereoMovil === 'function') reordenarAereoMovil();
+    if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Todo reiniciado desde cero.');
+    if (typeof activarPanelTab === 'function') activarPanelTab('ruta');
+    if (typeof esMovil === 'function' && esMovil() && typeof setMobileTab === 'function') setMobileTab('ruta');
+  }
+
+  function initReiniciar() {
+    const btn = document.getElementById('btn-reiniciar-todo');
+    if (btn) btn.addEventListener('click', reiniciarDesdeCero);
+  }
+
   document.addEventListener('DOMContentLoaded', initNuevoPuerto);
+  document.addEventListener('DOMContentLoaded', initReiniciar);
 
   document.addEventListener('DOMContentLoaded', init);

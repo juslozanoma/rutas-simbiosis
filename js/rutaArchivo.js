@@ -11,7 +11,7 @@
  */
 const RutaArchivoModule = (() => {
 
-  const VELOCIDAD_CAMINATA_KMH = 4.5; // ritmo promedio caminando
+  const VELOCIDAD_CAMINATA_KMH = 2.25; // ritmo promedio caminando (rutas subidas por el usuario)
   const CLAVE_STORAGE = 'rutas-simbiosis:rutas-archivo';
 
   // Paleta de colores de las rutas cargadas: cada ruta recibe uno distinto
@@ -158,6 +158,30 @@ const RutaArchivoModule = (() => {
       _rutaActualId = ruta.id;
       _ultimaRutaActivadaId = ruta.id;
       _activarModo();
+      // La ruta nueva queda como la única visible: todas las demás se ocultan
+      // del mapa y de la lista (se conservan en la memoria y se pueden volver
+      // a mostrar con su ojo).
+      _rutas.forEach((r) => {
+        if (r.id !== ruta.id) {
+          _rutasOcultas.add(r.id);
+          MapModule.toggleRutaArchivo(r.id, false);
+        }
+      });
+      _renderTarjetas();
+      // En móvil la pantalla completa se pide dentro del gesto del usuario
+      // (el mismo patrón que al calcular una ruta principal).
+      if (esMovil() && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+      // La altimetría de la ruta nueva se carga y muestra de una vez, y el
+      // mapa se centra en ella (con el zoom del PC, igual que al pulsar su ficha).
+      if (typeof mostrarAltimetriaRutaArchivo === 'function') {
+        mostrarAltimetriaRutaArchivo(_geojsonRuta(ruta), ruta.km, ruta.id);
+      }
+      setTimeout(() => {
+        MapModule.invalidateSize();
+        MapModule.ajustarVista(ruta.coords, esMovil() ? [40, 40] : [80, 80]);
+      }, 240);
       if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Ruta cargada: ' + ruta.nombre);
       return true;
     } catch (err) {
@@ -183,6 +207,33 @@ const RutaArchivoModule = (() => {
     if (el.btnGps) el.btnGps.hidden = false;
     cerrarDialogo();
     _ocultarPanel();
+    // Ajustes del modo K en las pestañas: en móvil la pestaña de altimetría
+    // cambia la bicicleta por el senderismo y la pestaña Rutas pasa a
+    // "MIS RUTAS"; en PC la pestaña "Ruta" también pasa a "MIS RUTAS". En
+    // ambos aparece un "+" para añadir otra ruta desde un archivo.
+    _aplicarModoPestanas();
+  }
+
+  /** Ajustes del modo K en las pestañas (móvil y PC). */
+  function _aplicarModoPestanas() {
+    if (esMovil()) {
+      if (el.btnTabRutaLabel) el.btnTabRutaLabel.textContent = 'Mis rutas';
+      if (el.btnAnadirRutaTab) el.btnAnadirRutaTab.hidden = false;
+      if (el.icoTabAltimetria) el.icoTabAltimetria.classList.replace('tab-icon--bike', 'tab-icon--hiking');
+    }
+    if (el.btnTabPanelRutaLabel) el.btnTabPanelRutaLabel.textContent = 'MIS RUTAS';
+    if (el.btnAnadirRutaDesktop) el.btnAnadirRutaDesktop.hidden = false;
+  }
+
+  /** Revierte los ajustes del modo K en las pestañas. */
+  function _revertirModoPestanas() {
+    if (esMovil()) {
+      if (el.btnTabRutaLabel) el.btnTabRutaLabel.textContent = 'Rutas';
+      if (el.btnAnadirRutaTab) el.btnAnadirRutaTab.hidden = true;
+      if (el.icoTabAltimetria) el.icoTabAltimetria.classList.replace('tab-icon--hiking', 'tab-icon--bike');
+    }
+    if (el.btnTabPanelRutaLabel) el.btnTabPanelRutaLabel.textContent = 'Ruta';
+    if (el.btnAnadirRutaDesktop) el.btnAnadirRutaDesktop.hidden = true;
   }
 
   function _dibujarTodas() {
@@ -221,9 +272,10 @@ const RutaArchivoModule = (() => {
     }
     // El cambio de pestaña invalida el tamaño del mapa a los ~220 ms
     // (ver setMobileTab); centrar después de eso para usar el tamaño real.
+    // En PC el mapa queda con un poco menos de zoom (más margen alrededor).
     setTimeout(() => {
       MapModule.invalidateSize();
-      MapModule.ajustarVista(ruta.coords);
+      MapModule.ajustarVista(ruta.coords, esMovil() ? [40, 40] : [80, 80]);
     }, 240);
   }
 
@@ -333,15 +385,16 @@ const RutaArchivoModule = (() => {
       _renderTarjetas();
       _actualizarStats();
       if (_watcherId != null) { _desactivarSeguimiento(); activarSeguimiento(); }
-      // Si el perfil visible era de una de las rutas unidas, se refresca
-      // con la ruta nueva.
-      if (typeof perfilRutaArchivoVisibleId === 'function'
-          && typeof mostrarAltimetriaRutaArchivo === 'function') {
-        const visibleId = perfilRutaArchivoVisibleId();
-        if (visibleId === r1.id || visibleId === r2.id) {
-          mostrarAltimetriaRutaArchivo(_geojsonRuta(unida), unida.km, unida.id);
-        }
+      // Apenas se crea la ruta nueva se muestra su altimetría (panel en PC,
+      // pestaña de altimetría en móvil), igual que al subir un archivo.
+      if (typeof mostrarAltimetriaRutaArchivo === 'function') {
+        mostrarAltimetriaRutaArchivo(_geojsonRuta(unida), unida.km, unida.id);
       }
+      // Y el mapa se centra en ella, en PC y en el celular.
+      setTimeout(() => {
+        MapModule.invalidateSize();
+        MapModule.ajustarVista(unida.coords, esMovil() ? [40, 40] : [80, 80]);
+      }, 240);
       if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Rutas unidas: ' + nombre);
     });
   }
@@ -547,8 +600,34 @@ const RutaArchivoModule = (() => {
     if (el.btnGps) el.btnGps.hidden = true;
     if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = '—';
     if (el.statTiempoMobile) el.statTiempoMobile.textContent = '—';
+    _revertirModoPestanas();
     _restaurarPanel();
     cerrarDialogo();
+  }
+
+  /** "Reiniciar desde cero": borra TODAS las rutas subidas (memoria, mapa,
+   *  listado y localStorage) y vuelve al modo normal de Rutas. */
+  function reiniciar() {
+    _desactivarSeguimiento();
+    _rutas = [];
+    _rutasOcultas.clear();
+    _coordsOriginales.clear();
+    _rutaModificada.clear();
+    _secuencia = 0;
+    MapModule.limpiarRutasArchivo();
+    _guardar();
+    _modoActivo = false;
+    _rutaArchivoActiva = false;
+    _rutaActualId = null;
+    _rutaUnirSeleccionada = null;
+    _ultimaRutaActivadaId = null;
+    if (el.btnGps) el.btnGps.hidden = true;
+    if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = '—';
+    if (el.statTiempoMobile) el.statTiempoMobile.textContent = '—';
+    _revertirModoPestanas();
+    _restaurarPanel();
+    cerrarDialogo();
+    if (el.paradasTitulo) el.paradasTitulo.textContent = '';
   }
 
   /** Re-renderiza las tarjetas de rutas en la pestaña Ruta (si el modo sigue
@@ -670,6 +749,7 @@ const RutaArchivoModule = (() => {
     if (!rutaActual) return;
     const linea = turf.lineString(rutaActual.coords.map((c) => [c[1], c[0]]));
     if (el.seguirRuta) el.seguirRuta.hidden = false;
+    if (el.btnGps) el.btnGps.classList.add('activo');
     _watcherId = navigator.geolocation.watchPosition(
       (pos) => {
         const lat = pos.coords.latitude;
@@ -702,6 +782,7 @@ const RutaArchivoModule = (() => {
     }
     MapModule.limpiarPosicionUsuario();
     if (el.seguirRuta) el.seguirRuta.hidden = true;
+    if (el.btnGps) el.btnGps.classList.remove('activo');
   }
 
   // -------------------------------------------------------------------
@@ -765,7 +846,8 @@ const RutaArchivoModule = (() => {
       el.paradasLista.appendChild(li);
     });
     _actualizarStats();
-    if (el.paradasTitulo) el.paradasTitulo.textContent = 'Ruta';
+    // El listado no lleva la palabra "Ruta" como título (ni móvil ni PC).
+    if (el.paradasTitulo) el.paradasTitulo.textContent = '';
     if (el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = true;
     if (el.panelParadas) el.panelParadas.hidden = false;
   }
@@ -848,6 +930,10 @@ const RutaArchivoModule = (() => {
     }
     // "Subir tu propia ruta" (solo móvil): mismo comportamiento que la tecla K.
     if (el.btnSubirRutaPropia) el.btnSubirRutaPropia.addEventListener('click', toggleK);
+    // "+" de la barra de pestañas móvil y de la barra de pestañas de PC
+    // (modo K activo): añadir una ruta nueva.
+    if (el.btnAnadirRutaTab) el.btnAnadirRutaTab.addEventListener('click', abrirDialogo);
+    if (el.btnAnadirRutaDesktop) el.btnAnadirRutaDesktop.addEventListener('click', abrirDialogo);
     // Centrar el botón entre la fila del destino y la barra inferior, y
     // re-posicionarlo cuando cambia el alto del viewport (fullscreen, teclado,
     // rotación) o el ancho cruza el umbral de escritorio/móvil.
@@ -892,6 +978,7 @@ const RutaArchivoModule = (() => {
     continuar,
     quitarRuta,
     salirModo,
+    reiniciar,
     refrescarPanel,
   };
 })();

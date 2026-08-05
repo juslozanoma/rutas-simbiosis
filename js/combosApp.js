@@ -6,9 +6,17 @@
  * ---------------------------------------------------------------------------
  */
 
+  let _comboOrigen = null;
+  let _comboDestino = null;
+
+  /** Borra el texto y la selección de los cuadros de origen y destino. */
+  function _limpiarCombos() {
+    if (_comboOrigen && typeof _comboOrigen.limpiarTexto === 'function') _comboOrigen.limpiarTexto();
+    if (_comboDestino && typeof _comboDestino.limpiarTexto === 'function') _comboDestino.limpiarTexto();
+  }
+
   function initCombos() {
-    let comboOrigen;
-    comboOrigen = MunicipioCombo.crear({
+    _comboOrigen = MunicipioCombo.crear({
       contenedor: document.querySelector('.combo[data-combo="origen"]'),
       placeholder: 'Origen',
       lineas: 6, // el menú de origen muestra 6 opciones visibles (el resto con scroll)
@@ -45,7 +53,7 @@
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             const { latitude: lat, longitude: lon } = pos.coords;
-            comboOrigen.aplicar({ id: 'gps_' + Date.now(), lat, lon, nombre: 'Mi ubicación', departamento: '' });
+            _comboOrigen.aplicar({ id: 'gps_' + Date.now(), lat, lon, nombre: 'Mi ubicación', departamento: '' });
             ponerEnCargaRuta(false);
           },
           () => {
@@ -56,7 +64,7 @@
       },
     });
 
-    MunicipioCombo.crear({
+    _comboDestino = MunicipioCombo.crear({
       contenedor: document.querySelector('.combo[data-combo="destino"]'),
       placeholder: 'Destino',
       lineas: 5,
