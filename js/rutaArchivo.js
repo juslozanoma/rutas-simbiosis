@@ -628,6 +628,9 @@ const RutaArchivoModule = (() => {
     _restaurarPanel();
     cerrarDialogo();
     if (el.paradasTitulo) el.paradasTitulo.textContent = '';
+    // Tras reiniciar se recoloca el botón "Subir tu propia ruta" (móvil), ya
+    // que el panel volvió a mostrar la fila del destino.
+    _posicionarBotonSubirRuta();
   }
 
   /** Re-renderiza las tarjetas de rutas en la pestaña Ruta (si el modo sigue

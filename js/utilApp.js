@@ -192,6 +192,9 @@
     document.querySelectorAll('.sitio-card__add').forEach((b) => { b.disabled = cargando; });
     if (esMovil()) {
       el.panelLocate.hidden = cargando;
+      // El botón "Subir tu propia ruta" no debe verse mientras se calcula
+      // (durante el spinner): se oculta igual que el panel de origen/destino.
+      if (el.btnSubirRutaPropia) el.btnSubirRutaPropia.hidden = cargando;
       // El testigo "Mostrar sitios" se oculta solo mientras se carga; al terminar
       // su visibilidad la decide activarPanelTab/_habilitarMostrarSitios.
       if (cargando) el.btnMostrarSitiosCercanos.hidden = true;

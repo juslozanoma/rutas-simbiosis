@@ -1661,7 +1661,7 @@ input, select{ font-family: inherit; }
   #btn-desvios{ display: none !important; }
 
   /* Mostrar botón de sitios solo en la pestaña Ruta */
-  #btn-mostrar-sitios{ display: flex !important; align-items: center; justify-content: center; padding: 8px 18px; margin: 7px 0 -3px;}
+  #btn-mostrar-sitios{ display: flex !important; align-items: center; justify-content: center; margin: 3px 0px 8px 1px;}
   #app[data-mobile-tab="descubre"] #btn-mostrar-sitios{ display: none !important; }
   #btn-mostrar-sitios[hidden],
   #app[data-mobile-tab="ruta"] #btn-mostrar-sitios[hidden]{ display: none !important; }
