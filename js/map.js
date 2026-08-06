@@ -606,12 +606,15 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const raiz = document.getElementById('app');
     const puertosActivos = raiz && raiz.getAttribute('data-puertos-activos') === 'true';
     const aeropuertosActivos = raiz && raiz.getAttribute('data-aeropuertos-activos') === 'true';
+    // Con "Subir tu propia ruta" activo el listado pertenece a rutas de archivo:
+    // el menú "Marcar tramo destapado" no debe abrirse en ese modo.
+    const archivoActivo = raiz && raiz.getAttribute('data-ruta-archivo') === 'true';
     const btnSubir = document.getElementById('btn-subir-ruta-propia');
     const subirVisible = btnSubir
       ? !btnSubir.hidden && getComputedStyle(btnSubir).display !== 'none'
       : true;
     const items = [];
-    if (!puertosActivos && !aeropuertosActivos && !subirVisible) {
+    if (!puertosActivos && !aeropuertosActivos && !archivoActivo && !subirVisible) {
       items.push({ texto: 'Marcar tramo destapado', accion: () => iniciarMarcadoTramo() });
     }
     if (puertosActivos) {

@@ -307,19 +307,20 @@
       });
 
       // Marcador temporal para hover del perfil de altimetría: un carro verde
-      // que se orienta paralelo a la ruta en el punto que representa.
+      // (o senderista en modo "Subir tu propia ruta") que se orienta paralelo a
+      // la ruta en el punto que representa.
       let _hoverMarker = null;
       let _hoverCarImg = null;
-      const _carHoverIcon = L.divIcon({
-        className: 'altimetria-hover-car',
-        html: '<img src="public/car-verde.svg" alt="" style="width:26px;height:26px;transform-origin:50% 50%;"/>',
-        iconSize: [26, 26],
-        iconAnchor: [13, 26],
-      });
+      const _iconoPosicionMapa = () => (_rutaArchivoActiva ? 'public/hiking.svg' : 'public/car-verde.svg');
       AltimetriaModule.setOnHover((p) => {
         if (!_hoverMarker) {
           _hoverMarker = L.marker([p.lat, p.lon], {
-            icon: _carHoverIcon,
+            icon: L.divIcon({
+              className: 'altimetria-hover-car',
+              html: `<img src="${_iconoPosicionMapa()}" alt="" style="width:26px;height:26px;transform-origin:50% 50%;"/>`,
+              iconSize: [26, 26],
+              iconAnchor: [13, 26],
+            }),
             interactive: false,
             pane: 'tooltipPane',
             zIndexOffset: 1000,

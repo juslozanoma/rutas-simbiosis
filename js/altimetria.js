@@ -493,9 +493,10 @@ const AltimetriaModule = (() => {
     hoverLine.style.display = 'none';
     svg.appendChild(hoverLine);
 
-    // Indicador de posición (hover): un carro verde, igual que en el mapa.
+    // Indicador de posición (hover): un carro verde, igual que en el mapa
+    // (senderista en modo "Subir tu propia ruta").
     const hoverCircle = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-    hoverCircle.setAttribute('href', 'public/car-verde.svg');
+    hoverCircle.setAttribute('href', _rutaArchivoActiva ? 'public/hiking.svg' : 'public/car-verde.svg');
     hoverCircle.setAttribute('width', '22');
     hoverCircle.setAttribute('height', '22');
     hoverCircle.setAttribute('x', '-50');
@@ -723,6 +724,19 @@ const AltimetriaModule = (() => {
     return _tooltipIndicador;
   }
 
+  /** Posiciona el carro del perfil en (mx, cy) y lo orienta paralelo a la
+   *  trayectoria (mismo bearing que el carro del mapa). */
+  function _posicionarCarroPerfil(cont, mx, cy, bearing) {
+    cont._hoverCircle.setAttribute('x', mx - _CAR_MEDIA);
+    cont._hoverCircle.setAttribute('y', cy - 22);
+    if (bearing != null && !isNaN(bearing)) {
+      cont._hoverCircle.setAttribute('transform', `rotate(${bearing - 90}, ${mx}, ${cy - 11})`);
+    } else {
+      cont._hoverCircle.removeAttribute('transform');
+    }
+    cont._hoverCircle.style.display = '';
+  }
+
   function _onHover(cont, ev) {
     const rect = cont._svg.getBoundingClientRect();
     const mx = ev.clientX - rect.left;
@@ -751,14 +765,12 @@ const AltimetriaModule = (() => {
       alt = cont._minAlt + cont._rangoAlt * 0.5;
     }
     const cy = cont._padTop + cont._plotH - ((alt - cont._minAlt) / cont._rangoAlt) * cont._plotH;
-    cont._hoverCircle.setAttribute('x', mx - _CAR_MEDIA);
-    cont._hoverCircle.setAttribute('y', cy - 22);
-    cont._hoverCircle.style.display = '';
     let bearing = 0;
     if (pLo && pHi && pLo !== pHi && pLo.coord && pHi.coord) {
       const b = turf.bearing(turf.point(pLo.coord), turf.point(pHi.coord));
       if (!isNaN(b)) bearing = b;
     }
+    _posicionarCarroPerfil(cont, mx, cy, bearing);
     _puntoHover = { lat: pt.coord[1], lon: pt.coord[0], dist: dist.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A', bearing };
     if (_onHoverMapa) _onHoverMapa(_puntoHover);
     if (_followActivo && _onCentrarMapa) { _onCentrarMapa(_puntoHover); }
@@ -842,14 +854,12 @@ const AltimetriaModule = (() => {
       alt = cont._minAlt + cont._rangoAlt * 0.5;
     }
     const cy = cont._padTop + cont._plotH - ((alt - cont._minAlt) / cont._rangoAlt) * cont._plotH;
-    cont._hoverCircle.setAttribute('x', mx - _CAR_MEDIA);
-    cont._hoverCircle.setAttribute('y', cy - 22);
-    cont._hoverCircle.style.display = '';
     let bearing = 0;
     if (pLo && pHi && pLo !== pHi && pLo.coord && pHi.coord) {
       const b = turf.bearing(turf.point(pLo.coord), turf.point(pHi.coord));
       if (!isNaN(b)) bearing = b;
     }
+    _posicionarCarroPerfil(cont, mx, cy, bearing);
     _puntoHover = { lat: pt.coord[1], lon: pt.coord[0], dist: dist.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A', bearing };
     if (_onHoverMapa) _onHoverMapa(_puntoHover);
     if (_followActivo && _onCentrarMapa) { _onCentrarMapa(_puntoHover); }
@@ -994,9 +1004,12 @@ const AltimetriaModule = (() => {
     }
     if (alt != null) {
       const cy = cont._padTop + cont._plotH - ((alt - cont._minAlt) / cont._rangoAlt) * cont._plotH;
-      cont._hoverCircle.setAttribute('x', mx - _CAR_MEDIA);
-      cont._hoverCircle.setAttribute('y', cy - 22);
-      cont._hoverCircle.style.display = '';
+      let bearing = 0;
+      if (pLo && pHi && pLo !== pHi && pLo.coord && pHi.coord) {
+        const b = turf.bearing(turf.point(pLo.coord), turf.point(pHi.coord));
+        if (!isNaN(b)) bearing = b;
+      }
+      _posicionarCarroPerfil(cont, mx, cy, bearing);
     }
     if (seguir !== false && _followActivo && _onCentrarMapa) {
       const pt = cont._puntos[lo];

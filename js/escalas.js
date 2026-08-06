@@ -32,10 +32,21 @@
       clases: ['escala-trigger'],
       scope: row, // clic fuera de la fila cierra el menú
       excluirIds: () => {
+        // Un pueblo puede repetir cualquier punto anterior salvo el inmediatamente
+        // anterior (el pueblo previo confirmado, o el origen si es el primero).
         const ids = new Set();
-        if (state.origen?.id) ids.add(state.origen.id);
-        if (state.destino?.id) ids.add(state.destino.id);
-        state.escalas.forEach((e) => { if (e.id != null && e._row !== row) ids.add(e.id); });
+        const confirmadas = state.escalas.filter((e) => e.lat != null);
+        const idx = confirmadas.findIndex((e) => e._row === row);
+        let prev = null;
+        if (idx === -1) {
+          // Fila nueva (aún sin confirmar): se agrega al final, detrás de la última.
+          prev = confirmadas.length ? confirmadas[confirmadas.length - 1] : state.origen;
+        } else if (idx === 0) {
+          prev = state.origen;
+        } else {
+          prev = confirmadas[idx - 1];
+        }
+        if (prev && prev.id != null) ids.add(prev.id);
         return ids;
       },
       onSelect: (m) => {

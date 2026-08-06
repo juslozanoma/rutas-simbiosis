@@ -27,11 +27,24 @@
       return;
     }
 
-    if (state.origen.id === state.destino.id) {
+    if (state.origen.id === state.destino.id && !state.escalas.some((e) => e.lat != null)) {
       el.sitiosVacio.hidden = false;
       el.sitiosVacio.textContent = 'El origen y el destino deben ser municipios diferentes.';
       el.sitiosLista.hidden = true;
       return;
+    }
+
+    // Puntos consecutivos iguales romperían el ruteo (p. ej. un pueblo repetido
+    // justo antes del destino).
+    const puntosValidacion = [state.origen, ...state.escalas.filter((e) => e.lat != null), state.destino];
+    for (let i = 1; i < puntosValidacion.length; i++) {
+      const a = puntosValidacion[i - 1], b = puntosValidacion[i];
+      if (a.id != null && b.id != null && a.id === b.id) {
+        el.sitiosVacio.hidden = false;
+        el.sitiosVacio.textContent = 'La ruta no puede tener dos puntos consecutivos iguales.';
+        el.sitiosLista.hidden = true;
+        return;
+      }
     }
 
     // Fullscreen en móvil durante el gesto del usuario (antes de cualquier await)
@@ -343,6 +356,14 @@
     // Pueblos intermedios en orden de visita (los que ya tienen coordenadas).
     const paradasPueblo = state.escalas.filter((e) => e.lat != null && !e._dragGenerated);
     const puntos = [state.origen, ...paradasPueblo, state.destino];
+
+    // Puntos consecutivos iguales romperían el planeo de vuelos.
+    for (let i = 1; i < puntos.length; i++) {
+      if (puntos[i].id != null && puntos[i - 1].id != null && puntos[i].id === puntos[i - 1].id) {
+        _mostrarNotificacion('La ruta no puede tener dos puntos consecutivos iguales.');
+        return;
+      }
+    }
 
     // Por cada par consecutivo se planea el vuelo carro→aeropuerto→vuelo→aeropuerto→carro.
     const apSegs = [];

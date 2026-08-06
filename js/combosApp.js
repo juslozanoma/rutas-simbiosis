@@ -69,9 +69,13 @@
       placeholder: 'Destino',
       lineas: 5,
       excluirIds: () => {
+        // El destino puede repetir cualquier punto anterior salvo el inmediatamente
+        // anterior (último pueblo confirmado, o el origen si no hay pueblos).
         const ids = new Set();
-        if (state.origen?.id) ids.add(state.origen.id);
-        state.escalas.forEach((e) => { if (e.id != null) ids.add(e.id); });
+        const confirmadas = state.escalas.filter((e) => e.lat != null);
+        const ultimo = confirmadas[confirmadas.length - 1];
+        if (ultimo && ultimo.id != null) ids.add(ultimo.id);
+        else if (state.origen?.id) ids.add(state.origen.id);
         return ids;
       },
       onSelect: (m) => {
