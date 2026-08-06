@@ -16,7 +16,13 @@
       el.btnAutoOrganizar.addEventListener('click', () => {
         const activo = el.btnAutoOrganizar.getAttribute('aria-pressed') === 'true';
         el.btnAutoOrganizar.setAttribute('aria-pressed', String(!activo));
-        if (!activo) organizarAutomaticamente();
+        if (activo) {
+          // Al apagar la ordenación automática se muestran las flechas
+          // arriba/abajo para mover las paradas manualmente.
+          renderizarParadas();
+        } else {
+          organizarAutomaticamente();
+        }
       });
     }
   }
@@ -68,7 +74,7 @@
     calcBtn.title = 'Calcular ruta con este pueblo intermedio';
     calcBtn.setAttribute('aria-label', 'Calcular ruta con este pueblo intermedio');
     calcBtn.innerHTML = `
-      <img class="icon-btn__icon" src="public/car.svg" alt="" width="18" height="18" style="filter:brightness(0) invert(1);">
+      <img class="icon-btn__icon" src="public/transport/car.svg" alt="" width="18" height="18" style="filter:brightness(0) invert(1);">
       <span class="icon-btn__spinner" aria-hidden="true"></span>`;
 
     row.appendChild(calcBtn);

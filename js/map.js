@@ -202,11 +202,11 @@ const MapModule = (() => {
   }
 
   function iconoPuertoGlobal() {
-    return _iconoInfraGlobal('<img src="public/boat.svg" alt="Puerto"/>');
+    return _iconoInfraGlobal('<img src="public/transport/boat.svg" alt="Puerto"/>');
   }
 
   function iconoAeropuertoGlobal() {
-    return _iconoInfraGlobal('<img src="public/airplane.svg" alt="Aeropuerto"/>');
+    return _iconoInfraGlobal('<img src="public/transport/airplane.svg" alt="Aeropuerto"/>');
   }
 
   /** Ícono numerado verde de departamento (D) y municipio (M): el número indica
@@ -1086,7 +1086,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     _dibujarTramo(tramos, {
       color: '#4a6fa5',
       iconoEmoji: '✈',
-      iconoHtml: (bearing) => `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#ffffff;border:1px solid #ffffff;box-shadow:0 1px 4px rgba(20,32,27,0.55);"><img src="public/airplane.svg" style="width:16px;height:16px;transform:rotate(${bearing - 90}deg);filter:brightness(0) saturate(100%) invert(40%) sepia(11%) saturate(716%) hue-rotate(118deg) brightness(94%) contrast(92%);"/></div>`,
+      iconoHtml: (bearing) => `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#ffffff;border:1px solid #ffffff;box-shadow:0 1px 4px rgba(20,32,27,0.55);"><img src="public/transport/airplane.svg" style="width:16px;height:16px;transform:rotate(${bearing - 90}deg);filter:brightness(0) saturate(100%) invert(40%) sepia(11%) saturate(716%) hue-rotate(118deg) brightness(94%) contrast(92%);"/></div>`,
     });
   }
 

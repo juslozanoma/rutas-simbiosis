@@ -18,7 +18,7 @@ const TransportConfigModule = (() => {
 
   /** Vehículos disponibles. `path` es la ubicación del SVG (negro, monocromo). */
   const ICONOS = [
-    { file: 'car.svg', path: 'public/car.svg', nombre: 'Carro' },
+    { file: 'car.svg', path: 'public/transport/car.svg', nombre: 'Carro' },
     { file: 'car2.svg', path: 'public/transport/car2.svg', nombre: 'Carro deportivo' },
     { file: 'car3.svg', path: 'public/transport/car3.svg', nombre: 'Auto' },
     { file: 'people-in-car-side-view-svgrepo-com.svg', path: 'public/transport/people-in-car-side-view-svgrepo-com.svg', nombre: 'Carro familiar' },
@@ -29,7 +29,7 @@ const TransportConfigModule = (() => {
     { file: 'motorcycle2.svg', path: 'public/transport/motorcycle2.svg', nombre: 'Motocicleta' },
     { file: 'motorcycle3.svg', path: 'public/transport/motorcycle3.svg', nombre: 'Moto clásica' },
     { file: 'scooter-transport-svgrepo-com.svg', path: 'public/transport/scooter-transport-svgrepo-com.svg', nombre: 'Scooter' },
-    { file: 'bike.svg', path: 'public/bike.svg', nombre: 'Bicicleta' },
+    { file: 'bike.svg', path: 'public/transport/bike.svg', nombre: 'Bicicleta' },
     { file: 'helicopter.svg', path: 'public/transport/helicopter.svg', nombre: 'Helicóptero' },
   ];
 
@@ -69,9 +69,9 @@ const TransportConfigModule = (() => {
 
   /** Ruta del SVG (monocromo) que se muestra como vehículo. */
   function iconoPath() {
-    if (esHiking()) return 'public/hiking.svg';
+    if (esHiking()) return 'public/transport/hiking.svg';
     const def = ICONOS.find((i) => i.file === _icono);
-    return def ? def.path : 'public/car.svg';
+    return def ? def.path : 'public/transport/car.svg';
   }
 
   /** Color actual (negro en modo senderista). */
@@ -110,7 +110,7 @@ const TransportConfigModule = (() => {
     const h = (height || 26) + 'px';
     const rot = rotateStyle || '';
     if (esHiking()) {
-      return `<img class="transport-vehiculo" src="public/hiking.svg" alt="" style="width:${w};height:${h};${rot}"/>`;
+      return `<img class="transport-vehiculo" src="public/transport/hiking.svg" alt="" style="width:${w};height:${h};${rot}"/>`;
     }
     const path = iconoPath();
     return `<div class="transport-vehiculo" style="width:${w};height:${h};background-color:${_color};-webkit-mask:url('${path}') no-repeat center/contain;mask:url('${path}') no-repeat center/contain;${rot}"></div>`;

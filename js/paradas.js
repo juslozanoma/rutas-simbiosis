@@ -471,6 +471,9 @@
     if (tipo === 'departamento' || tipo === 'municipio') {
       const esDepto = tipo === 'departamento';
       cerrarAltimetria();
+      // Al seleccionar otro departamento/municipio se ocultan los sitios que se
+      // habían mostrado para el anterior.
+      if (typeof _ocultarSitiosCatalogo === 'function') _ocultarSitiosCatalogo();
       const map = MapModule.getMap();
       if (map) map.closePopup();
       if (esDepto) {
@@ -557,11 +560,12 @@
     return [Number(lat), Number(lon)];
   }
 
-  /** Lista de ítems de un tipo de catálogo (puerto | aeropuerto | departamento | municipio). */
+  /** Lista de ítems de un tipo de catálogo (puerto | aeropuerto | departamento | municipio | categoria). */
   function _itemsInfra(tipo) {
     if (tipo === 'puerto') return state.puertos;
     if (tipo === 'aeropuerto') return state.aeropuertos;
     if (tipo === 'departamento') return state.departamentos;
+    if (tipo === 'categoria') return state.categorias;
     if (tipo === 'municipio') {
       return _municipiosFiltroDepto
         ? state.municipios.filter((m) => m.departamento === _municipiosFiltroDepto)
@@ -590,28 +594,22 @@
     if (!tipos.length) return;
     if (!el.paradasLista) return;
 
-    // Filtros: el de departamento solo aplica a municipios (M); el de
-    // categorías solo a Categorías (C).
+    // Filtro: el de departamento solo aplica a municipios (M).
     if (el.filtroMunicipiosDepto) el.filtroMunicipiosDepto.hidden = !_municipiosVisibles;
-    if (el.filtroCategorias) el.filtroCategorias.hidden = !_categoriasVisibles;
 
     el.paradasLista.innerHTML = '';
     let n = 0;
     tipos.forEach((tipo) => {
       const items = _itemsInfra(tipo);
       (items || []).forEach((it) => {
-        if (!_coordsInfra(it)) return;
+        if (!_coordsInfra(it) && tipo !== 'categoria') return;
         el.paradasLista.appendChild(_crearTarjetaInfra(it, tipo, n));
         n++;
       });
     });
-    // Sin elección: pista en vez de una lista vacía (municipios / categorías).
+    // Sin elección: pista en vez de una lista vacía (municipios).
     if (_municipiosVisibles && !_municipiosFiltroDepto && n === 0) {
       const hint = Utils.crearElemento('<li class="paradas-vacio">Elige un departamento para ver sus municipios en el mapa y en la lista.</li>');
-      el.paradasLista.appendChild(hint);
-    }
-    if (_categoriasVisibles && !_categoriasFiltro && n === 0) {
-      const hint = Utils.crearElemento('<li class="paradas-vacio">Elige una categoría para ver sus sitios en el mapa.</li>');
       el.paradasLista.appendChild(hint);
     }
     el.paradasContador.textContent = (_categoriasVisibles && _categoriasFiltro)
@@ -633,10 +631,14 @@
       if (item.totalMunicipios != null) sufijo = ` (${item.totalMunicipios})`;
     } else if (tipo === 'municipio') {
       sub = [item.departamento, item.altura].filter(Boolean).join(' · ');
+    } else if (tipo === 'categoria') {
+      sub = item.total != null ? `${item.total} sitios` : '';
+      if (item.total != null) sufijo = ` (${item.total})`;
     }
     const rio = esPuerto && item.rio ? `<span class="sitio-card__rio">${item.rio}</span>` : '';
+    const activa = tipo === 'categoria' && item.nombre === _categoriasFiltro;
     const li = Utils.crearElemento(`
-      <li class="sitio-card" data-infra-id="${item.id}">
+      <li class="sitio-card${activa ? ' sitio-card--active' : ''}" data-infra-id="${item.id}">
         <div class="sitio-card__top">
           <span class="sitio-card__nombre"><span class="sitio-card__num">${idx + 1}.</span>&nbsp;${item.nombre}${sufijo}</span>
           ${rio}
@@ -645,6 +647,10 @@
       </li>
     `);
     li.addEventListener('click', () => {
+      if (tipo === 'categoria') {
+        _aplicarFiltroCategorias(item.nombre);
+        return;
+      }
       if (tipo === 'departamento' || tipo === 'municipio') {
         mostrarCuadroInfra(tipo, item);
         return;
@@ -665,10 +671,6 @@
     if (el.filtroMunicipiosDepto) {
       el.filtroMunicipiosDepto.hidden = true;
       el.filtroMunicipiosDepto.value = '';
-    }
-    if (el.filtroCategorias) {
-      el.filtroCategorias.hidden = true;
-      el.filtroCategorias.value = '';
     }
     if (el.panelEscalas) el.panelEscalas.hidden = !el.panelEscalas.children.length;
     renderizarParadas();
@@ -869,6 +871,28 @@
 
       const acciones = document.createElement('div');
       acciones.className = 'parada-item__acciones';
+
+      // Flechas arriba/abajo para mover la parada/pueblo manualmente cuando la
+      // ordenación automática está desactivada.
+      const autoOrganizar = !el.btnAutoOrganizar || el.btnAutoOrganizar.getAttribute('aria-pressed') === 'true';
+      if (!autoOrganizar) {
+        const idxOrden = state.orden.findIndex((o) => o.tipo === item.tipo && o.id === e.id);
+        const crearFlecha = (titulo, aria, svg, delta) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'parada-item__btn';
+          b.title = titulo;
+          b.setAttribute('aria-label', aria);
+          b.innerHTML = svg;
+          b.addEventListener('click', (evt) => { evt.stopPropagation(); reordenar(idxOrden, idxOrden + delta); });
+          b.addEventListener('contextmenu', (evt) => evt.stopPropagation());
+          return b;
+        };
+        acciones.appendChild(crearFlecha('Subir en la ruta', 'Subir ' + e.nombre + ' en la ruta',
+          '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>', -1));
+        acciones.appendChild(crearFlecha('Bajar en la ruta', 'Bajar ' + e.nombre + ' en la ruta',
+          '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>', 1));
+      }
 
       const btnDel = document.createElement('button');
       btnDel.type = 'button';

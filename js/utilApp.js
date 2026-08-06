@@ -120,6 +120,9 @@
    *  el mapa y lista solo los municipios del departamento elegido, y encuadra
    *  el departamento para que se vean solo sus municipios. */
   function _aplicarFiltroMunicipios() {
+    // Al cambiar de departamento/municipio se ocultan los sitios que se habían
+    // mostrado para el anterior (se vuelven a mostrar con su botón).
+    _ocultarSitiosCatalogo();
     const sel = el.filtroMunicipiosDepto;
     if (sel) _municipiosFiltroDepto = sel.value;
     const lista = _municipiosFiltroDepto
@@ -165,42 +168,24 @@
   }
 
 
-  let _filtroCategoriasOk = false; // el listener del filtro de categorías se conecta una sola vez
-
-  /** Rellena el <select> de categorías con las categorías y su número de sitios. */
-  function _rellenarFiltroCategorias() {
-    const sel = el.filtroCategorias;
-    if (!sel) return;
-    const actual = sel.value;
+  /** Construye el listado de categorías con su número de sitios (tecla C). */
+  function _construirCategorias() {
     const conteo = new Map();
     state.sitios.forEach((s) => {
       const c = s.categoria ? s.categoria.trim() : '';
       if (!c) return;
       conteo.set(c, (conteo.get(c) || 0) + 1);
     });
-    const cats = [...conteo.keys()].sort((a, b) => a.length - b.length || a.localeCompare(b, 'es'));
-    sel.innerHTML = '';
-    const vacio = document.createElement('option');
-    vacio.value = '';
-    vacio.textContent = 'Filtrar por categoría…';
-    sel.appendChild(vacio);
-    cats.forEach((c) => {
-      const o = document.createElement('option');
-      o.value = c;
-      o.textContent = `${c} (${conteo.get(c)})`;
-      sel.appendChild(o);
-    });
-    if (cats.includes(actual)) sel.value = actual;
-    else sel.value = '';
-    _categoriasFiltro = sel.value;
+    state.categorias = [...conteo.entries()]
+      .map(([nombre, total]) => ({ id: nombre, nombre, total }))
+      .sort((a, b) => a.nombre.length - b.nombre.length || a.nombre.localeCompare(b.nombre, 'es'));
   }
 
 
-  /** Aplica el filtro de categoría (tecla C): muestra en el mapa y en Descubre
-   *  los sitios de la categoría elegida (una sola a la vez). */
-  function _aplicarFiltroCategorias() {
-    const sel = el.filtroCategorias;
-    if (sel) _categoriasFiltro = sel.value;
+  /** Muestra en el mapa (y en Descubre) los sitios de la categoría elegida
+   *  (una sola a la vez); `cat` vacío limpia los sitios. */
+  function _aplicarFiltroCategorias(cat) {
+    _categoriasFiltro = cat || '';
     if (_categoriasFiltro) {
       const lista = state.sitios.filter((s) => (s.categoria || '').trim() === _categoriasFiltro);
       state.sitiosFiltradosBase = lista;
@@ -222,13 +207,10 @@
   function _syncCategorias() {
     if (el.appRoot) el.appRoot.setAttribute('data-categorias-activos', _categoriasVisibles ? 'true' : 'false');
     if (_categoriasVisibles) {
-      _rellenarFiltroCategorias();
-      if (!_filtroCategoriasOk) {
-        _filtroCategoriasOk = true;
-        if (el.filtroCategorias) el.filtroCategorias.addEventListener('change', _aplicarFiltroCategorias);
-      }
-      _aplicarFiltroCategorias();
+      _construirCategorias();
+      _aplicarFiltroCategorias(_categoriasFiltro);
     } else {
+      _categoriasFiltro = '';
       _ocultarSitiosCatalogo();
     }
     _syncModoInfra();

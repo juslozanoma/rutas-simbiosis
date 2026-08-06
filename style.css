@@ -1095,9 +1095,8 @@ input, select{ font-family: inherit; }
   transition: background 0.12s, color 0.12s;
 }
 .popup-sitio__header-btn:hover{ background: var(--teal-500); color: #ffffff; }
-/* Filtros de catálogo: departamento del modo municipios (M) y categoría (C). */
-.filtro-municipios-departamento,
-.filtro-categorias{
+/* Filtro de departamento del modo municipios (M). */
+.filtro-municipios-departamento{
   display: block;
   width: 100%;
   margin: 0 0 8px;
@@ -1108,8 +1107,7 @@ input, select{ font-family: inherit; }
   border-radius: var(--radius-sm);
   background: #ffffff;
 }
-.filtro-municipios-departamento[hidden],
-.filtro-categorias[hidden]{ display: none; }
+.filtro-municipios-departamento[hidden]{ display: none; }
 /* Pista del modo municipios cuando no hay departamento elegido. */
 .paradas-vacio{
   padding: 12px 10px;
@@ -1409,8 +1407,8 @@ input, select{ font-family: inherit; }
 .tab-icon--26{ width: 26px; height: 26px; }
 .tab-icon--sign-post{ -webkit-mask-image: url('public/sign-post.svg'); mask-image: url('public/sign-post.svg'); }
 .tab-icon--colombia{ -webkit-mask-image: url('public/colombia.svg'); mask-image: url('public/colombia.svg'); }
-.tab-icon--bike{ -webkit-mask-image: url('public/bike.svg'); mask-image: url('public/bike.svg'); }
-.tab-icon--hiking{ -webkit-mask-image: url('public/hiking.svg'); mask-image: url('public/hiking.svg'); }
+.tab-icon--bike{ -webkit-mask-image: url('public/transport/bike.svg'); mask-image: url('public/transport/bike.svg'); }
+.tab-icon--hiking{ -webkit-mask-image: url('public/transport/hiking.svg'); mask-image: url('public/transport/hiking.svg'); }
 .panel-tab--active .tab-icon,
 .mobile-tab-btn--active .tab-icon{ background-color: var(--teal-500); }
 
