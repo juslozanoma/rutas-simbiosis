@@ -12,7 +12,7 @@ MODELO = "gemini-3.5-flash-lite"
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODELO}:generateContent?key={API_KEY}"
 
 FILE_PATH = "sitios_turisticos.json"
-BATCH_SIZE = 25  # Procesamiento seguro por lotes
+BATCH_SIZE = 800  # Procesamiento seguro por lotes
 
 
 def cargar_json(ruta):

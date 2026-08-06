@@ -1445,40 +1445,6 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     _conexionCentroId = null;
   }
 
-  /** Dibuja la geometría real del río (Overpass/OSM) desde el puerto central
-   *  hacia cada puerto conectado, con línea continua. Si la geometría no se
-   *  obtiene, deja la línea provisional punteada. Al volver a hacer clic sobre
-   *  el mismo puerto se ocultan. */
-  function dibujarConexionesRio(puertoId, lat, lon, destinos, color) {
-    const clave = 'puerto_' + puertoId;
-    if (_conexionCentroId === clave && capaConexiones && capaConexiones.getLayers().length) {
-      limpiarConexiones();
-      return;
-    }
-    limpiarConexiones();
-    _conexionCentroId = clave;
-    if (!capaConexiones || !destinos || !destinos.length) return;
-    destinos.forEach((d) => {
-      if (d.latitud == null || d.longitud == null || isNaN(Number(d.latitud)) || isNaN(Number(d.longitud))) return;
-      const colorFinal = color || '#2f7a6b';
-      const provisional = L.polyline([[Number(lat), Number(lon)], [Number(d.latitud), Number(d.longitud)]], {
-        color: colorFinal, weight: 2, opacity: 0.85, dashArray: '6 6',
-      }).bindTooltip(d.nombre, { sticky: true }).addTo(capaConexiones);
-      if (typeof _geometriaRioOverpass === 'function') {
-        _geometriaRioOverpass({ latitud: Number(lat), longitud: Number(lon) }, d)
-          .then((coords) => {
-            if (!coords || coords.length < 2) return;
-            if (!capaConexiones || !map.hasLayer(capaConexiones)) return;
-            if (capaConexiones.hasLayer(provisional)) capaConexiones.removeLayer(provisional);
-            L.polyline(coords.map((c) => [Number(c[1]), Number(c[0])]), {
-              color: colorFinal, weight: 3, opacity: 0.9, lineCap: 'round',
-            }).bindTooltip(d.nombre, { sticky: true }).addTo(capaConexiones);
-          })
-          .catch(() => {});
-      }
-    });
-  }
-
   // ---------------------------------------------------------------------
   // Ocultar rutas e íconos de sitios (catálogo de puertos/aeropuertos P/A)
   // ---------------------------------------------------------------------
@@ -1899,7 +1865,6 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     setOnAgregarPuertoEn,
     setOnMenuPuntoRutaArchivo,
     dibujarConexiones,
-    dibujarConexionesRio,
     limpiarConexiones,
     estanConexionesAbiertas,
     ocultarRutasYSitios,

@@ -2112,6 +2112,7 @@ input, select{ font-family: inherit; }
   top: 0;
   z-index: 6;
   cursor: pointer;
+  transform-origin: 50% 100%; /* base abajo-centro: gira apoyado en la curva */
 }
 
 /* ==========================================================================

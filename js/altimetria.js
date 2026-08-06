@@ -736,14 +736,35 @@ const AltimetriaModule = (() => {
     return _tooltipIndicador;
   }
 
-  /** Posiciona el carro del perfil en (mx, cy) con su base apoyada sobre la
-   *  curva y siempre orientado hacia la derecha (el sentido del perfil). */
+  /** Posiciona el vehículo del perfil en (mx, cy) con su base apoyada sobre la
+   *  curva y orientado por el vector tangente local del perfil (como en el
+   *  mapa), de modo que parezca desplazarse sobre el terreno. */
   function _posicionarCarroPerfil(cont, mx, cy) {
     const el = cont._hoverCircle;
     if (!el) return;
     el.style.left = (mx - _CAR_MEDIA) + 'px';
     el.style.top = (cy - 22) + 'px';
-    el.style.transform = '';
+    let ang = 0;
+    if (cont._puntos && cont._plotW) {
+      // Tangente local en píxeles alrededor de mx: ángulo del tramo de la curva.
+      const zs = cont._zoomStart || 0;
+      const ze = cont._zoomEnd != null ? cont._zoomEnd : cont._maxD;
+      const span = (ze - zs) || 1;
+      const d = zs + ((mx - cont._padLeft) / cont._plotW) * span;
+      let lo = 0;
+      while (lo < cont._puntos.length - 1 && cont._puntos[lo + 1].d < d) lo++;
+      const hi = Math.min(lo + 1, cont._puntos.length - 1);
+      const pLo = cont._puntos[lo];
+      const pHi = cont._puntos[hi];
+      if (pLo && pHi && pLo.e != null && pHi.e != null && pHi.d > pLo.d) {
+        const mxLo = cont._padLeft + ((pLo.d - zs) / span) * cont._plotW;
+        const mxHi = cont._padLeft + ((pHi.d - zs) / span) * cont._plotW;
+        const cyLo = cont._padTop + cont._plotH - ((pLo.e - cont._minAlt) / cont._rangoAlt) * cont._plotH;
+        const cyHi = cont._padTop + cont._plotH - ((pHi.e - cont._minAlt) / cont._rangoAlt) * cont._plotH;
+        ang = (Math.atan2(cyHi - cyLo, mxHi - mxLo) * 180) / Math.PI;
+      }
+    }
+    el.style.transform = ang !== 0 ? `rotate(${ang}deg)` : '';
     el.style.display = '';
   }
 

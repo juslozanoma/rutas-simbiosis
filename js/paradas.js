@@ -665,11 +665,7 @@
       }
       const conexiones = esPuerto ? _conexionesDePuerto(item) : _conexionesDeAeropuerto(item);
       const coords = _coordsInfra(item);
-      if (esPuerto && typeof MapModule.dibujarConexionesRio === 'function') {
-        MapModule.dibujarConexionesRio(String(item.id), coords[0], coords[1], conexiones, '#2f7a6b');
-      } else {
-        MapModule.dibujarConexiones(tipo, String(item.id), coords[0], coords[1], conexiones, esPuerto ? '#2f7a6b' : '#4a6fa5');
-      }
+      MapModule.dibujarConexiones(tipo, String(item.id), coords[0], coords[1], conexiones, esPuerto ? '#2f7a6b' : '#4a6fa5');
       mostrarCuadroInfra(tipo, item);
     });
     return li;
@@ -826,7 +822,7 @@
       li.dataset.tipoParada = 'puerto';
       const num = document.createElement('span');
       num.className = 'parada-item__num parada-item__num--ico';
-      num.innerHTML = '<img src="public/transport/boat.svg" alt="Puerto" style="width:16px;height:16px;filter:brightness(0) invert(1);">';
+      num.innerHTML = '<img src="public/transport/boat.svg" alt="Puerto" style="width:12px;height:12px;filter:brightness(0) invert(1);">';
       const nombreEl = document.createElement('span');
       nombreEl.className = 'parada-item__nombre';
       nombreEl.textContent = (prefijo ? prefijo + ': ' : '') + (puerto || '');
