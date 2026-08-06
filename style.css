@@ -308,9 +308,11 @@ input, select{ font-family: inherit; }
 .icon-btn:disabled{ opacity: 0.35; cursor: not-allowed; }
 .icon-btn--aereo img{ transition: filter 0.12s; }
 .icon-btn--fluvial img{ transition: filter 0.12s; }
-/* Botón de avión: verde con el avión blanco (siempre, no solo al activarse). */
-.icon-btn--aereo{ background: var(--teal-600); border-color: var(--teal-600); }
-.icon-btn--aereo:hover:not(:disabled){ background: var(--teal-500); border-color: var(--teal-500); }
+/* Botón de avión: mismo aspecto que el de calcular (teal-500) y mismo estado
+   inhabilitado (opacity 0.4), con el avión blanco. */
+.icon-btn--aereo{ background: var(--teal-500); border-color: var(--teal-500); }
+.icon-btn--aereo:hover:not(:disabled){ background: var(--teal-600); border-color: var(--teal-600); }
+.icon-btn--aereo:disabled{ opacity: 0.4; }
 .icon-btn--aereo img{ filter: brightness(0) invert(1); }
 .icon-btn--active{ background: var(--teal-500); border-color: var(--teal-500); }
 .icon-btn--active:hover:not(:disabled){ background: var(--teal-600); border-color: var(--teal-600); }
@@ -1074,18 +1076,19 @@ input, select{ font-family: inherit; }
   cursor: grabbing;
 }
 /* Pin numerado verde de departamento (D) y municipio (M): el número indica la
-   posición en la lista del panel. Pequeño (18px) para no saturar el mapa. */
+   posición en la lista del panel. Mismo tamaño que los pines de aeropuerto,
+   puerto y sitio turístico (25px) para mantener todo uniforme. */
 .parada-pin--departamento{ background: var(--teal-500); }
 .parada-pin--numero{
-  width: 18px; height: 18px;
-  font-size: 0.56rem;
+  width: 25px; height: 25px;
+  font-size: 0.7rem;
 }
 /* Botón pequeño junto a la x de las fichas (p. ej. "Mostrar sitios turísticos"). */
 .popup-sitio__header-btn{
   margin-left: auto;
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  padding: 3px 9px;
+  padding: 5px 12px;
   border-radius: 999px;
   border: 1px solid var(--teal-500);
   background: var(--teal-50);
@@ -1118,7 +1121,7 @@ input, select{ font-family: inherit; }
 }
 
 .sitio-pin{
-  width: 34px; height: 34px;
+  width: 25px; height: 25px;
   display: flex;
   align-items: center;
   justify-content: center;

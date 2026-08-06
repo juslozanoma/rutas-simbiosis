@@ -18,6 +18,16 @@ const ROOT = __dirname;
 const PORT = Number(process.env.PORT) || 5500;
 const ARCHIVO_PUERTOS = path.join(ROOT, 'data', 'puertos_colombia.json');
 
+// Claves de catálogo → archivo real en data/. Solo estas se pueden escribir.
+const ARCHIVOS_PERMITIDOS = new Map([
+  ['puertos', 'puertos_colombia.json'],
+  ['aeropuertos', 'aeropuertos_colombia.json'],
+  ['municipios', 'municipios.json'],
+  ['departamentos', 'departamentos.json'],
+  ['sitios', 'sitios_turisticos.json'],
+  ['frontera', 'sitios_turisticos_frontera.json'],
+]);
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -79,6 +89,42 @@ const server = http.createServer((req, res) => {
       try {
         const datos = JSON.parse(body);
         fs.writeFile(ARCHIVO_PUERTOS, JSON.stringify(datos, null, 2), 'utf8', (err) => {
+          if (err) {
+            console.error('[server] No se pudo escribir el JSON:', err);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: false }));
+            return;
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: true }));
+        });
+      } catch (err) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false }));
+      }
+    });
+    return;
+  }
+
+  // Guardado genérico de un catálogo (A/M/D/C/frontera/puertos): escribe en
+  // data/<archivo>. La clave se valida contra una lista blanca.
+  if (url.pathname === '/api/catalogo' && req.method === 'POST') {
+    let body = '';
+    req.on('data', (c) => {
+      body += c;
+      if (body.length > 50 * 1024 * 1024) req.destroy();
+    });
+    req.on('end', () => {
+      try {
+        const datos = JSON.parse(body);
+        const archivo = ARCHIVOS_PERMITIDOS.get(String(datos.clave || ''));
+        if (!archivo) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: false }));
+          return;
+        }
+        const ruta = path.join(ROOT, 'data', archivo);
+        fs.writeFile(ruta, JSON.stringify(datos.datos, null, 2), 'utf8', (err) => {
           if (err) {
             console.error('[server] No se pudo escribir el JSON:', err);
             res.writeHead(500, { 'Content-Type': 'application/json' });

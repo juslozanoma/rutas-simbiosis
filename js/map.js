@@ -180,12 +180,12 @@ const MapModule = (() => {
   function iconoSitio() {
     return L.divIcon({
       html: `<div class="sitio-pin">
-        <svg viewBox="0 0 32 32" width="18" height="18" fill="#ffffff"><path d="M29.83,17.45l-2-3A1,1,0,0,0,27,14H17V12h8a1,1,0,0,0,1-1V5a1,1,0,0,0-1-1H17V3a1,1,0,0,0-2,0V4H6a1,1,0,0,0-.71.29l-3,3a1,1,0,0,0,0,1.41l3,3A1,1,0,0,0,6,12h9v2H7a1,1,0,0,0-1,1v6a1,1,0,0,0,1,1h8v6H11a1,1,0,0,0,0,2H21a1,1,0,0,0,0-2H17V22H27a1,1,0,0,0,.83-.45l2-3A1,1,0,0,0,29.83,17.45Z"/></svg>
+        <svg viewBox="0 0 32 32" width="13" height="13" fill="#ffffff"><path d="M29.83,17.45l-2-3A1,1,0,0,0,27,14H17V12h8a1,1,0,0,0,1-1V5a1,1,0,0,0-1-1H17V3a1,1,0,0,0-2,0V4H6a1,1,0,0,0-.71.29l-3,3a1,1,0,0,0,0,1.41l3,3A1,1,0,0,0,6,12h9v2H7a1,1,0,0,0-1,1v6a1,1,0,0,0,1,1h8v6H11a1,1,0,0,0,0,2H21a1,1,0,0,0,0-2H17V22H27a1,1,0,0,0,.83-.45l2-3A1,1,0,0,0,29.83,17.45Z"/></svg>
       </div>`,
       className: '',
-      iconSize: [34, 34],
-      iconAnchor: [17, 17],
-      popupAnchor: [0, -20],
+      iconSize: [25, 25],
+      iconAnchor: [12.5, 12.5],
+      popupAnchor: [0, -15],
     });
   }
 
@@ -210,14 +210,15 @@ const MapModule = (() => {
   }
 
   /** Ícono numerado verde de departamento (D) y municipio (M): el número indica
-   *  la posición del elemento en la lista del panel. */
+   *  la posición del elemento en la lista del panel. Mismo tamaño que el pin de
+   *  aeropuerto/puerto (25px) para que todo quede uniforme. */
   function _iconoPinNumeroVerde(n) {
     return L.divIcon({
       html: `<div class="parada-pin parada-pin--departamento parada-pin--numero">${n}</div>`,
       className: '',
-      iconSize: [18, 18],
-      iconAnchor: [9, 9],
-      popupAnchor: [0, -11],
+      iconSize: [25, 25],
+      iconAnchor: [12.5, 12.5],
+      popupAnchor: [0, -15],
     });
   }
 
@@ -264,6 +265,18 @@ const MapModule = (() => {
   let _onPuertoMovidoGlobal = null;
 
   function setOnPuertoMovidoGlobal(fn) { _onPuertoMovidoGlobal = fn; }
+
+  // Menú contextual (clic derecho) sobre un marcador de catálogo
+  // (aeropuerto | municipio | departamento | frontera): recibe (tipo, item, marker, x, y).
+  let _onMenuCatalogoGlobal = null;
+
+  function setOnMenuCatalogoGlobal(fn) { _onMenuCatalogoGlobal = fn; }
+
+  // Callback al soltar un ítem de catálogo (distinto de puerto) arrastrado:
+  // recibe (tipo, id, lat, lng) con la nueva coordenada.
+  let _onMoverCatalogoGlobal = null;
+
+  function setOnMoverCatalogoGlobal(fn) { _onMoverCatalogoGlobal = fn; }
 
   // Callback al pulsar con el botón derecho sobre un puerto del catálogo:
   // recibe (puerto, marker, clientX, clientY) para abrir su menú contextual.
@@ -1210,20 +1223,21 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
           _onMenuPuertoGlobal(p, marker, ev.originalEvent.clientX, ev.originalEvent.clientY);
           return;
         }
-        _iniciarArrastrePuerto(marker, p.id, ev);
+        _iniciarArrastreCatalogo(marker, 'puerto', p.id, ev);
       });
       marker.addTo(capaPuertosGlobal);
     });
   }
 
   // ---------------------------------------------------------------------
-  // Arrastre con clic derecho de un puerto del catálogo
+  // Arrastre con clic derecho de un ítem del catálogo (puerto, aeropuerto,
+  // municipio, departamento o sitio)
   // ---------------------------------------------------------------------
 
-  let _puertoEnArrastre = null; // { marker, puertoId, inicioLat, inicioLng }
+  let _arrastreCatalogo = null; // { marker, tipo, id, inicioLat, inicioLng }
 
-  function _iniciarArrastrePuerto(marker, puertoId, ev) {
-    if (_puertoEnArrastre || _marcandoTramo) return;
+  function _iniciarArrastreCatalogo(marker, tipo, id, ev) {
+    if (_arrastreCatalogo || _marcandoTramo) return;
     _cerrarCtxMenu();
     if (ev) {
       L.DomEvent.stopPropagation(ev.originalEvent);
@@ -1231,35 +1245,39 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     }
     if (map.dragging) map.dragging.disable();
     const pos = marker.getLatLng();
-    _puertoEnArrastre = { marker, puertoId, inicioLat: pos.lat, inicioLng: pos.lng };
+    _arrastreCatalogo = { marker, tipo, id, inicioLat: pos.lat, inicioLng: pos.lng };
     const iconEl = marker.getElement();
     if (iconEl) iconEl.classList.add('infra-global-pin--arrastre');
     marker.setZIndexOffset(1300);
     map.getContainer().style.cursor = 'grabbing';
-    map.on('mousemove', _moverPuertoArrastre);
-    map.on('mouseup', _terminarArrastrePuerto);
-    document.addEventListener('mouseup', _terminarArrastrePuertoDoc);
+    map.on('mousemove', _moverCatalogoArrastre);
+    map.on('mouseup', _terminarArrastreCatalogo);
+    document.addEventListener('mouseup', _terminarArrastreCatalogoDoc);
   }
 
-  /** Inicia el arrastre de un puerto desde el menú contextual (sin evento de
-   *  clic derecho directo sobre el marcador). */
+  /** Inicia el arrastre de un ítem del catálogo desde el menú contextual. */
+  function iniciarArrastreCatalogo(marker, tipo, id) {
+    _iniciarArrastreCatalogo(marker, tipo, id, null);
+  }
+
+  /** Inicia el arrastre de un puerto (API previa del menú de puertos). */
   function iniciarArrastrePuerto(marker, puertoId) {
-    _iniciarArrastrePuerto(marker, puertoId, null);
+    _iniciarArrastreCatalogo(marker, 'puerto', puertoId, null);
   }
 
-  function _moverPuertoArrastre(ev) {
-    const arr = _puertoEnArrastre;
+  function _moverCatalogoArrastre(ev) {
+    const arr = _arrastreCatalogo;
     if (!arr || !ev.latlng) return;
     arr.marker.setLatLng([ev.latlng.lat, ev.latlng.lng]);
   }
 
-  function _terminarArrastrePuerto() {
-    const arr = _puertoEnArrastre;
+  function _terminarArrastreCatalogo() {
+    const arr = _arrastreCatalogo;
     if (!arr) return;
-    _puertoEnArrastre = null;
-    map.off('mousemove', _moverPuertoArrastre);
-    map.off('mouseup', _terminarArrastrePuerto);
-    document.removeEventListener('mouseup', _terminarArrastrePuertoDoc);
+    _arrastreCatalogo = null;
+    map.off('mousemove', _moverCatalogoArrastre);
+    map.off('mouseup', _terminarArrastreCatalogo);
+    document.removeEventListener('mouseup', _terminarArrastreCatalogoDoc);
     if (map.dragging) map.dragging.enable();
     map.getContainer().style.cursor = '';
     const iconEl = arr.marker.getElement();
@@ -1267,11 +1285,16 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     arr.marker.setZIndexOffset(1100);
     const pos = arr.marker.getLatLng();
     const movido = Math.abs(pos.lat - arr.inicioLat) > 1e-5 || Math.abs(pos.lng - arr.inicioLng) > 1e-5;
-    if (movido && _onPuertoMovidoGlobal) _onPuertoMovidoGlobal(arr.puertoId, pos.lat, pos.lng);
+    if (!movido) return;
+    if (arr.tipo === 'puerto' && _onPuertoMovidoGlobal) {
+      _onPuertoMovidoGlobal(arr.id, pos.lat, pos.lng);
+    } else if (_onMoverCatalogoGlobal) {
+      _onMoverCatalogoGlobal(arr.tipo, arr.id, pos.lat, pos.lng);
+    }
   }
 
-  function _terminarArrastrePuertoDoc() {
-    _terminarArrastrePuerto();
+  function _terminarArrastreCatalogoDoc() {
+    _terminarArrastreCatalogo();
   }
 
   function limpiarPuertosGlobal() {
@@ -1291,6 +1314,16 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       marker.on('click', () => {
         _alternarTooltipFijo(marker);
         if (_onClicInfraGlobal) _onClicInfraGlobal('aeropuerto', ap);
+      });
+      marker.on('contextmenu', (ev) => {
+        if (_onMenuCatalogoGlobal) {
+          ev.originalEvent.preventDefault();
+          L.DomEvent.stopPropagation(ev.originalEvent);
+          _cerrarCtxMenu();
+          _onMenuCatalogoGlobal('aeropuerto', ap, marker, ev.originalEvent.clientX, ev.originalEvent.clientY);
+          return;
+        }
+        _iniciarArrastreCatalogo(marker, 'aeropuerto', ap.id, ev);
       });
       marker.addTo(capaAeropuertosGlobal);
     });
@@ -1316,6 +1349,16 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         _alternarTooltipFijo(marker);
         if (_onClicInfraGlobal) _onClicInfraGlobal('departamento', d);
       });
+      marker.on('contextmenu', (ev) => {
+        if (_onMenuCatalogoGlobal) {
+          ev.originalEvent.preventDefault();
+          L.DomEvent.stopPropagation(ev.originalEvent);
+          _cerrarCtxMenu();
+          _onMenuCatalogoGlobal('departamento', d, marker, ev.originalEvent.clientX, ev.originalEvent.clientY);
+          return;
+        }
+        _iniciarArrastreCatalogo(marker, 'departamento', d.id, ev);
+      });
       marker.addTo(capaDepartamentosGlobal);
     });
   }
@@ -1338,6 +1381,16 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       marker.on('click', () => {
         _alternarTooltipFijo(marker);
         if (_onClicInfraGlobal) _onClicInfraGlobal('municipio', m);
+      });
+      marker.on('contextmenu', (ev) => {
+        if (_onMenuCatalogoGlobal) {
+          ev.originalEvent.preventDefault();
+          L.DomEvent.stopPropagation(ev.originalEvent);
+          _cerrarCtxMenu();
+          _onMenuCatalogoGlobal('municipio', m, marker, ev.originalEvent.clientX, ev.originalEvent.clientY);
+          return;
+        }
+        _iniciarArrastreCatalogo(marker, 'municipio', m.id, ev);
       });
       marker.addTo(capaMunicipiosGlobal);
     });
@@ -1390,15 +1443,25 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
    *  aéreos/fluviales, paradas, escalas, sitios turísticos, frontera, rutas de
    *  archivo KML/GPX, origen/destino y posición GPS). Al desactivarlo los
    *  restaura tal como estaban, sin redibujar nada. */
-  function ocultarRutasYSitios(ocultar) {
+  /** Oculta/restaura las rutas calculadas y (opcionalmente) los íconos de
+   *  sitios al activar un catálogo (P/A/D/M/C). Con `incluirSitios = false`
+   *  (departamentos, municipios, categorías) las rutas se ocultan pero los
+   *  sitios turísticos pueden seguir mostrándose en el mapa. */
+  function ocultarRutasYSitios(ocultar, incluirSitios = true) {
     if (ocultar) {
-      if (_capasOcultasInfra) return;
+      // Si ya había capas ocultas (p. ej. al cambiar de catálogo) se restauran
+      // primero y se recalcula el conjunto con el nuevo modo.
+      if (_capasOcultasInfra) {
+        _capasOcultasInfra.forEach((c) => map.addLayer(c));
+        _capasOcultasInfra = null;
+      }
       const capas = [
         _capaRutaVisible, _capaRutaHover, _capaFlechas, capaRutaPreview,
         capaParadas, capaEscalas, capaPuntosDesvio, capaAlertas, capaAerea,
-        capaFrontera, clusterSitios,
+        capaFrontera,
         ...Object.keys(_gruposRutaArchivo).map((id) => _gruposRutaArchivo[id].grupo),
       ];
+      if (incluirSitios) capas.push(clusterSitios);
       if (markerOrigen) capas.push(markerOrigen);
       if (markerDestino) capas.push(markerDestino);
       if (_marcadorUsuario) capas.push(_marcadorUsuario);
@@ -1464,6 +1527,16 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       const marker = L.marker([s.lat, s.lon], { icon: iconoSitio(), zIndexOffset: 1000 });
       marker.bindTooltip(s.nombre, { direction: 'top', offset: [0, -20], className: 'site-label' });
       marker.on('click', () => centrarEn(s.lat, s.lon));
+      marker.on('contextmenu', (ev) => {
+        if (_onMenuCatalogoGlobal) {
+          ev.originalEvent.preventDefault();
+          L.DomEvent.stopPropagation(ev.originalEvent);
+          _cerrarCtxMenu();
+          _onMenuCatalogoGlobal('frontera', s, marker, ev.originalEvent.clientX, ev.originalEvent.clientY);
+          return;
+        }
+        _iniciarArrastreCatalogo(marker, 'frontera', s.id, ev);
+      });
       marker.addTo(capaFrontera);
     });
   }
@@ -1773,7 +1846,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     setOnClicInfraGlobal,
     setOnPuertoMovidoGlobal,
     setOnMenuPuertoGlobal,
+    setOnMenuCatalogoGlobal,
+    setOnMoverCatalogoGlobal,
     iniciarArrastrePuerto,
+    iniciarArrastreCatalogo,
     setOnAgregarPuertoEn,
     setOnMenuPuntoRutaArchivo,
     dibujarConexiones,

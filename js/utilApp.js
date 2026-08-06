@@ -68,7 +68,7 @@
           lat: Number(d.latitud),
           lon: Number(d.longitud),
           descripcion: d.descripcion || '',
-          ano: capitalMuni ? (capitalMuni.ano_fundacion || '') : '',
+          ano: d.año_fundacion != null ? d.año_fundacion : (capitalMuni ? (capitalMuni.ano_fundacion || '') : ''),
           totalMunicipios: conteo.get(d.nombre) || 0,
           sede: d.nombre === 'Cundinamarca' ? 'Gobernación de Cundinamarca' : null,
         };
@@ -168,7 +168,8 @@
   }
 
 
-  /** Construye el listado de categorías con su número de sitios (tecla C). */
+  /** Construye el listado de categorías con su número de sitios (tecla C),
+   *  en orden alfabético y sin "Sin información" ni "Frontera". */
   function _construirCategorias() {
     const conteo = new Map();
     state.sitios.forEach((s) => {
@@ -176,9 +177,14 @@
       if (!c) return;
       conteo.set(c, (conteo.get(c) || 0) + 1);
     });
+    const excluidas = new Set(['sin informacion', 'frontera']);
     state.categorias = [...conteo.entries()]
+      .filter(([nombre]) => {
+        const normal = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return !excluidas.has(normal);
+      })
       .map(([nombre, total]) => ({ id: nombre, nombre, total }))
-      .sort((a, b) => a.nombre.length - b.nombre.length || a.nombre.localeCompare(b.nombre, 'es'));
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   }
 
 
@@ -297,12 +303,12 @@
         el.btnMostrarSitiosCercanos.hidden = true;
         el.btnMostrarSitiosCercanos.disabled = true;
       }
-      // Con puertos/aeropuertos (P/A) se ocultan del mapa todas las rutas e
-      // íconos de sitios; se restauran al apagar las teclas. En departamentos
-      // (D) y municipios (M) no se ocultan, para poder mostrar sus sitios.
-      const ocultarMapaInfra = _puertosVisibles || _aeropuertosVisibles;
-      if (ocultarMapaInfra && typeof MapModule !== 'undefined' && typeof MapModule.ocultarRutasYSitios === 'function') {
-        MapModule.ocultarRutasYSitios(true);
+      // Con cualquier catálogo (P/A/D/M/C) se ocultan del mapa las rutas
+      // calculadas del modo normal; con puertos/aeropuertos (P/A) también los
+      // íconos de sitios. Se restauran al apagar las teclas.
+      const ocultarSitios = _puertosVisibles || _aeropuertosVisibles;
+      if (typeof MapModule !== 'undefined' && typeof MapModule.ocultarRutasYSitios === 'function') {
+        MapModule.ocultarRutasYSitios(true, ocultarSitios);
       }
       if (typeof renderizarInfraListado === 'function') renderizarInfraListado();
       _actualizarEtiquetaPestanaRutaInfra();

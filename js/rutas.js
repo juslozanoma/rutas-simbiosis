@@ -601,6 +601,22 @@
     el.btnFluvial.classList.toggle('icon-btn--active', state.modoFluvial);
   }
 
+  /** Une el extremo de un tramo en carro con el puerto fluvial si OSRM no lo
+   *  alcanzó (el puerto está a la orilla del río, fuera de la red de carreteras).
+   *  `lado` es 'inicio' (puerto→carretera) o 'final' (carretera→puerto). */
+  function _unirPuertoACarretera(coords, puerto, lado) {
+    if (!coords || !coords.length) return coords;
+    const puertoCoord = [Number(puerto.longitud), Number(puerto.latitud)];
+    const ref = lado === 'inicio' ? coords[0] : coords[coords.length - 1];
+    const dist = turf.distance(turf.point(ref), turf.point(puertoCoord), { units: 'kilometers' });
+    const UMBRAL = 0.1; // 100 m
+    if (dist > UMBRAL) {
+      if (lado === 'inicio') return [puertoCoord, ...coords];
+      return [...coords, puertoCoord];
+    }
+    return coords;
+  }
+
   /** Calcula la ruta por río (carro→puerto→trayecto fluvial→puerto→carro). */
   async function calcularRutaFluvial() {
     if (!state.origen || !state.destino) return;
@@ -633,14 +649,25 @@
     const hub = pares.length > 1 ? pares[0].b : null;
 
     ponerEnCargaRuta(true, true);
+    let rutaCarro1, rutaCarro2;
     try {
-      const [rutaCarro1, rutaCarro2] = await Promise.all([
+      [rutaCarro1, rutaCarro2] = await Promise.all([
         RoutingModule.calcularRuta(state.origen, { lat: po.latitud, lon: po.longitud }, 'driving'),
         RoutingModule.calcularRuta({ lat: pd.latitud, lon: pd.longitud }, state.destino, 'driving'),
       ]);
+    } catch (err) {
+      _mostrarNotificacion('No se pudo enlazar el puerto con la carretera más cercana.');
+      ponerEnCargaRuta(false);
+      return;
+    }
 
-      const coordsCarro1 = rutaCarro1.geojson.geometry.coordinates;
-      const coordsCarro2 = rutaCarro2.geojson.geometry.coordinates;
+    try {
+      // Carretera origen→puerto y puerto→destino, completando la carretera de
+      // acceso al puerto si OSRM no la dibujó (el puerto está a la orilla).
+      const coordsCarro1 = _unirPuertoACarretera(rutaCarro1.geojson.geometry.coordinates, po, 'final');
+      const coordsCarro2 = _unirPuertoACarretera(rutaCarro2.geojson.geometry.coordinates, pd, 'inicio');
+      const distCarro1 = turf.length(turf.lineString(coordsCarro1), { units: 'kilometers' }) * 1000;
+      const distCarro2 = turf.length(turf.lineString(coordsCarro2), { units: 'kilometers' }) * 1000;
 
       // Tramos fluviales: directo o con conexión (definido por destinos_id).
       const tramos = pares.map(({ a, b }) => {
@@ -667,10 +694,10 @@
       };
 
       const elevacion = [...(rutaCarro1.elevacion || []), ...(rutaCarro2.elevacion || [])];
-      const totalDist = rutaCarro1.distanciaMetros + distRio + rutaCarro2.distanciaMetros;
+      const totalDist = distCarro1 + distRio + distCarro2;
       const totalDur = rutaCarro1.duracionSegundos + durRio + rutaCarro2.duracionSegundos;
       // Kilometraje del perfil: solo de carretera (sin trayectos por río).
-      const totalKmPerfil = (rutaCarro1.distanciaMetros + rutaCarro2.distanciaMetros) / 1000;
+      const totalKmPerfil = (distCarro1 + distCarro2) / 1000;
 
       const ruta = {
         geojson: geojsonMapa,
@@ -688,8 +715,8 @@
         po,
         pd,
         hub,
-        distCarro1: rutaCarro1.distanciaMetros,
-        distCarro2: rutaCarro2.distanciaMetros,
+        distCarro1,
+        distCarro2,
         distRio,
         durRio,
       };

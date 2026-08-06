@@ -46,6 +46,11 @@ const TourismModule = (() => {
 
   function setOnAgregarParada(cb) { onAgregarParadaCallback = cb; }
 
+  // Menú contextual (clic derecho) sobre un marcador de sitio del mapa.
+  let _onMenuSitio = null;
+
+  function setOnMenuSitio(fn) { _onMenuSitio = fn; }
+
   function colorCategoria(categoria) {
     return COLORES_CATEGORIA[categoria] || '#6c7369';
   }
@@ -77,7 +82,7 @@ const TourismModule = (() => {
     marker.bindTooltip(numero ? `${numero} · ${sitio.nombre}` : sitio.nombre, {
       permanent: true,
       direction: 'top',
-      offset: [0, -22],
+      offset: [0, -16],
       className: 'site-label',
     });
 
@@ -92,6 +97,13 @@ const TourismModule = (() => {
         MapModule.centrarEn(sitio.lat, sitio.lon);
       }
       mostrarPopupSitio(sitio);
+    });
+
+    marker.on('contextmenu', (ev) => {
+      if (_onMenuSitio) {
+        ev.originalEvent.preventDefault();
+        _onMenuSitio(sitio, marker, ev.originalEvent.clientX, ev.originalEvent.clientY);
+      }
     });
 
     return marker;
@@ -309,6 +321,7 @@ const TourismModule = (() => {
     municipiosUnicos,
     crearMarcador,
     setOnAgregarParada,
+    setOnMenuSitio,
     mostrarPopupSitio,
     mostrarCuadroInfo,
     ocultarPopupSitio,

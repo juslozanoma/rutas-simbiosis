@@ -54,10 +54,19 @@
     MapModule.setOnMenuPuertoGlobal((p, marker, clientX, clientY) => {
       abrirMenuFila([
         { etiqueta: 'Borrar puerto', accion: () => borrarPuerto(p) },
-        { etiqueta: 'Mover puerto', accion: () => MapModule.iniciarArrastrePuerto(marker, p.id) },
+        { etiqueta: 'Mover puerto', accion: () => MapModule.iniciarArrastreCatalogo(marker, 'puerto', p.id) },
         { etiqueta: 'Editar información', accion: () => abrirDialogoEditarPuerto(p) },
         { etiqueta: 'Ver más información', accion: () => mostrarCuadroInfra('puerto', p) },
       ], clientX, clientY);
+    });
+    // Menú contextual de aeropuertos, municipios, departamentos y sitios de
+    // frontera (editar / borrar / mover / ver información), guardado en local.
+    MapModule.setOnMenuCatalogoGlobal((tipo, item, marker, clientX, clientY) => {
+      _menuCatalogo(tipo, item, marker, clientX, clientY);
+    });
+    MapModule.setOnMoverCatalogoGlobal((tipo, id, lat, lng) => _moverItemCatalogo(tipo, id, lat, lng));
+    TourismModule.setOnMenuSitio((sitio, marker, clientX, clientY) => {
+      _menuCatalogo('sitio', sitio, marker, clientX, clientY);
     });
 
     try {
@@ -81,27 +90,7 @@
         const res = await fetch('data/sitios_turisticos_frontera.json');
         if (res.ok) {
           const frontera = await res.json();
-          for (const f of frontera) {
-            if (!f.sitios_turisticos_fuera_colombia) continue;
-            for (let i = 0; i < f.sitios_turisticos_fuera_colombia.length; i++) {
-              const raw = f.sitios_turisticos_fuera_colombia[i];
-              const sep = raw.indexOf(' - ');
-              const nombre = sep > 0 ? raw.substring(0, sep).trim() : raw.trim();
-              const desc = sep > 0 ? raw.substring(sep + 3).trim() : '';
-              state.sitios.push({
-                id: 'frontera_' + f.id + '_' + i,
-                nombre,
-                categoria: 'Frontera',
-                municipio: f.ciudad_origen,
-                departamento: f.departamento,
-                lat: f.latitud,
-                lon: f.longitud,
-                descripcion: desc,
-                ubicacion: f.pais_fronterizo + ' (frontera)',
-                frontera: true,
-              });
-            }
-          }
+          state.sitios = state.sitios.concat(_aplanarFrontera(frontera));
         }
       } catch {}
       if (el.sitiosFronteraContador) {
@@ -128,6 +117,28 @@
           const guardados = await PersistenciaJsonModule.leerPuertosGuardados();
           if (Array.isArray(guardados) && guardados.length) state.puertos = guardados;
         } catch {}
+      }
+
+      // Copias guardadas en el navegador (OPFS) de los demás catálogos
+      // editables: se usan si existen (más recientes que el archivo original).
+      if (typeof PersistenciaJsonModule !== 'undefined' && typeof PersistenciaJsonModule.leerJson === 'function') {
+        const leerLocal = async (clave, aplicar) => {
+          try {
+            const datos = await PersistenciaJsonModule.leerJson(clave);
+            if (datos) aplicar(datos);
+          } catch (e) {}
+        };
+        await leerLocal('aeropuertos', (d) => { state.aeropuertos = d; });
+        await leerLocal('municipios', (d) => { state.municipios = d; _construirDepartamentos(); });
+        await leerLocal('departamentos', (d) => { state.departamentos = d; _construirDepartamentos(); });
+        await leerLocal('sitios', (d) => {
+          const frontera = state.sitios.filter((s) => s.frontera);
+          state.sitios = d.filter((s) => !s.frontera).concat(frontera);
+        });
+        await leerLocal('frontera', (d) => {
+          const regulares = state.sitios.filter((s) => !s.frontera);
+          state.sitios = regulares.concat(_aplanarFrontera(d));
+        });
       }
     } catch (err) {
       el.sitiosVacio.textContent = 'Error cargando los datos base: ' + err.message;
@@ -343,6 +354,244 @@
     if (dlg) {
       dlg.addEventListener('click', (e) => { if (e.target === dlg) cerrarDialogoNuevoPuerto(); });
     }
+  }
+
+  // -------------------------------------------------------------------
+  // Menús contextuales y edición de catálogos (aeropuertos, municipios,
+  // departamentos, sitios y sitios de frontera) guardados en local.
+  // -------------------------------------------------------------------
+
+  function _etiquetaTipo(tipo) {
+    return { aeropuerto: 'aeropuerto', municipio: 'municipio', departamento: 'departamento', sitio: 'sitio turístico', frontera: 'sitio de frontera' }[tipo] || tipo;
+  }
+
+  function _itemCatalogo(tipo, id) {
+    if (tipo === 'aeropuerto') return state.aeropuertos.find((x) => String(x.id) === String(id));
+    if (tipo === 'municipio') return state.municipios.find((x) => String(x.id) === String(id));
+    if (tipo === 'departamento') return state.departamentos.find((x) => String(x.id) === String(id));
+    if (tipo === 'sitio' || tipo === 'frontera') return state.sitios.find((x) => String(x.id) === String(id));
+    return null;
+  }
+
+  function _archivoCatalogo(tipo) {
+    return { aeropuerto: 'aeropuertos', municipio: 'municipios', departamento: 'departamentos', sitio: 'sitios', frontera: 'frontera' }[tipo];
+  }
+
+  /** Aplana sitios_turisticos_frontera.json a los objetos que viven en
+   *  state.sitios con `frontera: true`. */
+  function _aplanarFrontera(frontera) {
+    const sitios = [];
+    for (const f of frontera) {
+      if (!f.sitios_turisticos_fuera_colombia) continue;
+      for (let i = 0; i < f.sitios_turisticos_fuera_colombia.length; i++) {
+        const raw = f.sitios_turisticos_fuera_colombia[i];
+        const sep = raw.indexOf(' - ');
+        const nombre = sep > 0 ? raw.substring(0, sep).trim() : raw.trim();
+        const desc = sep > 0 ? raw.substring(sep + 3).trim() : '';
+        sitios.push({
+          id: 'frontera_' + f.id + '_' + i,
+          nombre,
+          categoria: 'Frontera',
+          municipio: f.ciudad_origen,
+          departamento: f.departamento,
+          lat: f.latitud,
+          lon: f.longitud,
+          descripcion: desc,
+          ubicacion: (f.pais_fronterizo || '') + ' (frontera)',
+          frontera: true,
+        });
+      }
+    }
+    return sitios;
+  }
+
+  /** Reconstruye sitios_turisticos_frontera.json desde los sitios con
+   *  `frontera: true` que viven aplanados en state.sitios. */
+  function _reconstruirFrontera() {
+    const mapa = new Map();
+    state.sitios.forEach((s) => {
+      if (!s.frontera) return;
+      const partes = String(s.id).split('_');
+      const base = partes[1] != null ? partes[1] : 'x';
+      if (!mapa.has(base)) {
+        mapa.set(base, {
+          id: /^\d+$/.test(base) ? Number(base) : base,
+          ciudad_origen: s.municipio || '',
+          departamento: s.departamento || '',
+          pais_fronterizo: (s.ubicacion || '').replace(' (frontera)', ''),
+          latitud: s.lat,
+          longitud: s.lon,
+          sitios_turisticos_fuera_colombia: [],
+        });
+      }
+      const entry = mapa.get(base);
+      const raw = `${s.nombre}${s.descripcion ? ' - ' + s.descripcion : ''}`;
+      if (!entry.sitios_turisticos_fuera_colombia.includes(raw)) entry.sitios_turisticos_fuera_colombia.push(raw);
+    });
+    return [...mapa.values()];
+  }
+
+  /** Guarda el catálogo modificado en su JSON (servidor o copia en navegador). */
+  function _guardarCatalogo(tipo) {
+    const clave = _archivoCatalogo(tipo);
+    if (!clave || typeof PersistenciaJsonModule === 'undefined' || typeof PersistenciaJsonModule.guardarJson !== 'function') return;
+    let datos;
+    if (tipo === 'frontera') datos = _reconstruirFrontera();
+    else if (tipo === 'sitio') datos = state.sitios.filter((s) => !s.frontera);
+    else if (tipo === 'departamento') datos = state.departamentos.map((d) => ({ nombre: d.nombre, capital: d.capital, latitud: d.lat, longitud: d.lon, descripcion: d.descripcion, año_fundacion: d.ano }));
+    else if (tipo === 'aeropuerto') datos = state.aeropuertos;
+    else if (tipo === 'municipio') datos = state.municipios;
+    else return;
+    PersistenciaJsonModule.guardarJson(clave, datos).then((res) => {
+      if (res !== true) _mostrarNotificacion('No se pudo escribir el archivo; se guardó una copia en el navegador.');
+    });
+  }
+
+  /** Abre el menú contextual de un ítem del catálogo (aeropuerto/municipio/
+   *  departamento/sitio/frontera). */
+  function _menuCatalogo(tipo, item, marker, clientX, clientY) {
+    if (!item) return;
+    abrirMenuFila([
+      { etiqueta: 'Ver más información', accion: () => _verInfoCatalogo(tipo, item) },
+      { etiqueta: 'Mover', accion: () => MapModule.iniciarArrastreCatalogo(marker, tipo, item.id) },
+      { etiqueta: 'Editar información', accion: () => _editarItemCatalogo(tipo, item) },
+      { etiqueta: 'Borrar', accion: () => _borrarItemCatalogo(tipo, item) },
+    ], clientX, clientY);
+  }
+
+  function _verInfoCatalogo(tipo, item) {
+    if ((tipo === 'sitio' || tipo === 'frontera') && typeof TourismModule !== 'undefined') {
+      TourismModule.mostrarPopupSitio(item);
+      return;
+    }
+    if (typeof mostrarCuadroInfra === 'function') mostrarCuadroInfra(tipo, item);
+  }
+
+  function _moverItemCatalogo(tipo, id, lat, lng) {
+    const item = _itemCatalogo(tipo, id);
+    if (!item) return;
+    const nLat = Number(lat.toFixed(6));
+    const nLng = Number(lng.toFixed(6));
+    if ('latitud' in item || 'longitud' in item) {
+      item.latitud = nLat;
+      item.longitud = nLng;
+    } else {
+      item.lat = nLat;
+      item.lon = nLng;
+    }
+    // Si el aeropuerto movido tenía líneas de conexión abiertas, se redibujan.
+    if (tipo === 'aeropuerto' && typeof MapModule !== 'undefined'
+      && typeof MapModule.estanConexionesAbiertas === 'function'
+      && MapModule.estanConexionesAbiertas('aeropuerto', String(id))) {
+      MapModule.limpiarConexiones();
+      MapModule.dibujarConexiones('aeropuerto', String(id), nLat, nLng, _conexionesDeAeropuerto(item), '#4a6fa5');
+    }
+    _guardarCatalogo(tipo);
+  }
+
+  function _borrarItemCatalogo(tipo, item) {
+    if (tipo === 'aeropuerto') {
+      state.aeropuertos = state.aeropuertos.filter((x) => String(x.id) !== String(item.id));
+      if (_aeropuertosVisibles) _syncAeropuertos();
+    } else if (tipo === 'municipio') {
+      state.municipios = state.municipios.filter((x) => String(x.id) !== String(item.id));
+      if (_municipiosVisibles) _syncMunicipios();
+    } else if (tipo === 'departamento') {
+      state.departamentos = state.departamentos.filter((x) => String(x.id) !== String(item.id));
+      if (_departamentosVisibles) _syncDepartamentos();
+    } else {
+      state.sitios = state.sitios.filter((x) => String(x.id) !== String(item.id));
+      if (_categoriasVisibles && typeof _aplicarFiltroCategorias === 'function') _aplicarFiltroCategorias(_categoriasFiltro);
+      if (_fronteraVisibles && typeof _syncFrontera === 'function') _syncFrontera();
+    }
+    _guardarCatalogo(tipo);
+    _mostrarNotificacion('Borrado: ' + (item.nombre || ''));
+  }
+
+  function _escHtml(texto) {
+    return String(texto == null ? '' : texto)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function _camposEdicion(tipo, item) {
+    if (tipo === 'aeropuerto') {
+      return [
+        { label: 'Nombre', key: 'nombre', value: item.nombre || '' },
+        { label: 'Descripción', key: 'descripcion', value: item.descripcion || '', textarea: true },
+      ];
+    }
+    if (tipo === 'municipio') {
+      return [
+        { label: 'Nombre', key: 'nombre', value: item.nombre || '' },
+        { label: 'Departamento', key: 'departamento', value: item.departamento || '' },
+        { label: 'Descripción', key: 'descripción', value: item.descripción || '', textarea: true },
+      ];
+    }
+    if (tipo === 'departamento') {
+      return [
+        { label: 'Nombre', key: 'nombre', value: item.nombre || '' },
+        { label: 'Capital', key: 'capital', value: item.capital || '' },
+        { label: 'Año de fundación', key: 'ano', value: item.ano != null ? String(item.ano) : '' },
+        { label: 'Descripción', key: 'descripcion', value: item.descripcion || '', textarea: true },
+      ];
+    }
+    return [
+      { label: 'Nombre', key: 'nombre', value: item.nombre || '' },
+      { label: 'Municipio', key: 'municipio', value: item.municipio || '' },
+      { label: 'Descripción', key: 'descripcion', value: item.descripcion || '', textarea: true },
+    ];
+  }
+
+  function _despuesEditarCatalogo(tipo) {
+    if (tipo === 'aeropuerto' && _aeropuertosVisibles) _syncAeropuertos();
+    else if (tipo === 'municipio' && _municipiosVisibles) _syncMunicipios();
+    else if (tipo === 'departamento' && _departamentosVisibles) _syncDepartamentos();
+    else if (tipo === 'sitio' || tipo === 'frontera') {
+      if (_categoriasVisibles) _aplicarFiltroCategorias(_categoriasFiltro);
+      if (_fronteraVisibles) _syncFrontera();
+    }
+  }
+
+  /** Diálogo genérico de edición de un ítem del catálogo. */
+  function _editarItemCatalogo(tipo, item) {
+    const campos = _camposEdicion(tipo, item);
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    let html = `<div class="dialog">
+      <h3 class="dialog__title">Editar ${_etiquetaTipo(tipo)}</h3>`;
+    campos.forEach((c, i) => {
+      const valor = _escHtml(c.value);
+      if (c.textarea) {
+        html += `<label class="nuevo-puerto__label">${c.label}<textarea class="nuevo-puerto__input" data-idx="${i}" rows="3">${valor}</textarea></label>`;
+      } else {
+        html += `<label class="nuevo-puerto__label">${c.label}<input class="nuevo-puerto__input" data-idx="${i}" value="${valor}"></label>`;
+      }
+    });
+    html += `<p class="dialog__error" hidden id="catalogo-edit-error"></p>
+      <div class="dialog__actions">
+        <button type="button" class="dialog__btn dialog__btn--cancel" id="catalogo-edit-cancel">Cancelar</button>
+        <button type="button" class="dialog__btn dialog__btn--save" id="catalogo-edit-save">Guardar</button>
+      </div>
+    </div>`;
+    overlay.innerHTML = html;
+    document.body.appendChild(overlay);
+    const primero = overlay.querySelector('.nuevo-puerto__input');
+    if (primero) setTimeout(() => primero.focus(), 50);
+
+    overlay.querySelector('#catalogo-edit-cancel').addEventListener('click', () => overlay.remove());
+    overlay.querySelector('#catalogo-edit-save').addEventListener('click', () => {
+      campos.forEach((c, i) => {
+        const el = overlay.querySelector(`[data-idx="${i}"]`);
+        if (el) item[c.key] = el.value;
+      });
+      overlay.remove();
+      _despuesEditarCatalogo(tipo);
+      _guardarCatalogo(tipo);
+      _mostrarNotificacion('Guardado: ' + (item.nombre || ''));
+    });
+    overlay.querySelector('.dialog').addEventListener('click', (e) => e.stopPropagation());
+    overlay.addEventListener('click', () => overlay.querySelector('#catalogo-edit-cancel').click());
   }
 
   // -------------------------------------------------------------------
