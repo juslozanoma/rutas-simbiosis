@@ -80,7 +80,7 @@ const TourismModule = (() => {
     const marker = L.marker([sitio.lat, sitio.lon], { icon: icono });
     const numero = etiqueta != null && String(etiqueta) !== '' ? String(etiqueta) : null;
     marker.bindTooltip(numero ? `${numero} · ${sitio.nombre}` : sitio.nombre, {
-      permanent: true,
+      permanent: false,
       direction: 'top',
       offset: [0, -16],
       className: 'site-label',

@@ -95,9 +95,16 @@
           ? await RoutingModule.calcularRutaConParadas(puntosRuta, PERFIL_FIJO)
           : await RoutingModule.calcularRuta(state.origen, state.destino, PERFIL_FIJO);
       } catch (err) {
-        // Sin ruta por carretera (p. ej. San Andrés): se usa la ruta aérea.
-        console.warn('Ruta por carretera no disponible, usando ruta aérea:', err.message);
-        await calcularRutaAerea();
+        // Sin ruta por carretera (p. ej. San Andrés o la Amazonía): se prueba
+        // el avión y, si tampoco hay conexión aérea, la ruta por río.
+        console.warn('Ruta por carretera no disponible:', err.message);
+        const antes = state.rutaActual;
+        await calcularRutaAerea(true);
+        if (state.rutaActual !== antes) return;
+        await calcularRutaFluvial(true);
+        if (state.rutaActual === antes) {
+          _mostrarNotificacion('No se encontró una ruta por carretera, avión ni río entre el origen y el destino.');
+        }
         return;
       }
 
@@ -341,10 +348,10 @@
    *  propio tramo carro→vuelo→carro, y los tramos se enlazan en el aeropuerto
    *  más cercano de cada pueblo (p. ej. Bogotá → Medellín → Cartagena vuela
    *  Bogotá→EOH, EOH→CTG). */
-  async function calcularRutaAerea() {
+  async function calcularRutaAerea(silencioso = false) {
     if (!state.origen || !state.destino) return;
     if (!state.aeropuertos || !state.aeropuertos.length) {
-      _mostrarNotificacion('No hay datos de aeropuertos disponibles');
+      if (!silencioso) _mostrarNotificacion('No hay datos de aeropuertos disponibles');
       return;
     }
     cerrarAltimetria();
@@ -378,7 +385,7 @@
         if (pares) break;
       }
       if (!apOri || !apDes || !pares || !pares.length) {
-        _mostrarNotificacion('No se encontró una conexión aérea completa para la ruta');
+        if (!silencioso) _mostrarNotificacion('No se encontró una conexión aérea completa para la ruta');
         return;
       }
       apSegs.push({ a, b, apOri, apDes, hub: pares.length > 1 ? pares[0].b : null, pares });
@@ -618,10 +625,10 @@
   }
 
   /** Calcula la ruta por río (carro→puerto→trayecto fluvial→puerto→carro). */
-  async function calcularRutaFluvial() {
+  async function calcularRutaFluvial(silencioso = false) {
     if (!state.origen || !state.destino) return;
     if (!state.puertos || !state.puertos.length) {
-      _mostrarNotificacion('No hay datos de puertos fluviales disponibles');
+      if (!silencioso) _mostrarNotificacion('No hay datos de puertos fluviales disponibles');
       return;
     }
     cerrarAltimetria();
@@ -643,7 +650,7 @@
       if (pares) break;
     }
     if (!po || !pd || !pares || !pares.length) {
-      _mostrarNotificacion('No se encontró un trayecto fluvial entre el origen y el destino');
+      if (!silencioso) _mostrarNotificacion('No se encontró un trayecto fluvial entre el origen y el destino');
       return;
     }
     const hub = pares.length > 1 ? pares[0].b : null;

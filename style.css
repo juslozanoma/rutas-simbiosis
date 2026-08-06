@@ -160,26 +160,46 @@ input, select{ font-family: inherit; }
   border-color: var(--teal-500);
   color: var(--teal-600);
 }
-/* Los dos botones (Subir tu propia ruta / Iniciar tour) en la misma línea. */
+/* Los dos botones (Subir tu propia ruta / Iniciar tour) en la misma línea,
+   con margen y letra verde teal. */
 .btn-acciones-ruta{
   display: flex;
   gap: 8px;
   justify-content: center;
-  margin: 10px auto 0;
+  margin: 0px 10px 0px 10px;
   max-width: 480px;
 }
-.btn-acciones-ruta > button{ flex: 1; margin: 0; min-width: 0; }
-/* Con el tour activo se ocultan los cuadros de origen/destino y "Subir tu
-   propia ruta"; el panel del tour ocupa su lugar. */
+.btn-acciones-ruta > button{ flex: 1; margin: 0; min-width: 0; color: var(--teal-600); border-color: var(--teal-500); }
+.btn-acciones-ruta > button:hover{ color: var(--teal-500); background: var(--teal-50); }
+/* Con el tour activo se ocultan los cuadros de origen/destino y ambos botones;
+   el panel del tour ocupa su lugar y aparece la pestaña X para cerrarlo. */
 #app[data-tour-activo="true"] #panel-locate{ display: none; }
-#app[data-tour-activo="true"] #btn-subir-ruta-propia{ display: none; }
+#app[data-tour-activo="true"] #btn-subir-ruta-propia,
+#app[data-tour-activo="true"] #btn-iniciar-tour{ display: none; }
 
-/* Panel del tour: combo de destino + lista de destinos elegidos. */
-.panel-tour{ padding: 4px 0 8px; }
+/* Pestañas X para cerrar el tour (escritorio y móvil), como en "Subir tu
+   propia ruta". */
+.panel-tab--cerrar-tour,
+.mobile-tab-btn--cerrar-tour{
+  display: none;
+  flex: 0 0 44px;
+  color: #d64545;
+  border-bottom-color: transparent;
+}
+.panel-tab--cerrar-tour:hover,
+.mobile-tab-btn--cerrar-tour:hover{ color: #b33a3a; }
+.panel-tab--cerrar-tour svg,
+.mobile-tab-btn--cerrar-tour svg{ display: block; flex-shrink: 0; }
+#app[data-tour-activo="true"] .panel-tab--cerrar-tour,
+#app[data-tour-activo="true"] .mobile-tab-btn--cerrar-tour{ display: flex; }
+
+/* Panel del tour: combo de destino + lista de destinos elegidos, con aire a
+   los lados para que no queden pegados a los bordes del panel. */
+.panel-tour{ padding: 4px 6px 8px; }
 .panel-tour[hidden]{ display: none; }
 .tour-destinos-lista{
   list-style: none;
-  margin: 8px 0 0;
+  margin: 8px 2px 0;
   padding: 0;
   display: flex;
   flex-direction: column;

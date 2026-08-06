@@ -661,6 +661,12 @@
   function initTour() {
     const btn = document.getElementById('btn-iniciar-tour');
     if (btn) btn.addEventListener('click', () => { if (typeof _toggleTour === 'function') _toggleTour(); });
+    const cerrar = (id) => {
+      const b = document.getElementById(id);
+      if (b) b.addEventListener('click', () => { if (typeof _desactivarTour === 'function') _desactivarTour(); });
+    };
+    cerrar('btn-cerrar-tour');
+    cerrar('btn-cerrar-tour-desktop');
   }
 
   // Recarga automática SOLO cuando el servidor lo anuncia (server.js), y ese
