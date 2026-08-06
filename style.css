@@ -1073,6 +1073,45 @@ input, select{ font-family: inherit; }
   box-shadow: 0 0 0 6px rgba(47,122,107,0.3);
   cursor: grabbing;
 }
+/* Pin numerado verde de departamento (D) y municipio (M): el número indica la
+   posición en la lista del panel. */
+.parada-pin--departamento{ background: var(--teal-500); }
+/* Botón pequeño junto a la x de las fichas (p. ej. "Mostrar sitios turísticos"). */
+.popup-sitio__header-btn{
+  margin-left: auto;
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--teal-500);
+  background: var(--teal-50);
+  color: var(--teal-600);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s;
+}
+.popup-sitio__header-btn:hover{ background: var(--teal-500); color: #ffffff; }
+/* Filtro de departamento del modo municipios (tecla M). */
+.filtro-municipios-departamento{
+  display: block;
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 7px 9px;
+  font-size: 12.5px;
+  color: var(--text-soft, #444);
+  border: 1px solid var(--line-300, #d4d4cc);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+}
+.filtro-municipios-departamento[hidden]{ display: none; }
+/* Pista del modo municipios cuando no hay departamento elegido. */
+.paradas-vacio{
+  padding: 12px 10px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: center;
+  list-style: none;
+}
 
 .sitio-pin{
   width: 34px; height: 34px;
@@ -1908,6 +1947,77 @@ input, select{ font-family: inherit; }
   white-space: nowrap;
   pointer-events: none;
   box-shadow: 0 4px 14px rgba(20,32,27,0.25);
+}
+
+/* ==========================================================================
+   SELECTOR DE VEHÍCULO (ícono + color de la ruta terrestre)
+   ========================================================================== */
+.transport-selector{
+  position: fixed;
+  z-index: 2200;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.22);
+  padding: 10px;
+  width: 236px;
+  box-sizing: border-box;
+}
+.transport-selector[hidden]{ display: none; }
+.transport-selector__titulo{
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: 4px 2px 6px;
+}
+.transport-selector__iconos{
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.transport-selector__icono{
+  border: 1px solid #e4e7ea;
+  background: #ffffff;
+  border-radius: 7px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.transport-selector__icono:hover{ border-color: var(--teal-500); background: var(--teal-50); }
+.transport-selector__icono--activo{
+  border-color: var(--teal-600);
+  background: var(--teal-50);
+  box-shadow: 0 0 0 1px var(--teal-600);
+}
+.transport-selector__colores{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.transport-selector__color{
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 0 0 1px #d4d8db;
+  cursor: pointer;
+  padding: 0;
+}
+.transport-selector__color--activo{
+  box-shadow: 0 0 0 2px var(--teal-600);
+}
+
+/* Vehículo superpuesto al perfil de altimetría (máscara CSS sobre el SVG) */
+.altimetria-hover-vehiculo{
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 6;
+  cursor: pointer;
 }
 
 /* ==========================================================================

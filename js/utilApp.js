@@ -21,6 +21,8 @@
 
   let _pestanaAntesInfra = null;
 
+  let _filtroMunicipiosOk = false; // el listener del filtro de municipios se conecta una sola vez
+
 
   function _syncPuertos() {
     if (typeof MapModule === 'undefined' || !MapModule.setMarcadoresPuertosGlobal) return;
@@ -46,19 +48,117 @@
   }
 
 
-  /** Con el catálogo de puertos/aeropuertos (teclas A/P) activo se ocultan los
-   *  cuadros de búsqueda de origen/destino y la pestaña Descubre, y la lista de
-   *  la pestaña Ruta muestra el listado de infraestructura. Al apagar ambas
-   *  teclas se restaura el panel tal como estaba. */
-  /** Etiqueta de la pestaña Ruta cuando el catálogo de puertos/aeropuertos
-   *  (P/A) está activo: "PUERTOS", "AEROPUERTOS" o "PUERTOS Y AEROPUERTOS". */
-  function _etiquetaInfra() {
-    if (!_puertosVisibles && !_aeropuertosVisibles) return null;
-    if (_puertosVisibles && _aeropuertosVisibles) return 'PUERTOS Y AEROPUERTOS';
-    return _puertosVisibles ? 'PUERTOS' : 'AEROPUERTOS';
+  /** Construye el catálogo de departamentos (tecla D) desde CAPITALES: un
+   *  marcador por cada departamento, centrado en su capital. Cundinamarca usa
+   *  la Gobernación de Cundinamarca, en Bogotá. */
+  function _construirDepartamentos() {
+    const deps = [];
+    const conteo = new Map();
+    state.municipios.forEach((m) => {
+      if (m.departamento) conteo.set(m.departamento, (conteo.get(m.departamento) || 0) + 1);
+    });
+    for (const nombre of Object.keys(CAPITALES)) {
+      const capital = CAPITALES[nombre];
+      const m = state.municipios.find((x) => x.nombre === capital);
+      if (!m) continue;
+      deps.push({
+        id: nombre,
+        nombre,
+        capital,
+        lat: m.lat,
+        lon: m.lon,
+        descripcion: m.descripción || '',
+        ano: m.ano_fundacion || '',
+        totalMunicipios: conteo.get(nombre) || 0,
+        sede: nombre === 'Cundinamarca' ? 'Gobernación de Cundinamarca' : null,
+      });
+    }
+    deps.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    state.departamentos = deps;
   }
 
-  /** Renombra la pestaña Ruta (móvil y PC) según el catálogo activo (P/A). */
+
+  function _syncDepartamentos() {
+    if (typeof MapModule === 'undefined' || !MapModule.setMarcadoresDepartamentosGlobal) return;
+    if (el.appRoot) el.appRoot.setAttribute('data-departamentos-activos', _departamentosVisibles ? 'true' : 'false');
+    if (_departamentosVisibles) {
+      MapModule.setMarcadoresDepartamentosGlobal(state.departamentos);
+    } else {
+      MapModule.limpiarDepartamentosGlobal();
+    }
+    _syncModoInfra();
+  }
+
+
+  /** Rellena el <select> de departamentos con las 33 opciones del país. */
+  function _rellenarFiltroMunicipios() {
+    const sel = el.filtroMunicipiosDepto;
+    if (!sel) return;
+    const actual = sel.value;
+    const deps = [...new Set(state.municipios.map((m) => m.departamento).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, 'es'));
+    sel.innerHTML = '';
+    const vacio = document.createElement('option');
+    vacio.value = '';
+    vacio.textContent = 'Filtrar por departamento…';
+    sel.appendChild(vacio);
+    deps.forEach((d) => {
+      const o = document.createElement('option');
+      o.value = d;
+      o.textContent = d;
+      sel.appendChild(o);
+    });
+    if (deps.includes(actual)) sel.value = actual;
+    else sel.value = '';
+    _municipiosFiltroDepto = sel.value;
+  }
+
+
+  /** Aplica el filtro de departamento del modo municipios (tecla M): dibuja en
+   *  el mapa y lista solo los municipios del departamento elegido. */
+  function _aplicarFiltroMunicipios() {
+    const sel = el.filtroMunicipiosDepto;
+    if (sel) _municipiosFiltroDepto = sel.value;
+    const lista = _municipiosFiltroDepto
+      ? state.municipios.filter((m) => m.departamento === _municipiosFiltroDepto)
+      : [];
+    if (typeof MapModule !== 'undefined' && typeof MapModule.setMarcadoresMunicipiosGlobal === 'function') {
+      MapModule.setMarcadoresMunicipiosGlobal(lista);
+    }
+    if (typeof renderizarInfraListado === 'function') renderizarInfraListado();
+  }
+
+
+  function _syncMunicipios() {
+    if (typeof MapModule === 'undefined' || !MapModule.setMarcadoresMunicipiosGlobal) return;
+    if (el.appRoot) el.appRoot.setAttribute('data-municipios-activos', _municipiosVisibles ? 'true' : 'false');
+    if (_municipiosVisibles) {
+      _rellenarFiltroMunicipios();
+      if (!_filtroMunicipiosOk) {
+        _filtroMunicipiosOk = true;
+        if (el.filtroMunicipiosDepto) el.filtroMunicipiosDepto.addEventListener('change', _aplicarFiltroMunicipios);
+      }
+      _aplicarFiltroMunicipios();
+    } else {
+      MapModule.limpiarMunicipiosGlobal();
+    }
+    _syncModoInfra();
+  }
+
+
+  /** Etiqueta de la pestaña Ruta cuando algún catálogo (P/A/D/M) está activo:
+   *  "PUERTOS", "AEROPUERTOS", "DEPARTAMENTOS", "MUNICIPIOS" o combinaciones. */
+  function _etiquetaInfra() {
+    if (!_puertosVisibles && !_aeropuertosVisibles && !_departamentosVisibles && !_municipiosVisibles) return null;
+    const partes = [];
+    if (_puertosVisibles) partes.push('PUERTOS');
+    if (_aeropuertosVisibles) partes.push('AEROPUERTOS');
+    if (_departamentosVisibles) partes.push('DEPARTAMENTOS');
+    if (_municipiosVisibles) partes.push('MUNICIPIOS');
+    return partes.join(' Y ');
+  }
+
+  /** Renombra la pestaña Ruta (móvil y PC) según el catálogo activo (P/A/D/M). */
   function _actualizarEtiquetaPestanaRutaInfra() {
     const etiqueta = _etiquetaInfra();
     if (!etiqueta) return;
@@ -66,7 +166,7 @@
     if (el.btnTabRutaLabel) el.btnTabRutaLabel.textContent = etiqueta;
   }
 
-  /** Restaura el nombre de la pestaña Ruta al apagar el catálogo (P/A). */
+  /** Restaura el nombre de la pestaña Ruta al apagar el catálogo (P/A/D/M). */
   function _restaurarEtiquetaPestanaRuta() {
     const enModoK = _rutaArchivoActiva;
     if (el.btnTabPanelRutaLabel) el.btnTabPanelRutaLabel.textContent = enModoK ? 'MIS RUTAS' : 'Ruta';
@@ -74,7 +174,7 @@
   }
 
   function _syncModoInfra() {
-    const activo = _puertosVisibles || _aeropuertosVisibles;
+    const activo = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles;
     if (el.appRoot) {
       if (activo) el.appRoot.setAttribute('data-infra-activa', 'true');
       else el.appRoot.removeAttribute('data-infra-activa');
@@ -86,15 +186,21 @@
         else activarPanelTab('ruta');
       }
       if (el.panelLocate) el.panelLocate.hidden = true;
-      if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.hidden = true;
-      if (el.btnTabDescubre) el.btnTabDescubre.hidden = true;
+      // La pestaña Descubre se oculta solo con puertos/aeropuertos (P/A); con
+      // departamentos (D) o municipios (M) queda visible para poder ver los
+      // sitios turísticos de cada uno.
+      const ocultarDescubre = _puertosVisibles || _aeropuertosVisibles;
+      if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.hidden = ocultarDescubre;
+      if (el.btnTabDescubre) el.btnTabDescubre.hidden = ocultarDescubre;
       if (el.btnMostrarSitiosCercanos) {
         el.btnMostrarSitiosCercanos.hidden = true;
         el.btnMostrarSitiosCercanos.disabled = true;
       }
-      // Con los catálogos activos se ocultan del mapa todas las rutas e
-      // íconos de sitios; se restauran al apagar las teclas (A/P).
-      if (typeof MapModule !== 'undefined' && typeof MapModule.ocultarRutasYSitios === 'function') {
+      // Con puertos/aeropuertos (P/A) se ocultan del mapa todas las rutas e
+      // íconos de sitios; se restauran al apagar las teclas. En departamentos
+      // (D) y municipios (M) no se ocultan, para poder mostrar sus sitios.
+      const ocultarMapaInfra = _puertosVisibles || _aeropuertosVisibles;
+      if (ocultarMapaInfra && typeof MapModule !== 'undefined' && typeof MapModule.ocultarRutasYSitios === 'function') {
         MapModule.ocultarRutasYSitios(true);
       }
       if (typeof renderizarInfraListado === 'function') renderizarInfraListado();

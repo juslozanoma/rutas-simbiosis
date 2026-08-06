@@ -283,6 +283,18 @@ const TourismModule = (() => {
       });
     }
 
+    // Botón pequeño junto al botón de cerrar (p. ej. "Mostrar sitios turísticos").
+    if (opciones.botonCabecera && opciones.botonCabecera.accion) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'popup-sitio__header-btn';
+      b.textContent = opciones.botonCabecera.etiqueta || '';
+      b.addEventListener('click', (e) => { e.stopPropagation(); opciones.botonCabecera.accion(); });
+      const head = popup.querySelector('.popup-sitio__head');
+      if (head) head.appendChild(b);
+      else popup.insertBefore(b, btnClose);
+    }
+
     _montarCuadroCentrado(nodo, true);
   }
 

@@ -860,8 +860,9 @@ const RutaArchivoModule = (() => {
     if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.hidden = false;
     if (el.btnTabDescubre) el.btnTabDescubre.hidden = false;
     if (typeof _restaurarPanelRutaInfra === 'function') _restaurarPanelRutaInfra();
-    // Si el catálogo de aeropuertos/puertos (A/P) sigue activo, reponer su listado.
-    if ((_puertosVisibles || _aeropuertosVisibles) && typeof renderizarInfraListado === 'function') {
+    // Si el catálogo de aeropuertos/puertos/departamentos/municipios (A/P/D/M)
+    // sigue activo, reponer su listado.
+    if ((_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles) && typeof renderizarInfraListado === 'function') {
       renderizarInfraListado();
     }
     activarPanelTab('ruta');

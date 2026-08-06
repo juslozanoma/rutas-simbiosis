@@ -26,6 +26,8 @@ const MapModule = (() => {
   let capaFrontera = null;      // L.layerGroup overlay de prueba: sitios de frontera
   let capaPuertosGlobal = null;     // L.layerGroup con todos los puertos del catálogo (tecla P)
   let capaAeropuertosGlobal = null; // L.layerGroup con todos los aeropuertos del catálogo (tecla A)
+  let capaDepartamentosGlobal = null; // L.layerGroup con los departamentos en sus capitales (tecla D)
+  let capaMunicipiosGlobal = null;    // L.layerGroup con los municipios filtrados (tecla M)
   let capaConexiones = null;    // L.layerGroup con las líneas de conexión de un puerto/aeropuerto
   let clusterSitios = null;     // L.markerClusterGroup con los sitios candidatos filtrados
   let _capaFlechas = null;      // L.layerGroup con flechas de dirección sobre la ruta
@@ -81,6 +83,13 @@ const MapModule = (() => {
       attribution: '&copy; OpenStreetMap',
     }).addTo(map);
 
+    // Al cambiar el vehículo o su color se re-dibuja la flecha de la ruta.
+    if (typeof TransportConfigModule !== 'undefined' && TransportConfigModule.setOnCambio) {
+      TransportConfigModule.setOnCambio(() => {
+        if (map && !_altimetriaActiva) _actualizarFlechaRuta();
+      });
+    }
+
     // Pane custom para clusters (z-index alto para quedar sobre tooltips y marcadores)
     const clusterPane = map.createPane('clusterPane');
     clusterPane.style.zIndex = 800;
@@ -115,6 +124,8 @@ const MapModule = (() => {
     capaFrontera = L.layerGroup().addTo(map);
     capaPuertosGlobal = L.layerGroup().addTo(map);
     capaAeropuertosGlobal = L.layerGroup().addTo(map);
+    capaDepartamentosGlobal = L.layerGroup().addTo(map);
+    capaMunicipiosGlobal = L.layerGroup().addTo(map);
     capaConexiones = L.layerGroup().addTo(map);
 
     // El contenedor del mapa nace con un tamaño definido por CSS (flex),
@@ -196,6 +207,18 @@ const MapModule = (() => {
 
   function iconoAeropuertoGlobal() {
     return _iconoInfraGlobal('<img src="public/airplane.svg" alt="Aeropuerto"/>');
+  }
+
+  /** Ícono numerado verde de departamento (D) y municipio (M): el número indica
+   *  la posición del elemento en la lista del panel. */
+  function _iconoPinNumeroVerde(n) {
+    return L.divIcon({
+      html: `<div class="parada-pin parada-pin--departamento">${n}</div>`,
+      className: '',
+      iconSize: [26, 26],
+      iconAnchor: [13, 13],
+      popupAnchor: [0, -15],
+    });
   }
 
   /** Ícono numerado para un sitio agregado como parada de la ruta. */
@@ -861,12 +884,26 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const next = turf.along(line, Math.min(km, d + 0.5), { units: 'kilometers' });
     const bearing = turf.bearing(prev, next);
     const arrowIcon = L.divIcon({
-      html: `<img src="public/car.svg" style="transform-origin:0% 100%;transform:rotate(${bearing - 90}deg);width:26px;height:26px;"/>`,
+      html: TransportConfigModule.divIconoHTML(26, 26, `transform-origin:0% 100%;transform:rotate(${bearing - 90}deg);`),
       className: '',
       iconSize: [26, 26],
       iconAnchor: [0, 26],
     });
-    L.marker([pt.geometry.coordinates[1], pt.geometry.coordinates[0]], { icon: arrowIcon, interactive: false }).addTo(_capaFlechas);
+    const arrowMarker = L.marker([pt.geometry.coordinates[1], pt.geometry.coordinates[0]], {
+      icon: arrowIcon,
+      interactive: !TransportConfigModule.esHiking(),
+      zIndexOffset: 1050,
+    }).addTo(_capaFlechas);
+    if (!TransportConfigModule.esHiking()) {
+      arrowMarker.on('click', (e) => {
+        if (e.originalEvent) {
+          e.originalEvent.stopImmediatePropagation();
+          L.DomEvent.preventDefault(e.originalEvent);
+        }
+        L.DomEvent.stopPropagation(e);
+        TransportConfigModule.abrirSelector(e.originalEvent ? e.originalEvent.clientX : 0, e.originalEvent ? e.originalEvent.clientY : 0);
+      });
+    }
   }
 
   // ---------------------------------------------------------------------
@@ -1263,6 +1300,52 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     if (capaAeropuertosGlobal) capaAeropuertosGlobal.clearLayers();
     _marcadoresTooltipFijo.clear();
     if (_conexionCentroId && _conexionCentroId.startsWith('aeropuerto_')) limpiarConexiones();
+  }
+
+  /** Pinta los departamentos del catálogo (tecla D): un marcador numerado por
+   *  cada departamento, centrado en su capital (Cundinamarca usa la Gobernación
+   *  de Cundinamarca, en Bogotá). El número coincide con la lista del panel. */
+  function setMarcadoresDepartamentosGlobal(lista) {
+    limpiarDepartamentosGlobal();
+    if (!lista || !lista.length) return;
+    lista.forEach((d, i) => {
+      if (d.lat == null || d.lon == null || isNaN(Number(d.lat)) || isNaN(Number(d.lon))) return;
+      const marker = L.marker([Number(d.lat), Number(d.lon)], { icon: _iconoPinNumeroVerde(i + 1), zIndexOffset: 1100 });
+      marker.bindTooltip(d.sede || d.nombre, { direction: 'top', offset: [0, -16], className: 'site-label' });
+      marker.on('click', () => {
+        _alternarTooltipFijo(marker);
+        if (_onClicInfraGlobal) _onClicInfraGlobal('departamento', d);
+      });
+      marker.addTo(capaDepartamentosGlobal);
+    });
+  }
+
+  function limpiarDepartamentosGlobal() {
+    if (capaDepartamentosGlobal) capaDepartamentosGlobal.clearLayers();
+    _marcadoresTooltipFijo.clear();
+  }
+
+  /** Pinta los municipios del catálogo (tecla M): solo los del departamento
+   *  seleccionado en el filtro, para no mostrar ~1100 puntos a la vez. El
+   *  número coincide con la lista del panel. */
+  function setMarcadoresMunicipiosGlobal(lista) {
+    limpiarMunicipiosGlobal();
+    if (!lista || !lista.length) return;
+    lista.forEach((m, i) => {
+      if (m.lat == null || m.lon == null || isNaN(Number(m.lat)) || isNaN(Number(m.lon))) return;
+      const marker = L.marker([Number(m.lat), Number(m.lon)], { icon: _iconoPinNumeroVerde(i + 1), zIndexOffset: 1100 });
+      marker.bindTooltip(m.nombre + (m.departamento && m.departamento !== m.nombre ? ', ' + m.departamento : ''), { direction: 'top', offset: [0, -12], className: 'site-label' });
+      marker.on('click', () => {
+        _alternarTooltipFijo(marker);
+        if (_onClicInfraGlobal) _onClicInfraGlobal('municipio', m);
+      });
+      marker.addTo(capaMunicipiosGlobal);
+    });
+  }
+
+  function limpiarMunicipiosGlobal() {
+    if (capaMunicipiosGlobal) capaMunicipiosGlobal.clearLayers();
+    _marcadoresTooltipFijo.clear();
   }
 
   // ---------------------------------------------------------------------
@@ -1727,6 +1810,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarPuertosGlobal,
     setMarcadoresAeropuertosGlobal,
     limpiarAeropuertosGlobal,
+    setMarcadoresDepartamentosGlobal,
+    limpiarDepartamentosGlobal,
+    setMarcadoresMunicipiosGlobal,
+    limpiarMunicipiosGlobal,
     dibujarRutaPreview,
     limpiarRutaPreview,
     limpiarRuta,

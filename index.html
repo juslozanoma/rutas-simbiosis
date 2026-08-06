@@ -168,6 +168,9 @@
         <button type="button" id="btn-auto-organizar" class="auto-organizar-btn" title="Ordenar automáticamente pueblos y paradas por su distancia al origen" aria-label="Ordenar automáticamente pueblos y paradas" aria-pressed="true">Organizar</button>
         <button type="button" id="btn-reiniciar-pc" class="btn-reiniciar-pc" title="Reiniciar desde cero (borra las rutas subidas y el viaje)" aria-label="Reiniciar desde cero">Reiniciar</button>
       </h2>
+      <select id="filtro-municipios-departamento" class="filtro-municipios-departamento" hidden aria-label="Filtrar municipios por departamento">
+        <option value="">Filtrar por departamento…</option>
+      </select>
       <ul class="paradas-lista" id="paradas-lista"></ul>
     </section>
 
@@ -360,6 +363,7 @@
 </div>
 
 <script src="js/utils.js"></script>
+<script src="js/transport.js"></script>
 <script src="js/map.js"></script>
 <script src="js/routing.js"></script>
 <script src="js/tourism.js"></script>

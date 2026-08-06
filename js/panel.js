@@ -9,7 +9,8 @@
   function activarPanelTab(tab) {
     // Con el catálogo de puertos/aeropuertos (A/P) o la ruta desde archivo (K)
     // activos, la pestaña Descubre queda oculta y los cuadros de búsqueda no
-    // deben reaparecer al volver a Ruta.
+    // deben reaparecer al volver a Ruta. En departamentos (D) y municipios (M)
+    // la pestaña Descubre sigue disponible.
     if (tab === 'descubre' && (_puertosVisibles || _aeropuertosVisibles || _rutaArchivoActiva)) return;
     document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('panel-tab--active'));
     if (tab === 'ruta') {
@@ -18,12 +19,12 @@
       el.loadingSitios.hidden = true;
       el.panelSitios.hidden = true;
       el.panelSitios.scrollTop = 0;
-      el.panelLocate.hidden = _puertosVisibles || _aeropuertosVisibles || _rutaArchivoActiva;
+      el.panelLocate.hidden = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _rutaArchivoActiva;
       el.panelEscalas.hidden = true;
-      if (state.rutaActual && !(_puertosVisibles || _aeropuertosVisibles || _rutaArchivoActiva)) {
+      if (state.rutaActual && !(_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _rutaArchivoActiva)) {
         el.panelParadas.hidden = false;
       }
-      const ocultarTestigo = !state.rutaActual || _soMostrarSitiosVisto || (_puertosVisibles || _aeropuertosVisibles || _rutaArchivoActiva);
+      const ocultarTestigo = !state.rutaActual || _soMostrarSitiosVisto || (_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _rutaArchivoActiva);
       el.btnMostrarSitiosCercanos.hidden = ocultarTestigo;
       el.btnMostrarSitiosCercanos.disabled = ocultarTestigo;
       sincronizarModoRutaMovil();
@@ -37,7 +38,7 @@
       el.panelSitios.hidden = false;
       el.btnMostrarSitiosCercanos.hidden = true;
       if (el.btnSubirRutaPropia) el.btnSubirRutaPropia.hidden = true;
-      if (!state.rutaActual && el.sitiosVacio) {
+      if (!state.rutaActual && el.sitiosVacio && state.sitiosFiltrados.length === 0) {
         el.sitiosVacio.hidden = false;
         el.sitiosVacio.textContent = 'Calcula una ruta para descubrir sitios turísticos.';
         if (el.sitiosLista) el.sitiosLista.hidden = true;
@@ -306,18 +307,19 @@
         }
       });
 
-      // Marcador temporal para hover del perfil de altimetría: un carro verde
-      // (o senderista en modo "Subir tu propia ruta") que se orienta paralelo a
-      // la ruta en el punto que representa.
+      // Marcador temporal para hover del perfil de altimetría: el vehículo
+      // elegido por el usuario (o senderista en modo "Subir tu propia ruta")
+      // que se orienta paralelo a la ruta en el punto que representa.
       let _hoverMarker = null;
-      let _hoverCarImg = null;
-      const _iconoPosicionMapa = () => (_rutaArchivoActiva ? 'public/hiking.svg' : 'public/car-verde.svg');
+      let _hoverCarEl = null;
+      let _hoverBearing = null;
       AltimetriaModule.setOnHover((p) => {
+        _hoverBearing = p.bearing != null ? p.bearing : null;
         if (!_hoverMarker) {
           _hoverMarker = L.marker([p.lat, p.lon], {
             icon: L.divIcon({
               className: 'altimetria-hover-car',
-              html: `<img src="${_iconoPosicionMapa()}" alt="" style="width:26px;height:26px;transform-origin:50% 50%;"/>`,
+              html: TransportConfigModule.divIconoHTML(26, 26, 'transform-origin:50% 50%;'),
               iconSize: [26, 26],
               iconAnchor: [13, 26],
             }),
@@ -325,12 +327,12 @@
             pane: 'tooltipPane',
             zIndexOffset: 1000,
           }).addTo(_map);
-          _hoverCarImg = _hoverMarker.getElement()?.querySelector('img') || null;
+          _hoverCarEl = _hoverMarker.getElement()?.querySelector('.transport-vehiculo') || null;
         } else {
           _hoverMarker.setLatLng([p.lat, p.lon]);
         }
-        if (_hoverCarImg && p.bearing != null) {
-          _hoverCarImg.style.transform = `rotate(${p.bearing - 90}deg)`;
+        if (_hoverCarEl && _hoverBearing != null) {
+          _hoverCarEl.style.transform = `rotate(${_hoverBearing - 90}deg)`;
         }
         _hoverMarker.bindTooltip(`${p.alt} msnm · ${p.dist} km`, {
           permanent: true, direction: 'top', className: 'altimetria-map-tooltip',
@@ -339,8 +341,21 @@
       });
 
       AltimetriaModule.setOnLeave(() => {
-        if (_hoverMarker) { _hoverMarker.remove(); _hoverMarker = null; }
+        if (_hoverMarker) { _hoverMarker.remove(); _hoverMarker = null; _hoverCarEl = null; _hoverBearing = null; }
       });
+
+      // Al cambiar el vehículo o su color se actualiza el carro hover del mapa.
+      if (typeof TransportConfigModule !== 'undefined' && TransportConfigModule.setOnCambio) {
+        TransportConfigModule.setOnCambio(() => {
+          if (_hoverMarker && _hoverMarker.getElement()) {
+            _hoverMarker.getElement().innerHTML = TransportConfigModule.divIconoHTML(26, 26, 'transform-origin:50% 50%;');
+            _hoverCarEl = _hoverMarker.getElement()?.querySelector('.transport-vehiculo') || null;
+            if (_hoverCarEl && _hoverBearing != null) {
+              _hoverCarEl.style.transform = `rotate(${_hoverBearing - 90}deg)`;
+            }
+          }
+        });
+      }
 
       AltimetriaModule.setOnSetInicio((data) => {
         AltimetriaModule.setRangoInicio(data.distKm);

@@ -493,17 +493,6 @@ const AltimetriaModule = (() => {
     hoverLine.style.display = 'none';
     svg.appendChild(hoverLine);
 
-    // Indicador de posición (hover): un carro verde, igual que en el mapa
-    // (senderista en modo "Subir tu propia ruta").
-    const hoverCircle = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-    hoverCircle.setAttribute('href', _rutaArchivoActiva ? 'public/hiking.svg' : 'public/car-verde.svg');
-    hoverCircle.setAttribute('width', '22');
-    hoverCircle.setAttribute('height', '22');
-    hoverCircle.setAttribute('x', '-50');
-    hoverCircle.setAttribute('y', '-50');
-    hoverCircle.style.display = 'none';
-    svg.appendChild(hoverCircle);
-
     // Hit area for hover / zoom
     const hit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     hit.setAttribute('x', padLeft);
@@ -517,7 +506,7 @@ const AltimetriaModule = (() => {
     cont._svg = svg;
     cont._puntos = puntos;
     cont._hoverLine = hoverLine;
-    cont._hoverCircle = hoverCircle;
+    cont._hoverCircle = null;
     cont._plotW = plotW;
     cont._plotH = plotH;
     cont._padLeft = padLeft;
@@ -574,7 +563,14 @@ const AltimetriaModule = (() => {
     // Hover listeners
     hit.addEventListener('mousemove', (ev) => { if (!_arrastrePerfil) _onHover(cont, ev); });
     hit.addEventListener('mouseleave', () => { if (!_arrastrePerfil) _onLeave(cont); });
-    hit.addEventListener('click', (ev) => { if (_puntoHover) { _mostrarTooltip(cont, null); } });
+    // Clic sobre el perfil con el vehículo visible: abre el selector de
+    // vehículo/color (el carro sigue al cursor, por eso el clic se captura aquí).
+    hit.addEventListener('click', (ev) => {
+      if (_puntoHover) {
+        ev.stopPropagation();
+        TransportConfigModule.abrirSelector(ev.clientX, ev.clientY);
+      }
+    });
     // Arrastre con el ratón para desplazarse lateralmente por el perfil
     hit.addEventListener('mousedown', (ev) => {
       _arrastrePerfil = { cont, startX: ev.clientX, startZs: cont._zoomStart, startZe: cont._zoomEnd };
@@ -600,6 +596,19 @@ const AltimetriaModule = (() => {
       cont._zoomEnd = maxD;
       _construir(cont);
     });
+
+    // Indicador de posición (hover): el vehículo elegido por el usuario con su
+    // color, superpuesto al SVG (senderista en "Subir tu propia ruta"). Es un
+    // div HTML (máscara CSS) para colorear el ícono de forma exacta; como el
+    // vehículo sigue al cursor, el clic para abrir el selector se captura en
+    // el área de hover (abajo), por eso aquí no se interceptan eventos.
+    const hoverCircle = document.createElement('div');
+    hoverCircle.className = 'altimetria-hover-vehiculo';
+    hoverCircle.innerHTML = TransportConfigModule.divIconoHTML(22, 22, '');
+    hoverCircle.style.pointerEvents = 'none';
+    hoverCircle.style.display = 'none';
+    cont.appendChild(hoverCircle);
+    cont._hoverCircle = hoverCircle;
     } catch (err) {
       console.warn('[ALT] Error al dibujar el perfil:', err);
       if (!cont.querySelector('svg')) cont.innerHTML = _prevHTML;
@@ -727,14 +736,13 @@ const AltimetriaModule = (() => {
   /** Posiciona el carro del perfil en (mx, cy) y lo orienta paralelo a la
    *  trayectoria (mismo bearing que el carro del mapa). */
   function _posicionarCarroPerfil(cont, mx, cy, bearing) {
-    cont._hoverCircle.setAttribute('x', mx - _CAR_MEDIA);
-    cont._hoverCircle.setAttribute('y', cy - 22);
-    if (bearing != null && !isNaN(bearing)) {
-      cont._hoverCircle.setAttribute('transform', `rotate(${bearing - 90}, ${mx}, ${cy - 11})`);
-    } else {
-      cont._hoverCircle.removeAttribute('transform');
-    }
-    cont._hoverCircle.style.display = '';
+    const el = cont._hoverCircle;
+    if (!el) return;
+    el.style.left = (mx - _CAR_MEDIA) + 'px';
+    el.style.top = (cy - 22) + 'px';
+    const rot = (bearing != null && !isNaN(bearing)) ? `rotate(${bearing - 90}deg)` : '';
+    el.style.transform = rot;
+    el.style.display = '';
   }
 
   function _onHover(cont, ev) {
@@ -872,7 +880,7 @@ const AltimetriaModule = (() => {
 
   function _onLeave(cont) {
     cont._hoverLine.style.display = 'none';
-    cont._hoverCircle.style.display = 'none';
+    if (cont._hoverCircle) cont._hoverCircle.style.display = 'none';
     _puntoHover = null;
     if (_onLeaveMapa) _onLeaveMapa();
     const suffix = cont.id.includes('-panel') ? '-panel' : '';
@@ -1026,7 +1034,7 @@ const AltimetriaModule = (() => {
     const cont = document.getElementById('altimetria-chart') || document.getElementById('altimetria-chart-panel');
     if (!cont || !cont._hoverLine) return;
     cont._hoverLine.style.display = 'none';
-    cont._hoverCircle.style.display = 'none';
+    if (cont._hoverCircle) cont._hoverCircle.style.display = 'none';
   }
 
   function getInfoAt(distKm) {
@@ -1036,6 +1044,12 @@ const AltimetriaModule = (() => {
     while (ei < cont._puntos.length - 1 && cont._puntos[ei + 1].d < distKm) ei++;
     const alt = cont._puntos[ei] && cont._puntos[ei].e != null ? cont._puntos[ei].e : null;
     return { alt, dist: distKm };
+  }
+
+  // Al cambiar el vehículo o su color se re-dibujan los perfiles visibles
+  // (el carro del perfil usa el ícono y color elegidos).
+  if (typeof TransportConfigModule !== 'undefined' && TransportConfigModule.setOnCambio) {
+    TransportConfigModule.setOnCambio(() => renderizarVisibles());
   }
 
   return { setDatos, setSegmentosExtremos, setSegmentoActivo, agregarParada, renderizar, renderizarVisibles, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa, setOnHover, setOnLeave, setOnCentrarMapa, setOnEliminarParada, setExtremos, setRangoInicio, setRangoFin, quitarRangoInicio, quitarRangoFin, toggleFollow, setFollowActivo, isFollowActivo, mostrarHoverEn, ocultarHover, getInfoAt };

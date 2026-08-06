@@ -21,6 +21,10 @@
     // Clic en un puerto/aeropuerto del mapa: solo líneas hacia sus conexiones
     // (la ficha informativa se muestra al pulsar en la lista de Descubre).
     MapModule.setOnClicInfraGlobal((tipo, item) => {
+      if (tipo === 'departamento' || tipo === 'municipio') {
+        if (typeof mostrarCuadroInfra === 'function') mostrarCuadroInfra(tipo, item);
+        return;
+      }
       const conexiones = tipo === 'puerto' ? _conexionesDePuerto(item) : _conexionesDeAeropuerto(item);
       MapModule.dibujarConexiones(tipo, String(item.id), Number(item.latitud), Number(item.longitud), conexiones, tipo === 'puerto' ? '#2f7a6b' : '#4a6fa5');
     });
@@ -64,6 +68,8 @@
       ]);
       state.municipios = municipios;
       state.sitios = sitios;
+      // Catálogo de departamentos (tecla D) centrado en sus capitales.
+      if (typeof _construirDepartamentos === 'function') _construirDepartamentos();
 
       // Cargar sitios de frontera
       try {
@@ -154,6 +160,8 @@
     _syncFrontera();
     _syncPuertos();
     _syncAeropuertos();
+    _syncDepartamentos();
+    _syncMunicipios();
     document.addEventListener('keydown', (evt) => {
       if (evt.ctrlKey || evt.metaKey || evt.altKey) return;
       const esInput = evt.target && evt.target.tagName && /^(INPUT|TEXTAREA|SELECT)$/.test(evt.target.tagName);
@@ -168,6 +176,12 @@
       } else if (tecla === 'a') {
         _aeropuertosVisibles = !_aeropuertosVisibles;
         _syncAeropuertos();
+      } else if (tecla === 'd') {
+        _departamentosVisibles = !_departamentosVisibles;
+        _syncDepartamentos();
+      } else if (tecla === 'm') {
+        _municipiosVisibles = !_municipiosVisibles;
+        _syncMunicipios();
       } else if (tecla === 'k') {
         if (typeof RutaArchivoModule !== 'undefined' && typeof RutaArchivoModule.toggleK === 'function') {
           RutaArchivoModule.toggleK();

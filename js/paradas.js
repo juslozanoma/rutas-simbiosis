@@ -456,8 +456,9 @@
   }
 
   /** Centra el mapa y muestra la ficha informativa centrada de un
-   *  puerto/aeropuerto del catálogo (o de la ruta, si pertenece a ella), igual
-   *  que con los sitios turísticos. `tipo` es 'puerto' | 'aeropuerto'. */
+   *  puerto/aeropuerto del catálogo (o de la ruta, si pertenece a ella), de un
+   *  departamento (tecla D) o de un municipio (tecla M), igual que con los
+   *  sitios turísticos. `tipo` es 'puerto' | 'aeropuerto' | 'departamento' | 'municipio'. */
   function mostrarCuadroInfra(tipo, item) {
     if (!item) return;
     const esPuerto = tipo === 'puerto';
@@ -467,10 +468,34 @@
       else mostrarCuadroAeropuerto(item, prefijo);
       return;
     }
+    if (tipo === 'departamento' || tipo === 'municipio') {
+      const esDepto = tipo === 'departamento';
+      cerrarAltimetria();
+      const map = MapModule.getMap();
+      if (map) map.closePopup();
+      MapModule.centrarEn(Number(item.lat), Number(item.lon), esDepto ? 9 : 12);
+      TourismModule.mostrarCuadroInfo({
+        color: esDepto ? '#3f6f8f' : '#2b6a8f',
+        categoria: esDepto ? 'Departamento' : 'Municipio',
+        nombre: `${item.nombre} (${esDepto ? (item.ano || '') : (item.ano_fundacion || '')})`,
+        ciudad: '',
+        ubicacion: esDepto ? `Capital: ${item.capital}` : (item.departamento || ''),
+        descripcion: item.descripcion || item.descripción || '',
+        altura: esDepto ? '' : (item.altura || ''),
+        temperatura: esDepto ? '' : (item.temperatura_promedio || ''),
+        dist: '',
+        botones: [],
+        botonCabecera: {
+          etiqueta: 'Mostrar sitios turísticos',
+          accion: () => _mostrarSitiosTurísticos(item, tipo),
+        },
+      });
+      return;
+    }
     cerrarAltimetria();
     const map = MapModule.getMap();
     if (map) map.closePopup();
-    MapModule.centrarEn(item.latitud, item.longitud, 13);
+    MapModule.centrarEn(Number(item.latitud), Number(item.longitud), 13);
     TourismModule.mostrarCuadroInfo({
       color: esPuerto ? '#2f7a6b' : '#4a6fa5',
       nombre: item.nombre || '',
@@ -483,61 +508,146 @@
     });
   }
 
+  /** Muestra en el mapa (y deja lista en Descubre) los sitios turísticos de un
+   *  departamento o los que están a 30 km de un municipio. */
+  function _mostrarSitiosTurísticos(item, tipo) {
+    let lista;
+    if (tipo === 'departamento') {
+      // Coincide por departamento; también por la capital (p. ej. los sitios de
+      // San Andrés se registran con otra grafía del departamento).
+      lista = state.sitios.filter((s) => s.departamento === item.nombre || s.municipio === item.capital);
+    } else {
+      const centro = turf.point([Number(item.lon), Number(item.lat)]);
+      lista = state.sitios.filter((s) => {
+        if (s.lat == null || s.lon == null || isNaN(Number(s.lat)) || isNaN(Number(s.lon))) return false;
+        const d = turf.distance(centro, turf.point([Number(s.lon), Number(s.lat)]), { units: 'kilometers' });
+        return d <= 30;
+      });
+    }
+    state.sitiosFiltradosBase = lista;
+    state.sitiosFiltrados = lista;
+    state.modoVisibilidad = 'completa';
+    if (typeof renderizarSitios === 'function') renderizarSitios(lista);
+    // La pestaña Descubre queda disponible (en modos D/M se mantiene visible).
+    if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.hidden = false;
+    if (el.btnTabDescubre) el.btnTabDescubre.hidden = false;
+    if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
+    if (el.btnTabDescubre) el.btnTabDescubre.disabled = false;
+  }
+
   // -------------------------------------------------------------------
   // Listado del catálogo de puertos/aeropuertos en la pestaña Ruta (A/P)
   // -------------------------------------------------------------------
 
-  /** Rellena la lista de la pestaña Ruta con los puertos y/o aeropuertos del
-   *  catálogo cuyas teclas (P/A) estén activas. */
+  /** Coordenadas [lat, lon] de un ítem del catálogo (puertos/aeropuertos usan
+   *  latitud/longitud; departamentos y municipios usan lat/lon); null si no. */
+  function _coordsInfra(it) {
+    const lat = it.latitud != null ? it.latitud : it.lat;
+    const lon = it.longitud != null ? it.longitud : it.lon;
+    if (lat == null || lon == null || isNaN(Number(lat)) || isNaN(Number(lon))) return null;
+    return [Number(lat), Number(lon)];
+  }
+
+  /** Lista de ítems de un tipo de catálogo (puerto | aeropuerto | departamento | municipio). */
+  function _itemsInfra(tipo) {
+    if (tipo === 'puerto') return state.puertos;
+    if (tipo === 'aeropuerto') return state.aeropuertos;
+    if (tipo === 'departamento') return state.departamentos;
+    if (tipo === 'municipio') {
+      return _municipiosFiltroDepto
+        ? state.municipios.filter((m) => m.departamento === _municipiosFiltroDepto)
+        : [];
+    }
+    return [];
+  }
+
+  /** Título del listado del catálogo (p. ej. "Aeropuertos y puertos"). */
+  function _tituloInfra(tipos) {
+    const nombres = tipos.map((t) => ({
+      puerto: 'Puertos', aeropuerto: 'Aeropuertos', departamento: 'Departamentos', municipio: 'Municipios',
+    }[t] || ''));
+    return nombres.map((n, i) => (i > 0 ? n.toLowerCase() : n)).join(' y ');
+  }
+
+  /** Rellena la lista de la pestaña Ruta con los ítems del catálogo cuyas
+   *  teclas (P/A/D/M) estén activas. */
   function renderizarInfraListado() {
     const tipos = [];
     if (_puertosVisibles) tipos.push('puerto');
     if (_aeropuertosVisibles) tipos.push('aeropuerto');
+    if (_departamentosVisibles) tipos.push('departamento');
+    if (_municipiosVisibles) tipos.push('municipio');
     if (!tipos.length) return;
     if (!el.paradasLista) return;
+
+    // El filtro de departamento solo aplica al modo municipios (tecla M).
+    if (el.filtroMunicipiosDepto) el.filtroMunicipiosDepto.hidden = !_municipiosVisibles;
 
     el.paradasLista.innerHTML = '';
     let n = 0;
     tipos.forEach((tipo) => {
-      const lista = tipo === 'puerto' ? state.puertos : state.aeropuertos;
-      (lista || []).forEach((it) => {
-        if (it.latitud == null || it.longitud == null || isNaN(Number(it.latitud)) || isNaN(Number(it.longitud))) return;
+      const items = _itemsInfra(tipo);
+      (items || []).forEach((it) => {
+        if (!_coordsInfra(it)) return;
         el.paradasLista.appendChild(_crearTarjetaInfra(it, tipo, n));
         n++;
       });
     });
-    el.paradasContador.textContent = String(n);
-    if (el.paradasTitulo) {
-      el.paradasTitulo.textContent = tipos.length > 1 ? 'Aeropuertos y puertos' : (tipos[0] === 'puerto' ? 'Puertos' : 'Aeropuertos');
+    // Modo municipios sin departamento elegido: pista en vez de una lista vacía.
+    if (_municipiosVisibles && !_municipiosFiltroDepto && n === 0) {
+      const hint = Utils.crearElemento('<li class="paradas-vacio">Elige un departamento para ver sus municipios en el mapa y en la lista.</li>');
+      el.paradasLista.appendChild(hint);
     }
+    el.paradasContador.textContent = String(n);
+    if (el.paradasTitulo) el.paradasTitulo.textContent = _tituloInfra(tipos);
     if (el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = true;
     el.panelParadas.hidden = false;
   }
 
   function _crearTarjetaInfra(item, tipo, idx) {
     const esPuerto = tipo === 'puerto';
+    let sub = '';
+    let sufijo = '';
+    if (tipo === 'puerto' || tipo === 'aeropuerto') {
+      sub = item.ciudad || '';
+    } else if (tipo === 'departamento') {
+      sub = item.capital || '';
+      if (item.totalMunicipios != null) sufijo = ` (${item.totalMunicipios})`;
+    } else if (tipo === 'municipio') {
+      sub = [item.departamento, item.altura].filter(Boolean).join(' · ');
+    }
     const rio = esPuerto && item.rio ? `<span class="sitio-card__rio">${item.rio}</span>` : '';
     const li = Utils.crearElemento(`
       <li class="sitio-card" data-infra-id="${item.id}">
         <div class="sitio-card__top">
-          <span class="sitio-card__nombre"><span class="sitio-card__num">${idx + 1}.</span>&nbsp;${item.nombre}</span>
+          <span class="sitio-card__nombre"><span class="sitio-card__num">${idx + 1}.</span>&nbsp;${item.nombre}${sufijo}</span>
           ${rio}
         </div>
-        <p class="sitio-card__ciudad">${item.ciudad || ''}</p>
+        <p class="sitio-card__ciudad">${sub || ''}</p>
       </li>
     `);
     li.addEventListener('click', () => {
+      if (tipo === 'departamento' || tipo === 'municipio') {
+        mostrarCuadroInfra(tipo, item);
+        return;
+      }
       const conexiones = esPuerto ? _conexionesDePuerto(item) : _conexionesDeAeropuerto(item);
-      MapModule.dibujarConexiones(tipo, String(item.id), Number(item.latitud), Number(item.longitud), conexiones, esPuerto ? '#2f7a6b' : '#4a6fa5');
+      const coords = _coordsInfra(item);
+      MapModule.dibujarConexiones(tipo, String(item.id), coords[0], coords[1], conexiones, esPuerto ? '#2f7a6b' : '#4a6fa5');
       mostrarCuadroInfra(tipo, item);
     });
     return li;
   }
 
-  /** Restaura la pestaña Ruta al apagar el catálogo de puertos/aeropuertos. */
+  /** Restaura la pestaña Ruta al apagar el catálogo de puertos/aeropuertos
+   *  (y departamentos/municipios). */
   function _restaurarPanelRutaInfra() {
     if (el.paradasTitulo) el.paradasTitulo.textContent = 'Paradas';
     if (el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = false;
+    if (el.filtroMunicipiosDepto) {
+      el.filtroMunicipiosDepto.hidden = true;
+      el.filtroMunicipiosDepto.value = '';
+    }
     if (el.panelEscalas) el.panelEscalas.hidden = !el.panelEscalas.children.length;
     renderizarParadas();
   }
@@ -546,7 +656,7 @@
     sincronizarOrden();
     // Con el catálogo de puertos/aeropuertos (A/P) o la ruta desde archivo (K)
     // activos, la lista de la pestaña Ruta la ocupa otro contenido; no mezclar.
-    if (_puertosVisibles || _aeropuertosVisibles || _rutaArchivoActiva) return;
+    if (_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _rutaArchivoActiva) return;
 
     const items = state.orden.map((o) => {
       if (o.tipo === 'escala') {

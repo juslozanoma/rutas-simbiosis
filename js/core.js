@@ -43,6 +43,7 @@
     categoriasUnicas: [],
     aeropuertos: [],
     puertos: [],
+    departamentos: [],
     modoAereo: false,
     tramosAereo: null,
     modoFluvial: false,
@@ -99,6 +100,7 @@
     rowOrigen: document.getElementById('row-origen'),
     rowDestino: document.getElementById('row-destino'),
     paradasTitulo: document.getElementById('paradas-titulo'),
+    filtroMunicipiosDepto: document.getElementById('filtro-municipios-departamento'),
     btnAutoOrganizar: document.getElementById('btn-auto-organizar'),
     btnTabPanelRuta: document.getElementById('btn-tab-panel-ruta'),
     btnTabPanelRutaLabel: document.getElementById('btn-tab-panel-ruta-label'),
@@ -158,6 +160,13 @@
 
   let _puertosVisibles = false;
   let _aeropuertosVisibles = false;
+
+  // Departamentos del país centrados en sus capitales (tecla D) y municipios
+  // con filtro por departamento (tecla M): ocultos por defecto.
+
+  let _departamentosVisibles = false;
+  let _municipiosVisibles = false;
+  let _municipiosFiltroDepto = '';   // departamento activo del filtro de municipios
 
   // Ruta cargada desde archivo KML/GPX (tecla K): oculta el panel como los
   // aeropuertos/puertos mientras esté activa.
