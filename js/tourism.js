@@ -74,11 +74,11 @@ const TourismModule = (() => {
     const icono = MapModule.iconoSitio();
     const marker = L.marker([sitio.lat, sitio.lon], { icon: icono });
     const numero = etiqueta != null && String(etiqueta) !== '' ? String(etiqueta) : null;
-    marker.bindTooltip(numero || sitio.nombre, {
+    marker.bindTooltip(numero ? `${numero} · ${sitio.nombre}` : sitio.nombre, {
       permanent: true,
       direction: 'top',
       offset: [0, -22],
-      className: numero ? 'site-label site-label--num' : 'site-label',
+      className: 'site-label',
     });
 
     marker.__sitioId = sitio.id;

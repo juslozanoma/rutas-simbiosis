@@ -1008,16 +1008,19 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         lineCap: 'round',
         interactive: true,
       }).addTo(capaAerea);
+      let tooltipTxt = null;
       if (t.distanciaMetros || t.duracionSegundos) {
         const km = (t.distanciaMetros || 0) / 1000;
         const seg = t.duracionSegundos || 0;
         const h = Math.floor(seg / 3600);
         const min = Math.round((seg % 3600) / 60);
         const durStr = h > 0 ? `${h} h ${min} min` : `${min} min`;
-        linea.bindTooltip(`${estilo.iconoEmoji} ${km.toFixed(1)} km · ${durStr}`, { sticky: true, direction: 'top', className: 'altimetria-map-tooltip' });
+        tooltipTxt = `${estilo.iconoEmoji} ${km.toFixed(1)} km · ${durStr}`;
+        linea.bindTooltip(tooltipTxt, { sticky: true, direction: 'top', className: 'altimetria-map-tooltip' });
       }
 
-      // Ícono en la mitad de la trayectoria.
+      // Ícono en la mitad de la trayectoria. Es interactivo para que al pasar el
+      // cursor muestre el mismo tooltip de distancia y duración que la línea.
       const midIdx = Math.floor(coords.length / 2);
       const mid = coords[midIdx];
       const dest = coords[coords.length - 1] || mid;
@@ -1031,7 +1034,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         iconSize: [26, 26],
         iconAnchor: [13, 13],
       });
-      L.marker([Number(mid[1]), Number(mid[0])], { icon: icono, interactive: false, zIndexOffset: 1500 }).addTo(capaAerea);
+      const marcador = L.marker([Number(mid[1]), Number(mid[0])], { icon: icono, interactive: true, zIndexOffset: 1500 }).addTo(capaAerea);
+      if (tooltipTxt) {
+        marcador.bindTooltip(tooltipTxt, { sticky: true, direction: 'top', className: 'altimetria-map-tooltip' });
+      }
     });
   }
 
@@ -1040,7 +1046,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     _dibujarTramo(tramos, {
       color: '#4a6fa5',
       iconoEmoji: '✈',
-      iconoHtml: (bearing) => `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid #ffffff;box-shadow:0 1px 4px rgba(20,32,27,0.55);"><img src="public/airplane.svg" style="width:16px;height:16px;transform:rotate(${bearing - 90}deg);filter:brightness(0) saturate(100%) invert(40%) sepia(11%) saturate(716%) hue-rotate(118deg) brightness(94%) contrast(92%);"/></div>`,
+      iconoHtml: (bearing) => `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#ffffff;border:1px solid #ffffff;box-shadow:0 1px 4px rgba(20,32,27,0.55);"><img src="public/airplane.svg" style="width:16px;height:16px;transform:rotate(${bearing - 90}deg);filter:brightness(0) saturate(100%) invert(40%) sepia(11%) saturate(716%) hue-rotate(118deg) brightness(94%) contrast(92%);"/></div>`,
     });
   }
 

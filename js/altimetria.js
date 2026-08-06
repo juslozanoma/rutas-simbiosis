@@ -754,7 +754,12 @@ const AltimetriaModule = (() => {
     cont._hoverCircle.setAttribute('x', mx - _CAR_MEDIA);
     cont._hoverCircle.setAttribute('y', cy - 22);
     cont._hoverCircle.style.display = '';
-    _puntoHover = { lat: pt.coord[1], lon: pt.coord[0], dist: dist.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A' };
+    let bearing = 0;
+    if (pLo && pHi && pLo !== pHi && pLo.coord && pHi.coord) {
+      const b = turf.bearing(turf.point(pLo.coord), turf.point(pHi.coord));
+      if (!isNaN(b)) bearing = b;
+    }
+    _puntoHover = { lat: pt.coord[1], lon: pt.coord[0], dist: dist.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A', bearing };
     if (_onHoverMapa) _onHoverMapa(_puntoHover);
     if (_followActivo && _onCentrarMapa) { _onCentrarMapa(_puntoHover); }
     const suffix = cont.id.includes('-panel') ? '-panel' : '';
@@ -840,7 +845,12 @@ const AltimetriaModule = (() => {
     cont._hoverCircle.setAttribute('x', mx - _CAR_MEDIA);
     cont._hoverCircle.setAttribute('y', cy - 22);
     cont._hoverCircle.style.display = '';
-    _puntoHover = { lat: pt.coord[1], lon: pt.coord[0], dist: dist.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A' };
+    let bearing = 0;
+    if (pLo && pHi && pLo !== pHi && pLo.coord && pHi.coord) {
+      const b = turf.bearing(turf.point(pLo.coord), turf.point(pHi.coord));
+      if (!isNaN(b)) bearing = b;
+    }
+    _puntoHover = { lat: pt.coord[1], lon: pt.coord[0], dist: dist.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A', bearing };
     if (_onHoverMapa) _onHoverMapa(_puntoHover);
     if (_followActivo && _onCentrarMapa) { _onCentrarMapa(_puntoHover); }
     const suffix = cont.id.includes('-panel') ? '-panel' : '';

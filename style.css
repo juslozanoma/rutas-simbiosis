@@ -308,6 +308,15 @@ input, select{ font-family: inherit; }
 .icon-btn--aereo{ background: var(--teal-600); border-color: var(--teal-600); }
 .icon-btn--aereo:hover:not(:disabled){ background: var(--teal-500); border-color: var(--teal-500); }
 .icon-btn--aereo img{ filter: brightness(0) invert(1); }
+/* Sin origen/destino el avión queda inhabilitado, pero con aspecto propio:
+   fondo gris y avión visible, para no confundirlo con el botón de calcular. */
+.icon-btn.icon-btn--aereo:disabled{
+  background: #edece6;
+  border-color: #d9d7ce;
+  opacity: 1;
+  cursor: not-allowed;
+}
+.icon-btn.icon-btn--aereo:disabled img{ filter: invert(45%); opacity: 0.8; }
 .icon-btn--active{ background: var(--teal-500); border-color: var(--teal-500); }
 .icon-btn--active:hover:not(:disabled){ background: var(--teal-600); border-color: var(--teal-600); }
 .icon-btn--active img{ filter: brightness(0) invert(1) !important; }
