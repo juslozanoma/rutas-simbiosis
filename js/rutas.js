@@ -649,23 +649,31 @@
     const hub = pares.length > 1 ? pares[0].b : null;
 
     ponerEnCargaRuta(true, true);
-    let rutaCarro1, rutaCarro2;
-    try {
-      [rutaCarro1, rutaCarro2] = await Promise.all([
-        RoutingModule.calcularRuta(state.origen, { lat: po.latitud, lon: po.longitud }, 'driving'),
-        RoutingModule.calcularRuta({ lat: pd.latitud, lon: pd.longitud }, state.destino, 'driving'),
-      ]);
-    } catch (err) {
-      _mostrarNotificacion('No se pudo enlazar el puerto con la carretera más cercana.');
-      ponerEnCargaRuta(false);
-      return;
-    }
+    // Carretera origen→puerto y puerto→destino. En zonas sin carreteras
+    // (p. ej. la Amazonía) OSRM falla: se completa con una línea recta de
+    // acceso para que la ruta fluvial siempre se muestre.
+    const _rutaCarroSegura = async (a, b) => {
+      try {
+        const r = await RoutingModule.calcularRuta(a, b, 'driving');
+        return (r && r.geojson && r.geojson.geometry.coordinates.length >= 2) ? r : null;
+      } catch (err) {
+        return null;
+      }
+    };
+    const [rutaCarro1, rutaCarro2] = await Promise.all([
+      _rutaCarroSegura(state.origen, { lat: po.latitud, lon: po.longitud }),
+      _rutaCarroSegura({ lat: pd.latitud, lon: pd.longitud }, state.destino),
+    ]);
 
     try {
       // Carretera origen→puerto y puerto→destino, completando la carretera de
       // acceso al puerto si OSRM no la dibujó (el puerto está a la orilla).
-      const coordsCarro1 = _unirPuertoACarretera(rutaCarro1.geojson.geometry.coordinates, po, 'final');
-      const coordsCarro2 = _unirPuertoACarretera(rutaCarro2.geojson.geometry.coordinates, pd, 'inicio');
+      const coordsCarro1 = rutaCarro1
+        ? _unirPuertoACarretera(rutaCarro1.geojson.geometry.coordinates, po, 'final')
+        : [[state.origen.lon, state.origen.lat], [po.longitud, po.latitud]];
+      const coordsCarro2 = rutaCarro2
+        ? _unirPuertoACarretera(rutaCarro2.geojson.geometry.coordinates, pd, 'inicio')
+        : [[pd.longitud, pd.latitud], [state.destino.lon, state.destino.lat]];
       const distCarro1 = turf.length(turf.lineString(coordsCarro1), { units: 'kilometers' }) * 1000;
       const distCarro2 = turf.length(turf.lineString(coordsCarro2), { units: 'kilometers' }) * 1000;
 
@@ -693,9 +701,11 @@
         geometry: { type: 'MultiLineString', coordinates: [coordsCarro1, coordsCarro2] },
       };
 
-      const elevacion = [...(rutaCarro1.elevacion || []), ...(rutaCarro2.elevacion || [])];
+      const elevacion = [...(rutaCarro1 ? rutaCarro1.elevacion || [] : []), ...(rutaCarro2 ? rutaCarro2.elevacion || [] : [])];
       const totalDist = distCarro1 + distRio + distCarro2;
-      const totalDur = rutaCarro1.duracionSegundos + durRio + rutaCarro2.duracionSegundos;
+      const durCarro1 = rutaCarro1 ? rutaCarro1.duracionSegundos : (distCarro1 / 1000) / 40 * 3600;
+      const durCarro2 = rutaCarro2 ? rutaCarro2.duracionSegundos : (distCarro2 / 1000) / 40 * 3600;
+      const totalDur = durCarro1 + durRio + durCarro2;
       // Kilometraje del perfil: solo de carretera (sin trayectos por río).
       const totalKmPerfil = (distCarro1 + distCarro2) / 1000;
 

@@ -350,10 +350,7 @@
     if (guardar) guardar.addEventListener('click', guardarNuevoPuerto);
     const cancelar = document.getElementById('np-cancelar');
     if (cancelar) cancelar.addEventListener('click', cerrarDialogoNuevoPuerto);
-    const dlg = document.getElementById('panel-nuevo-puerto');
-    if (dlg) {
-      dlg.addEventListener('click', (e) => { if (e.target === dlg) cerrarDialogoNuevoPuerto(); });
-    }
+    // El diálogo solo se cierra con Guardar o Cancelar (no al hacer clic fuera).
   }
 
   // -------------------------------------------------------------------
@@ -562,10 +559,11 @@
       <h3 class="dialog__title">Editar ${_etiquetaTipo(tipo)}</h3>`;
     campos.forEach((c, i) => {
       const valor = _escHtml(c.value);
+      const attrs = 'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"';
       if (c.textarea) {
-        html += `<label class="nuevo-puerto__label">${c.label}<textarea class="nuevo-puerto__input" data-idx="${i}" rows="3">${valor}</textarea></label>`;
+        html += `<label class="nuevo-puerto__label">${c.label}<textarea class="nuevo-puerto__input" data-idx="${i}" rows="3" ${attrs}>${valor}</textarea></label>`;
       } else {
-        html += `<label class="nuevo-puerto__label">${c.label}<input class="nuevo-puerto__input" data-idx="${i}" value="${valor}"></label>`;
+        html += `<label class="nuevo-puerto__label">${c.label}<input type="search" class="nuevo-puerto__input" data-idx="${i}" value="${valor}" ${attrs}></label>`;
       }
     });
     html += `<p class="dialog__error" hidden id="catalogo-edit-error"></p>
@@ -591,7 +589,6 @@
       _mostrarNotificacion('Guardado: ' + (item.nombre || ''));
     });
     overlay.querySelector('.dialog').addEventListener('click', (e) => e.stopPropagation());
-    overlay.addEventListener('click', () => overlay.querySelector('#catalogo-edit-cancel').click());
   }
 
   // -------------------------------------------------------------------
