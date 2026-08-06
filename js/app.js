@@ -658,6 +658,11 @@
     if (btn) btn.addEventListener('click', reiniciarDesdeCero);
   }
 
+  function initTour() {
+    const btn = document.getElementById('btn-iniciar-tour');
+    if (btn) btn.addEventListener('click', () => { if (typeof _toggleTour === 'function') _toggleTour(); });
+  }
+
   // Recarga automática SOLO cuando el servidor lo anuncia (server.js), y ese
   // servidor solo avisa cuando cambian .html o .js. No recarga al guardar
   // puertos (JSON), ni por cambios de CSS/SVG.
@@ -674,6 +679,7 @@
 
   document.addEventListener('DOMContentLoaded', initNuevoPuerto);
   document.addEventListener('DOMContentLoaded', initReiniciar);
+  document.addEventListener('DOMContentLoaded', initTour);
   document.addEventListener('DOMContentLoaded', initRecargaPorServidor);
 
   document.addEventListener('DOMContentLoaded', init);

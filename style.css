@@ -133,7 +133,7 @@ input, select{ font-family: inherit; }
    su texto, tras los cuadros de origen/destino) y en móvil (flotante, centrado
    entre la fila del destino y la barra de pestañas inferior, ver media query).
    Blanco con texto y borde grises; abre el diálogo del atajo K. */
-.btn-subir-ruta-propia{
+.btn-subir-ruta-propia, .btn-iniciar-tour{
   display: flex;
   width: auto;
   align-items: center;
@@ -151,9 +151,64 @@ input, select{ font-family: inherit; }
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
-.btn-subir-ruta-propia:hover{ background: var(--bg-subtle); border-color: var(--text-muted); color: var(--text-soft); }
-.btn-subir-ruta-propia:active{ transform: translateY(1px); }
-.btn-subir-ruta-propia[hidden]{ display: none; }
+.btn-subir-ruta-propia:hover, .btn-iniciar-tour:hover{ background: var(--bg-subtle); border-color: var(--text-muted); color: var(--text-soft); }
+.btn-subir-ruta-propia:active, .btn-iniciar-tour:active{ transform: translateY(1px); }
+.btn-subir-ruta-propia[hidden], .btn-iniciar-tour[hidden]{ display: none; }
+/* Iniciar tour: estado activo (tour en curso). */
+.btn-iniciar-tour[aria-pressed="true"]{
+  background: var(--teal-50);
+  border-color: var(--teal-500);
+  color: var(--teal-600);
+}
+/* Los dos botones (Subir tu propia ruta / Iniciar tour) en la misma línea. */
+.btn-acciones-ruta{
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 10px auto 0;
+  max-width: 480px;
+}
+.btn-acciones-ruta > button{ flex: 1; margin: 0; min-width: 0; }
+/* Con el tour activo se ocultan los cuadros de origen/destino y "Subir tu
+   propia ruta"; el panel del tour ocupa su lugar. */
+#app[data-tour-activo="true"] #panel-locate{ display: none; }
+#app[data-tour-activo="true"] #btn-subir-ruta-propia{ display: none; }
+
+/* Panel del tour: combo de destino + lista de destinos elegidos. */
+.panel-tour{ padding: 4px 0 8px; }
+.panel-tour[hidden]{ display: none; }
+.tour-destinos-lista{
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.tour-destino-item{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  border: 1px solid var(--line-300);
+}
+.tour-destino-item__info{ display: flex; flex-direction: column; min-width: 0; }
+.tour-destino-item__nombre{ font-size: 0.8rem; font-weight: 600; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tour-destino-item__meta{ font-size: 0.68rem; color: var(--text-muted); }
+.tour-destino-item__count{ margin-left: auto; flex-shrink: 0; font-size: 0.72rem; font-weight: 700; color: var(--teal-600); white-space: nowrap; }
+.tour-destino-item__btn{
+  flex-shrink: 0;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--line-300);
+  background: #ffffff;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.tour-destino-item__btn:hover{ background: #fdf0f0; color: #b23b2e; border-color: #e6b8b3; }
 #app[data-ruta-archivo="true"] .btn-subir-ruta-propia,
 #app[data-infra-activa="true"] .btn-subir-ruta-propia,
 #app[data-ruta-lista="true"] .btn-subir-ruta-propia{ display: none; }
@@ -1412,6 +1467,7 @@ input, select{ font-family: inherit; }
 .tab-icon--colombia{ -webkit-mask-image: url('public/colombia.svg'); mask-image: url('public/colombia.svg'); }
 .tab-icon--bike{ -webkit-mask-image: url('public/transport/bike.svg'); mask-image: url('public/transport/bike.svg'); }
 .tab-icon--hiking{ -webkit-mask-image: url('public/transport/hiking.svg'); mask-image: url('public/transport/hiking.svg'); }
+.tab-icon--tour{ -webkit-mask-image: url('public/tour.svg'); mask-image: url('public/tour.svg'); }
 .panel-tab--active .tab-icon,
 .mobile-tab-btn--active .tab-icon{ background-color: var(--teal-500); }
 

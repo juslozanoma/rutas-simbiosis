@@ -226,6 +226,8 @@
   /** Alterna un catálogo (P/A/D/M/C) manteniéndolos excluyentes: activar uno
    *  apaga los demás; activar el que ya está activo lo apaga. */
   function _toggleCatalogo(tipo) {
+    // El tour y los catálogos son excluyentes: activar uno apaga el otro.
+    if (_tourActivo && typeof _desactivarTour === 'function') _desactivarTour();
     let activando = false;
     if (tipo === 'puertos') activando = !_puertosVisibles;
     else if (tipo === 'aeropuertos') activando = !_aeropuertosVisibles;

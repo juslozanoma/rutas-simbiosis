@@ -45,6 +45,7 @@
     puertos: [],
     departamentos: [],
     categorias: [],
+    tourDestinos: [],
     modoAereo: false,
     tramosAereo: null,
     modoFluvial: false,
@@ -115,6 +116,13 @@
     panelSitios: document.getElementById('panel-sites'),
     btnMostrarSitiosCercanos: document.getElementById('btn-mostrar-sitios'),
     btnSubirRutaPropia: document.getElementById('btn-subir-ruta-propia'),
+    btnIniciarTour: document.getElementById('btn-iniciar-tour'),
+    panelTour: document.getElementById('panel-tour'),
+    tourInput: document.getElementById('tour-input'),
+    tourList: document.getElementById('tour-list'),
+    tourDestinosLista: document.getElementById('tour-destinos-lista'),
+    icoTabRuta: document.getElementById('ico-tab-ruta'),
+    icoTabRutaDesktop: document.getElementById('ico-tab-ruta-desktop'),
     btnCerrarRutasArchivo: document.getElementById('btn-cerrar-rutas-archivo'),
     btnCerrarRutasArchivoDesktop: document.getElementById('btn-cerrar-rutas-archivo-desktop'),
     statDistanciaMobile: document.getElementById('stat-distancia-mobile'),
@@ -170,6 +178,7 @@
   let _municipiosFiltroDepto = '';   // departamento activo del filtro de municipios
   let _categoriasVisibles = false;   // tecla C: sitios por categoría (una a la vez)
   let _categoriasFiltro = '';        // categoría activa del filtro de categorías
+  let _tourActivo = false;           // modo tour (seleccionar destinos sin ruta)
 
   // Ruta cargada desde archivo KML/GPX (tecla K): oculta el panel como los
   // aeropuertos/puertos mientras esté activa.

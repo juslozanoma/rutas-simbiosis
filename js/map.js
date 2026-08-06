@@ -102,7 +102,8 @@ const MapModule = (() => {
     map.getPane('popupPane').style.zIndex = 900;
 
     clusterSitios = L.markerClusterGroup({
-      maxClusterRadius: 45,
+      // maxClusterRadius 0: no agrupar, se muestran los iconos individuales.
+      maxClusterRadius: 0,
       showCoverageOnHover: false,
       clusterPane: 'clusterPane',
       iconCreateFunction: (cluster) => {

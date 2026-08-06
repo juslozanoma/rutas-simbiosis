@@ -86,7 +86,7 @@
 
     <!-- Pestañas del panel (escritorio) -->
     <div class="panel-tab-bar" id="panel-tab-bar">
-      <button type="button" id="btn-tab-panel-ruta" class="panel-tab panel-tab--active"><span id="btn-tab-panel-ruta-label">Ruta</span> <span class="tab-icon tab-icon--sign-post tab-icon--16" aria-hidden="true"></span></button>
+      <button type="button" id="btn-tab-panel-ruta" class="panel-tab panel-tab--active"><span id="btn-tab-panel-ruta-label">Ruta</span> <span class="tab-icon tab-icon--sign-post tab-icon--16" aria-hidden="true" id="ico-tab-ruta-desktop"></span></button>
       <button type="button" id="btn-anadir-ruta-desktop" class="panel-tab panel-tab--anadir" title="Añadir una nueva ruta" aria-label="Añadir una nueva ruta" hidden>
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
       </button>
@@ -137,7 +137,20 @@
       <button type="button" id="btn-mostrar-sitios" class="btn-mostrar-sitios-cercanos" disabled hidden>Mostrar sitios turísticos cercanos</button>
     </section>
 
-    <button type="button" id="btn-subir-ruta-propia" class="btn-subir-ruta-propia" title="Subir tu propia ruta (KML o GPX)" aria-label="Subir tu propia ruta (KML o GPX)">Subir tu propia ruta</button>
+    <!-- Tour: seleccionar destinos sin ruta, solo el listado en Descubre -->
+    <section class="panel-tour" id="panel-tour" hidden>
+      <div class="combo" data-combo="tour">
+        <input type="search" class="combo__trigger" id="tour-input" placeholder="Seleccionar un destino" autocomplete="one-time-code" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Seleccionar un destino">
+        <svg class="combo__chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+        <ul class="combo__list" id="tour-list" role="listbox" hidden></ul>
+      </div>
+      <ul class="tour-destinos-lista" id="tour-destinos-lista"></ul>
+    </section>
+
+    <div class="btn-acciones-ruta">
+      <button type="button" id="btn-subir-ruta-propia" class="btn-subir-ruta-propia" title="Subir tu propia ruta (KML o GPX)" aria-label="Subir tu propia ruta (KML o GPX)">Subir tu propia ruta</button>
+      <button type="button" id="btn-iniciar-tour" class="btn-iniciar-tour" title="Iniciar tour por destinos" aria-label="Iniciar tour por destinos" aria-pressed="false">Iniciar tour</button>
+    </div>
 
     <div id="loading-ruta" class="loading-ruta" hidden>
       <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="loader">
@@ -287,7 +300,7 @@
     <button type="button" id="btn-tab-altimetria" class="mobile-tab-btn mobile-tab-btn--altimetria" title="Perfil de elevación" aria-label="Perfil de elevación">
       <span class="tab-icon tab-icon--bike tab-icon--26" id="ico-tab-altimetria" aria-hidden="true"></span>
     </button>
-    <button type="button" class="mobile-tab-btn mobile-tab-btn--active" data-tab="ruta" id="btn-tab-ruta"><span id="btn-tab-ruta-label">Rutas</span> <span class="tab-icon tab-icon--sign-post tab-icon--20" aria-hidden="true"></span>
+    <button type="button" class="mobile-tab-btn mobile-tab-btn--active" data-tab="ruta" id="btn-tab-ruta"><span id="btn-tab-ruta-label">Rutas</span> <span class="tab-icon tab-icon--sign-post tab-icon--20" aria-hidden="true" id="ico-tab-ruta"></span>
     </button>
     <button type="button" id="btn-anadir-ruta-tab" class="mobile-tab-btn mobile-tab-btn--anadir" title="Añadir una nueva ruta" aria-label="Añadir una nueva ruta" hidden>
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -382,6 +395,7 @@
 <script src="js/paradas.js"></script>
 <script src="js/altimetriaApp.js"></script>
 <script src="js/rutaArchivo.js"></script>
+<script src="js/tour.js"></script>
 <script src="js/persistenciaJson.js"></script>
 <script src="js/app.js"></script>
 <!-- <script src="https://cdn.jsdelivr.net/npm/eruda"></script>

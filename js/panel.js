@@ -19,12 +19,15 @@
       el.loadingSitios.hidden = true;
       el.panelSitios.hidden = true;
       el.panelSitios.scrollTop = 0;
-      el.panelLocate.hidden = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _rutaArchivoActiva;
+      el.panelLocate.hidden = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _rutaArchivoActiva || _tourActivo;
+      if (el.panelTour) el.panelTour.hidden = !_tourActivo;
       el.panelEscalas.hidden = true;
       // Con un catálogo (P/A/D/M/C) activo, al volver a Ruta se repone su
       // listado (el cambio a Descubre oculta el panel de paradas).
       const infraActiva = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles;
-      if (infraActiva) {
+      if (_tourActivo) {
+        el.panelParadas.hidden = true;
+      } else if (infraActiva) {
         if (typeof renderizarInfraListado === 'function') renderizarInfraListado();
       } else if (state.rutaActual && !(_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _rutaArchivoActiva)) {
         el.panelParadas.hidden = false;
