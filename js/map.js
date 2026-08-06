@@ -178,7 +178,18 @@ const MapModule = (() => {
   function iconoOrigen(color) { return _pinDivIcon('A', color); }
   function iconoDestino(color) { return _pinDivIcon('Z', color); }
 
-  function iconoSitio() {
+  /** Ícono de sitio turístico: con número (el de su listado) usa el pin
+   *  numerado turquesa; sin número usa el pin con el SVG de encrucijada. */
+  function iconoSitio(numero) {
+    if (numero != null && String(numero) !== '') {
+      return L.divIcon({
+        html: `<div class="parada-pin parada-pin--sitio parada-pin--numero">${numero}</div>`,
+        className: '',
+        iconSize: [25, 25],
+        iconAnchor: [12.5, 12.5],
+        popupAnchor: [0, -15],
+      });
+    }
     return L.divIcon({
       html: `<div class="sitio-pin">
         <svg viewBox="0 0 32 32" width="13" height="13" fill="#ffffff"><path d="M29.83,17.45l-2-3A1,1,0,0,0,27,14H17V12h8a1,1,0,0,0,1-1V5a1,1,0,0,0-1-1H17V3a1,1,0,0,0-2,0V4H6a1,1,0,0,0-.71.29l-3,3a1,1,0,0,0,0,1.41l3,3A1,1,0,0,0,6,12h9v2H7a1,1,0,0,0-1,1v6a1,1,0,0,0,1,1h8v6H11a1,1,0,0,0,0,2H21a1,1,0,0,0,0-2H17V22H27a1,1,0,0,0,.83-.45l2-3A1,1,0,0,0,29.83,17.45Z"/></svg>
@@ -1058,7 +1069,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         color: estilo.color,
         weight: 3,
         opacity: 0.9,
-        dashArray: '8 8',
+        dashArray: estilo.dashArray != null ? estilo.dashArray : '8 8',
         lineCap: 'round',
         interactive: true,
       }).addTo(capaAerea);
@@ -1108,8 +1119,9 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   function dibujarTramoFluvial(tramos) {
     _dibujarTramo(tramos, {
       color: '#2f7a6b',
+      dashArray: null, // línea continua: el trayecto del río
       iconoEmoji: '🚢',
-      iconoHtml: () => `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1px solid #ffffff;box-shadow:0 1px 4px rgba(20,32,27,0.55);font-size:13px;">🚢</div>`,
+      iconoHtml: () => `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#ffffff;border:1px solid #ffffff;box-shadow:0 1px 4px rgba(20,32,27,0.55);"><img src="public/transport/boat.svg" alt="" style="width:16px;height:16px;filter:brightness(0) saturate(100%) invert(40%) sepia(11%) saturate(716%) hue-rotate(118deg) brightness(94%) contrast(92%);"/></div>`,
     });
   }
 
@@ -1459,7 +1471,6 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       const capas = [
         _capaRutaVisible, _capaRutaHover, _capaFlechas, capaRutaPreview,
         capaParadas, capaEscalas, capaPuntosDesvio, capaAlertas, capaAerea,
-        capaFrontera,
         ...Object.keys(_gruposRutaArchivo).map((id) => _gruposRutaArchivo[id].grupo),
       ];
       if (incluirSitios) capas.push(clusterSitios);
@@ -1523,9 +1534,9 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   function setMarcadoresFrontera(sitios) {
     if (!capaFrontera) return;
     capaFrontera.clearLayers();
-    sitios.forEach((s) => {
+    sitios.forEach((s, i) => {
       if (s.lat == null || s.lon == null || isNaN(Number(s.lat)) || isNaN(Number(s.lon))) return;
-      const marker = L.marker([s.lat, s.lon], { icon: iconoSitio(), zIndexOffset: 1000 });
+      const marker = L.marker([s.lat, s.lon], { icon: iconoSitio(i + 1), zIndexOffset: 1000 });
       marker.bindTooltip(s.nombre, { direction: 'top', offset: [0, -20], className: 'site-label' });
       marker.on('click', () => centrarEn(s.lat, s.lon));
       marker.on('contextmenu', (ev) => {

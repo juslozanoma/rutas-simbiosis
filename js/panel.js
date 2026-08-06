@@ -11,7 +11,7 @@
     // activos, la pestaña Descubre queda oculta y los cuadros de búsqueda no
     // deben reaparecer al volver a Ruta. En departamentos (D) y municipios (M)
     // la pestaña Descubre sigue disponible.
-    if (tab === 'descubre' && (_puertosVisibles || _aeropuertosVisibles || _rutaArchivoActiva)) return;
+    if (tab === 'descubre' && (_puertosVisibles || _aeropuertosVisibles || _fronteraVisibles || _rutaArchivoActiva)) return;
     document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('panel-tab--active'));
     if (tab === 'ruta') {
       el.btnTabPanelRuta.classList.add('panel-tab--active');
@@ -19,20 +19,20 @@
       el.loadingSitios.hidden = true;
       el.panelSitios.hidden = true;
       el.panelSitios.scrollTop = 0;
-      el.panelLocate.hidden = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _rutaArchivoActiva || _tourActivo;
+      el.panelLocate.hidden = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles || _rutaArchivoActiva || _tourActivo;
       if (el.panelTour) el.panelTour.hidden = !_tourActivo;
       el.panelEscalas.hidden = true;
-      // Con un catálogo (P/A/D/M/C) activo, al volver a Ruta se repone su
+      // Con un catálogo (P/A/D/M/C/F) activo, al volver a Ruta se repone su
       // listado (el cambio a Descubre oculta el panel de paradas).
-      const infraActiva = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles;
+      const infraActiva = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles;
       if (_tourActivo) {
         el.panelParadas.hidden = true;
       } else if (infraActiva) {
         if (typeof renderizarInfraListado === 'function') renderizarInfraListado();
-      } else if (state.rutaActual && !(_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _rutaArchivoActiva)) {
+      } else if (state.rutaActual && !(_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles || _rutaArchivoActiva)) {
         el.panelParadas.hidden = false;
       }
-      const ocultarTestigo = !state.rutaActual || _soMostrarSitiosVisto || (_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _rutaArchivoActiva);
+      const ocultarTestigo = !state.rutaActual || _soMostrarSitiosVisto || (_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles || _rutaArchivoActiva);
       el.btnMostrarSitiosCercanos.hidden = ocultarTestigo;
       el.btnMostrarSitiosCercanos.disabled = ocultarTestigo;
       sincronizarModoRutaMovil();
@@ -88,7 +88,7 @@
 
   function toggleMobileTab(tab) {
     if (tab === 'descubre' && el.btnTabDescubre && el.btnTabDescubre.disabled) return;
-    if (tab === 'descubre' && (_puertosVisibles || _aeropuertosVisibles || _rutaArchivoActiva)) return;
+    if (tab === 'descubre' && (_puertosVisibles || _aeropuertosVisibles || _fronteraVisibles || _rutaArchivoActiva)) return;
     const currentTab = el.appRoot.getAttribute('data-mobile-tab');
     const isCollapsed = el.appRoot.getAttribute('data-mobile-panel') === 'collapsed';
     if (currentTab === tab && !isCollapsed) {

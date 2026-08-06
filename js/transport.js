@@ -24,12 +24,14 @@ const TransportConfigModule = (() => {
     { file: 'people-in-car-side-view-svgrepo-com.svg', path: 'public/transport/people-in-car-side-view-svgrepo-com.svg', nombre: 'Carro familiar' },
     { file: 'suv-transportation-car-suv-svgrepo-com.svg', path: 'public/transport/suv-transportation-car-suv-svgrepo-com.svg', nombre: 'SUV' },
     { file: 'pickup-svgrepo-com.svg', path: 'public/transport/pickup-svgrepo-com.svg', nombre: 'Camioneta' },
-    { file: 'bus.svg', path: 'public/transport/bus.svg', nombre: 'Bus' },
     { file: 'motorcycle.svg', path: 'public/transport/motorcycle.svg', nombre: 'Moto' },
     { file: 'motorcycle2.svg', path: 'public/transport/motorcycle2.svg', nombre: 'Motocicleta' },
     { file: 'motorcycle3.svg', path: 'public/transport/motorcycle3.svg', nombre: 'Moto clásica' },
     { file: 'scooter-transport-svgrepo-com.svg', path: 'public/transport/scooter-transport-svgrepo-com.svg', nombre: 'Scooter' },
     { file: 'bike.svg', path: 'public/transport/bike.svg', nombre: 'Bicicleta' },
+    { file: 'boat.svg', path: 'public/transport/boat.svg', nombre: 'Barco' },
+    { file: 'airplane.svg', path: 'public/transport/airplane.svg', nombre: 'Avión' },
+    { file: 'hiking.svg', path: 'public/transport/hiking.svg', nombre: 'Senderista' },
     { file: 'helicopter.svg', path: 'public/transport/helicopter.svg', nombre: 'Helicóptero' },
   ];
 
@@ -45,6 +47,10 @@ const TransportConfigModule = (() => {
     { hex: '#16a085', nombre: 'Turquesa' },
     { hex: '#d05278', nombre: 'Rosa' },
     { hex: '#6b7280', nombre: 'Gris' },
+    { hex: '#8b5e3c', nombre: 'Marrón' },
+    { hex: '#00bcd4', nombre: 'Cian' },
+    { hex: '#9e9d24', nombre: 'Lima' },
+    { hex: '#d4a017', nombre: 'Oro' },
   ];
 
   let _icono = (() => { try { return localStorage.getItem(_KEY_ICONO) || 'car.svg'; } catch (e) { return 'car.svg'; } })();

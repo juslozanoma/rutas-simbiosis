@@ -24,6 +24,7 @@
     _sitiosTour = [];
     _limpiarSitiosTour();
     _crearComboTour();
+    _crearCerrarTour();
     if (el.panelLocate) el.panelLocate.hidden = true;
     if (el.panelTour) el.panelTour.hidden = false;
     if (el.btnIniciarTour) el.btnIniciarTour.setAttribute('aria-pressed', 'true');
@@ -40,14 +41,41 @@
     state.tourDestinos = [];
     _sitiosTour = [];
     _limpiarSitiosTour();
+    _quitarCerrarTour();
     if (_comboTour && typeof _comboTour.limpiarTexto === 'function') _comboTour.limpiarTexto();
     if (el.tourInput) el.tourInput.placeholder = 'Seleccionar un destino';
     if (el.panelTour) el.panelTour.hidden = true;
-    if (el.panelLocate) el.panelLocate.hidden = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _rutaArchivoActiva;
+    if (el.panelLocate) el.panelLocate.hidden = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles || _rutaArchivoActiva;
     if (el.btnIniciarTour) el.btnIniciarTour.setAttribute('aria-pressed', 'false');
     if (el.tourDestinosLista) el.tourDestinosLista.innerHTML = '';
     _restaurarEtiquetasTour();
     renderizarParadas();
+  }
+
+  /** Pestaña X para cerrar el tour, a la derecha de Descubre (solo durante el
+   *  tour; se elimina al terminar). */
+  function _crearCerrarTour() {
+    const crear = (id, clase, ancho, descubreBtn) => {
+      if (document.getElementById(id) || !descubreBtn) return;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.id = id;
+      b.className = clase;
+      b.title = 'Cerrar el tour';
+      b.setAttribute('aria-label', 'Cerrar el tour');
+      b.innerHTML = `<svg viewBox="0 0 24 24" width="${ancho}" height="${ancho}" fill="none" stroke="#d64545" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
+      b.addEventListener('click', () => _desactivarTour());
+      descubreBtn.parentNode.insertBefore(b, descubreBtn.nextSibling);
+    };
+    crear('btn-cerrar-tour-desktop', 'panel-tab panel-tab--cerrar-tour', 15, document.getElementById('btn-tab-panel-descubre'));
+    crear('btn-cerrar-tour', 'mobile-tab-btn mobile-tab-btn--cerrar-tour', 18, document.getElementById('btn-tab-descubre'));
+  }
+
+  function _quitarCerrarTour() {
+    ['btn-cerrar-tour-desktop', 'btn-cerrar-tour'].forEach((id) => {
+      const b = document.getElementById(id);
+      if (b && b.parentNode) b.parentNode.removeChild(b);
+    });
   }
 
   function _aplicarEtiquetasTour() {

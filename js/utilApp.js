@@ -8,11 +8,13 @@
 
   function _syncFrontera() {
     if (typeof MapModule === 'undefined' || !MapModule.setMarcadoresFrontera) return;
+    if (el.appRoot) el.appRoot.setAttribute('data-frontera-activos', _fronteraVisibles ? 'true' : 'false');
     if (_fronteraVisibles) {
       MapModule.setMarcadoresFrontera(state.sitios.filter((s) => s.frontera));
     } else {
       MapModule.limpiarSitiosFrontera();
     }
+    _syncModoInfra();
   }
 
 
@@ -234,36 +236,41 @@
     else if (tipo === 'departamentos') activando = !_departamentosVisibles;
     else if (tipo === 'municipios') activando = !_municipiosVisibles;
     else if (tipo === 'categorias') activando = !_categoriasVisibles;
+    else if (tipo === 'frontera') activando = !_fronteraVisibles;
     _puertosVisibles = false;
     _aeropuertosVisibles = false;
     _departamentosVisibles = false;
     _municipiosVisibles = false;
     _categoriasVisibles = false;
+    _fronteraVisibles = false;
     if (activando) {
       if (tipo === 'puertos') _puertosVisibles = true;
       else if (tipo === 'aeropuertos') _aeropuertosVisibles = true;
       else if (tipo === 'departamentos') _departamentosVisibles = true;
       else if (tipo === 'municipios') _municipiosVisibles = true;
       else if (tipo === 'categorias') _categoriasVisibles = true;
+      else if (tipo === 'frontera') _fronteraVisibles = true;
     }
     _syncPuertos();
     _syncAeropuertos();
     _syncDepartamentos();
     _syncMunicipios();
     _syncCategorias();
+    _syncFrontera();
   }
 
 
   /** Etiqueta de la pestaña Ruta cuando algún catálogo (P/A/D/M) está activo:
    *  "PUERTOS", "AEROPUERTOS", "DEPARTAMENTOS", "MUNICIPIOS" o combinaciones. */
   function _etiquetaInfra() {
-    if (!_puertosVisibles && !_aeropuertosVisibles && !_departamentosVisibles && !_municipiosVisibles && !_categoriasVisibles) return null;
+    if (!_puertosVisibles && !_aeropuertosVisibles && !_departamentosVisibles && !_municipiosVisibles && !_categoriasVisibles && !_fronteraVisibles) return null;
     const partes = [];
     if (_puertosVisibles) partes.push('PUERTOS');
     if (_aeropuertosVisibles) partes.push('AEROPUERTOS');
     if (_departamentosVisibles) partes.push('DEPARTAMENTOS');
     if (_municipiosVisibles) partes.push('MUNICIPIOS');
     if (_categoriasVisibles) partes.push('CATEGORÍAS');
+    if (_fronteraVisibles) partes.push('FRONTERA');
     return partes.join(' Y ');
   }
 
@@ -283,7 +290,7 @@
   }
 
   function _syncModoInfra() {
-    const activo = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles;
+    const activo = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles;
     if (el.appRoot) {
       if (activo) el.appRoot.setAttribute('data-infra-activa', 'true');
       else el.appRoot.removeAttribute('data-infra-activa');
@@ -295,20 +302,19 @@
         else activarPanelTab('ruta');
       }
       if (el.panelLocate) el.panelLocate.hidden = true;
-      // La pestaña Descubre se oculta solo con puertos/aeropuertos (P/A); con
-      // departamentos (D) o municipios (M) queda visible para poder ver los
-      // sitios turísticos de cada uno.
-      const ocultarDescubre = _puertosVisibles || _aeropuertosVisibles;
+      // La pestaña Descubre se oculta con puertos/aeropuertos/frontera (P/A/F);
+      // con departamentos (D), municipios (M) o categorías (C) queda visible
+      // para poder ver los sitios turísticos de cada uno.
+      const ocultarDescubre = _puertosVisibles || _aeropuertosVisibles || _fronteraVisibles;
       if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.hidden = ocultarDescubre;
       if (el.btnTabDescubre) el.btnTabDescubre.hidden = ocultarDescubre;
       if (el.btnMostrarSitiosCercanos) {
         el.btnMostrarSitiosCercanos.hidden = true;
         el.btnMostrarSitiosCercanos.disabled = true;
       }
-      // Con cualquier catálogo (P/A/D/M/C) se ocultan del mapa las rutas
-      // calculadas del modo normal; con puertos/aeropuertos (P/A) también los
-      // íconos de sitios. Se restauran al apagar las teclas.
-      const ocultarSitios = _puertosVisibles || _aeropuertosVisibles;
+      // Con puertos/aeropuertos/frontera (P/A/F) se ocultan del mapa las rutas
+      // calculadas y los íconos de sitios; se restauran al apagar las teclas.
+      const ocultarSitios = _puertosVisibles || _aeropuertosVisibles || _fronteraVisibles;
       if (typeof MapModule !== 'undefined' && typeof MapModule.ocultarRutasYSitios === 'function') {
         MapModule.ocultarRutasYSitios(true, ocultarSitios);
       }
@@ -367,6 +373,7 @@
     const listo = !!(state.origen && state.destino);
     el.btnCalcular.disabled = !listo;
     if (el.btnAereo) el.btnAereo.disabled = !listo;
+    if (el.btnFluvial) el.btnFluvial.disabled = !listo;
   }
 
   /** Activa modo de selección en el mapa: el usuario hace clic y se llama a `callback(lat, lon)`. */

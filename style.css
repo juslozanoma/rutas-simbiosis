@@ -231,7 +231,10 @@ input, select{ font-family: inherit; }
 .tour-destino-item__btn:hover{ background: #fdf0f0; color: #b23b2e; border-color: #e6b8b3; }
 #app[data-ruta-archivo="true"] .btn-subir-ruta-propia,
 #app[data-infra-activa="true"] .btn-subir-ruta-propia,
-#app[data-ruta-lista="true"] .btn-subir-ruta-propia{ display: none; }
+#app[data-ruta-lista="true"] .btn-subir-ruta-propia,
+#app[data-ruta-archivo="true"] #btn-iniciar-tour,
+#app[data-infra-activa="true"] #btn-iniciar-tour,
+#app[data-ruta-lista="true"] #btn-iniciar-tour{ display: none; }
 /* Con "Subir tu propia ruta" activo, el listado es de rutas de archivo: se
    ocultan los botones de organizar y reiniciar, que pertenecen a las paradas. */
 #app[data-ruta-archivo="true"] #btn-auto-organizar,
@@ -1154,6 +1157,7 @@ input, select{ font-family: inherit; }
    posición en la lista del panel. Mismo tamaño que los pines de aeropuerto,
    puerto y sitio turístico (25px) para mantener todo uniforme. */
 .parada-pin--departamento{ background: var(--teal-500); }
+.parada-pin--sitio{ background: #4a6fa5; }
 .parada-pin--numero{
   width: 25px; height: 25px;
   font-size: 0.7rem;
@@ -1514,6 +1518,10 @@ input, select{ font-family: inherit; }
   gap: 6px;
 }
 .btns-map--gps{ left: auto; right: 12px; }
+/* En PC el botón de GPS va arriba a la izquierda del mapa. */
+@media (min-width: 861px){
+  .btns-map--gps{ top: 12px; bottom: auto; left: 12px; right: auto; }
+}
 .btn-map-icon{
   width: 34px;
   height: 34px;

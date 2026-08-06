@@ -273,11 +273,14 @@
     return _puertoPorNombre(ref);
   }
 
-  /** Genera una línea curva entre dos aeropuertos para el tramo aéreo. */
+  /** Genera una línea curva entre dos puertos para el tramo fluvial (o entre
+   *  aeropuertos para el tramo aéreo). `meandros > 0` añade ondulaciones que
+   *  imitan el cauce de un río (aproximación; sin geometría real del río). */
 
-  function _arcCoords(a, b) {    const lon1 = Number(a.longitud), lat1 = Number(a.latitud);
+  function _arcCoords(a, b, meandros = 0) {
+    const lon1 = Number(a.longitud), lat1 = Number(a.latitud);
     const lon2 = Number(b.longitud), lat2 = Number(b.latitud);
-    const n = 26;
+    const n = 32;
     const dLon = lon2 - lon1, dLat = lat2 - lat1;
     const len = Math.sqrt(dLon * dLon + dLat * dLat) || 1;
     const bulge = Math.min(Math.max(len * 0.10, 0.15), 3.5);
@@ -286,7 +289,10 @@
     const pts = [];
     for (let i = 0; i <= n; i++) {
       const t = i / n;
-      const off = Math.sin(Math.PI * t);
+      let off = Math.sin(Math.PI * t);
+      if (meandros > 0) {
+        off += 0.45 * meandros * Math.sin(2 * Math.PI * t * 3) * Math.sin(Math.PI * t);
+      }
       pts.push([lon1 + dLon * t + px * bulge * off, lat1 + dLat * t + py * bulge * off]);
     }
     return pts;
@@ -608,6 +614,148 @@
     el.btnFluvial.classList.toggle('icon-btn--active', state.modoFluvial);
   }
 
+  /** Geometría real del río entre dos puertos (a, b) usando Overpass (OSM).
+   *  Devuelve [[lon, lat], ...] o null si no se pudo obtener (offline, CORS,
+   *  sin datos en la zona). Se usa como trayecto del río con línea continua. */
+  async function _geometriaRioOverpass(a, b) {
+    const dLon = Math.abs(Number(a.longitud) - Number(b.longitud));
+    const dLat = Math.abs(Number(a.latitud) - Number(b.latitud));
+    const margen = Math.max(dLon, dLat) * 0.5 + 0.1;
+    const minLat = Math.min(a.latitud, b.latitud) - margen;
+    const maxLat = Math.max(a.latitud, b.latitud) + margen;
+    const minLon = Math.min(a.longitud, b.longitud) - margen;
+    const maxLon = Math.max(a.longitud, b.longitud) + margen;
+    const query = `[out:json][timeout:25];(way["waterway"](${minLat},${minLon},${maxLat},${maxLon});>;);out geom;`;
+    const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+    let res;
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 25000);
+      res = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(t);
+    } catch (err) { return null; }
+    if (!res.ok) return null;
+    let data;
+    try { data = await res.json(); } catch (err) { return null; }
+    const ways = (data.elements || [])
+      .filter((el) => el.type === 'way' && Array.isArray(el.geometry) && el.geometry.length >= 2);
+    if (!ways.length) return null;
+
+    const coordsWay = (w) => w.geometry.map((g) => [g.lon, g.lat]);
+    const keyNodo = (g) => g.lat.toFixed(6) + ',' + g.lon.toFixed(6);
+    const keyW = (w) => 'w' + w.id;
+    const pa = [Number(a.longitud), Number(a.latitud)];
+    const pb = [Number(b.longitud), Number(b.latitud)];
+    const distPtWay = (pt, w) => {
+      let best = Infinity;
+      for (const g of w.geometry) {
+        const d = Math.hypot(g.lat - pt[1], g.lon - pt[0]);
+        if (d < best) best = d;
+      }
+      return best;
+    };
+    const idxCercano = (w, pt) => {
+      let best = 0, bd = Infinity;
+      for (let i = 0; i < w.geometry.length; i++) {
+        const d = Math.hypot(w.geometry[i].lat - pt[1], w.geometry[i].lon - pt[0]);
+        if (d < bd) { bd = d; best = i; }
+      }
+      return best;
+    };
+
+    let wA = null, wB = null, dA = Infinity, dB = Infinity;
+    for (const w of ways) {
+      const da = distPtWay(pa, w), db = distPtWay(pb, w);
+      if (da < dA) { dA = da; wA = w; }
+      if (db < dB) { dB = db; wB = w; }
+    }
+    if (!wA || !wB) return null;
+
+    // Ambos extremos en la misma vía fluvial: extraer el sub-tramo.
+    if (wA === wB) {
+      const c = coordsWay(wA);
+      const i1 = idxCercano(wA, pa), i2 = idxCercano(wA, pb);
+      return i1 <= i2 ? c.slice(i1, i2 + 1) : c.slice(i2, i1 + 1);
+    }
+
+    // Grafo de vías conectadas por nodos extremos compartidos.
+    const ady = new Map();
+    ways.forEach((w) => ady.set(keyW(w), []));
+    const nodoExtremos = new Map(); // keyNodo -> [[wayId, extremo], ...]
+    ways.forEach((w) => {
+      const e0 = keyNodo(w.geometry[0]), e1 = keyNodo(w.geometry[w.geometry.length - 1]);
+      [[e0, 0], [e1, 1]].forEach(([k, ei]) => {
+        if (!nodoExtremos.has(k)) nodoExtremos.set(k, []);
+        nodoExtremos.get(k).push([keyW(w), ei]);
+      });
+    });
+    nodoExtremos.forEach((lista) => {
+      for (let i = 0; i < lista.length; i++) {
+        for (let j = i + 1; j < lista.length; j++) {
+          const x = lista[i][0], y = lista[j][0];
+          if (x !== y) {
+            if (!ady.get(x).includes(y)) ady.get(x).push(y);
+            if (!ady.get(y).includes(x)) ady.get(y).push(x);
+          }
+        }
+      }
+    });
+
+    // BFS desde wA hasta wB.
+    const start = keyW(wA), goal = keyW(wB);
+    const cola = [start];
+    const padre = new Map([[start, null]]);
+    let encontrado = false;
+    while (cola.length) {
+      const actual = cola.shift();
+      if (actual === goal) { encontrado = true; break; }
+      for (const vec of ady.get(actual) || []) {
+        if (!padre.has(vec)) { padre.set(vec, actual); cola.push(vec); }
+      }
+    }
+    if (!encontrado) return null;
+
+    // Cadena de vías desde wA hasta wB.
+    const cadenaKeys = [];
+    let cur = goal;
+    while (cur != null) { cadenaKeys.unshift(cur); cur = padre.get(cur); }
+    const cadena = cadenaKeys.map((k) => ways.find((w) => keyW(w) === k));
+
+    // Unir la cadena orientada, desde el vértice más cercano a A hasta el más
+    // cercano a B.
+    const resultado = [];
+    for (let i = 0; i < cadena.length; i++) {
+      const w = cadena[i];
+      const c = coordsWay(w);
+      if (i === 0) {
+        const i0 = idxCercano(w, pa);
+        if (cadena.length === 1) {
+          const i1 = idxCercano(w, pb);
+          return i0 <= i1 ? c.slice(i0, i1 + 1) : c.slice(i1, i0 + 1);
+        }
+        const sig = cadena[1];
+        const e0 = keyNodo(w.geometry[0]), e1 = keyNodo(w.geometry[w.geometry.length - 1]);
+        const conectadoA0 = nodoExtremos.has(e0) && nodoExtremos.get(e0).some(([wk]) => wk === keyW(sig));
+        if (conectadoA0) for (let j = i0; j >= 0; j--) resultado.push(c[j]);
+        else for (let j = i0; j < c.length; j++) resultado.push(c[j]);
+      } else {
+        const ult = resultado[resultado.length - 1];
+        const dIni = Math.hypot(c[0][0] - ult[0], c[0][1] - ult[1]);
+        const dFin = Math.hypot(c[c.length - 1][0] - ult[0], c[c.length - 1][1] - ult[1]);
+        const adelante = dFin < dIni;
+        if (i === cadena.length - 1) {
+          const i1 = idxCercano(w, pb);
+          if (adelante) for (let j = 0; j <= i1; j++) resultado.push(c[j]);
+          else for (let j = c.length - 1; j >= i1; j--) resultado.push(c[j]);
+        } else {
+          if (adelante) for (const p of c) resultado.push(p);
+          else for (let j = c.length - 1; j >= 0; j--) resultado.push(c[j]);
+        }
+      }
+    }
+    return resultado.length >= 2 ? resultado : null;
+  }
+
   /** Une el extremo de un tramo en carro con el puerto fluvial si OSRM no lo
    *  alcanzó (el puerto está a la orilla del río, fuera de la red de carreteras).
    *  `lado` es 'inicio' (puerto→carretera) o 'final' (carretera→puerto). */
@@ -684,13 +832,18 @@
       const distCarro1 = turf.length(turf.lineString(coordsCarro1), { units: 'kilometers' }) * 1000;
       const distCarro2 = turf.length(turf.lineString(coordsCarro2), { units: 'kilometers' }) * 1000;
 
-      // Tramos fluviales: directo o con conexión (definido por destinos_id).
-      const tramos = pares.map(({ a, b }) => {
-        const coords = _arcCoords(a, b);
+      // Tramos fluviales: directo o con conexión (definido por destinos_id),
+      // con la geometría real del río (Overpass/OSM) y, si no se obtiene, una
+      // curva con meandros.
+      const tramos = [];
+      for (const { a, b } of pares) {
+        let coords = null;
+        try { coords = await _geometriaRioOverpass(a, b); } catch (err) { coords = null; }
+        if (!coords || coords.length < 2) coords = _arcCoords(a, b, 2);
         const dist = turf.length(turf.lineString(coords), { units: 'kilometers' }) * 1000;
         const dur = (dist / 1000) / 25 * 3600; // río ≈ 25 km/h
-        return { coords, distanciaMetros: dist, duracionSegundos: dur, a, b };
-      });
+        tramos.push({ coords, distanciaMetros: dist, duracionSegundos: dur, a, b });
+      }
       const distRio = tramos.reduce((s, t) => s + t.distanciaMetros, 0);
       const durRio = tramos.reduce((s, t) => s + t.duracionSegundos, 0);
 

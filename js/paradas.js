@@ -560,12 +560,13 @@
     return [Number(lat), Number(lon)];
   }
 
-  /** Lista de ítems de un tipo de catálogo (puerto | aeropuerto | departamento | municipio | categoria). */
+  /** Lista de ítems de un tipo de catálogo (puerto | aeropuerto | departamento | municipio | categoria | frontera). */
   function _itemsInfra(tipo) {
     if (tipo === 'puerto') return state.puertos;
     if (tipo === 'aeropuerto') return state.aeropuertos;
     if (tipo === 'departamento') return state.departamentos;
     if (tipo === 'categoria') return state.categorias;
+    if (tipo === 'frontera') return state.sitios.filter((s) => s.frontera);
     if (tipo === 'municipio') {
       return _municipiosFiltroDepto
         ? state.municipios.filter((m) => m.departamento === _municipiosFiltroDepto)
@@ -577,7 +578,7 @@
   /** Título del listado del catálogo (p. ej. "Aeropuertos y puertos"). */
   function _tituloInfra(tipos) {
     const nombres = tipos.map((t) => ({
-      puerto: 'Puertos', aeropuerto: 'Aeropuertos', departamento: 'Departamentos', municipio: 'Municipios', categoria: 'Categorías',
+      puerto: 'Puertos', aeropuerto: 'Aeropuertos', departamento: 'Departamentos', municipio: 'Municipios', categoria: 'Categorías', frontera: 'Frontera',
     }[t] || ''));
     return nombres.map((n, i) => (i > 0 ? n.toLowerCase() : n)).join(' y ');
   }
@@ -591,6 +592,7 @@
     if (_departamentosVisibles) tipos.push('departamento');
     if (_municipiosVisibles) tipos.push('municipio');
     if (_categoriasVisibles) tipos.push('categoria');
+    if (_fronteraVisibles) tipos.push('frontera');
     if (!tipos.length) return;
     if (!el.paradasLista) return;
 
@@ -634,6 +636,8 @@
     } else if (tipo === 'categoria') {
       sub = item.total != null ? `${item.total} sitios` : '';
       if (item.total != null) sufijo = ` (${item.total})`;
+    } else if (tipo === 'frontera') {
+      sub = [item.municipio, item.ubicacion].filter(Boolean).join(' · ');
     }
     const rio = esPuerto && item.rio ? `<span class="sitio-card__rio">${item.rio}</span>` : '';
     const activa = tipo === 'categoria' && item.nombre === _categoriasFiltro;
@@ -649,6 +653,10 @@
     li.addEventListener('click', () => {
       if (tipo === 'categoria') {
         _aplicarFiltroCategorias(item.nombre);
+        return;
+      }
+      if (tipo === 'frontera') {
+        if (typeof _verInfoCatalogo === 'function') _verInfoCatalogo('frontera', item);
         return;
       }
       if (tipo === 'departamento' || tipo === 'municipio') {
@@ -680,7 +688,7 @@
     sincronizarOrden();
     // Con el catálogo de puertos/aeropuertos (A/P) o la ruta desde archivo (K)
     // activos, la lista de la pestaña Ruta la ocupa otro contenido; no mezclar.
-    if (_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _rutaArchivoActiva) return;
+    if (_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles || _rutaArchivoActiva) return;
 
     const items = state.orden.map((o) => {
       if (o.tipo === 'escala') {
@@ -813,8 +821,8 @@
       li.className = 'parada-item parada-item--endpoint';
       li.dataset.tipoParada = 'puerto';
       const num = document.createElement('span');
-      num.className = 'parada-item__num';
-      num.textContent = '🚢';
+      num.className = 'parada-item__num parada-item__num--ico';
+      num.innerHTML = '<img src="public/transport/boat.svg" alt="Puerto" style="width:16px;height:16px;filter:brightness(0) saturate(100%) invert(40%) sepia(11%) saturate(716%) hue-rotate(118deg) brightness(94%) contrast(92%);">';
       const nombreEl = document.createElement('span');
       nombreEl.className = 'parada-item__nombre';
       nombreEl.textContent = (prefijo ? prefijo + ': ' : '') + (puerto || '');

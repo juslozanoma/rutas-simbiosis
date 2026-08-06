@@ -312,10 +312,42 @@ const RutaArchivoModule = (() => {
   /** Menú contextual (clic derecho / pulsación larga) de una ficha de ruta. */
   function _abrirMenuTarjeta(id, clientX, clientY) {
     if (typeof abrirMenuFila !== 'function') return;
-    abrirMenuFila([
+    const opciones = [
       { etiqueta: 'Cambiar nombre de la ruta', accion: () => _renombrarRuta(id) },
-      { etiqueta: 'Unir esta ruta con otra', accion: () => _unirRutaDesdeTarjeta(id) },
-    ], clientX, clientY);
+      { etiqueta: 'Cambiar punto de inicio', accion: () => _elegirPuntoEnMapa(id, 'inicio') },
+      { etiqueta: 'Cambiar punto de finalización', accion: () => _elegirPuntoEnMapa(id, 'fin') },
+      { etiqueta: 'Cambiar sentido de la ruta', accion: () => _cambiarSentido(id) },
+    ];
+    if (_rutaModificada.has(id)) {
+      opciones.push({ etiqueta: 'Revertir cambios', accion: () => _revertirCambiosRuta(id) });
+    }
+    opciones.push({ etiqueta: 'Unir esta ruta con otra', accion: () => _unirRutaDesdeTarjeta(id) });
+    abrirMenuFila(opciones, clientX, clientY);
+  }
+
+  /** Pide al usuario marcar en el mapa el nuevo punto de inicio o finalización
+   *  de una ruta (clic sobre la ruta) y aplica el cambio. */
+  function _elegirPuntoEnMapa(id, tipo) {
+    const ruta = _rutas.find((r) => r.id === id);
+    const map = (typeof MapModule !== 'undefined' && typeof MapModule.getMap === 'function') ? MapModule.getMap() : null;
+    if (!ruta || !map) return;
+    const esInicio = tipo === 'inicio';
+    if (typeof _mostrarNotificacion === 'function') {
+      _mostrarNotificacion('Haz clic en el mapa sobre la ruta para marcar el nuevo ' + (esInicio ? 'punto de inicio' : 'punto de finalización') + '.');
+    }
+    map.getContainer().style.cursor = 'crosshair';
+    const onClick = (ev) => {
+      map.off('click', onClick);
+      map.getContainer().style.cursor = '';
+      const indice = _indicePuntoMasCercano(ruta.coords, ev.latlng);
+      if (indice <= 0 || indice >= ruta.coords.length - 1) {
+        if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('El punto debe estar dentro de la ruta (no en los extremos).');
+        return;
+      }
+      if (esInicio) _cambiarPuntoInicio(id, indice);
+      else _cambiarPuntoFin(id, indice);
+    };
+    map.on('click', onClick);
   }
 
   /** Pide el nuevo nombre de la ruta y lo guarda (mapa + lista + storage). */
@@ -862,7 +894,7 @@ const RutaArchivoModule = (() => {
     if (typeof _restaurarPanelRutaInfra === 'function') _restaurarPanelRutaInfra();
     // Si el catálogo de aeropuertos/puertos/departamentos/municipios (A/P/D/M)
     // sigue activo, reponer su listado.
-    if ((_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles) && typeof renderizarInfraListado === 'function') {
+    if ((_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles) && typeof renderizarInfraListado === 'function') {
       renderizarInfraListado();
     }
     activarPanelTab('ruta');
