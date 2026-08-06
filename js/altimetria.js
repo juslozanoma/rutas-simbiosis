@@ -579,6 +579,9 @@ const AltimetriaModule = (() => {
     // Touch support for mobile (hover de un dedo y zoom con dos dedos)
     hit.addEventListener('touchstart', (ev) => { ev.preventDefault(); _onTouchStart(cont, ev); }, { passive: false });
     hit.addEventListener('touchmove', (ev) => { ev.preventDefault(); _onTouchMove(cont, ev); }, { passive: false });
+    // Al soltar el dedo se oculta el hover del perfil y el tooltip del mapa.
+    hit.addEventListener('touchend', (ev) => { ev.preventDefault(); if (ev.touches.length === 0) _onLeave(cont); }, { passive: false });
+    hit.addEventListener('touchcancel', () => { _onLeave(cont); });
 
     // Zoom horizontal con la rueda del ratón; doble clic para restablecer
     svg.addEventListener('wheel', (ev) => {

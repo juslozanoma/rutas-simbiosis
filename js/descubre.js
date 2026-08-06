@@ -400,7 +400,7 @@
         </div>
         <div class="sitio-card__meta">
           <span>${sitio.municipio}, ${sitio.departamento}</span>
-          <span class="mono">${sitio.distanciaRutaKm.toFixed(1)} km · ${Math.round(sitio.tiempoDesvioMin)} min</span>
+          ${sitio.distanciaRutaKm != null ? `<span class="mono">${sitio.distanciaRutaKm.toFixed(1)} km · ${Math.round(sitio.tiempoDesvioMin)} min</span>` : ''}
         </div>
         <p class="sitio-card__preview" hidden></p>
       </li>

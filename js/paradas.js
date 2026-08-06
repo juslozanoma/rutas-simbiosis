@@ -473,7 +473,16 @@
       cerrarAltimetria();
       const map = MapModule.getMap();
       if (map) map.closePopup();
-      MapModule.centrarEn(Number(item.lat), Number(item.lon), esDepto ? 9 : 12);
+      if (esDepto) {
+        // Encuadrar únicamente el departamento (límites de sus municipios).
+        const coords = state.municipios
+          .filter((m) => m.departamento === item.nombre && m.lat != null && m.lon != null && !isNaN(Number(m.lat)) && !isNaN(Number(m.lon)))
+          .map((m) => [Number(m.lat), Number(m.lon)]);
+        if (coords.length >= 2) MapModule.encuadrar(coords, [40, 40]);
+        else MapModule.centrarEn(Number(item.lat), Number(item.lon), 9);
+      } else {
+        MapModule.centrarEn(Number(item.lat), Number(item.lon), 12);
+      }
       TourismModule.mostrarCuadroInfo({
         color: esDepto ? '#3f6f8f' : '#2b6a8f',
         categoria: esDepto ? 'Departamento' : 'Municipio',
@@ -564,24 +573,27 @@
   /** Título del listado del catálogo (p. ej. "Aeropuertos y puertos"). */
   function _tituloInfra(tipos) {
     const nombres = tipos.map((t) => ({
-      puerto: 'Puertos', aeropuerto: 'Aeropuertos', departamento: 'Departamentos', municipio: 'Municipios',
+      puerto: 'Puertos', aeropuerto: 'Aeropuertos', departamento: 'Departamentos', municipio: 'Municipios', categoria: 'Categorías',
     }[t] || ''));
     return nombres.map((n, i) => (i > 0 ? n.toLowerCase() : n)).join(' y ');
   }
 
   /** Rellena la lista de la pestaña Ruta con los ítems del catálogo cuyas
-   *  teclas (P/A/D/M) estén activas. */
+   *  teclas (P/A/D/M/C) estén activas. */
   function renderizarInfraListado() {
     const tipos = [];
     if (_puertosVisibles) tipos.push('puerto');
     if (_aeropuertosVisibles) tipos.push('aeropuerto');
     if (_departamentosVisibles) tipos.push('departamento');
     if (_municipiosVisibles) tipos.push('municipio');
+    if (_categoriasVisibles) tipos.push('categoria');
     if (!tipos.length) return;
     if (!el.paradasLista) return;
 
-    // El filtro de departamento solo aplica al modo municipios (tecla M).
+    // Filtros: el de departamento solo aplica a municipios (M); el de
+    // categorías solo a Categorías (C).
     if (el.filtroMunicipiosDepto) el.filtroMunicipiosDepto.hidden = !_municipiosVisibles;
+    if (el.filtroCategorias) el.filtroCategorias.hidden = !_categoriasVisibles;
 
     el.paradasLista.innerHTML = '';
     let n = 0;
@@ -593,12 +605,18 @@
         n++;
       });
     });
-    // Modo municipios sin departamento elegido: pista en vez de una lista vacía.
+    // Sin elección: pista en vez de una lista vacía (municipios / categorías).
     if (_municipiosVisibles && !_municipiosFiltroDepto && n === 0) {
       const hint = Utils.crearElemento('<li class="paradas-vacio">Elige un departamento para ver sus municipios en el mapa y en la lista.</li>');
       el.paradasLista.appendChild(hint);
     }
-    el.paradasContador.textContent = String(n);
+    if (_categoriasVisibles && !_categoriasFiltro && n === 0) {
+      const hint = Utils.crearElemento('<li class="paradas-vacio">Elige una categoría para ver sus sitios en el mapa.</li>');
+      el.paradasLista.appendChild(hint);
+    }
+    el.paradasContador.textContent = (_categoriasVisibles && _categoriasFiltro)
+      ? String(state.sitiosFiltrados.length)
+      : String(n);
     if (el.paradasTitulo) el.paradasTitulo.textContent = _tituloInfra(tipos);
     if (el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = true;
     el.panelParadas.hidden = false;
@@ -640,13 +658,17 @@
   }
 
   /** Restaura la pestaña Ruta al apagar el catálogo de puertos/aeropuertos
-   *  (y departamentos/municipios). */
+   *  (y departamentos/municipios/categorías). */
   function _restaurarPanelRutaInfra() {
     if (el.paradasTitulo) el.paradasTitulo.textContent = 'Paradas';
     if (el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = false;
     if (el.filtroMunicipiosDepto) {
       el.filtroMunicipiosDepto.hidden = true;
       el.filtroMunicipiosDepto.value = '';
+    }
+    if (el.filtroCategorias) {
+      el.filtroCategorias.hidden = true;
+      el.filtroCategorias.value = '';
     }
     if (el.panelEscalas) el.panelEscalas.hidden = !el.panelEscalas.children.length;
     renderizarParadas();

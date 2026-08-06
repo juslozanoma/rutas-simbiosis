@@ -68,7 +68,12 @@
       ]);
       state.municipios = municipios;
       state.sitios = sitios;
-      // Catálogo de departamentos (tecla D) centrado en sus capitales.
+      // Catálogo de departamentos (tecla D): data/departamentos.json.
+      state.departamentos = [];
+      try {
+        const resDep = await fetch('data/departamentos.json');
+        if (resDep.ok) state.departamentos = await resDep.json();
+      } catch {}
       if (typeof _construirDepartamentos === 'function') _construirDepartamentos();
 
       // Cargar sitios de frontera
@@ -162,6 +167,7 @@
     _syncAeropuertos();
     _syncDepartamentos();
     _syncMunicipios();
+    _syncCategorias();
     document.addEventListener('keydown', (evt) => {
       if (evt.ctrlKey || evt.metaKey || evt.altKey) return;
       const esInput = evt.target && evt.target.tagName && /^(INPUT|TEXTAREA|SELECT)$/.test(evt.target.tagName);
@@ -171,17 +177,15 @@
         _fronteraVisibles = !_fronteraVisibles;
         _syncFrontera();
       } else if (tecla === 'p') {
-        _puertosVisibles = !_puertosVisibles;
-        _syncPuertos();
+        _toggleCatalogo('puertos');
       } else if (tecla === 'a') {
-        _aeropuertosVisibles = !_aeropuertosVisibles;
-        _syncAeropuertos();
+        _toggleCatalogo('aeropuertos');
       } else if (tecla === 'd') {
-        _departamentosVisibles = !_departamentosVisibles;
-        _syncDepartamentos();
+        _toggleCatalogo('departamentos');
       } else if (tecla === 'm') {
-        _municipiosVisibles = !_municipiosVisibles;
-        _syncMunicipios();
+        _toggleCatalogo('municipios');
+      } else if (tecla === 'c') {
+        _toggleCatalogo('categorias');
       } else if (tecla === 'k') {
         if (typeof RutaArchivoModule !== 'undefined' && typeof RutaArchivoModule.toggleK === 'function') {
           RutaArchivoModule.toggleK();

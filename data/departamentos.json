@@ -1,0 +1,233 @@
+[
+  {
+    "nombre": "Amazonas",
+    "capital": "Leticia",
+    "latitud": -4.208247,
+    "longitud": -69.939293,
+    "descripcion": "Fundada en 1867 como una pequeña colonia fronteriza bautizada inicialmente como San Antonio, Leticia ha evolucionado hasta convertirse en el principal epicentro de la integración amazónica colombiana. Su rica identidad cultural es el resultado de una vibrante mezcla entre las tradiciones ancestrales de las comunidades indígenas y las influencias de las culturas vecinas, lo cual se manifiesta en su folclor y celebraciones populares. En la actualidad, su economía se sostiene principalmente a través del sector turístico, que aprovecha su biodiversidad única, y el comercio derivado de su dinámica actividad portuaria."
+  },
+  {
+    "nombre": "Antioquia",
+    "capital": "Medellín",
+    "latitud": 6.269732,
+    "longitud": -75.60256,
+    "descripcion": "Conocida históricamente como la \"Ciudad de la Eterna Primavera\" tras superar un pasado marcado por la violencia, Medellín ha protagonizado una transformación urbana sin precedentes que le ha permitido proyectarse al mundo. Su vibrante cultura se manifiesta en el orgullo paisa, la calidez de su gente y eventos emblemáticos como la Feria de las Flores, que celebran la riqueza de sus tradiciones locales. Actualmente, su economía se sustenta en una sólida base de servicios, comercio y una pujante industria de innovación, tecnología y turismo que atrae inversionistas y visitantes de todo el planeta."
+  },
+  {
+    "nombre": "Arauca",
+    "capital": "Arauca",
+    "latitud": 6.666676,
+    "longitud": -71.000009,
+    "descripcion": "Fundado en 1780 bajo el nombre de Villa de Santa Bárbara de Arauca, este municipio ha sido un epicentro histórico donde se gestó gran parte de la independencia nacional bajo el liderazgo de Simón Bolívar. Su vibrante cultura está profundamente arraigada en las tradiciones llaneras, destacándose el joropo como máxima expresión de su identidad musical y dancística. La economía de la región se sustenta principalmente en la industria extractiva de hidrocarburos, complementada por una sólida tradición ganadera y actividades agrícolas que dinamizan su desarrollo."
+  },
+  {
+    "nombre": "Atlántico",
+    "capital": "Barranquilla",
+    "latitud": 11.010192,
+    "longitud": -74.823179,
+    "descripcion": "Fundada como un puerto fluvial y marítimo estratégico, Barranquilla se consolidó históricamente como la \"Puerta de Oro de Colombia\", siendo la entrada principal de la modernidad, la aviación y la inmigración al país. Su vibrante identidad cultural alcanza su máxima expresión en el Carnaval de Barranquilla, una fiesta declarada Obra Maestra del Patrimonio Oral e Inmaterial de la Humanidad que refleja la alegría y diversidad de su gente. Actualmente, la economía del municipio se fundamenta principalmente en la actividad industrial, el comercio exterior a través de su puerto y un creciente sector de servicios que impulsa su desarrollo regional."
+  },
+  {
+    "nombre": "Bogotá D.C.",
+    "capital": "Bogotá D.C.",
+    "latitud": 4.653382,
+    "longitud": -74.083633,
+    "descripcion": "Fundada en 1538 por Gonzalo Jiménez de Quesada, Bogotá se ha transformado desde su pasado colonial hasta convertirse en una vibrante metrópoli que preserva su legado histórico en el centro colonial de La Candelaria. Su rica oferta cultural destaca por la convergencia de diversas expresiones artísticas, museos de talla mundial y una dinámica escena gastronómica que refleja la pluralidad del país. La economía de la capital se fundamenta principalmente en los sectores de servicios, comercio y una robusta industria financiera que impulsa gran parte del desarrollo nacional. Como corazón administrativo de Colombia, la ciudad equilibra constantemente la memoria de sus tradiciones con un espíritu innovador y vanguardista."
+  },
+  {
+    "nombre": "Bolívar",
+    "capital": "Cartagena",
+    "latitud": 10.426557,
+    "longitud": -75.544167,
+    "descripcion": "Fundada en 1533, la «Heroica» conserva un legado colonial imponente reflejado en sus murallas y fortalezas, las cuales fueron construidas para proteger al puerto más importante del Imperio español en América. Su vibrante cultura se manifiesta en el colorido de sus calles, la calidez de su gente y un espíritu festivo que se celebra anualmente en eventos de talla internacional. Hoy en día, su economía se sustenta principalmente en una robusta industria turística que aprovecha su riqueza histórica, sumada a la relevancia estratégica de su sector portuario y la actividad petroquímica."
+  },
+  {
+    "nombre": "Boyacá",
+    "capital": "Tunja",
+    "latitud": 5.532431,
+    "longitud": -73.361601,
+    "descripcion": "Fundada en 1539 sobre el antiguo asentamiento del cacique Hunzahua, Tunja se erige como una joya histórica que conserva un valioso legado arquitectónico colonial en su centro histórico. Su vibrante cultura se manifiesta a través de eventos de renombre internacional, como el Festival Internacional de la Cultura de Boyacá, que celebra profundamente las tradiciones y expresiones artísticas de la región. La economía local se fundamenta principalmente en la administración pública, la actividad comercial y un sólido sector educativo que posiciona a la ciudad como un referente académico y administrativo en el departamento."
+  },
+  {
+    "nombre": "Caldas",
+    "capital": "Manizales",
+    "latitud": 5.066891,
+    "longitud": -75.506666,
+    "descripcion": "Fundada en 1849 por colonos antioqueños durante la denominada colonización del oro, Manizales ha forjado una identidad marcada por su imponente arquitectura republicana y una arraigada tradición literaria y artística. Su vibrante cultura se manifiesta con esplendor en eventos de renombre internacional como la Feria de Manizales y el Festival Internacional de Teatro, que celebran el ingenio y la hospitalidad de sus habitantes. Actualmente, la economía del municipio se fundamenta principalmente en la producción de café de alta calidad, la pujante industria manufacturera y un ecosistema de servicios educativos de excelencia que impulsa el conocimiento y la innovación."
+  },
+  {
+    "nombre": "Caquetá",
+    "capital": "Florencia",
+    "latitud": 1.615867,
+    "longitud": -75.614305,
+    "descripcion": "Fundada oficialmente en 1902 por el fraile capuchino Doroteo de Pupiales, Florencia surgió como un enclave estratégico en la selva amazónica que pronto se consolidó como el motor administrativo y comercial de la región. Su identidad cultural se manifiesta en la vibrante celebración del Festival Folclórico de la Amazonía, donde las tradiciones indígenas y campesinas convergen a través de danzas y ritmos autóctonos. Actualmente, el municipio basa su economía principalmente en la ganadería extensiva, la producción lechera y la creciente oferta de servicios comerciales y ecoturísticos que aprovechan su biodiversidad única."
+  },
+  {
+    "nombre": "Casanare",
+    "capital": "Yopal",
+    "latitud": 5.335666,
+    "longitud": -72.393693,
+    "descripcion": "Fundado como un asentamiento ganadero a principios del siglo XX, Yopal ha evolucionado rápidamente desde ser un pequeño caserío hasta convertirse en el epicentro administrativo y cultural de los Llanos Orientales. Su identidad está profundamente marcada por la cultura llanera, manifestada en la destreza del joropo, la poesía costumbrista y las tradiciones musicales que celebran la vida en la sabana. Actualmente, la economía del municipio se fundamenta principalmente en la explotación de hidrocarburos, complementada por una sólida actividad comercial y la ganadería extensiva que sigue siendo motor de su progreso. Esta combinación de herencia folclórica y modernidad industrial define el carácter resiliente y pujante de su gente."
+  },
+  {
+    "nombre": "Cauca",
+    "capital": "Popayán",
+    "latitud": 2.442229,
+    "longitud": -76.607237,
+    "descripcion": "Conocida como la «Ciudad Blanca» por sus fachadas coloniales, Popayán posee una profunda riqueza histórica al ser una de las ciudades más antiguas de Colombia y un importante centro intelectual durante la época virreinal. Su vibrante cultura se manifiesta en tradiciones centenarias como la Semana Santa, declarada Patrimonio Inmaterial de la Humanidad, y en su destacada gastronomía reconocida por la UNESCO. Actualmente, su economía se fundamenta principalmente en la administración pública, los servicios educativos, el comercio y una incipiente pero creciente industria turística."
+  },
+  {
+    "nombre": "Cesar",
+    "capital": "Valledupar",
+    "latitud": 10.465173,
+    "longitud": -73.252951,
+    "descripcion": "Fundada en 1550 por Hernando de Santana, Valledupar es una ciudad con una rica herencia colonial que se convirtió en la cuna mundial del vallenato, un género musical declarado patrimonio cultural de la humanidad. Su vibrante cultura se celebra anualmente en el prestigioso Festival de la Leyenda Vallenata, que exalta la tradición oral y las raíces folclóricas de la región. Actualmente, el municipio basa gran parte de su economía en la producción agropecuaria, destacándose especialmente en la ganadería intensiva y el cultivo de algodón, además de un sector de servicios en constante crecimiento."
+  },
+  {
+    "nombre": "Chocó",
+    "capital": "Quibdó",
+    "latitud": 5.691284,
+    "longitud": -76.653134,
+    "descripcion": "Fundado en 1648 por colonizadores españoles sobre asentamientos indígenas, Quibdó se erige como un baluarte histórico donde convergen la resistencia y la resiliencia del pueblo chocoano. Su vibrante cultura se manifiesta en la riqueza de sus tradiciones afrodescendientes y el fervor de las Fiestas de San Pacho, declaradas Patrimonio Inmaterial de la Humanidad por la UNESCO. Actualmente, la economía del municipio se fundamenta principalmente en la minería de oro y platino, el aprovechamiento forestal y el comercio de productos agrícolas locales."
+  },
+  {
+    "nombre": "Córdoba",
+    "capital": "Montería",
+    "latitud": 8.750936,
+    "longitud": -75.878681,
+    "descripcion": "Fundada en 1777 por Antonio de la Torre y Miranda, la ciudad ha evolucionado desde un asentamiento colonial hasta convertirse en la capital ganadera del país. Su rica identidad cultural está profundamente influenciada por la tradición sabanera, destacando la música de porro y los festivales equinos que celebran su folclor. Hoy en día, su economía se basa principalmente en la ganadería bovina, el comercio dinámico y los servicios agroindustriales."
+  },
+  {
+    "nombre": "Cundinamarca",
+    "capital": "Bogotá D.C.",
+    "latitud": 4.653382,
+    "longitud": -74.083633,
+    "descripcion": "Fundada en 1538 por Gonzalo Jiménez de Quesada, Bogotá se ha transformado desde su pasado colonial hasta convertirse en una vibrante metrópoli que preserva su legado histórico en el centro colonial de La Candelaria. Su rica oferta cultural destaca por la convergencia de diversas expresiones artísticas, museos de talla mundial y una dinámica escena gastronómica que refleja la pluralidad del país. La economía de la capital se fundamenta principalmente en los sectores de servicios, comercio y una robusta industria financiera que impulsa gran parte del desarrollo nacional. Como corazón administrativo de Colombia, la ciudad equilibra constantemente la memoria de sus tradiciones con un espíritu innovador y vanguardista."
+  },
+  {
+    "nombre": "Guainía",
+    "capital": "Ínirida",
+    "latitud": 3.865037,
+    "longitud": -67.925985,
+    "descripcion": "Antiguamente conocida como Puerto Obando, la cabecera municipal creció gracias a la colonización cauchera y al posterior asentamiento de diversas etnias indígenas. Su identidad cultural es un crisol donde conviven tradiciones amazónicas y llaneras, destacándose en la celebración de eventos como el Festival departamental de raudal. La economía local se dinamiza a través del comercio, la pesca ornamental, la administración pública y el ecoturismo impulsado por los Cerros de Mavecure."
+  },
+  {
+    "nombre": "Guaviare",
+    "capital": "San José del Guaviare",
+    "latitud": 2.571614,
+    "longitud": -72.642651,
+    "descripcion": "Fundado oficialmente a mediados del siglo XX tras intensas olas de colonización, este municipio es hoy un epicentro de transición entre los Llanos Orientales y la selva amazónica. Culturalmente es reconocido por su vibrante música llanera y por albergar vestigios arqueológicos de gran valor en el parque nacional natural Serranía de la Lindosa. Su economía es dinámica, destacándose por la ganadería extensiva, la agricultura tecnificada, el ecoturismo y la producción de caucho y cacao."
+  },
+  {
+    "nombre": "Huila",
+    "capital": "Neiva",
+    "latitud": 2.925704,
+    "longitud": -75.289394,
+    "descripcion": "Fundada en el siglo XVI, la ciudad ha evolucionado hasta convertirse en el epicentro político, comercial y cultural de todo el departamento. Su cultura es un crisol de tradiciones folclóricas, siendo la cuna indiscutible del Festival Folclórico y Reinado Nacional del Bambuco. La economía urbana y regional se basa en el sector servicios, el comercio formal, la banca y la administración pública. Adicionalmente, la construcción, la industria avícola y la ganadería tecnificada dinamizan fuertemente su mercado."
+  },
+  {
+    "nombre": "La Guajira",
+    "capital": "Riohacha",
+    "latitud": 11.544939,
+    "longitud": -72.915052,
+    "descripcion": "Fundada en el siglo XVI por los españoles, esta histórica ciudad fue un puerto colonial clave y un centro de evangelización y comercio marítimo con la península. Culturalmente es el epicentro de la nación Wayuu, donde convergen mitos ancestrales, la artesanía de las mochilas y la memoria de navegantes y pescadores. Su economía se basa en la administración pública, el turismo impulsado por sus playas, la pesca artesanal y el comercio impulsado por su condición portuaria."
+  },
+  {
+    "nombre": "Magdalena",
+    "capital": "Santa Marta",
+    "latitud": 11.232094,
+    "longitud": -74.195092,
+    "descripcion": "Fundada en 1525, es la ciudad más antigua de Colombia y resguarda un valioso patrimonio arquitectónico colonial junto al legado de los indígenas tayronas. Su cultura es una vibrante mezcla de tradiciones caribeñas, indígenas y afrodescendientes, enriquecida por su condición de destino turístico y literario. Su economía se sustenta principalmente en el turismo, el comercio portuario, la actividad hotelera y la pesca artesanal."
+  },
+  {
+    "nombre": "Meta",
+    "capital": "Villavicencio",
+    "latitud": 4.134764,
+    "longitud": -73.620152,
+    "descripcion": "Fundada a mediados del siglo XIX como un hato ganadero, esta ciudad ha crecido hasta convertirse en el epicentro comercial y cultural de los Llanos Orientales. Su identidad está profundamente marcada por la música llanera, el joropo y el coleo, siendo escenario del prestigioso Torneo Internacional del Joropo. Económicamente, sustenta su desarrollo en el comercio, la ganadería extensiva, la agroindustria y los servicios petroleros."
+  },
+  {
+    "nombre": "Nariño",
+    "capital": "Pasto",
+    "latitud": 1.214028,
+    "longitud": -77.27851,
+    "descripcion": "Capital departamental con una profunda historia colonial y republicana, es célebre por albergar el majestuoso Carnaval de Negros y Blancos, Patrimonio Cultural de la Humanidad. Su cultura es un crisol de expresiones artísticas, tradiciones religiosas y una destacada maestría en el trabajo del barniz de Pasto (mopa-mopa). La economía de la ciudad es dinámica y se basa en el comercio, los servicios, la educación superior y la agroindustria de la región andina."
+  },
+  {
+    "nombre": "Norte de Santander",
+    "capital": "Cúcuta",
+    "latitud": 7.897146,
+    "longitud": -72.508039,
+    "descripcion": "Conocida históricamente como la 'Ciudad Indómita', fue cuna de la Constitución de 1821 y escenario clave en la gesta libertadora de la nación. Culturalmente es un vibrante cruce de caminos y tradiciones colombo-venezolanas que se manifiestan en su gastronomía, música y comercio cotidiano. Su economía es altamente dinámica, basada en el comercio binacional, la industria manufacturera, el calzado y los servicios."
+  },
+  {
+    "nombre": "Putumayo",
+    "capital": "Mocoa",
+    "latitud": 1.146629,
+    "longitud": -76.648233,
+    "descripcion": "Conocida como la capital del departamento, Mocoa fue establecida por misioneros capuchinos y ha evolucionado como un importante centro político y de refugio para diversas comunidades indígenas. Su cultura es sumamente diversa, fusionando expresiones amazónicas y andinas que se celebran en eventos como el Carnaval del Agua. La economía local se basa en el comercio formal e informal, la administración pública, la ganadería y el ecoturismo enfocado en cascadas y reservas naturales."
+  },
+  {
+    "nombre": "Quindío",
+    "capital": "Armenia",
+    "latitud": 6.156178,
+    "longitud": -75.787047,
+    "descripcion": "Fundado en 1888 bajo el nombre de Armenia Mantequilla, este municipio conserva una rica historia marcada por la colonización antioqueña y el legado de sus fundadores que forjaron su identidad actual. Su cultura se manifiesta vibrante a través de las festividades tradicionales y el arraigo a las costumbres campesinas que definen el carácter hospitalario de sus habitantes. La economía local se sustenta principalmente en la producción agrícola, destacándose el cultivo del café y diversos productos hortofrutícolas que dinamizan el desarrollo de la región."
+  },
+  {
+    "nombre": "Risaralda",
+    "capital": "Pereira",
+    "latitud": 4.785461,
+    "longitud": -75.788322,
+    "descripcion": "Fundada a finales del siglo XIX, esta pujante capital creció rápidamente gracias al esfuerzo de sus colonos y a la bonanza cafetera que transformó la región. Culturalmente es reconocida como 'La Querendona, Trasnochadora y Morena', destacándose por su industria musical, su tradición cafetera y su dinamismo académico. Su economía es la más fuerte del departamento, fundamentada en el comercio a gran escala, los servicios, la industria y el turismo de negocios."
+  },
+  {
+    "nombre": "San Andrés y Providencia",
+    "capital": "San Andrés",
+    "latitud": 13.353117,
+    "longitud": -81.374989,
+    "descripcion": "Habitado originalmente por indígenas arahuacos y reclamado por diversos imperios coloniales, el archipiélago adoptó una singular cultura raizal de habla inglesa creole y profundas raíces afrocaribeñas. Su identidad cultural se manifiesta en la música reggae, calipso y su tradicional gastronomía a base de frutos del mar. Su economía depende casi en su totalidad del turismo masivo, el comercio libre y la pesca artesanal de subsistencia."
+  },
+  {
+    "nombre": "Santander",
+    "capital": "Bucaramanga",
+    "latitud": 7.127459,
+    "longitud": -73.11913,
+    "descripcion": "Conocida históricamente como la 'Ciudad de los Parques', esta capital fue escenario de importantes movimientos comerciales y libertarios desde la época de la independencia. Su oferta cultural brilla a través de museos, teatros y una gastronomía típica muy variada donde sobresale la famosa hormiga culona. Hoy en día, su economía es un robusto motor regional basado en el comercio formal, la industria del calzado, los servicios de salud y una pujante industria de la construcción."
+  },
+  {
+    "nombre": "Sucre",
+    "capital": "Sincelejo",
+    "latitud": 9.297339,
+    "longitud": -75.39266,
+    "descripcion": "Fundada en la época colonial, esta capital departamental ha crecido como el epicentro político, intelectual y artístico de la subregión sabanera. Su cultura es mundialmente famosa por albergar el prestigioso Festival Nacional de Porro, consolidándose como la cuna de este ritmo autóctono. La economía es diversificada, combinando el comercio a gran escala, la administración pública, la industria agropecuaria y los servicios educativos."
+  },
+  {
+    "nombre": "Tolima",
+    "capital": "Ibagué",
+    "latitud": 4.438603,
+    "longitud": -75.210886,
+    "descripcion": "Fundada a mediados del siglo XVI, esta capital ha sido históricamente un epicentro político, educativo y artístico de gran relevancia en el centro del país. Es ampliamente reconocida a nivel nacional e internacional como la 'Musical de Colombia' debido a su conservatorio y su tradición de festivales folclóricos. Su economía es dinámica y diversa, apoyándose en la industria manufacturera, el comercio, los servicios universitarios y la agricultura tecnificada."
+  },
+  {
+    "nombre": "Valle del Cauca",
+    "capital": "Cali",
+    "latitud": 3.451999,
+    "longitud": -76.532526,
+    "descripcion": "Originada en la época colonial, esta importante metrópoli se consolidó rápidamente como un cruce de caminos vital para el desarrollo del occidente colombiano. Es mundialmente célebre como la 'Capital de la Salsa', un título que define su vibrante identidad cultural, su talento para la danza y su alegría festiva. Su economía es altamente diversificada, destacándose como un centro neurálgico de la industria manufacturera, el comercio, los servicios y la tecnología."
+  },
+  {
+    "nombre": "Vaupés",
+    "capital": "Mitú",
+    "latitud": 1.258018,
+    "longitud": -70.123733,
+    "descripcion": "Fundada oficialmente en la primera mitad del siglo XX durante la época de la bonanza cauchera, Mitú se consolidó como un punto clave de colonización y evangelización en la selva. Culturalmente es un mosaico de saberes ancestrales conformado por diversas comunidades indígenas que preservan sus tradiciones orales y rituales en armonía con la selva amazónica. Su economía se sustenta principalmente en la pesca artesanal, la agricultura de subsistencia basada en la yuca brava, la extracción de recursos forestales y la incipiente actividad ecoturística."
+  },
+  {
+    "nombre": "Vichada",
+    "capital": "Puerto Carreño",
+    "latitud": 6.190923,
+    "longitud": -67.484189,
+    "descripcion": "Puerto Carreño fue fundado a principios del siglo XX y nombrado en honor a un destacado ministro, convirtiéndose rápidamente en el eje administrativo y fronterizo del oriente colombiano. Culturalmente, la población refleja una rica mezcla de influencias llaneras y caribeñas, con una fuerte presencia de comunidades indígenas que enriquecen el patrimonio artístico y artesanal de la región. Su economía se basa en el comercio fronterizo, la pesca ornamental y comercial, así como en la ganadería y la agricultura de pequeña escala."
+  }
+]

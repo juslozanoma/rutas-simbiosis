@@ -1074,8 +1074,12 @@ input, select{ font-family: inherit; }
   cursor: grabbing;
 }
 /* Pin numerado verde de departamento (D) y municipio (M): el número indica la
-   posición en la lista del panel. */
+   posición en la lista del panel. Pequeño (18px) para no saturar el mapa. */
 .parada-pin--departamento{ background: var(--teal-500); }
+.parada-pin--numero{
+  width: 18px; height: 18px;
+  font-size: 0.56rem;
+}
 /* Botón pequeño junto a la x de las fichas (p. ej. "Mostrar sitios turísticos"). */
 .popup-sitio__header-btn{
   margin-left: auto;
@@ -1091,8 +1095,9 @@ input, select{ font-family: inherit; }
   transition: background 0.12s, color 0.12s;
 }
 .popup-sitio__header-btn:hover{ background: var(--teal-500); color: #ffffff; }
-/* Filtro de departamento del modo municipios (tecla M). */
-.filtro-municipios-departamento{
+/* Filtros de catálogo: departamento del modo municipios (M) y categoría (C). */
+.filtro-municipios-departamento,
+.filtro-categorias{
   display: block;
   width: 100%;
   margin: 0 0 8px;
@@ -1103,7 +1108,8 @@ input, select{ font-family: inherit; }
   border-radius: var(--radius-sm);
   background: #ffffff;
 }
-.filtro-municipios-departamento[hidden]{ display: none; }
+.filtro-municipios-departamento[hidden],
+.filtro-categorias[hidden]{ display: none; }
 /* Pista del modo municipios cuando no hay departamento elegido. */
 .paradas-vacio{
   padding: 12px 10px;

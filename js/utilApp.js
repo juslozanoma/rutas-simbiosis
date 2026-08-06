@@ -48,31 +48,31 @@
   }
 
 
-  /** Construye el catálogo de departamentos (tecla D) desde CAPITALES: un
-   *  marcador por cada departamento, centrado en su capital. Cundinamarca usa
-   *  la Gobernación de Cundinamarca, en Bogotá. */
+  /** Procesa el catálogo de departamentos (tecla D) cargado desde
+   *  data/departamentos.json: completa cada uno con el año de fundación de su
+   *  capital, el total de municipios y la sede de Cundinamarca. */
   function _construirDepartamentos() {
-    const deps = [];
     const conteo = new Map();
     state.municipios.forEach((m) => {
       if (m.departamento) conteo.set(m.departamento, (conteo.get(m.departamento) || 0) + 1);
     });
-    for (const nombre of Object.keys(CAPITALES)) {
-      const capital = CAPITALES[nombre];
-      const m = state.municipios.find((x) => x.nombre === capital);
-      if (!m) continue;
-      deps.push({
-        id: nombre,
-        nombre,
-        capital,
-        lat: m.lat,
-        lon: m.lon,
-        descripcion: m.descripción || '',
-        ano: m.ano_fundacion || '',
-        totalMunicipios: conteo.get(nombre) || 0,
-        sede: nombre === 'Cundinamarca' ? 'Gobernación de Cundinamarca' : null,
+    const raw = Array.isArray(state.departamentos) ? state.departamentos : [];
+    const deps = raw
+      .filter((d) => d.nombre && d.latitud != null && d.longitud != null && !isNaN(Number(d.latitud)) && !isNaN(Number(d.longitud)))
+      .map((d) => {
+        const capitalMuni = state.municipios.find((x) => x.nombre === d.capital);
+        return {
+          id: d.nombre,
+          nombre: d.nombre,
+          capital: d.capital || '',
+          lat: Number(d.latitud),
+          lon: Number(d.longitud),
+          descripcion: d.descripcion || '',
+          ano: capitalMuni ? (capitalMuni.ano_fundacion || '') : '',
+          totalMunicipios: conteo.get(d.nombre) || 0,
+          sede: d.nombre === 'Cundinamarca' ? 'Gobernación de Cundinamarca' : null,
+        };
       });
-    }
     deps.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
     state.departamentos = deps;
   }
@@ -85,6 +85,8 @@
       MapModule.setMarcadoresDepartamentosGlobal(state.departamentos);
     } else {
       MapModule.limpiarDepartamentosGlobal();
+      // Los sitios mostrados por el catálogo se ocultan al apagarlo.
+      _ocultarSitiosCatalogo();
     }
     _syncModoInfra();
   }
@@ -115,7 +117,8 @@
 
 
   /** Aplica el filtro de departamento del modo municipios (tecla M): dibuja en
-   *  el mapa y lista solo los municipios del departamento elegido. */
+   *  el mapa y lista solo los municipios del departamento elegido, y encuadra
+   *  el departamento para que se vean solo sus municipios. */
   function _aplicarFiltroMunicipios() {
     const sel = el.filtroMunicipiosDepto;
     if (sel) _municipiosFiltroDepto = sel.value;
@@ -124,6 +127,12 @@
       : [];
     if (typeof MapModule !== 'undefined' && typeof MapModule.setMarcadoresMunicipiosGlobal === 'function') {
       MapModule.setMarcadoresMunicipiosGlobal(lista);
+    }
+    if (_municipiosFiltroDepto && lista.length >= 2 && typeof MapModule !== 'undefined' && typeof MapModule.encuadrar === 'function') {
+      const coords = lista
+        .filter((m) => m.lat != null && m.lon != null && !isNaN(Number(m.lat)) && !isNaN(Number(m.lon)))
+        .map((m) => [Number(m.lat), Number(m.lon)]);
+      if (coords.length >= 2) MapModule.encuadrar(coords, [40, 40]);
     }
     if (typeof renderizarInfraListado === 'function') renderizarInfraListado();
   }
@@ -141,20 +150,130 @@
       _aplicarFiltroMunicipios();
     } else {
       MapModule.limpiarMunicipiosGlobal();
+      // Los sitios mostrados por el catálogo se ocultan al apagarlo.
+      _ocultarSitiosCatalogo();
     }
     _syncModoInfra();
+  }
+
+
+  /** Oculta los sitios que el catálogo (D/M/C) pudo mostrar en el mapa y deja
+   *  limpio el listado de Descubre. */
+  function _ocultarSitiosCatalogo() {
+    if (typeof MapModule !== 'undefined' && typeof MapModule.limpiarSitios === 'function') MapModule.limpiarSitios();
+    if (typeof _borrarListadoDescubre === 'function') _borrarListadoDescubre();
+  }
+
+
+  let _filtroCategoriasOk = false; // el listener del filtro de categorías se conecta una sola vez
+
+  /** Rellena el <select> de categorías con las categorías y su número de sitios. */
+  function _rellenarFiltroCategorias() {
+    const sel = el.filtroCategorias;
+    if (!sel) return;
+    const actual = sel.value;
+    const conteo = new Map();
+    state.sitios.forEach((s) => {
+      const c = s.categoria ? s.categoria.trim() : '';
+      if (!c) return;
+      conteo.set(c, (conteo.get(c) || 0) + 1);
+    });
+    const cats = [...conteo.keys()].sort((a, b) => a.length - b.length || a.localeCompare(b, 'es'));
+    sel.innerHTML = '';
+    const vacio = document.createElement('option');
+    vacio.value = '';
+    vacio.textContent = 'Filtrar por categoría…';
+    sel.appendChild(vacio);
+    cats.forEach((c) => {
+      const o = document.createElement('option');
+      o.value = c;
+      o.textContent = `${c} (${conteo.get(c)})`;
+      sel.appendChild(o);
+    });
+    if (cats.includes(actual)) sel.value = actual;
+    else sel.value = '';
+    _categoriasFiltro = sel.value;
+  }
+
+
+  /** Aplica el filtro de categoría (tecla C): muestra en el mapa y en Descubre
+   *  los sitios de la categoría elegida (una sola a la vez). */
+  function _aplicarFiltroCategorias() {
+    const sel = el.filtroCategorias;
+    if (sel) _categoriasFiltro = sel.value;
+    if (_categoriasFiltro) {
+      const lista = state.sitios.filter((s) => (s.categoria || '').trim() === _categoriasFiltro);
+      state.sitiosFiltradosBase = lista;
+      state.sitiosFiltrados = lista;
+      state.modoVisibilidad = 'completa';
+      if (typeof renderizarSitios === 'function') renderizarSitios(lista);
+      // La pestaña Descubre queda disponible.
+      if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.hidden = false;
+      if (el.btnTabDescubre) el.btnTabDescubre.hidden = false;
+      if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
+      if (el.btnTabDescubre) el.btnTabDescubre.disabled = false;
+    } else {
+      _ocultarSitiosCatalogo();
+    }
+    if (typeof renderizarInfraListado === 'function') renderizarInfraListado();
+  }
+
+
+  function _syncCategorias() {
+    if (el.appRoot) el.appRoot.setAttribute('data-categorias-activos', _categoriasVisibles ? 'true' : 'false');
+    if (_categoriasVisibles) {
+      _rellenarFiltroCategorias();
+      if (!_filtroCategoriasOk) {
+        _filtroCategoriasOk = true;
+        if (el.filtroCategorias) el.filtroCategorias.addEventListener('change', _aplicarFiltroCategorias);
+      }
+      _aplicarFiltroCategorias();
+    } else {
+      _ocultarSitiosCatalogo();
+    }
+    _syncModoInfra();
+  }
+
+
+  /** Alterna un catálogo (P/A/D/M/C) manteniéndolos excluyentes: activar uno
+   *  apaga los demás; activar el que ya está activo lo apaga. */
+  function _toggleCatalogo(tipo) {
+    let activando = false;
+    if (tipo === 'puertos') activando = !_puertosVisibles;
+    else if (tipo === 'aeropuertos') activando = !_aeropuertosVisibles;
+    else if (tipo === 'departamentos') activando = !_departamentosVisibles;
+    else if (tipo === 'municipios') activando = !_municipiosVisibles;
+    else if (tipo === 'categorias') activando = !_categoriasVisibles;
+    _puertosVisibles = false;
+    _aeropuertosVisibles = false;
+    _departamentosVisibles = false;
+    _municipiosVisibles = false;
+    _categoriasVisibles = false;
+    if (activando) {
+      if (tipo === 'puertos') _puertosVisibles = true;
+      else if (tipo === 'aeropuertos') _aeropuertosVisibles = true;
+      else if (tipo === 'departamentos') _departamentosVisibles = true;
+      else if (tipo === 'municipios') _municipiosVisibles = true;
+      else if (tipo === 'categorias') _categoriasVisibles = true;
+    }
+    _syncPuertos();
+    _syncAeropuertos();
+    _syncDepartamentos();
+    _syncMunicipios();
+    _syncCategorias();
   }
 
 
   /** Etiqueta de la pestaña Ruta cuando algún catálogo (P/A/D/M) está activo:
    *  "PUERTOS", "AEROPUERTOS", "DEPARTAMENTOS", "MUNICIPIOS" o combinaciones. */
   function _etiquetaInfra() {
-    if (!_puertosVisibles && !_aeropuertosVisibles && !_departamentosVisibles && !_municipiosVisibles) return null;
+    if (!_puertosVisibles && !_aeropuertosVisibles && !_departamentosVisibles && !_municipiosVisibles && !_categoriasVisibles) return null;
     const partes = [];
     if (_puertosVisibles) partes.push('PUERTOS');
     if (_aeropuertosVisibles) partes.push('AEROPUERTOS');
     if (_departamentosVisibles) partes.push('DEPARTAMENTOS');
     if (_municipiosVisibles) partes.push('MUNICIPIOS');
+    if (_categoriasVisibles) partes.push('CATEGORÍAS');
     return partes.join(' Y ');
   }
 
@@ -174,7 +293,7 @@
   }
 
   function _syncModoInfra() {
-    const activo = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles;
+    const activo = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles;
     if (el.appRoot) {
       if (activo) el.appRoot.setAttribute('data-infra-activa', 'true');
       else el.appRoot.removeAttribute('data-infra-activa');

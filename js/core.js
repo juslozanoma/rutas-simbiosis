@@ -101,6 +101,7 @@
     rowDestino: document.getElementById('row-destino'),
     paradasTitulo: document.getElementById('paradas-titulo'),
     filtroMunicipiosDepto: document.getElementById('filtro-municipios-departamento'),
+    filtroCategorias: document.getElementById('filtro-categorias'),
     btnAutoOrganizar: document.getElementById('btn-auto-organizar'),
     btnTabPanelRuta: document.getElementById('btn-tab-panel-ruta'),
     btnTabPanelRutaLabel: document.getElementById('btn-tab-panel-ruta-label'),
@@ -167,6 +168,8 @@
   let _departamentosVisibles = false;
   let _municipiosVisibles = false;
   let _municipiosFiltroDepto = '';   // departamento activo del filtro de municipios
+  let _categoriasVisibles = false;   // tecla C: sitios por categoría (una a la vez)
+  let _categoriasFiltro = '';        // categoría activa del filtro de categorías
 
   // Ruta cargada desde archivo KML/GPX (tecla K): oculta el panel como los
   // aeropuertos/puertos mientras esté activa.

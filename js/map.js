@@ -213,11 +213,11 @@ const MapModule = (() => {
    *  la posición del elemento en la lista del panel. */
   function _iconoPinNumeroVerde(n) {
     return L.divIcon({
-      html: `<div class="parada-pin parada-pin--departamento">${n}</div>`,
+      html: `<div class="parada-pin parada-pin--departamento parada-pin--numero">${n}</div>`,
       className: '',
-      iconSize: [26, 26],
-      iconAnchor: [13, 13],
-      popupAnchor: [0, -15],
+      iconSize: [18, 18],
+      iconAnchor: [9, 9],
+      popupAnchor: [0, -11],
     });
   }
 

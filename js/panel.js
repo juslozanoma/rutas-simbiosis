@@ -21,10 +21,15 @@
       el.panelSitios.scrollTop = 0;
       el.panelLocate.hidden = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _rutaArchivoActiva;
       el.panelEscalas.hidden = true;
-      if (state.rutaActual && !(_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _rutaArchivoActiva)) {
+      // Con un catálogo (P/A/D/M/C) activo, al volver a Ruta se repone su
+      // listado (el cambio a Descubre oculta el panel de paradas).
+      const infraActiva = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles;
+      if (infraActiva) {
+        if (typeof renderizarInfraListado === 'function') renderizarInfraListado();
+      } else if (state.rutaActual && !(_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _rutaArchivoActiva)) {
         el.panelParadas.hidden = false;
       }
-      const ocultarTestigo = !state.rutaActual || _soMostrarSitiosVisto || (_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _rutaArchivoActiva);
+      const ocultarTestigo = !state.rutaActual || _soMostrarSitiosVisto || (_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _rutaArchivoActiva);
       el.btnMostrarSitiosCercanos.hidden = ocultarTestigo;
       el.btnMostrarSitiosCercanos.disabled = ocultarTestigo;
       sincronizarModoRutaMovil();
