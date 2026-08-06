@@ -374,6 +374,12 @@
     el.btnCalcular.disabled = !listo;
     if (el.btnAereo) el.btnAereo.disabled = !listo;
     if (el.btnFluvial) el.btnFluvial.disabled = !listo;
+    // Al agregar el origen se ocultan "Subir tu propia ruta" y "Tour
+    // personalizado" (CSS por data-origen-puesto).
+    if (el.appRoot) {
+      if (state.origen) el.appRoot.setAttribute('data-origen-puesto', 'true');
+      else el.appRoot.removeAttribute('data-origen-puesto');
+    }
   }
 
   /** Activa modo de selección en el mapa: el usuario hace clic y se llama a `callback(lat, lon)`. */

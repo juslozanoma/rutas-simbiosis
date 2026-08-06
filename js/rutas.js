@@ -280,10 +280,10 @@
   function _arcCoords(a, b, meandros = 0) {
     const lon1 = Number(a.longitud), lat1 = Number(a.latitud);
     const lon2 = Number(b.longitud), lat2 = Number(b.latitud);
-    const n = 32;
+    const n = 36;
     const dLon = lon2 - lon1, dLat = lat2 - lat1;
     const len = Math.sqrt(dLon * dLon + dLat * dLat) || 1;
-    const bulge = Math.min(Math.max(len * 0.10, 0.15), 3.5);
+    const bulge = Math.min(Math.max(len * 0.12, 0.15), 4);
     const px = -dLat / len;
     const py = dLon / len;
     const pts = [];
@@ -291,7 +291,10 @@
       const t = i / n;
       let off = Math.sin(Math.PI * t);
       if (meandros > 0) {
-        off += 0.45 * meandros * Math.sin(2 * Math.PI * t * 3) * Math.sin(Math.PI * t);
+        // Meandros con varias frecuencias para un cauce más natural.
+        off += 0.5 * meandros * Math.sin(2 * Math.PI * t * 2 + 0.6) * Math.sin(Math.PI * t);
+        off += 0.3 * meandros * Math.sin(2 * Math.PI * t * 4 + 1.3) * Math.sin(Math.PI * t);
+        off += 0.15 * meandros * Math.sin(2 * Math.PI * t * 7 + 2.1) * Math.sin(Math.PI * t);
       }
       pts.push([lon1 + dLon * t + px * bulge * off, lat1 + dLat * t + py * bulge * off]);
     }
@@ -391,13 +394,20 @@
         if (pares) break;
       }
       if (!apOri || !apDes || !pares || !pares.length) {
+        // Sin conexión aérea: si existe una ruta por río, se usa en su lugar
+        // (sin avisar del avión).
+        if (puntos.length === 2) {
+          const antes = state.rutaActual;
+          await calcularRutaFluvial(true);
+          if (state.rutaActual !== antes) return;
+        }
         if (!silencioso) _mostrarNotificacion('No se encontró una conexión aérea completa para la ruta');
         return;
       }
       apSegs.push({ a, b, apOri, apDes, hub: pares.length > 1 ? pares[0].b : null, pares });
     }
 
-    ponerEnCargaRuta(true, true);
+    ponerEnCargaRuta(true);
     try {
       // Rutas en carro de todos los tramos (todas en paralelo).
       const carros = await Promise.all(
@@ -568,7 +578,7 @@
       _habilitarMostrarSitios();
     } catch (err) {
       console.warn('Error al calcular ruta aérea', err);
-      _mostrarNotificacion('No se pudo calcular la ruta en avión');
+      if (!silencioso) _mostrarNotificacion('No se pudo calcular la ruta en avión');
     } finally {
       ponerEnCargaRuta(false);
     }
@@ -615,28 +625,37 @@
   }
 
   /** Geometría real del río entre dos puertos (a, b) usando Overpass (OSM).
-   *  Devuelve [[lon, lat], ...] o null si no se pudo obtener (offline, CORS,
-   *  sin datos en la zona). Se usa como trayecto del río con línea continua. */
+   *  Prueba varios espejos; devuelve [[lon, lat], ...] o null si no se pudo
+   *  obtener (offline, CORS, sin datos en la zona). */
   async function _geometriaRioOverpass(a, b) {
+    const ENDPOINTS = [
+      'https://overpass-api.de/api/interpreter',
+      'https://overpass.kumi.systems/api/interpreter',
+      'https://overpass.private.coffee/api/interpreter',
+      'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+    ];
     const dLon = Math.abs(Number(a.longitud) - Number(b.longitud));
     const dLat = Math.abs(Number(a.latitud) - Number(b.latitud));
-    const margen = Math.max(dLon, dLat) * 0.5 + 0.1;
+    const margen = Math.max(dLon, dLat) * 0.15 + 0.06;
     const minLat = Math.min(a.latitud, b.latitud) - margen;
     const maxLat = Math.max(a.latitud, b.latitud) + margen;
     const minLon = Math.min(a.longitud, b.longitud) - margen;
     const maxLon = Math.max(a.longitud, b.longitud) + margen;
-    const query = `[out:json][timeout:25];(way["waterway"](${minLat},${minLon},${maxLat},${maxLon});>;);out geom;`;
-    const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
-    let res;
-    try {
+    const query = `[out:json][timeout:20];(way["waterway"="river"](${minLat},${minLon},${maxLat},${maxLon}););out geom;`;
+
+    let data = null;
+    const consultas = ENDPOINTS.map((base) => {
       const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 25000);
-      res = await fetch(url, { signal: ctrl.signal });
-      clearTimeout(t);
-    } catch (err) { return null; }
-    if (!res.ok) return null;
-    let data;
-    try { data = await res.json(); } catch (err) { return null; }
+      const t = setTimeout(() => ctrl.abort(), 3000);
+      return fetch(base + '?data=' + encodeURIComponent(query), { signal: ctrl.signal })
+        .then((res) => { clearTimeout(t); return res.ok ? res.json() : null; })
+        .catch(() => { clearTimeout(t); return null; });
+    });
+    data = await Promise.race([
+      Promise.all(consultas).then((results) => results.find((r) => r && r.elements && r.elements.length) || null),
+      new Promise((resolve) => setTimeout(() => resolve(null), 6000)),
+    ]);
+    if (!data || !data.elements) return null;
     const ways = (data.elements || [])
       .filter((el) => el.type === 'way' && Array.isArray(el.geometry) && el.geometry.length >= 2);
     if (!ways.length) return null;
@@ -803,7 +822,7 @@
     }
     const hub = pares.length > 1 ? pares[0].b : null;
 
-    ponerEnCargaRuta(true, true);
+    ponerEnCargaRuta(true);
     // Carretera origen→puerto y puerto→destino. En zonas sin carreteras
     // (p. ej. la Amazonía) OSRM falla: se completa con una línea recta de
     // acceso para que la ruta fluvial siempre se muestre.
@@ -839,7 +858,12 @@
       for (const { a, b } of pares) {
         let coords = null;
         try { coords = await _geometriaRioOverpass(a, b); } catch (err) { coords = null; }
-        if (!coords || coords.length < 2) coords = _arcCoords(a, b, 2);
+        if (coords && coords.length >= 2) {
+          console.log('[fluvial] Geometría real del río (Overpass):', (a.nombre || a.id), '→', (b.nombre || b.id), coords.length, 'puntos');
+        } else {
+          coords = _arcCoords(a, b, 2);
+          console.warn('[fluvial] Sin geometría real (Overpass no respondió): arco con meandros', (a.nombre || a.id), '→', (b.nombre || b.id));
+        }
         const dist = turf.length(turf.lineString(coords), { units: 'kilometers' }) * 1000;
         const dur = (dist / 1000) / 25 * 3600; // río ≈ 25 km/h
         tramos.push({ coords, distanciaMetros: dist, duracionSegundos: dur, a, b });
@@ -977,7 +1001,7 @@
       _habilitarMostrarSitios();
     } catch (err) {
       console.warn('Error al calcular ruta fluvial', err);
-      _mostrarNotificacion('No se pudo calcular la ruta por río');
+      if (!silencioso) _mostrarNotificacion('No se pudo calcular la ruta por río');
     } finally {
       ponerEnCargaRuta(false);
     }

@@ -317,17 +317,26 @@
 
       // Marcador temporal para hover del perfil de altimetría: el vehículo
       // elegido por el usuario (o senderista en modo "Subir tu propia ruta")
-      // que se orienta paralelo a la ruta en el punto que representa.
+      // que avanza sobre la ruta apoyado en su base (ancla abajo-centro) y se
+      // orienta por el vector tangente sin saltos de 180°.
       let _hoverMarker = null;
       let _hoverCarEl = null;
       let _hoverBearing = null;
+      let _hoverRotation = null;
+      const _rotContinua = (target, prev) => {
+        if (prev == null) return target;
+        let r = target;
+        while (r - prev > 180) r -= 360;
+        while (r - prev < -180) r += 360;
+        return r;
+      };
       AltimetriaModule.setOnHover((p) => {
         _hoverBearing = p.bearing != null ? p.bearing : null;
         if (!_hoverMarker) {
           _hoverMarker = L.marker([p.lat, p.lon], {
             icon: L.divIcon({
               className: 'altimetria-hover-car',
-              html: TransportConfigModule.divIconoHTML(26, 26, 'transform-origin:50% 50%;'),
+              html: TransportConfigModule.divIconoHTML(26, 26, 'transform-origin:50% 100%;'),
               iconSize: [26, 26],
               iconAnchor: [13, 26],
             }),
@@ -340,7 +349,8 @@
           _hoverMarker.setLatLng([p.lat, p.lon]);
         }
         if (_hoverCarEl && _hoverBearing != null) {
-          _hoverCarEl.style.transform = `rotate(${_hoverBearing - 90}deg)`;
+          _hoverRotation = _rotContinua(_hoverBearing - 90, _hoverRotation);
+          _hoverCarEl.style.transform = `rotate(${_hoverRotation}deg)`;
         }
         _hoverMarker.bindTooltip(`${p.alt} msnm · ${p.dist} km`, {
           permanent: true, direction: 'top', className: 'altimetria-map-tooltip',
@@ -349,17 +359,18 @@
       });
 
       AltimetriaModule.setOnLeave(() => {
-        if (_hoverMarker) { _hoverMarker.remove(); _hoverMarker = null; _hoverCarEl = null; _hoverBearing = null; }
+        if (_hoverMarker) { _hoverMarker.remove(); _hoverMarker = null; _hoverCarEl = null; _hoverBearing = null; _hoverRotation = null; }
       });
 
       // Al cambiar el vehículo o su color se actualiza el carro hover del mapa.
       if (typeof TransportConfigModule !== 'undefined' && TransportConfigModule.setOnCambio) {
         TransportConfigModule.setOnCambio(() => {
           if (_hoverMarker && _hoverMarker.getElement()) {
-            _hoverMarker.getElement().innerHTML = TransportConfigModule.divIconoHTML(26, 26, 'transform-origin:50% 50%;');
+            _hoverMarker.getElement().innerHTML = TransportConfigModule.divIconoHTML(26, 26, 'transform-origin:50% 100%;');
             _hoverCarEl = _hoverMarker.getElement()?.querySelector('.transport-vehiculo') || null;
             if (_hoverCarEl && _hoverBearing != null) {
-              _hoverCarEl.style.transform = `rotate(${_hoverBearing - 90}deg)`;
+              _hoverRotation = _rotContinua(_hoverBearing - 90, _hoverRotation);
+              _hoverCarEl.style.transform = `rotate(${_hoverRotation}deg)`;
             }
           }
         });

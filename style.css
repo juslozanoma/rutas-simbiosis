@@ -176,6 +176,9 @@ input, select{ font-family: inherit; }
 #app[data-tour-activo="true"] #panel-locate{ display: none; }
 #app[data-tour-activo="true"] #btn-subir-ruta-propia,
 #app[data-tour-activo="true"] #btn-iniciar-tour{ display: none; }
+/* Al agregar el origen se ocultan "Subir tu propia ruta" y "Tour personalizado". */
+#app[data-origen-puesto="true"] .btn-subir-ruta-propia,
+#app[data-origen-puesto="true"] #btn-iniciar-tour{ display: none; }
 
 /* Pestañas X para cerrar el tour (escritorio y móvil), como en "Subir tu
    propia ruta". */

@@ -736,15 +736,14 @@ const AltimetriaModule = (() => {
     return _tooltipIndicador;
   }
 
-  /** Posiciona el carro del perfil en (mx, cy) y lo orienta paralelo a la
-   *  trayectoria (mismo bearing que el carro del mapa). */
-  function _posicionarCarroPerfil(cont, mx, cy, bearing) {
+  /** Posiciona el carro del perfil en (mx, cy) con su base apoyada sobre la
+   *  curva y siempre orientado hacia la derecha (el sentido del perfil). */
+  function _posicionarCarroPerfil(cont, mx, cy) {
     const el = cont._hoverCircle;
     if (!el) return;
     el.style.left = (mx - _CAR_MEDIA) + 'px';
     el.style.top = (cy - 22) + 'px';
-    const rot = (bearing != null && !isNaN(bearing)) ? `rotate(${bearing - 90}deg)` : '';
-    el.style.transform = rot;
+    el.style.transform = '';
     el.style.display = '';
   }
 

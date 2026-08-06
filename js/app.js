@@ -26,6 +26,12 @@
         return;
       }
       const conexiones = tipo === 'puerto' ? _conexionesDePuerto(item) : _conexionesDeAeropuerto(item);
+      // En el catálogo de puertos se muestra el trayecto real del río
+      // (Overpass/OSM) en línea continua hacia cada puerto conectado.
+      if (tipo === 'puerto' && typeof MapModule.dibujarConexionesRio === 'function') {
+        MapModule.dibujarConexionesRio(String(item.id), Number(item.latitud), Number(item.longitud), conexiones, '#2f7a6b');
+        return;
+      }
       MapModule.dibujarConexiones(tipo, String(item.id), Number(item.latitud), Number(item.longitud), conexiones, tipo === 'puerto' ? '#2f7a6b' : '#4a6fa5');
     });
     // Arrastre con clic derecho de un puerto del catálogo: actualiza su
