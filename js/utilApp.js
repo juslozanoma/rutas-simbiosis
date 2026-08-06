@@ -92,6 +92,11 @@
         el.btnMostrarSitiosCercanos.hidden = true;
         el.btnMostrarSitiosCercanos.disabled = true;
       }
+      // Con los catálogos activos se ocultan del mapa todas las rutas e
+      // íconos de sitios; se restauran al apagar las teclas (A/P).
+      if (typeof MapModule !== 'undefined' && typeof MapModule.ocultarRutasYSitios === 'function') {
+        MapModule.ocultarRutasYSitios(true);
+      }
       if (typeof renderizarInfraListado === 'function') renderizarInfraListado();
       _actualizarEtiquetaPestanaRutaInfra();
     } else {
@@ -99,6 +104,9 @@
       _pestanaAntesInfra = null;
       if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.hidden = false;
       if (el.btnTabDescubre) el.btnTabDescubre.hidden = false;
+      if (typeof MapModule !== 'undefined' && typeof MapModule.ocultarRutasYSitios === 'function') {
+        MapModule.ocultarRutasYSitios(false);
+      }
       if (typeof _restaurarPanelRutaInfra === 'function') _restaurarPanelRutaInfra();
       // Si la ruta desde archivo (K) sigue activa, reponer su tarjeta en la lista.
       if (_rutaArchivoActiva && typeof RutaArchivoModule !== 'undefined' && typeof RutaArchivoModule.refrescarPanel === 'function') {
@@ -141,7 +149,9 @@
 
 
   function actualizarEstadoBotonCalcular() {
-    el.btnCalcular.disabled = !(state.origen && state.destino);
+    const listo = !!(state.origen && state.destino);
+    el.btnCalcular.disabled = !listo;
+    if (el.btnAereo) el.btnAereo.disabled = !listo;
   }
 
   /** Activa modo de selección en el mapa: el usuario hace clic y se llama a `callback(lat, lon)`. */
@@ -200,7 +210,7 @@
   function ponerEnCargaRuta(cargando, silencioso = false) {
     if (cargando) el.btnCalcular.disabled = true;
     el.btnCalcular.setAttribute('data-loading', cargando ? 'true' : 'false');
-    if (el.btnAereo) el.btnAereo.disabled = cargando;
+    if (el.btnAereo) el.btnAereo.disabled = cargando || !(state.origen && state.destino);
     if (el.btnFluvial) el.btnFluvial.disabled = cargando;
     // El spinner Monalisa no debe aparecer en la pestaña Descubre ni en recálculos
     // silenciosos (p. ej. al agregar un sitio a la ruta).
@@ -214,6 +224,7 @@
       b.disabled = cargando;
       b.setAttribute('data-loading', cargando ? 'true' : 'false');
     });
+    document.querySelectorAll('.escala-row__aereo').forEach((b) => { b.disabled = cargando; });
     document.querySelectorAll('.sitio-card__add').forEach((b) => { b.disabled = cargando; });
     if (esMovil()) {
       el.panelLocate.hidden = cargando;

@@ -18,6 +18,9 @@ const AltimetriaModule = (() => {
   let _nombreOrigen = 'Origen';
   let _nombreDestino = 'Destino';
   let _onEliminarParada = null;
+  let _nSegmentos = 1;          // número de tramos en carro del perfil (MultiLineString)
+  let _segmentoActivo = 0;      // índice (0-based) del tramo visible (por defecto el 1)
+  let _segmentoExtremos = null; // [[nombreInicio, nombreFin], ...] por tramo
   const _esTactil = ('ontouchstart' in window) || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);
 
   // Arrastre horizontal del perfil (clic + mover para desplazarse lateralmente).
@@ -65,17 +68,28 @@ const AltimetriaModule = (() => {
   window.addEventListener('orientationchange', _reRenderPorResize);
 
   const MIN_SPAN_ZOOM = 0.5;   // km mínimos de rango visible al hacer zoom horizontal
+  const _CAR_MEDIA = 11;       // mitad del tamaño del indicador de hover (carro verde, 22px)
 
   let _tooltipIndicador = null;
 
   function _acumular(coords, elev) {
+    // LineString (coords plano) o MultiLineString (varios tramos separados,
+    // p. ej. carretera→aeropuerto y aeropuerto→carretera). La distancia se
+    // acumula de forma continua (kilometraje solo de carretera) y cada punto
+    // guarda su tramo para no dibujar líneas entre tramos distintos.
+    const tramos = (coords && Array.isArray(coords[0]) && Array.isArray(coords[0][0])) ? coords : [coords];
     const total = [];
     let acc = 0;
-    for (let i = 0; i < coords.length; i++) {
-      if (i > 0) {
-        acc += turf.distance(turf.point(coords[i - 1]), turf.point(coords[i]), { units: 'kilometers' });
+    let ei = 0; // índice aplanado: recorre TODOS los tramos en el mismo orden que `elev`
+    for (let si = 0; si < tramos.length; si++) {
+      const tramo = tramos[si];
+      for (let i = 0; i < tramo.length; i++) {
+        if (i > 0) {
+          acc += turf.distance(turf.point(tramo[i - 1]), turf.point(tramo[i]), { units: 'kilometers' });
+        }
+        total.push({ d: acc, e: elev && elev[ei] != null ? elev[ei] : null, coord: tramo[i], seg: si });
+        ei++;
       }
-      total.push({ d: acc, e: elev && elev[i] != null ? elev[i] : null, coord: coords[i] });
     }
     return total;
   }
@@ -90,8 +104,49 @@ const AltimetriaModule = (() => {
       _finOffset = null;
       _inicioAsignado = false;
       _finAsignado = false;
+      _segmentoActivo = 0;
     }
+    const geo = rutaGeojson && rutaGeojson.geometry;
+    const coords = geo && geo.coordinates;
+    _nSegmentos = (geo && geo.type === 'MultiLineString' && Array.isArray(coords)) ? coords.length : 1;
+    if (_segmentoActivo >= _nSegmentos) _segmentoActivo = 0;
+    _renderSegmentosHeader();
     _puntoHover = null;
+  }
+
+  /** Nombres de los extremos (inicio/fin) de cada tramo en carro del perfil. */
+  function setSegmentosExtremos(extremos) {
+    _segmentoExtremos = extremos && Array.isArray(extremos) ? extremos : null;
+  }
+
+  /** Selecciona el tramo en carro a mostrar (índice 0-based); el 1 por defecto. */
+  function setSegmentoActivo(idx) {
+    const next = (idx == null || idx < 0 || idx >= _nSegmentos) ? 0 : idx;
+    if (next === _segmentoActivo) return;
+    _segmentoActivo = next;
+    _renderSegmentosHeader();
+    _renderizarTodo();
+  }
+
+  /** Pinta los botones numerados (1..N) a la derecha del título del perfil. */
+  function _renderSegmentosHeader() {
+    ['altimetria-segmentos', 'altimetria-segmentos-panel'].forEach((id) => {
+      const cont = document.getElementById(id);
+      if (!cont) return;
+      cont.innerHTML = '';
+      if (_nSegmentos <= 1) { cont.hidden = true; return; }
+      cont.hidden = false;
+      for (let i = 0; i < _nSegmentos; i++) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'altimetria__segmento' + (i === _segmentoActivo ? ' altimetria__segmento--activo' : '');
+        btn.textContent = String(i + 1);
+        btn.title = 'Segmento en carro ' + (i + 1);
+        btn.setAttribute('aria-label', 'Segmento en carro ' + (i + 1));
+        btn.addEventListener('click', () => setSegmentoActivo(i));
+        cont.appendChild(btn);
+      }
+    });
   }
 
   function agregarParada(lat, lon, nombre, distKm, label, id, tipo) {
@@ -148,6 +203,7 @@ const AltimetriaModule = (() => {
   function setOnLeave(fn) { _onLeaveMapa = fn; }
   function setOnCentrarMapa(fn) { _onCentrarMapa = fn; }
   function toggleFollow() { _followActivo = !_followActivo; return _followActivo; }
+  function setFollowActivo(activo) { _followActivo = !!activo; return _followActivo; }
   function isFollowActivo() { return _followActivo; }
 
   /** Interpola la altitud del perfil en una distancia dada (km). */
@@ -222,8 +278,19 @@ const AltimetriaModule = (() => {
     const maxD = puntos[puntos.length - 1].d || 1;
 
     // Dominio mostrado: desde el punto asignado como inicio hasta el asignado como fin.
-    const domInicio = Math.max(0, Math.min(_inicioOffset != null ? _inicioOffset : 0, maxD));
-    const domFin = Math.max(domInicio, Math.min(_finOffset != null ? _finOffset : maxD, maxD));
+    let domInicio = Math.max(0, Math.min(_inicioOffset != null ? _inicioOffset : 0, maxD));
+    let domFin = Math.max(domInicio, Math.min(_finOffset != null ? _finOffset : maxD, maxD));
+    // Con un segmento activo el perfil se limita a ese tramo en carro (respeta
+    // los puntos de inicio/fin asignados dentro del segmento).
+    if (_segmentoActivo != null && _segmentoActivo < _nSegmentos) {
+      const segPts = puntos.filter((p) => p.seg === _segmentoActivo);
+      if (segPts.length) {
+        domInicio = segPts[0].d;
+        domFin = segPts[segPts.length - 1].d;
+        if (_inicioOffset != null && _inicioOffset > domInicio) domInicio = Math.min(_inicioOffset, domFin);
+        if (_finOffset != null && _finOffset < domFin) domFin = Math.max(_finOffset, domInicio);
+      }
+    }
 
     // Si cambió la ruta o el rango asignado se reinicia el zoom.
     if (cont._geo !== _rutaGeojson || cont._domInicio !== domInicio || cont._domFin !== domFin) {
@@ -240,16 +307,20 @@ const AltimetriaModule = (() => {
     const zoomEnd = cont._zoomEnd;
     const span = zoomEnd - zoomStart;
 
-    // Alturas visibles dentro del rango de zoom (para ajustar el eje vertical).
-    const alturasVis = puntos.filter(p => p.e != null && p.d >= zoomStart - 0.001 && p.d <= zoomEnd + 0.001).map(p => p.e);
+    // Eje vertical independiente por tramo: la altura máxima del recorrido
+    // activo fija el tope del eje y la mínima el límite inferior. El eje no
+    // cambia con el zoom horizontal.
+    const ptsSeg = (_segmentoActivo != null && _segmentoActivo < _nSegmentos)
+      ? puntos.filter(p => p.seg === _segmentoActivo)
+      : puntos;
+    const alturasSeg = ptsSeg.filter(p => p.e != null).map(p => p.e);
     let minAlt, maxAlt, rangoAlt;
-    if (alturasVis.length) {
-      minAlt = Math.min(...alturasVis);
-      maxAlt = Math.max(...alturasVis);
+    if (alturasSeg.length) {
+      minAlt = Math.min(...alturasSeg);
+      maxAlt = Math.max(...alturasSeg);
     } else {
-      const alturas = puntos.filter(p => p.e != null).map(p => p.e);
-      minAlt = alturas.length ? Math.min(...alturas) : 0;
-      maxAlt = alturas.length ? Math.max(...alturas) : 1;
+      minAlt = 0;
+      maxAlt = 1;
     }
     rangoAlt = Math.max(maxAlt - minAlt, 10);
 
@@ -279,9 +350,12 @@ const AltimetriaModule = (() => {
 
     const visibles = puntos.filter(p => p.e != null && p.d >= zoomStart - 0.001 && p.d <= zoomEnd + 0.001);
     let dLine = '';
+    let segAnterior = null;
     for (const p of visibles) {
       if (!dLine) dLine = `M${x(p.d)},${y(p.e)}`;
-      else dLine += ` L${x(p.d)},${y(p.e)}`;
+      else if (p.seg === segAnterior) dLine += ` L${x(p.d)},${y(p.e)}`;
+      else dLine += ` M${x(p.d)},${y(p.e)}`;
+      segAnterior = p.seg;
     }
 
     const _prevHTML = cont.innerHTML;
@@ -419,10 +493,13 @@ const AltimetriaModule = (() => {
     hoverLine.style.display = 'none';
     svg.appendChild(hoverLine);
 
-    // Hover circle
-    const hoverCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    hoverCircle.setAttribute('r', '4');
-    hoverCircle.setAttribute('fill', '#246054');
+    // Indicador de posición (hover): un carro verde, igual que en el mapa.
+    const hoverCircle = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+    hoverCircle.setAttribute('href', 'public/car-verde.svg');
+    hoverCircle.setAttribute('width', '22');
+    hoverCircle.setAttribute('height', '22');
+    hoverCircle.setAttribute('x', '-50');
+    hoverCircle.setAttribute('y', '-50');
     hoverCircle.style.display = 'none';
     svg.appendChild(hoverCircle);
 
@@ -462,9 +539,25 @@ const AltimetriaModule = (() => {
       _crearIndicador(svg, px, py, p.label || '', { tipo: p.tipo || 'parada', id: p.id, lat: p.lat, lon: p.lon, nombre: p.nombre, distKm: dist }, tooltip, _nombreSinDepartamento(p.nombre));
     }
 
-    // A (origen) y Z (destino) markers
-    _agregarIndicadorExtremo(svg, puntos, 0, 'A', _nombreOrigen, zoomStart, zoomEnd, x, y, minAlt, rangoAlt);
-    _agregarIndicadorExtremo(svg, puntos, puntos.length - 1, 'Z', _nombreDestino, zoomStart, zoomEnd, x, y, minAlt, rangoAlt);
+    // Marcadores de extremos del tramo visible: cada borde muestra el icono
+    // correcto según lo que hay ahí (A en el origen real, Z en el destino real,
+    // ✈ en aeropuertos, 🚢 en puertos); los bordes de pueblo (escala) no se
+    // marcan porque su letra ya la pinta la parada en ese mismo punto.
+    let idxA = 0, idxZ = puntos.length - 1;
+    let extremoIni = { nombre: _nombreOrigen, tipo: 'origen' };
+    let extremoFin = { nombre: _nombreDestino, tipo: 'destino' };
+    if (_segmentoActivo != null && _segmentoActivo < _nSegmentos) {
+      const idxs = [];
+      for (let i = 0; i < puntos.length; i++) { if (puntos[i].seg === _segmentoActivo) idxs.push(i); }
+      if (idxs.length) { idxA = idxs[0]; idxZ = idxs[idxs.length - 1]; }
+      if (_segmentoExtremos && _segmentoExtremos[_segmentoActivo]) {
+        const par = _segmentoExtremos[_segmentoActivo];
+        if (par && par[0]) extremoIni = par[0];
+        if (par && par[1]) extremoFin = par[1];
+      }
+    }
+    _agregarIndicadorExtremo(svg, puntos, idxA, extremoIni, zoomStart, zoomEnd, x, y, minAlt, rangoAlt);
+    _agregarIndicadorExtremo(svg, puntos, idxZ, extremoFin, zoomStart, zoomEnd, x, y, minAlt, rangoAlt);
 
     // Las etiquetas del eje X se dibujan al final (z alto) para no quedar ocultas
     // ni cortadas (por ejemplo el "km" del último valor).
@@ -581,7 +674,20 @@ const AltimetriaModule = (() => {
     }
   }
 
-  function _agregarIndicadorExtremo(svg, puntos, idx, letra, nombre, zoomStart, zoomEnd, x, y, minAlt, rangoAlt) {
+  /** Añade el marcador de un extremo del tramo activo con el icono correcto:
+   *  A (origen real), Z (destino real) y ✈ (aeropuerto). En los bordes de
+   *  pueblo (escala) y de puerto no se pinta nada porque su letra o símbolo
+   *  (B, C, …, 🚢) ya aparece como parada en ese mismo punto. */
+  function _agregarIndicadorExtremo(svg, puntos, idx, extremo, zoomStart, zoomEnd, x, y, minAlt, rangoAlt) {
+    if (!extremo) return;
+    const tipo = extremo.tipo || 'origen';
+    if (tipo === 'escala' || tipo === 'puerto') return;
+    let letra;
+    if (tipo === 'origen') letra = 'A';
+    else if (tipo === 'destino') letra = 'Z';
+    else if (tipo === 'aeropuerto') letra = '✈';
+    else letra = 'A';
+    const nombre = extremo.nombre || '';
     const pt = puntos[idx];
     if (!pt) return;
     const dist = pt.d;
@@ -631,7 +737,6 @@ const AltimetriaModule = (() => {
     cont._hoverLine.setAttribute('x1', mx);
     cont._hoverLine.setAttribute('x2', mx);
     cont._hoverLine.style.display = '';
-    cont._hoverCircle.setAttribute('cx', mx);
     const pLo = cont._puntos[lo];
     const pHi = cont._puntos[hi];
     let alt;
@@ -645,7 +750,9 @@ const AltimetriaModule = (() => {
     } else {
       alt = cont._minAlt + cont._rangoAlt * 0.5;
     }
-    cont._hoverCircle.setAttribute('cy', cont._padTop + cont._plotH - ((alt - cont._minAlt) / cont._rangoAlt) * cont._plotH);
+    const cy = cont._padTop + cont._plotH - ((alt - cont._minAlt) / cont._rangoAlt) * cont._plotH;
+    cont._hoverCircle.setAttribute('x', mx - _CAR_MEDIA);
+    cont._hoverCircle.setAttribute('y', cy - 22);
     cont._hoverCircle.style.display = '';
     _puntoHover = { lat: pt.coord[1], lon: pt.coord[0], dist: dist.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A' };
     if (_onHoverMapa) _onHoverMapa(_puntoHover);
@@ -716,7 +823,6 @@ const AltimetriaModule = (() => {
     cont._hoverLine.setAttribute('x1', mx);
     cont._hoverLine.setAttribute('x2', mx);
     cont._hoverLine.style.display = '';
-    cont._hoverCircle.setAttribute('cx', mx);
     const pLo = cont._puntos[lo];
     const pHi = cont._puntos[hi];
     let alt;
@@ -730,7 +836,9 @@ const AltimetriaModule = (() => {
     } else {
       alt = cont._minAlt + cont._rangoAlt * 0.5;
     }
-    cont._hoverCircle.setAttribute('cy', cont._padTop + cont._plotH - ((alt - cont._minAlt) / cont._rangoAlt) * cont._plotH);
+    const cy = cont._padTop + cont._plotH - ((alt - cont._minAlt) / cont._rangoAlt) * cont._plotH;
+    cont._hoverCircle.setAttribute('x', mx - _CAR_MEDIA);
+    cont._hoverCircle.setAttribute('y', cy - 22);
     cont._hoverCircle.style.display = '';
     _puntoHover = { lat: pt.coord[1], lon: pt.coord[0], dist: dist.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A' };
     if (_onHoverMapa) _onHoverMapa(_puntoHover);
@@ -834,6 +942,13 @@ const AltimetriaModule = (() => {
     _paradas = [];
     _totalKm = 0;
     _puntoHover = null;
+    _nSegmentos = 1;
+    _segmentoActivo = 0;
+    _segmentoExtremos = null;
+    ['altimetria-segmentos', 'altimetria-segmentos-panel'].forEach((id) => {
+      const c = document.getElementById(id);
+      if (c) { c.innerHTML = ''; c.hidden = true; }
+    });
     ['', '-panel'].forEach((suffix) => {
       const d = document.getElementById('altimetria-dist' + suffix);
       const a = document.getElementById('altimetria-alt' + suffix);
@@ -868,8 +983,9 @@ const AltimetriaModule = (() => {
       }
     }
     if (alt != null) {
-      cont._hoverCircle.setAttribute('cx', mx);
-      cont._hoverCircle.setAttribute('cy', cont._padTop + cont._plotH - ((alt - cont._minAlt) / cont._rangoAlt) * cont._plotH);
+      const cy = cont._padTop + cont._plotH - ((alt - cont._minAlt) / cont._rangoAlt) * cont._plotH;
+      cont._hoverCircle.setAttribute('x', mx - _CAR_MEDIA);
+      cont._hoverCircle.setAttribute('y', cy - 22);
       cont._hoverCircle.style.display = '';
     }
     if (seguir !== false && _followActivo && _onCentrarMapa) {
@@ -899,5 +1015,5 @@ const AltimetriaModule = (() => {
     return { alt, dist: distKm };
   }
 
-  return { setDatos, agregarParada, renderizar, renderizarVisibles, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa, setOnHover, setOnLeave, setOnCentrarMapa, setOnEliminarParada, setExtremos, setRangoInicio, setRangoFin, quitarRangoInicio, quitarRangoFin, toggleFollow, isFollowActivo, mostrarHoverEn, ocultarHover, getInfoAt };
+  return { setDatos, setSegmentosExtremos, setSegmentoActivo, agregarParada, renderizar, renderizarVisibles, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa, setOnHover, setOnLeave, setOnCentrarMapa, setOnEliminarParada, setExtremos, setRangoInicio, setRangoFin, quitarRangoInicio, quitarRangoFin, toggleFollow, setFollowActivo, isFollowActivo, mostrarHoverEn, ocultarHover, getInfoAt };
 })();

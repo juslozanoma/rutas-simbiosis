@@ -304,6 +304,10 @@ input, select{ font-family: inherit; }
 .icon-btn:disabled{ opacity: 0.35; cursor: not-allowed; }
 .icon-btn--aereo img{ transition: filter 0.12s; }
 .icon-btn--fluvial img{ transition: filter 0.12s; }
+/* Botón de avión: verde con el avión blanco (siempre, no solo al activarse). */
+.icon-btn--aereo{ background: var(--teal-600); border-color: var(--teal-600); }
+.icon-btn--aereo:hover:not(:disabled){ background: var(--teal-500); border-color: var(--teal-500); }
+.icon-btn--aereo img{ filter: brightness(0) invert(1); }
 .icon-btn--active{ background: var(--teal-500); border-color: var(--teal-500); }
 .icon-btn--active:hover:not(:disabled){ background: var(--teal-600); border-color: var(--teal-600); }
 .icon-btn--active img{ filter: brightness(0) invert(1) !important; }
@@ -443,9 +447,14 @@ input, select{ font-family: inherit; }
 #app[data-ruta-lista="true"] #row-destino{ display: none; }
 #app[data-ruta-lista="true"] #btn-agregar-intermedio{ display: inline-flex; }
 
-/* Cuando están visibles los cuadros de origen y destino, no se muestran los botones
-   naranjas de "calcular ruta" de los pueblos intermedios. */
-#app:not([data-ruta-lista="true"]) .escala-row__calc{ display: none; }
+/* Botones de carro (verde) y avión (verde) de cada pueblo intermedio: siempre
+   visibles para que el usuario elija el medio de transporte del tramo. */
+.escala-row__aereo{
+  background: var(--teal-600);
+  border-color: var(--teal-600);
+  color: #ffffff;
+}
+.escala-row__aereo:hover{ background: var(--teal-500); border-color: var(--teal-500); }
 .paradas-lista{
   list-style: none;
   margin: 0;
@@ -1592,8 +1601,6 @@ input, select{ font-family: inherit; }
   .btn-agregar-intermedio{ display: inline-flex; }
   /* En móvil los pueblos intermedios solo se agregan desde las paradas: el
      "+" nunca se muestra (el avión ocupa su lugar en la fila del origen). */
-  /* En móvil el pueblo intermedio recalcula solo al elegirlo: sin botón verde. */
-  .escala-row__calc{ display: none !important; }
   .map-full{ flex: 0 0 50%; min-height: 0; }
   #app[data-mobile-panel="collapsed"] .map-full{ flex: 1 !important; }
   #app[data-mobile-panel="collapsed"] .side-panel{ display: none !important; }
@@ -1779,6 +1786,27 @@ input, select{ font-family: inherit; }
   padding-bottom: 0px;
 }
 .altimetria__title{ font-size: 0.7rem; font-weight: 600; color: var(--text-muted); margin-right: auto; text-transform: uppercase; letter-spacing: 0.04em; }
+/* Botones numerados de segmentos en carro (altimetría de rutas aéreas/fluviales) */
+.altimetria__segmentos{ display: flex; gap: 4px; align-items: center; margin-right: 6px; }
+.altimetria__segmentos[hidden]{ display: none; }
+.altimetria__segmento{
+  width: 22px; height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--teal-500);
+  background: #ffffff;
+  color: var(--teal-600);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.altimetria__segmento:hover{ background: var(--teal-100); }
+.altimetria__segmento--activo,
+.altimetria__segmento--activo:hover{ background: var(--teal-500); border-color: var(--teal-500); color: #ffffff; }
 .altimetria__close{
   width: 26px; height: 26px;
   border: none; background: transparent;

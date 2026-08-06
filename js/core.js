@@ -187,5 +187,3 @@
   let _cambioExtremoEnCurso = null; // 'origen' | 'destino' | null
 
   /** La próxima escala creada reemplaza un pueblo intermedio (recalcular al elegir). */
-
-  let _escalaEnCambio = false;

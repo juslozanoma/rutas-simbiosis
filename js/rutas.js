@@ -273,14 +273,61 @@
   }
 
 
+  /** Distancia en km sobre la geometría del perfil (LineString o MultiLineString)
+   *  del punto más cercano a (lon, lat). En modo aéreo/fluvial el perfil son
+   *  los tramos de carretera separados (sin el trayecto de avión/río): la
+   *  distancia se acumula en el mismo orden en que el perfil acumula km. */
+  function _distKmEnPerfil(linea, lon, lat) {
+    if (!linea || !linea.geometry) return 0;
+    const coords = linea.geometry.coordinates;
+    const tramos = linea.geometry.type === 'MultiLineString' ? coords : [coords];
+    let acumulado = 0;
+    let mejor = Infinity;
+    for (const tramo of tramos) {
+      if (!tramo || tramo.length < 2) continue;
+      try {
+        const nearest = turf.nearestPointOnLine(turf.lineString(tramo), turf.point([lon, lat]), { units: 'kilometers' });
+        const d = (nearest.properties.location || 0) + acumulado;
+        if (d < mejor) mejor = d;
+      } catch {}
+      acumulado += turf.length(turf.lineString(tramo), { units: 'kilometers' });
+    }
+    return mejor === Infinity ? 0 : mejor;
+  }
+
   function _actualizarBotonAereo() {
     if (!el.btnAereo) return;
     el.btnAereo.setAttribute('aria-pressed', String(state.modoAereo));
     el.btnAereo.classList.toggle('icon-btn--active', state.modoAereo);
   }
 
-  /** Calcula la ruta directamente en avión (carro→aeropuerto→vuelo→aeropuerto→carro). */
+  /** Aeropuertos de la ruta aérea para marcarlos en el mapa, sin duplicados:
+   *  cuando dos tramos encadenados comparten aeropuerto (la llegada de uno es
+   *  la salida del siguiente en el pueblo intermedio) se marca una sola vez. */
+  function _aeropuertosMarcables(apSegs) {
+    const segs = (apSegs && apSegs.length)
+      ? apSegs
+      : [{ apOri: state.tramosAereo?.apOri, hub: state.tramosAereo?.hub, apDes: state.tramosAereo?.apDes }];
+    const vistos = new Set();
+    const res = [];
+    segs.forEach((seg, i, arr) => {
+      const items = [];
+      if (seg.apOri) items.push({ ap: seg.apOri, titulo: i === 0 ? 'Salida' : 'Conexión' });
+      if (seg.hub) items.push({ ap: seg.hub, titulo: 'Conexión' });
+      if (seg.apDes) items.push({ ap: seg.apDes, titulo: i === arr.length - 1 ? 'Llegada' : 'Conexión' });
+      items.forEach((it) => {
+        const k = String(it.ap.id);
+        if (!vistos.has(k)) { vistos.add(k); res.push(it); }
+      });
+    });
+    return res;
+  }
 
+  /** Calcula la ruta directamente en avión (carro→aeropuerto→vuelo→aeropuerto→carro).
+   *  Con pueblos intermedios el trayecto se encadena: cada pueblo genera su
+   *  propio tramo carro→vuelo→carro, y los tramos se enlazan en el aeropuerto
+   *  más cercano de cada pueblo (p. ej. Bogotá → Medellín → Cartagena vuela
+   *  Bogotá→EOH, EOH→CTG). */
   async function calcularRutaAerea() {
     if (!state.origen || !state.destino) return;
     if (!state.aeropuertos || !state.aeropuertos.length) {
@@ -292,62 +339,99 @@
     // elige el primer par con conexión; el más cercano puede no tener vuelos
     // hacia el otro extremo (p. ej. Bogotá→Medellín cae por EOH y sí por MDE).
     const K_AEROPUERTOS = 5;
-    let apOri = null, apDes = null, pares = null;
-    for (const candDes of _infraCercanos(state.destino, state.aeropuertos, K_AEROPUERTOS)) {
-      for (const candOri of _infraCercanos(state.origen, state.aeropuertos, K_AEROPUERTOS)) {
-        const p = _planearVuelos(candOri, candDes);
-        if (p && p.length) { apOri = candOri; apDes = candDes; pares = p; break; }
+
+    // Pueblos intermedios en orden de visita (los que ya tienen coordenadas).
+    const paradasPueblo = state.escalas.filter((e) => e.lat != null && !e._dragGenerated);
+    const puntos = [state.origen, ...paradasPueblo, state.destino];
+
+    // Por cada par consecutivo se planea el vuelo carro→aeropuerto→vuelo→aeropuerto→carro.
+    const apSegs = [];
+    for (let i = 0; i < puntos.length - 1; i++) {
+      const a = puntos[i], b = puntos[i + 1];
+      let apOri = null, apDes = null, pares = null;
+      for (const candDes of _infraCercanos(b, state.aeropuertos, K_AEROPUERTOS)) {
+        for (const candOri of _infraCercanos(a, state.aeropuertos, K_AEROPUERTOS)) {
+          const p = _planearVuelos(candOri, candDes);
+          if (p && p.length) { apOri = candOri; apDes = candDes; pares = p; break; }
+        }
+        if (pares) break;
       }
-      if (pares) break;
+      if (!apOri || !apDes || !pares || !pares.length) {
+        _mostrarNotificacion('No se encontró una conexión aérea completa para la ruta');
+        return;
+      }
+      apSegs.push({ a, b, apOri, apDes, hub: pares.length > 1 ? pares[0].b : null, pares });
     }
-    if (!apOri || !apDes || !pares || !pares.length) {
-      _mostrarNotificacion('No se encontró una conexión aérea entre el origen y el destino');
-      return;
-    }
-    const hub = pares.length > 1 ? pares[0].b : null;
 
     ponerEnCargaRuta(true, true);
     try {
-      const [rutaCarro1, rutaCarro2] = await Promise.all([
-        RoutingModule.calcularRuta(state.origen, { lat: apOri.latitud, lon: apOri.longitud }, 'driving'),
-        RoutingModule.calcularRuta({ lat: apDes.latitud, lon: apDes.longitud }, state.destino, 'driving'),
-      ]);
+      // Rutas en carro de todos los tramos (todas en paralelo).
+      const carros = await Promise.all(
+        apSegs.flatMap((seg) => [
+          RoutingModule.calcularRuta(seg.a, { lat: seg.apOri.latitud, lon: seg.apOri.longitud }, 'driving'),
+          RoutingModule.calcularRuta({ lat: seg.apDes.latitud, lon: seg.apDes.longitud }, seg.b, 'driving'),
+        ]),
+      );
 
-      const coordsCarro1 = rutaCarro1.geojson.geometry.coordinates;
-      const coordsCarro2 = rutaCarro2.geojson.geometry.coordinates;
+      const vuelosT = [];
+      const tramosCarro = [];
+      const elevacion = [];
+      let totalDist = 0, totalDur = 0, distAvion = 0, durAvion = 0, vertices = 0;
 
-      // Tramos de vuelo: directo o con conexión (definido por destinos_id).
-      const vuelos = pares.map(({ a, b }) => {
-        const coords = _arcCoords(a, b);
-        const dist = turf.length(turf.lineString(coords), { units: 'kilometers' }) * 1000;
-        const dur = (dist / 1000) / 750 * 3600;
-        return { coords, distanciaMetros: dist, duracionSegundos: dur, a, b };
+      apSegs.forEach((seg, i) => {
+        const rutaCarro1 = carros[i * 2];
+        const rutaCarro2 = carros[i * 2 + 1];
+        const coordsCarro1 = rutaCarro1.geojson.geometry.coordinates;
+        const coordsCarro2 = rutaCarro2.geojson.geometry.coordinates;
+
+        // Tramos de vuelo: directo o con conexión (definido por destinos_id).
+        const vuelos = seg.pares.map(({ a, b }) => {
+          const coords = _arcCoords(a, b);
+          const dist = turf.length(turf.lineString(coords), { units: 'kilometers' }) * 1000;
+          const dur = (dist / 1000) / 750 * 3600;
+          return { coords, distanciaMetros: dist, duracionSegundos: dur, a, b };
+        });
+        seg.rutaCarro1 = rutaCarro1;
+        seg.rutaCarro2 = rutaCarro2;
+        seg.coordsCarro1 = coordsCarro1;
+        seg.coordsCarro2 = coordsCarro2;
+        seg.vuelos = vuelos;
+        seg.distAvion = vuelos.reduce((s, v) => s + v.distanciaMetros, 0);
+        seg.durAvion = vuelos.reduce((s, v) => s + v.duracionSegundos, 0);
+
+        vuelosT.push(...vuelos);
+        tramosCarro.push(coordsCarro1, coordsCarro2);
+        elevacion.push(...(rutaCarro1.elevacion || []), ...(rutaCarro2.elevacion || []));
+        totalDist += rutaCarro1.distanciaMetros + seg.distAvion + rutaCarro2.distanciaMetros;
+        totalDur += rutaCarro1.duracionSegundos + seg.durAvion + rutaCarro2.duracionSegundos;
+        distAvion += seg.distAvion;
+        durAvion += seg.durAvion;
+        vertices += coordsCarro1.length + coordsCarro2.length;
       });
-      const distAvion = vuelos.reduce((s, v) => s + v.distanciaMetros, 0);
-      const durAvion = vuelos.reduce((s, v) => s + v.duracionSegundos, 0);
 
-      // Mapa: MultiLineString con los tramos en carro (sin línea recta entre aeropuertos).
+      // Mapa: MultiLineString con los tramos en carro (sin líneas rectas
+      // entre aeropuertos; los vuelos van punteados aparte).
       const geojsonMapa = {
         type: 'Feature',
         properties: { perfil: 'aereo' },
-        geometry: { type: 'MultiLineString', coordinates: [coordsCarro1, coordsCarro2] },
+        geometry: { type: 'MultiLineString', coordinates: tramosCarro },
       };
-      // Perfil: LineString continua con los tramos en carro (turf solo en carro).
+      // Perfil: tramos en carro separados (sin el trayecto aéreo entre
+      // aeropuertos): la línea de elevación no salta de un aeropuerto al otro.
       const geojsonPerfil = {
         type: 'Feature',
         properties: {},
-        geometry: { type: 'LineString', coordinates: [...coordsCarro1, ...coordsCarro2] },
+        geometry: { type: 'MultiLineString', coordinates: tramosCarro },
       };
 
-      const elevacion = [...(rutaCarro1.elevacion || []), ...(rutaCarro2.elevacion || [])];
-      const totalDist = rutaCarro1.distanciaMetros + distAvion + rutaCarro2.distanciaMetros;
-      const totalDur = rutaCarro1.duracionSegundos + durAvion + rutaCarro2.duracionSegundos;
+      // Kilometraje del perfil: solo de carretera (sin vuelos).
+      const totalKmPerfil = (totalDist - distAvion) / 1000;
 
       const ruta = {
         geojson: geojsonMapa,
         distanciaMetros: totalDist,
         duracionSegundos: totalDur,
-        vertices: coordsCarro1.length + coordsCarro2.length,
+        vertices,
         perfil: 'aereo',
       };
 
@@ -355,24 +439,35 @@
       state.modoFluvial = false;
       state.tramosFluviales = null;
       _actualizarBotonFluvial();
+      const primer = apSegs[0], ultimo = apSegs[apSegs.length - 1];
       state.tramosAereo = {
-        vuelos,
-        carro1: coordsCarro1,
-        carro2: coordsCarro2,
-        apOri,
-        apDes,
-        hub,
-        distCarro1: rutaCarro1.distanciaMetros,
-        distCarro2: rutaCarro2.distanciaMetros,
+        vuelos: vuelosT,
+        carro1: primer.coordsCarro1,
+        carro2: ultimo.coordsCarro2,
+        apOri: primer.apOri,
+        apDes: ultimo.apDes,
+        hub: primer.hub,
+        distCarro1: primer.rutaCarro1.distanciaMetros,
+        distCarro2: ultimo.rutaCarro2.distanciaMetros,
         distAvion,
         durAvion,
+        apSegs,
       };
       state.rutaBase = ruta;
       state.rutaActual = ruta;
       state.elevacion = elevacion;
       state.altimetriaGeo = geojsonPerfil;
-      state.altimetriaTotalKm = totalDist / 1000;
+      state.altimetriaTotalKm = totalKmPerfil;
       AltimetriaModule.setDatos(geojsonPerfil, state.elevacion, state.altimetriaTotalKm);
+      AltimetriaModule.setExtremos(formatMunicipio(state.origen), formatMunicipio(state.destino));
+      // Extremos de cada tramo en carro (los botones numerados del perfil): los
+      // pueblos de cada tramo; en los bordes de aeropuerto se usa su ciudad.
+      AltimetriaModule.setSegmentosExtremos(apSegs.flatMap((seg, i, arr) => [
+        [{ nombre: formatMunicipio(seg.a), tipo: i === 0 ? 'origen' : 'escala' },
+         { nombre: seg.apOri.ciudad || 'Aeropuerto', tipo: 'aeropuerto' }],
+        [{ nombre: seg.apDes.ciudad || 'Aeropuerto', tipo: 'aeropuerto' },
+         { nombre: formatMunicipio(seg.b), tipo: i === arr.length - 1 ? 'destino' : 'escala' }],
+      ]));
 
       sincronizarOrden();
       let idxIntermedio = 0;
@@ -394,37 +489,25 @@
         }
       });
 
-      const routeLine = turf.lineString(geojsonPerfil.geometry.coordinates);
-      state.escalas.filter(e => e.lat != null && !e._dragGenerated).forEach(e => {
-        const nearest = turf.nearestPointOnLine(routeLine, turf.point([e.lon, e.lat]), { units: 'kilometers' });
-        e._distKm = nearest.properties.location || 0;
+      paradasPueblo.forEach(e => {
+        e._distKm = _distKmEnPerfil(geojsonPerfil, e.lon, e.lat);
         AltimetriaModule.agregarParada(e.lat, e.lon, formatMunicipio(e), e._distKm, mapaEtiquetas.get('escala_' + e.id) || '', e.id, 'escala');
       });
       state.paradas.forEach(p => {
-        const nearest = turf.nearestPointOnLine(routeLine, turf.point([p.lon, p.lat]), { units: 'kilometers' });
-        p._distKm = nearest.properties.location || 0;
+        p._distKm = _distKmEnPerfil(geojsonPerfil, p.lon, p.lat);
         AltimetriaModule.agregarParada(p.lat, p.lon, p.nombre, p._distKm, mapaEtiquetas.get('parada_' + p.id) || '', p.id, 'parada');
       });
 
-      // Aeropuertos en el perfil: salida, (hub) y llegada.
-      const aeropuertos = [{ ap: apOri }, ...(hub ? [{ ap: hub }] : []), { ap: apDes }];
-      aeropuertos.forEach(({ ap }) => {
-        if (!ap) return;
-        const nearest = turf.nearestPointOnLine(routeLine, turf.point([ap.longitud, ap.latitud]), { units: 'kilometers' });
-        AltimetriaModule.agregarParada(ap.latitud, ap.longitud, ap.nombre, nearest.properties.location || 0, '✈', 'aero_' + ap.id, 'aeropuerto');
-      });
+      // Aeropuertos: ya no se marcan en el perfil (se sustituyen por los botones
+      // numerados de segmentos en carro de la cabecera).
 
       MapModule.dibujarRuta(geojsonMapa, {
         distanciaMetros: totalDist,
         duracionSegundos: totalDur,
         origenNombre: state.origen?.nombre || 'el origen',
       });
-      MapModule.dibujarTramoAereo(vuelos);
-      MapModule.setMarcadoresAeropuertos([
-        { ap: apOri, titulo: 'Salida' },
-        ...(hub ? [{ ap: hub, titulo: 'Conexión' }] : []),
-        { ap: apDes, titulo: 'Llegada' },
-      ]);
+      MapModule.dibujarTramoAereo(vuelosT);
+      MapModule.setMarcadoresAeropuertos(_aeropuertosMarcables(apSegs));
       MapModule.setMarcadorOrigen(state.origen.lat, state.origen.lon, state.origen.nombre);
       MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);
       MapModule.setMarcadoresEscalas(state.escalas);
@@ -439,6 +522,16 @@
       renderizarParadas();
       _actualizarBotonAereo();
       sincronizarModoRutaMovil();
+
+      // Los pueblos ya quedaron dentro de la ruta (en el perfil y las paradas):
+      // se limpian sus cuadros de entrada para que no queden cuadros visibles
+      // ni se acumulen al oprimir "+" de nuevo.
+      state.escalas.forEach((e) => { if (e._row && e._row.parentNode) e._row.remove(); });
+      activarPanelTab('ruta');
+      // Bug 1: el botón de altimetría debe quedar visible con la ruta aérea.
+      _syncBotonAltimetria();
+      // Bug 2: con la ruta aérea los sitios cercanos ya pueden filtrarse.
+      _habilitarMostrarSitios();
     } catch (err) {
       console.warn('Error al calcular ruta aérea', err);
       _mostrarNotificacion('No se pudo calcular la ruta en avión');
@@ -544,16 +637,19 @@
         properties: { perfil: 'fluvial' },
         geometry: { type: 'MultiLineString', coordinates: [coordsCarro1, coordsCarro2] },
       };
-      // Perfil: LineString continua con los tramos en carro (turf solo en carro).
+      // Perfil: dos tramos en carro separados (sin el trayecto por río entre
+      // puertos): la línea de elevación no salta de un puerto al otro.
       const geojsonPerfil = {
         type: 'Feature',
         properties: {},
-        geometry: { type: 'LineString', coordinates: [...coordsCarro1, ...coordsCarro2] },
+        geometry: { type: 'MultiLineString', coordinates: [coordsCarro1, coordsCarro2] },
       };
 
       const elevacion = [...(rutaCarro1.elevacion || []), ...(rutaCarro2.elevacion || [])];
       const totalDist = rutaCarro1.distanciaMetros + distRio + rutaCarro2.distanciaMetros;
       const totalDur = rutaCarro1.duracionSegundos + durRio + rutaCarro2.duracionSegundos;
+      // Kilometraje del perfil: solo de carretera (sin trayectos por río).
+      const totalKmPerfil = (rutaCarro1.distanciaMetros + rutaCarro2.distanciaMetros) / 1000;
 
       const ruta = {
         geojson: geojsonMapa,
@@ -580,8 +676,16 @@
       state.rutaActual = ruta;
       state.elevacion = elevacion;
       state.altimetriaGeo = geojsonPerfil;
-      state.altimetriaTotalKm = totalDist / 1000;
+      state.altimetriaTotalKm = totalKmPerfil;
       AltimetriaModule.setDatos(geojsonPerfil, state.elevacion, state.altimetriaTotalKm);
+      AltimetriaModule.setExtremos(formatMunicipio(state.origen), formatMunicipio(state.destino));
+      // Extremos de cada tramo en carro (botones numerados del perfil).
+      AltimetriaModule.setSegmentosExtremos([
+        [{ nombre: formatMunicipio(state.origen), tipo: 'origen' },
+         { nombre: po.ciudad || 'Puerto', tipo: 'puerto' }],
+        [{ nombre: pd.ciudad || 'Puerto', tipo: 'puerto' },
+         { nombre: formatMunicipio(state.destino), tipo: 'destino' }],
+      ]);
 
       sincronizarOrden();
       let idxIntermedio = 0;
@@ -603,24 +707,21 @@
         }
       });
 
-      const routeLine = turf.lineString(geojsonPerfil.geometry.coordinates);
       state.escalas.filter(e => e.lat != null && !e._dragGenerated).forEach(e => {
-        const nearest = turf.nearestPointOnLine(routeLine, turf.point([e.lon, e.lat]), { units: 'kilometers' });
-        e._distKm = nearest.properties.location || 0;
+        e._distKm = _distKmEnPerfil(geojsonPerfil, e.lon, e.lat);
         AltimetriaModule.agregarParada(e.lat, e.lon, formatMunicipio(e), e._distKm, mapaEtiquetas.get('escala_' + e.id) || '', e.id, 'escala');
       });
       state.paradas.forEach(p => {
-        const nearest = turf.nearestPointOnLine(routeLine, turf.point([p.lon, p.lat]), { units: 'kilometers' });
-        p._distKm = nearest.properties.location || 0;
+        p._distKm = _distKmEnPerfil(geojsonPerfil, p.lon, p.lat);
         AltimetriaModule.agregarParada(p.lat, p.lon, p.nombre, p._distKm, mapaEtiquetas.get('parada_' + p.id) || '', p.id, 'parada');
       });
 
-      // Puertos en el perfil: salida, (conexión) y llegada.
+      // Puertos en el perfil: salida, (conexión) y llegada. El símbolo 🚢 es el
+      // mismo tanto para el puerto de salida como para el de llegada.
       const puertos = [{ p: po }, ...(hub ? [{ p: hub }] : []), { p: pd }];
       puertos.forEach(({ p }) => {
         if (!p) return;
-        const nearest = turf.nearestPointOnLine(routeLine, turf.point([p.longitud, p.latitud]), { units: 'kilometers' });
-        AltimetriaModule.agregarParada(p.latitud, p.longitud, p.nombre, nearest.properties.location || 0, '🚢', 'puerto_' + p.id, 'puerto');
+        AltimetriaModule.agregarParada(p.latitud, p.longitud, p.nombre, _distKmEnPerfil(geojsonPerfil, p.longitud, p.latitud), '🚢', 'puerto_' + p.id, 'puerto');
       });
 
       MapModule.dibujarRuta(geojsonMapa, {
@@ -648,6 +749,14 @@
       renderizarParadas();
       _actualizarBotonFluvial();
       sincronizarModoRutaMovil();
+
+      // Los pueblos intermedios no forman parte de la ruta por río: se limpian
+      // sus cuadros de entrada y se sincronizan los botones, igual que en la
+      // ruta aérea.
+      state.escalas.forEach((e) => { if (e._row && e._row.parentNode) e._row.remove(); });
+      activarPanelTab('ruta');
+      _syncBotonAltimetria();
+      _habilitarMostrarSitios();
     } catch (err) {
       console.warn('Error al calcular ruta fluvial', err);
       _mostrarNotificacion('No se pudo calcular la ruta por río');
@@ -744,12 +853,10 @@
     if (typeof _syncBotonAltimetria === 'function') _syncBotonAltimetria();
     if (state.modoAereo && state.tramosAereo) {
       MapModule.dibujarTramoAereo(state.tramosAereo.vuelos || []);
-      const ta = state.tramosAereo;
-      MapModule.setMarcadoresAeropuertos([
-        { ap: ta.apOri, titulo: 'Salida' },
-        ...(ta.hub ? [{ ap: ta.hub, titulo: 'Conexión' }] : []),
-        { ap: ta.apDes, titulo: 'Llegada' },
-      ]);
+      // Con tramos encadenados (apSegs) se marcan todos los aeropuertos;
+      // si no hay apSegs (ruta calculada antes de este cambio) se usan los
+      // aeropuertos directos de la ruta.
+      MapModule.setMarcadoresAeropuertos(_aeropuertosMarcables(state.tramosAereo.apSegs));
     }
     if (state.modoFluvial && state.tramosFluviales) {
       MapModule.dibujarTramoFluvial(state.tramosFluviales.tramos || []);
@@ -798,7 +905,15 @@
     } catch {}
 
     // Almacenar datos para altimetría (elevación se carga bajo demanda)
-    const totalKm = state.rutaBase ? state.rutaBase.distanciaMetros / 1000 : 0;
+    // En modo aéreo/fluvial el kilometraje del perfil es solo el de carretera.
+    let totalKm;
+    if (state.modoAereo && state.tramosAereo) {
+      totalKm = (state.tramosAereo.distCarro1 + state.tramosAereo.distCarro2) / 1000;
+    } else if (state.modoFluvial && state.tramosFluviales) {
+      totalKm = (state.tramosFluviales.distCarro1 + state.tramosFluviales.distCarro2) / 1000;
+    } else {
+      totalKm = state.rutaBase ? state.rutaBase.distanciaMetros / 1000 : 0;
+    }
     const geoPerfil = (state.modoAereo || state.modoFluvial) && state.altimetriaGeo
       ? state.altimetriaGeo
       : (state.rutaBase ? state.rutaBase.geojson : state.rutaActual.geojson);
@@ -832,15 +947,12 @@
     });
 
     if (geoPerfil) {
-      const routeLine = turf.lineString(geoPerfil.geometry.coordinates);
       state.escalas.filter(e => e.lat != null && !e._dragGenerated).forEach(e => {
-        const nearest = turf.nearestPointOnLine(routeLine, turf.point([e.lon, e.lat]), { units: 'kilometers' });
-        e._distKm = nearest.properties.location || 0;
+        e._distKm = _distKmEnPerfil(geoPerfil, e.lon, e.lat);
         AltimetriaModule.agregarParada(e.lat, e.lon, formatMunicipio(e), e._distKm, mapaEtiquetas.get('escala_' + e.id) || '', e.id, 'escala');
       });
       state.paradas.forEach(p => {
-        const nearest = turf.nearestPointOnLine(routeLine, turf.point([p.lon, p.lat]), { units: 'kilometers' });
-        p._distKm = nearest.properties.location || 0;
+        p._distKm = _distKmEnPerfil(geoPerfil, p.lon, p.lat);
         AltimetriaModule.agregarParada(p.lat, p.lon, p.nombre, p._distKm, mapaEtiquetas.get('parada_' + p.id) || '', p.id, 'parada');
       });
     }

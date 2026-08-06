@@ -6,38 +6,85 @@
  * ---------------------------------------------------------------------------
  */
 
-  function _prepararCoordenadasParaElevacion(coords, maxPuntos = 50) {
-    const total = coords.length;
-    if (total <= maxPuntos) {
-      return {
-        coordenadas: coords.map((c) => [c[1], c[0]]),
-        indices: coords.map((_, i) => i),
-      };
-    }
-    const step = Math.ceil(total / maxPuntos);
-    const coordenadas = [];
+  function _prepararCoordenadasParaElevacion(coords, maxPuntos = 300, pasoKm = 1.5) {
+    // LineString (plano) o MultiLineString (varios tramos): se aplanan para
+    // consultar la elevación en el mismo orden en que el perfil acumula km.
+    const esMulti = coords && Array.isArray(coords[0]) && Array.isArray(coords[0][0]);
+    const tramos = esMulti ? coords : [coords];
+    const planas = esMulti ? coords.reduce((acc, tramo) => acc.concat(tramo), []) : coords;
+    const total = planas.length;
+
+    // Muestreo INDEPENDIENTE por tramo: cada segmento en carro se muestrea
+    // desde su propio inicio cada `pasoKm` km (siempre con su primer y último
+    // punto), de modo que la altura de un segmento no se mezcle con la del
+    // siguiente en los aeropuertos/puertos. `limites` guarda el índice de
+    // inicio de cada tramo en la lista aplanada para que la interpolación no
+    // cruce de un tramo a otro.
     const indices = [];
-    for (let i = 0; i < total; i += step) {
-      coordenadas.push([coords[i][1], coords[i][0]]);
-      indices.push(i);
+    const limites = [];
+    let accT = 0;
+    for (const tramo of tramos) {
+      limites.push(accT);
+      if (tramo.length >= 2) {
+        indices.push(accT); // inicio del tramo
+        let acc = 0;
+        let prox = pasoKm;
+        for (let i = 1; i < tramo.length; i++) {
+          acc += turf.distance(turf.point(tramo[i - 1]), turf.point(tramo[i]), { units: 'kilometers' });
+          if (acc >= prox) {
+            indices.push(accT + i);
+            prox += pasoKm;
+          }
+        }
+        indices.push(accT + tramo.length - 1); // fin del tramo
+      }
+      accT += tramo.length;
     }
-    if (indices[indices.length - 1] !== total - 1) {
-      coordenadas.push([coords[total - 1][1], coords[total - 1][0]]);
-      indices.push(total - 1);
+
+    // Si se supera `maxPuntos` se adelgazan puntos interiores uniformemente,
+    // conservando siempre el inicio y el final de cada tramo.
+    let muestras = indices;
+    if (indices.length > maxPuntos) {
+      const conservar = new Set([0, total - 1]);
+      let a = 0;
+      for (const tramo of tramos) {
+        if (tramo.length >= 2) { conservar.add(a); conservar.add(a + tramo.length - 1); }
+        a += tramo.length;
+      }
+      const interior = indices.filter((i) => !conservar.has(i));
+      const paso = Math.max(1, interior.length / Math.max(1, maxPuntos - conservar.size));
+      const adelgazados = [];
+      let cont = 0;
+      for (let i = 0; i < interior.length; i++) {
+        cont++;
+        if (cont >= paso) { adelgazados.push(interior[i]); cont = 0; }
+      }
+      muestras = [...conservar, ...adelgazados].sort((x, y) => x - y);
     }
-    return { coordenadas, indices };
+
+    const coordenadas = muestras.map((i) => [planas[i][1], planas[i][0]]);
+    return { coordenadas, indices: muestras, total, limites };
   }
 
 
-  function _reconstruirElevacion(elevaciones, indices, totalCoords) {
+  function _reconstruirElevacion(elevaciones, indices, totalCoords, limites) {
     const result = new Array(totalCoords).fill(null);
     for (let i = 0; i < indices.length; i++) {
       result[indices[i]] = elevaciones[i];
     }
+    // Dos índices están en el mismo tramo si no hay un límite entre ellos; así
+    // la interpolación no cruza de un segmento en carro al siguiente.
+    const mismoTramo = (a, b) => {
+      if (!limites || limites.length < 2) return true;
+      for (const l of limites) {
+        if (l > a && l <= b) return false;
+      }
+      return true;
+    };
     let lastKnown = -1;
     for (let i = 0; i < result.length; i++) {
       if (result[i] != null) {
-        if (lastKnown >= 0 && i > lastKnown + 1) {
+        if (lastKnown >= 0 && i > lastKnown + 1 && mismoTramo(lastKnown, i)) {
           const start = result[lastKnown];
           const end = result[i];
           const span = i - lastKnown;
@@ -58,7 +105,18 @@
     if (active) { cerrarAltimetria(); return; }
     el.altimetriaPanel.hidden = false;
     if (el.btnAltimetria) el.btnAltimetria.hidden = true;
+    _activarSeguimientoConVuelos();
+    _syncAltimetriaMapa();
     await _cargarElevacionAltimetria('altimetria-chart');
+  }
+
+  /** En una ruta con vuelos el mapa se encuadra lejísimos y conviene activar el
+   *  seguimiento con zoom: el carro del perfil lleva la vista acercada a la ruta. */
+  function _activarSeguimientoConVuelos() {
+    const conVuelos = !!(state.modoAereo && state.tramosAereo && state.tramosAereo.apSegs && state.tramosAereo.apSegs.length);
+    if (!conVuelos) return;
+    if (AltimetriaModule.setFollowActivo) AltimetriaModule.setFollowActivo(true);
+    if (typeof actualizarTextoSeguimiento === 'function') actualizarTextoSeguimiento();
   }
 
 
@@ -74,6 +132,18 @@
     if (!el.altimetriaPanel) return;
     el.altimetriaPanel.hidden = true;
     _syncBotonAltimetria();
+    _syncAltimetriaMapa();
+  }
+
+  /** Sincroniza la visibilidad de la flecha de dirección del mapa con la de la
+   *  altimetría: mientras un perfil esté abierto (PC o móvil) el carro verde
+   *  del perfil reemplaza la flecha de dirección sobre la ruta. */
+  function _syncAltimetriaMapa() {
+    const visible = (el.altimetriaPanel && !el.altimetriaPanel.hidden)
+      || (el.altimetriaPanelMovil && !el.altimetriaPanelMovil.hidden);
+    if (typeof MapModule !== 'undefined' && MapModule.setAltimetriaActiva) {
+      MapModule.setAltimetriaActiva(visible);
+    }
   }
 
 
@@ -87,10 +157,10 @@
       if (geo && geo.geometry && geo.geometry.coordinates) {
         try {
           const coords = geo.geometry.coordinates;
-          const { coordenadas, indices } = _prepararCoordenadasParaElevacion(coords);
+          const { coordenadas, indices, total, limites } = _prepararCoordenadasParaElevacion(coords);
           const elevBatch = await Utils.obtenerElevacionBatch(coordenadas);
           if (elevBatch.some((e) => e != null)) {
-            state.elevacion = _reconstruirElevacion(elevBatch, indices, coords.length);
+            state.elevacion = _reconstruirElevacion(elevBatch, indices, total, limites);
             AltimetriaModule.setDatos(geo, state.elevacion, state.altimetriaTotalKm, false);
           }
         } catch (err) {
@@ -122,10 +192,10 @@
     if (!_elevacionRutaArchivo || !_elevacionRutaArchivo.some((e) => e != null)) {
       try {
         const coords = _geoRutaArchivo.geometry.coordinates;
-        const { coordenadas, indices } = _prepararCoordenadasParaElevacion(coords);
+        const { coordenadas, indices, limites } = _prepararCoordenadasParaElevacion(coords);
         const elevBatch = await Utils.obtenerElevacionBatch(coordenadas);
         if (elevBatch.some((e) => e != null)) {
-          _elevacionRutaArchivo = _reconstruirElevacion(elevBatch, indices, coords.length);
+          _elevacionRutaArchivo = _reconstruirElevacion(elevBatch, indices, coords.length, limites);
         }
       } catch (err) {
         console.warn('[ALT] Error al cargar elevación de la ruta de archivo:', err.message);
@@ -151,6 +221,7 @@
       if (el.btnAltimetria) el.btnAltimetria.hidden = true;
       _cargarElevacionRutaArchivo('altimetria-chart');
     }
+    _syncAltimetriaMapa();
   }
 
   /** ¿La altimetría visible corresponde a una ruta de archivo (K)? Sirve para

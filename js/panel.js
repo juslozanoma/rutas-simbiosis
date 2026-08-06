@@ -61,6 +61,7 @@
     }
     if (tab === 'altimetria') {
       if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = false;
+      if (typeof _activarSeguimientoConVuelos === 'function') _activarSeguimientoConVuelos();
       _cargarElevacionAltimetria('altimetria-chart-panel');
     } else {
       if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = true;
@@ -71,6 +72,7 @@
     } else if (tab === 'descubre') {
       activarPanelTab('descubre');
     }
+    if (typeof _syncAltimetriaMapa === 'function') _syncAltimetriaMapa();
     setTimeout(() => MapModule.invalidateSize(), 220);
   }
 
@@ -86,10 +88,24 @@
       el.btnTabRuta.classList.remove('mobile-tab-btn--active');
       if (el.btnTabAltimetria) el.btnTabAltimetria.classList.remove('mobile-tab-btn--active');
       if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = true;
+      if (typeof _syncAltimetriaMapa === 'function') _syncAltimetriaMapa();
       setTimeout(() => MapModule.invalidateSize(), 220);
     } else {
       setMobileTab(tab);
     }
+  }
+
+
+  function actualizarTextoSeguimiento() {
+    const activo = AltimetriaModule.isFollowActivo();
+    const pcBtn = document.getElementById('btn-seguimiento-altimetria');
+    const movBtn = document.getElementById('btn-seguimiento-altimetria-panel');
+    if (pcBtn) {
+      const label = pcBtn.querySelector('.altimetria__seguimiento-label');
+      if (label) label.textContent = activo ? 'Seguimiento activado' : 'Seguimiento inactivado';
+      pcBtn.setAttribute('aria-pressed', String(activo));
+    }
+    if (movBtn) movBtn.setAttribute('aria-pressed', String(activo));
   }
 
 
@@ -290,19 +306,28 @@
         }
       });
 
-      // Marcador temporal para hover del perfil de altimetría
+      // Marcador temporal para hover del perfil de altimetría: un carro verde.
       let _hoverMarker = null;
+      const _carHoverIcon = L.divIcon({
+        className: 'altimetria-hover-car',
+        html: '<img src="public/car-verde.svg" alt="" style="width:26px;height:26px;"/>',
+        iconSize: [26, 26],
+        iconAnchor: [13, 26],
+      });
       AltimetriaModule.setOnHover((p) => {
         if (!_hoverMarker) {
-          _hoverMarker = L.circleMarker([p.lat, p.lon], {
-            radius: 6, fillColor: '#246054', color: '#fff', weight: 2,
-            fillOpacity: 1, pane: 'tooltipPane',
+          _hoverMarker = L.marker([p.lat, p.lon], {
+            icon: _carHoverIcon,
+            interactive: false,
+            pane: 'tooltipPane',
+            zIndexOffset: 1000,
           }).addTo(_map);
         } else {
           _hoverMarker.setLatLng([p.lat, p.lon]);
         }
         _hoverMarker.bindTooltip(`${p.alt} msnm · ${p.dist} km`, {
           permanent: true, direction: 'top', className: 'altimetria-map-tooltip',
+          offset: [0, -34],
         }).openTooltip();
       });
 
@@ -324,24 +349,20 @@
         _map.setView([data.lat, data.lon], 13, { animate: true });
       });
       AltimetriaModule.setOnCentrarMapa((data) => {
-        _map.panTo([data.lat, data.lon], { animate: true });
+        const conVuelos = !!(state.modoAereo && state.tramosAereo && state.tramosAereo.apSegs && state.tramosAereo.apSegs.length);
+        if (conVuelos) {
+          // Seguimiento con zoom: en una ruta con vuelos el mapa está encuadrado
+          // lejísimos y conviene acercarse a la ruta para ver el carro.
+          _map.setView([data.lat, data.lon], Math.max(_map.getZoom(), 11), { animate: true });
+        } else {
+          _map.panTo([data.lat, data.lon], { animate: true });
+        }
       });
 
       document.getElementById('btn-cerrar-altimetria')?.addEventListener('click', () => {
         if (_hoverMarker) { _hoverMarker.remove(); _hoverMarker = null; }
       });
 
-      function actualizarTextoSeguimiento() {
-        const activo = AltimetriaModule.isFollowActivo();
-        const pcBtn = document.getElementById('btn-seguimiento-altimetria');
-        const movBtn = document.getElementById('btn-seguimiento-altimetria-panel');
-        if (pcBtn) {
-          const label = pcBtn.querySelector('.altimetria__seguimiento-label');
-          if (label) label.textContent = activo ? 'Seguimiento activado' : 'Seguimiento inactivado';
-          pcBtn.setAttribute('aria-pressed', String(activo));
-        }
-        if (movBtn) movBtn.setAttribute('aria-pressed', String(activo));
-      }
       function toggleSeguimientoBtn() {
         AltimetriaModule.toggleFollow();
         actualizarTextoSeguimiento();

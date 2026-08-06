@@ -10,9 +10,9 @@ API_KEY = "AQ.Ab8RN6IFotbM4Ki92Tf3RN7ij5gIWgg-t37I1Bt7MrwaVC15yQ"
 MODELO = "gemini-3.5-flash-lite"
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODELO}:generateContent?key={API_KEY}"
 
-INPUT_FILE = "data_puertos_fluviales_colombia.json"
-OUTPUT_FILE = "puertos_fluviales_colombia.json"
-BATCH_SIZE = 40
+# Archivo de entrada que será modificado y sobrescrito directamente
+FILE_PATH = "puertos_colombia.json"
+BATCH_SIZE = 80
 
 
 def cargar_json(ruta):
@@ -29,7 +29,7 @@ def guardar_json(ruta, datos):
 
 
 def llamar_gemini_corregir(lote_datos):
-    """Envia un lote de datos a la IA para analizar y corregir únicamente los 4 campos solicitados."""
+    """Envía un lote de datos a la IA para analizar y corregir únicamente los 4 campos solicitados."""
     prompt = f"""
 Eres un experto en geografía e infraestructura portuaria de Colombia.
 Tu tarea es EXCLUSIVAMENTE analizar y corregir 4 campos de los siguientes registros de puertos:
@@ -40,10 +40,10 @@ Campos a corregir/ajustar por cada puerto:
 3. "ubicacion": Descripción geográfica precisa de EXACTAMENTE 2 RENGLONES sobre la posición del puerto.
 4. "descripcion": Reseña funcional de EXACTAMENTE 4 RENGLONES sobre la importancia comercial, de pasajeros o carga del puerto.
 
-REGLAS STRICTAS:
+REGLAS ESTRUCTURALES ESTRICTAS:
 - Mantén el "id" recibido intacto para poder mapear la respuesta.
 - Devuelve un arreglo JSON con exactamente la misma cantidad de elementos recibidos.
-- NO devuelvas otros campos (nombre, latitud, longitud, destinos_id no deben ser alterados ni incluidos en tu respuesta).
+- NO devuelvas ni alteres otros campos (nombre, latitud, longitud, destinos_id no deben ser incluidos en la respuesta ni modificados).
 
 Lote a analizar:
 {json.dumps(lote_datos, ensure_ascii=False)}
@@ -65,28 +65,23 @@ Lote a analizar:
     return json.loads(texto_respuesta)
 
 
-def corregir_puertos():
-    puertos = cargar_json(INPUT_FILE)
+def corregir_y_sobrescribir():
+    puertos = cargar_json(FILE_PATH)
     if not puertos:
         return
 
     total = len(puertos)
-    print(f"Iniciando proceso de corrección para {total} puertos...")
+    print(
+        f"Iniciando corrección in-place. Se sobrescribirá '{FILE_PATH}' ({total} registros)..."
+    )
 
-    # Cargar avance previo si existe
-    puertos_actualizados = cargar_json(OUTPUT_FILE)
-    if not puertos_actualizados or len(puertos_actualizados) != total:
-        # Hacemos una copia exacta para no alterar la estructura, IDs, nombres, ni destinos
-        puertos_actualizados = [dict(p) for p in puertos]
-
-    # Mapeo por ID para actualizar fácilmente los elementos
-    mapa_actualizados = {p["id"]: p for p in puertos_actualizados}
+    # Indizado rápido por ID para hacer los cambios sobre la lista original
+    mapa_puertos = {p["id"]: p for p in puertos}
 
     for i in range(0, total, BATCH_SIZE):
         lote_original = puertos[i : i + BATCH_SIZE]
         num_lote = (i // BATCH_SIZE) + 1
 
-        # Preparamos solo los datos necesarios para que la IA los analice
         lote_para_ia = [
             {
                 "id": p.get("id"),
@@ -108,24 +103,26 @@ def corregir_puertos():
         try:
             resultados_corregidos = llamar_gemini_corregir(lote_para_ia)
 
-            # Reemplazar ÚNICAMENTE los 4 campos en el arreglo final sin tocar nada más
+            # Reemplazar ÚNICAMENTE los 4 campos en el objeto existente
             for item in resultados_corregidos:
                 pid = item.get("id")
-                if pid in mapa_actualizados:
-                    mapa_actualizados[pid]["ciudad"] = item.get(
+                if pid in mapa_puertos:
+                    mapa_puertos[pid]["ciudad"] = item.get(
                         "ciudad", "PENDIENTE"
                     )
-                    mapa_actualizados[pid]["rio"] = item.get("rio", "")
-                    mapa_actualizados[pid]["ubicacion"] = item.get(
+                    mapa_puertos[pid]["rio"] = item.get("rio", "")
+                    mapa_puertos[pid]["ubicacion"] = item.get(
                         "ubicacion", ""
                     )
-                    mapa_actualizados[pid]["descripcion"] = item.get(
+                    mapa_puertos[pid]["descripcion"] = item.get(
                         "descripcion", ""
                     )
 
-            # Guardado incremental
-            guardar_json(OUTPUT_FILE, puertos_actualizados)
-            print(f"  └─ Lote #{num_lote} actualizado y guardado.")
+            # Sobrescribir el archivo original tras procesar el lote
+            guardar_json(FILE_PATH, puertos)
+            print(
+                f"  └─ Lote #{num_lote} guardado y sobrescrito en '{FILE_PATH}'."
+            )
 
         except Exception as e:
             print(f"Error procesando lote #{num_lote}: {e}")
@@ -133,13 +130,16 @@ def corregir_puertos():
 
         time.sleep(1)
 
-    print("\n" + "=" * 50)
-    print("PROCESO DE CORRECCIÓN FINALIZADO")
-    print("=" * 50)
-    print(f"• Archivo generado: '{OUTPUT_FILE}'")
-    print(f"• Registros conservados: {len(puertos_actualizados)} (sin adiciones ni eliminaciones)")
-    print("• Campos actualizados: 'ciudad', 'rio', 'ubicacion', 'descripcion'")
+    print("\n==================================================")
+    print(f"PROCESO FINALIZADO: '{FILE_PATH}' HA SIDO SOBREESCRITO")
+    print("==================================================")
+    print(
+        f"• Se conservaron intactos los {len(puertos)} registros (sin borrados ni adiciones)."
+    )
+    print(
+        "• Solo se actualizaron los campos: ciudad, rio, ubicacion y descripcion."
+    )
 
 
 if __name__ == "__main__":
-    corregir_puertos()
+    corregir_y_sobrescribir()

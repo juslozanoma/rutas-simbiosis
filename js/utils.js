@@ -125,8 +125,8 @@ const Utils = (() => {
   }
 
   /**
-   * Obtiene elevación por lote usando requests individuales en paralelo.
-   * Usa Open-Meteo (gratis, sin key, SRTM/ASTER, permite CORS).
+   * Obtiene elevación por lote usando la API de Open-Meteo (gratis, sin key,
+   * SRTM/ASTER, permite CORS). Agrupa hasta 100 coordenadas por request.
    * @param {Array<[number,number]>} coords - [[lat, lon], ...]
    * @returns {Promise<Array<number|null>>} elevaciones en mismo orden
    */
@@ -147,24 +147,27 @@ const Utils = (() => {
 
     if (pendientes.length === 0) return resultados;
 
-    const CONCURRENCY = 5;
-    for (let i = 0; i < pendientes.length; i += CONCURRENCY) {
-      const chunk = pendientes.slice(i, i + CONCURRENCY);
-      await Promise.all(chunk.map(async (p) => {
-        try {
-          const res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${p.lat}&longitude=${p.lon}`);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-          const alt = data?.elevation?.[0];
+    const MAX_POR_REQUEST = 100;
+    for (let i = 0; i < pendientes.length; i += MAX_POR_REQUEST) {
+      const chunk = pendientes.slice(i, i + MAX_POR_REQUEST);
+      try {
+        const lats = chunk.map((p) => p.lat).join(',');
+        const lons = chunk.map((p) => p.lon).join(',');
+        const res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lons}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const elevs = Array.isArray(data?.elevation) ? data.elevation : [];
+        chunk.forEach((p, j) => {
+          const alt = elevs[j];
           if (alt != null) {
             const key = `${p.lat.toFixed(4)},${p.lon.toFixed(4)}`;
             _cacheElevacion.set(key, alt);
             resultados[p.idx] = alt;
           }
-        } catch (err) {
-          console.warn('[ELEV] Error individual:', err.message);
-        }
-      }));
+        });
+      } catch (err) {
+        console.warn('[ELEV] Error en lote:', err.message);
+      }
     }
 
     return resultados;

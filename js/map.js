@@ -29,6 +29,7 @@ const MapModule = (() => {
   let capaConexiones = null;    // L.layerGroup con las líneas de conexión de un puerto/aeropuerto
   let clusterSitios = null;     // L.markerClusterGroup con los sitios candidatos filtrados
   let _capaFlechas = null;      // L.layerGroup con flechas de dirección sobre la ruta
+  let _altimetriaActiva = false; // con la altimetría abierta se oculta la flecha de dirección
 
   const ZOOM_MIN_FLECHA = 9;    // Zoom mínimo para mostrar la flecha de dirección
 
@@ -676,7 +677,12 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
     // Si hay ruta dibujada, se ajusta el punto y se genera el segmento de 10km
     if (_rutaGeojson && _rutaGeojson.geometry && _rutaGeojson.geometry.coordinates.length >= 2) {
-      const routeLine = turf.lineString(_rutaGeojson.geometry.coordinates);
+      // Las rutas aéreas/fluviales son MultiLineString: se encadenan sus tramos.
+      const gc = _rutaGeojson.geometry.coordinates;
+      const coords = _rutaGeojson.geometry.type === 'MultiLineString'
+        ? gc.reduce((acc, tramo) => acc.concat(tramo), [])
+        : gc;
+      const routeLine = turf.lineString(coords);
       const nearest = turf.nearestPointOnLine(routeLine, turf.point(lnglat), { units: 'kilometers' });
       puntoSobreRuta = nearest.geometry.coordinates;
       const distAlong = nearest.properties.location || 0;
@@ -800,10 +806,23 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     return capaRuta;
   }
 
+  /** Oculta/muestra la flecha de dirección de la ruta según si la altimetría
+   *  está activa: mientras se ve el perfil, el carro verde del perfil reemplaza
+   *  la flecha y esta no debe dibujarse (ni al mover/zoom del mapa). */
+  function setAltimetriaActiva(activa) {
+    _altimetriaActiva = !!activa;
+    if (!_capaFlechas) return;
+    if (_altimetriaActiva) _capaFlechas.clearLayers();
+    else _actualizarFlechaRuta();
+  }
+
   /** Ubica (o reposiciona) la única flecha en el punto medio del tramo de ruta visible en pantalla. */
   function _actualizarFlechaRuta() {
     if (!_capaFlechas || !map) return;
     _capaFlechas.clearLayers();
+    // Con la altimetría activa el indicador de dirección se oculta (el carro
+    // verde del perfil lo reemplaza).
+    if (_altimetriaActiva) return;
     // La flecha de dirección solo se muestra con el mapa suficientemente ampliado.
     if (map.getZoom() < ZOOM_MIN_FLECHA) return;
     if (!_rutaGeojson || !_rutaGeojson.geometry) return;
@@ -1268,12 +1287,48 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     _conexionCentroId = null;
   }
 
+  // ---------------------------------------------------------------------
+  // Ocultar rutas e íconos de sitios (catálogo de puertos/aeropuertos P/A)
+  // ---------------------------------------------------------------------
+
+  let _capasOcultasInfra = null;
+
+  /** Con el catálogo de puertos/aeropuertos (teclas P/A) activo, oculta del
+   *  mapa TODAS las rutas y los íconos de sitios (ruta calculada, tramos
+   *  aéreos/fluviales, paradas, escalas, sitios turísticos, frontera, rutas de
+   *  archivo KML/GPX, origen/destino y posición GPS). Al desactivarlo los
+   *  restaura tal como estaban, sin redibujar nada. */
+  function ocultarRutasYSitios(ocultar) {
+    if (ocultar) {
+      if (_capasOcultasInfra) return;
+      const capas = [
+        _capaRutaVisible, _capaRutaHover, _capaFlechas, capaRutaPreview,
+        capaParadas, capaEscalas, capaPuntosDesvio, capaAlertas, capaAerea,
+        capaFrontera, clusterSitios,
+        ...Object.keys(_gruposRutaArchivo).map((id) => _gruposRutaArchivo[id].grupo),
+      ];
+      if (markerOrigen) capas.push(markerOrigen);
+      if (markerDestino) capas.push(markerDestino);
+      if (_marcadorUsuario) capas.push(_marcadorUsuario);
+      const visibles = capas.filter((c) => c && map.hasLayer(c));
+      visibles.forEach((c) => map.removeLayer(c));
+      _capasOcultasInfra = visibles;
+    } else {
+      if (!_capasOcultasInfra) return;
+      _capasOcultasInfra.forEach((c) => map.addLayer(c));
+      _capasOcultasInfra = null;
+    }
+  }
+
   /** Indica si las líneas de conexiones de un puerto/aeropuerto están visibles. */
   function estanConexionesAbiertas(tipo, id) {
     return _conexionCentroId === tipo + '_' + id && capaConexiones && capaConexiones.getLayers().length > 0;
   }
 
   function limpiarTodo() {
+    // Si el catálogo de puertos/aeropuertos (P/A) ocultó capas, esas
+    // referencias quedan obsoletas al limpiar todo: no restaurarlas después.
+    _capasOcultasInfra = null;
     limpiarRuta();
     limpiarRutaPreview();
     limpiarMarcadoresRuta();
@@ -1576,6 +1631,9 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
   function limpiarRutasArchivo() {
     Object.keys(_gruposRutaArchivo).forEach(quitarRutaArchivo);
+    // Si el catálogo P/A había ocultado estas capas, sus referencias quedan
+    // obsoletas: no restaurarlas después.
+    _capasOcultasInfra = null;
   }
 
   /** Ajusta la vista del mapa a los límites de las coordenadas dadas. */
@@ -1629,6 +1687,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     dibujarConexiones,
     limpiarConexiones,
     estanConexionesAbiertas,
+    ocultarRutasYSitios,
     limpiarMarcadoresRuta,
     setMarcadoresParadas,
     setOnEliminarParada,
@@ -1645,6 +1704,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     setOnTramoCompletado,
     cancelarMarcadoTramo,
     dibujarRuta,
+    setAltimetriaActiva,
     habilitarArrastreRuta,
     dibujarTramoAereo,
     limpiarTramoAereo,

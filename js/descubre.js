@@ -315,6 +315,7 @@
           completado();
         }
       } catch (e) {
+        console.warn('Error en filtrado progresivo de sitios', e);
         terminar();
       }
     }

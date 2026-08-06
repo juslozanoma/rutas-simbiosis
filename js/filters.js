@@ -34,9 +34,28 @@ const FiltersModule = (() => {
   /** Minutos fijos asumidos por la maniobra de salir/retomar la vía principal. */
   const MINUTOS_MANIOBRA = 3;
 
-  /** Distancia perpendicular mínima (km) de un punto a la línea de ruta. */
+  /** Coordenadas de la ruta como una sola lista (las rutas aéreas/fluviales
+   *  son MultiLineString: sus tramos se encadenan en un único arreglo). */
+  function _coordsRuta(rutaGeoJSON) {
+    const coords = rutaGeoJSON?.geometry?.coordinates || [];
+    return rutaGeoJSON?.geometry?.type === 'MultiLineString'
+      ? coords.reduce((acc, tramo) => acc.concat(tramo), [])
+      : coords;
+  }
+
+  /** Distancia perpendicular mínima (km) de un punto a la línea de ruta.
+   *  turf.pointToLineDistance solo acepta LineString: para MultiLineString
+   *  (rutas en avión/por río) se usa el punto más cercano de la ruta. */
   function distanciaARuta(sitio, rutaGeoJSON) {
     const punto = turf.point([sitio.lon, sitio.lat]);
+    if (rutaGeoJSON?.geometry?.type === 'MultiLineString') {
+      try {
+        const nearest = turf.nearestPointOnLine(rutaGeoJSON, punto, { units: 'kilometers' });
+        return turf.distance(punto, nearest.geometry.coordinates, { units: 'kilometers' });
+      } catch {
+        return Infinity;
+      }
+    }
     return turf.pointToLineDistance(punto, rutaGeoJSON, { units: 'kilometers' });
   }
 
@@ -96,25 +115,29 @@ const FiltersModule = (() => {
    * @returns {Array} sitios enriquecidos con distanciaRutaKm, tiempoDesvioMin, distanciaOrigenKm
    */
   function precomputarSitios(sitios, rutaGeoJSON, origen, destino, velocidadKmH = VELOCIDAD_DESVIO_KMH) {
-    const coords = rutaGeoJSON?.geometry?.coordinates || [];
+    const coords = _coordsRuta(rutaGeoJSON);
     sitios.forEach((s) => {
       if (s.lat == null || s.lon == null || isNaN(Number(s.lat)) || isNaN(Number(s.lon))) return;
       const punto = turf.point([s.lon, s.lat]);
-      s.distanciaRutaKm = turf.pointToLineDistance(punto, rutaGeoJSON, { units: 'kilometers' });
+      s.distanciaRutaKm = distanciaARuta(s, rutaGeoJSON);
       s.tiempoDesvioMin = aproximarTiempoDesvio(s.distanciaRutaKm, velocidadKmH);
       s.distanciaOrigenKm = distanciaAOrigen(s, origen);
       s.distanciaDestinoKm = distanciaADestino(s, destino);
       if (coords.length >= 2) {
-        const nearest = turf.nearestPointOnLine(rutaGeoJSON, punto, { units: 'kilometers' });
-        const idx = nearest.properties.index;
-        if (idx >= 0 && idx < coords.length - 1) {
-          const ax = coords[idx][0], ay = coords[idx][1];
-          const bx = coords[idx + 1][0], by = coords[idx + 1][1];
-          const dx = bx - ax, dy = by - ay;
-          const sx = s.lon - (nearest.geometry.coordinates[0] || ax);
-          const sy = s.lat - (nearest.geometry.coordinates[1] || ay);
-          s._offsetLado = Math.sign(dx * sy - dy * sx) || 1;
-        } else {
+        try {
+          const nearest = turf.nearestPointOnLine(rutaGeoJSON, punto, { units: 'kilometers' });
+          const idx = nearest.properties.index;
+          if (idx >= 0 && idx < coords.length - 1) {
+            const ax = coords[idx][0], ay = coords[idx][1];
+            const bx = coords[idx + 1][0], by = coords[idx + 1][1];
+            const dx = bx - ax, dy = by - ay;
+            const sx = s.lon - (nearest.geometry.coordinates[0] || ax);
+            const sy = s.lat - (nearest.geometry.coordinates[1] || ay);
+            s._offsetLado = Math.sign(dx * sy - dy * sx) || 1;
+          } else {
+            s._offsetLado = 1;
+          }
+        } catch {
           s._offsetLado = 1;
         }
       }
@@ -176,18 +199,22 @@ const FiltersModule = (() => {
           s.tiempoDesvioMin = aproximarTiempoDesvio(s.distanciaRutaKm, velocidadKmH);
           s.distanciaOrigenKm = distanciaAOrigen(s, origen);
           s.distanciaDestinoKm = distanciaADestino(s, destino);
-          const coords = rutaGeoJSON?.geometry?.coordinates;
+          const coords = _coordsRuta(rutaGeoJSON);
           if (coords && coords.length >= 2) {
-            const nearest = turf.nearestPointOnLine(rutaGeoJSON, punto, { units: 'kilometers' });
-            const idx = nearest.properties.index;
-            if (idx >= 0 && idx < coords.length - 1) {
-              const ax = coords[idx][0], ay = coords[idx][1];
-              const bx = coords[idx + 1][0], by = coords[idx + 1][1];
-              const dx = bx - ax, dy = by - ay;
-              const sx = s.lon - (nearest.geometry.coordinates[0] || ax);
-              const sy = s.lat - (nearest.geometry.coordinates[1] || ay);
-              s._offsetLado = Math.sign(dx * sy - dy * sx) || 1;
-            } else {
+            try {
+              const nearest = turf.nearestPointOnLine(rutaGeoJSON, punto, { units: 'kilometers' });
+              const idx = nearest.properties.index;
+              if (idx >= 0 && idx < coords.length - 1) {
+                const ax = coords[idx][0], ay = coords[idx][1];
+                const bx = coords[idx + 1][0], by = coords[idx + 1][1];
+                const dx = bx - ax, dy = by - ay;
+                const sx = s.lon - (nearest.geometry.coordinates[0] || ax);
+                const sy = s.lat - (nearest.geometry.coordinates[1] || ay);
+                s._offsetLado = Math.sign(dx * sy - dy * sx) || 1;
+              } else {
+                s._offsetLado = 1;
+              }
+            } catch {
               s._offsetLado = 1;
             }
           }

@@ -347,12 +347,9 @@
     const tramos = state.tramosAereo;
     const distTxt = (() => {
       if (!tramos) return '';
-      let dist = null;
-      if (prefijo === 'Salida') dist = tramos.distCarro1;
-      else if (prefijo === 'Llegada') dist = tramos.distCarro2;
-      else if (tramos.vuelos && tramos.vuelos[0]) dist = tramos.vuelos[0].distanciaMetros;
-      if (dist == null) return '';
-      return `${prefijo}: ${(dist / 1000).toFixed(1)} km`;
+      const item = _aeropuertosDeRuta(tramos).find((x) => String(x.ap.id) === String(ap.id));
+      if (!item || item.distKm == null) return '';
+      return `${prefijo}: ${(item.distKm / 1000).toFixed(1)} km`;
     })();
 
     TourismModule.mostrarCuadroInfo({
@@ -399,15 +396,52 @@
     });
   }
 
+  /** Aeropuertos de la ruta aérea en curso con su prefijo y la distancia del
+   *  tramo que le corresponde: [{ ap, prefijo, distKm }]. Con tramos
+   *  encadenados (apSegs) se listan los aeropuertos de cada tramo; la salida
+   *  solo es del primer tramo y la llegada solo del último. Un aeropuerto
+   *  compartido entre dos tramos (la llegada de uno es la salida del otro en
+   *  el pueblo intermedio) se lista una sola vez. */
+  function _aeropuertosDeRuta(tramos) {
+    const res = [];
+    const segs = (tramos && tramos.apSegs) || [{ apOri: tramos?.apOri, hub: tramos?.hub, apDes: tramos?.apDes }];
+    segs.forEach((seg, i, arr) => {
+      const primero = i === 0, ultimo = i === arr.length - 1;
+      const agregar = (ap, prefijo, distKm) => {
+        if (!ap) return;
+        const k = String(ap.id);
+        const existente = res.find((x) => String(x.ap.id) === k);
+        if (existente) {
+          // Si el mismo aeropuerto (compartido entre dos tramos en un pueblo
+          // intermedio) quedó sin distancia por ser tramo directo, se completa
+          // con la distancia del tramo que sí la tiene.
+          if (existente.distKm == null && distKm != null) existente.distKm = distKm;
+          return;
+        }
+        res.push({ ap, prefijo, distKm });
+      };
+      if (seg.apOri) {
+        agregar(seg.apOri, primero ? 'Salida' : 'Conexión',
+          primero ? (tramos && tramos.distCarro1) : (seg.vuelos && seg.vuelos[0] ? seg.vuelos[0].distanciaMetros : null));
+      }
+      if (seg.hub && seg.vuelos && seg.vuelos[0]) {
+        agregar(seg.hub, 'Conexión', seg.vuelos[0].distanciaMetros);
+      }
+      if (seg.apDes) {
+        agregar(seg.apDes, ultimo ? 'Llegada' : 'Conexión',
+          ultimo ? (tramos && tramos.distCarro2) : (seg.vuelos && seg.vuelos.length > 1 ? seg.vuelos[1].distanciaMetros : null));
+      }
+    });
+    return res;
+  }
+
   /** Prefijo de la ruta activa ('Salida'|'Conexión'|'Llegada') si `ap` es un
    *  aeropuerto de la ruta aérea en curso; null si no. */
   function _prefijoAeropuertoRuta(ap) {
     const t = state.tramosAereo;
     if (!t || !ap) return null;
-    if (t.apOri && String(t.apOri.id) === String(ap.id)) return 'Salida';
-    if (t.apDes && String(t.apDes.id) === String(ap.id)) return 'Llegada';
-    if (t.hub && String(t.hub.id) === String(ap.id)) return 'Conexión';
-    return null;
+    const item = _aeropuertosDeRuta(t).find((x) => String(x.ap.id) === String(ap.id));
+    return item ? item.prefijo : null;
   }
 
   /** Prefijo de la ruta activa ('Salida'|'Conexión'|'Llegada') si `p` es un
@@ -680,23 +714,7 @@
       return li;
     }
 
-    if (incluirExtremos) {
-      el.paradasLista.appendChild(crearFilaExtremo('A', formatMunicipio(state.origen), 'origen'));
-    }
-    if (state.modoAereo && state.tramosAereo && state.tramosAereo.apOri) {
-      el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, state.tramosAereo.apOri, 'Salida', state.tramosAereo.distCarro1));
-    }
-    if (state.modoAereo && state.tramosAereo && state.tramosAereo.hub && state.tramosAereo.vuelos && state.tramosAereo.vuelos[0]) {
-      el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, state.tramosAereo.hub, 'Conexión', state.tramosAereo.vuelos[0].distanciaMetros));
-    }
-    if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.po) {
-      el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.po, 'Salida', state.tramosFluviales.distCarro1));
-    }
-    if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.hub && state.tramosFluviales.tramos && state.tramosFluviales.tramos[0]) {
-      el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.hub, 'Conexión', state.tramosFluviales.tramos[0].distanciaMetros));
-    }
-
-    items.forEach((item, idx) => {
+    function construirFilaItem(item, etiqueta) {
       const e = item.datos;
       const li = document.createElement('li');
       li.className = 'parada-item';
@@ -705,7 +723,7 @@
 
       const num = document.createElement('span');
       num.className = 'parada-item__num';
-      num.textContent = etiquetaIntermedia(idx);
+      num.textContent = etiqueta;
 
       const nombre = document.createElement('span');
       nombre.className = 'parada-item__nombre';
@@ -776,14 +794,58 @@
         abrirMenuFila(construirOpcionesContexto(), evt.clientX, evt.clientY);
       });
 
-      el.paradasLista.appendChild(li);
-    });
-
-    if (state.modoAereo && state.tramosAereo && state.tramosAereo.apDes) {
-      el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, state.tramosAereo.apDes, 'Llegada', state.tramosAereo.distCarro2));
+      return li;
     }
-    if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.pd) {
-      el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.pd, 'Llegada', state.tramosFluviales.distCarro2));
+
+    if (incluirExtremos) {
+      el.paradasLista.appendChild(crearFilaExtremo('A', formatMunicipio(state.origen), 'origen'));
+    }
+
+    // Ruta aérea: la lista sigue el orden físico de la ruta
+    // (origen → salida → llegada → pueblo → salida → llegada → … → destino),
+    // intercalando los aeropuertos de cada tramo con los puntos intermedios.
+    const segsAereos = state.modoAereo && state.tramosAereo ? state.tramosAereo.apSegs : null;
+    if (segsAereos && segsAereos.length) {
+      const itemsRestantes = items.slice();
+      let idxItem = 0;
+      for (let i = 0; i < segsAereos.length; i++) {
+        const seg = segsAereos[i];
+        const dSalida = i === 0
+          ? state.tramosAereo.distCarro1
+          : (seg.vuelos && seg.vuelos[0] ? seg.vuelos[0].distanciaMetros : null);
+        const dLlegada = i === segsAereos.length - 1
+          ? state.tramosAereo.distCarro2
+          : (seg.vuelos && seg.vuelos.length > 1 ? seg.vuelos[1].distanciaMetros
+              : (seg.vuelos && seg.vuelos[0] ? seg.vuelos[0].distanciaMetros : null));
+        if (seg.apOri) el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, seg.apOri, 'Salida', dSalida));
+        if (seg.apDes) el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, seg.apDes, 'Llegada', dLlegada));
+        if (i < segsAereos.length - 1) {
+          const pueblo = itemsRestantes.find((it) => it.tipo === 'escala');
+          if (pueblo) {
+            itemsRestantes.splice(itemsRestantes.indexOf(pueblo), 1);
+            el.paradasLista.appendChild(construirFilaItem(pueblo, etiquetaIntermedia(idxItem++)));
+          }
+          while (itemsRestantes.length && itemsRestantes[0].tipo !== 'escala') {
+            el.paradasLista.appendChild(construirFilaItem(itemsRestantes.shift(), etiquetaIntermedia(idxItem++)));
+          }
+        }
+      }
+      while (itemsRestantes.length) {
+        el.paradasLista.appendChild(construirFilaItem(itemsRestantes.shift(), etiquetaIntermedia(idxItem++)));
+      }
+    } else {
+      if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.po) {
+        el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.po, 'Salida', state.tramosFluviales.distCarro1));
+      }
+      if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.hub && state.tramosFluviales.tramos && state.tramosFluviales.tramos[0]) {
+        el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.hub, 'Conexión', state.tramosFluviales.tramos[0].distanciaMetros));
+      }
+      items.forEach((item, idx) => {
+        el.paradasLista.appendChild(construirFilaItem(item, etiquetaIntermedia(idx)));
+      });
+      if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.pd) {
+        el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.pd, 'Llegada', state.tramosFluviales.distCarro2));
+      }
     }
     if (incluirExtremos) {
       el.paradasLista.appendChild(crearFilaExtremo('Z', formatMunicipio(state.destino), 'destino'));

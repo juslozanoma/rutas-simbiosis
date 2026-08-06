@@ -39,36 +39,13 @@
         return ids;
       },
       onSelect: (m) => {
+        // Registra el pueblo en state.escalas sin calcular OSRM: el usuario
+        // elige después si el tramo es por carro (botón verde) o avión.
         actualizarEscalas();
-        // El cuadro solo se oculta cuando los cuadros de origen/destino ya no
-        // están en pantalla (ruta calculada); al inicio permanece visible.
-        row.style.display = el.appRoot && el.appRoot.getAttribute('data-ruta-lista') === 'true' ? 'none' : '';
-        const autoOrganizar = !el.btnAutoOrganizar || el.btnAutoOrganizar.getAttribute('aria-pressed') === 'true';
-        if (autoOrganizar) {
-          organizarAutomaticamente(true);
-        } else if (state.rutaActual) {
-          // Sin "Organizar": el pueblo se inserta en su lugar y la ruta se
-          // recalcula igual (sin reordenar las demás paradas).
-          calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
-        }
-        // Recalcular la ruta (OSRM) automáticamente al elegir el pueblo:
-        // - Móvil: siempre (al agregar o cambiar), si organizarAutomaticamente ya no recalcó.
-        // - Cambio de pueblo en cualquier dispositivo: recalcular sin doble cálculo.
-        const recalcAuto = () => {
-          if (!state.rutaActual) {
-            calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
-          }
-        };
-        if (_escalaEnCambio) {
-          _escalaEnCambio = false;
-          recalcAuto();
-        } else if (esMovil()) {
-          recalcAuto();
-        }
       },
       onEnter: () => {
+        // Igual que onSelect: no se recalcula hasta elegir carro o avión.
         actualizarEscalas();
-        calcularRutaPrincipal(false, { ocultarTestigoSitios: true });
       },
     });
 
@@ -80,10 +57,23 @@
     calcBtn.title = 'Calcular ruta con este pueblo intermedio';
     calcBtn.setAttribute('aria-label', 'Calcular ruta con este pueblo intermedio');
     calcBtn.innerHTML = `
-      <svg class="icon-btn__icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      <img class="icon-btn__icon" src="public/car.svg" alt="" width="18" height="18" style="filter:brightness(0) invert(1);">
       <span class="icon-btn__spinner" aria-hidden="true"></span>`;
 
     row.appendChild(calcBtn);
+
+    // Botón de avión: calcula la ruta completa en modo aéreo pasando por este
+    // pueblo intermedio (carro→aeropuerto→vuelo→aeropuerto→carro).
+    const aereoBtn = document.createElement('button');
+    aereoBtn.type = 'button';
+    aereoBtn.className = 'escala-row__calc escala-row__aereo';
+    aereoBtn.title = 'Calcular la ruta en avión pasando por este pueblo';
+    aereoBtn.setAttribute('aria-label', 'Calcular la ruta en avión pasando por este pueblo');
+    aereoBtn.innerHTML = `
+      <svg class="icon-btn__icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+      <span class="icon-btn__spinner" aria-hidden="true"></span>`;
+
+    row.appendChild(aereoBtn);
     el.panelEscalas.appendChild(row);
     el.panelEscalas.hidden = false;
     // El foco abre la lista, el teclado y el acomodo del bloque (un solo
@@ -93,7 +83,19 @@
 
     calcBtn.addEventListener('click', () => {
       actualizarEscalas();
-      calcularRutaPrincipal(false, { ocultarTestigoSitios: true });
+      // Con "Organizar" activo y ruta ya calculada se ordena por distancia y se
+      // recalcula conservando paradas; en cualquier otro caso se recalcula igual.
+      const autoOrganizar = !el.btnAutoOrganizar || el.btnAutoOrganizar.getAttribute('aria-pressed') === 'true';
+      if (autoOrganizar && state.rutaActual) {
+        organizarAutomaticamente();
+      } else {
+        calcularRutaPrincipal(false, { ocultarTestigoSitios: true });
+      }
+    });
+
+    aereoBtn.addEventListener('click', () => {
+      actualizarEscalas();
+      calcularRutaAerea();
     });
 
     state.escalas.push({ _row: row });
@@ -330,7 +332,6 @@
   function reemplazarPuebloIntermedio() {
     activarPanelTab('ruta');
     setMobileTab('ruta');
-    _escalaEnCambio = true;
     agregarEscala();
     el.panelEscalas.scrollIntoView({ block: 'nearest' });
   }
