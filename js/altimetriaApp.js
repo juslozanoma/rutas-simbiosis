@@ -6,7 +6,7 @@
  * ---------------------------------------------------------------------------
  */
 
-  function _prepararCoordenadasParaElevacion(coords, maxPuntos = 900, pasoKm = 0.35) {
+  function _prepararCoordenadasParaElevacion(coords, maxPuntos = 2000, pasoKm = 0.1) {
     // LineString (plano) o MultiLineString (varios tramos): se aplanan para
     // consultar la elevación en el mismo orden en que el perfil acumula km.
     const esMulti = coords && Array.isArray(coords[0]) && Array.isArray(coords[0][0]);
@@ -14,110 +14,157 @@
     const planas = esMulti ? coords.reduce((acc, tramo) => acc.concat(tramo), []) : coords;
     const total = planas.length;
 
+    // Distancia acumulada continua por vértice (mismo criterio que el perfil
+    // en altimetria.js `_acumular`), para interpolar la altura proporcional a
+    // la distancia real recorrida y no al número de vértices.
+    const dists = new Array(total).fill(0);
+    let acc = 0;
+    for (let i = 1; i < total; i++) {
+      acc += turf.distance(turf.point(planas[i - 1]), turf.point(planas[i]), { units: 'kilometers' });
+      dists[i] = acc;
+    }
+
     // Rutas cortas: se consulta TODOS los vértices (máxima precisión, sin
     // interpolar). En rutas largas se muestrea por distancia.
     if (total <= maxPuntos) {
       const limites = [];
+      const muestrasTramo = [];
       let accT = 0;
-      for (const tramo of tramos) { limites.push(accT); accT += tramo.length; }
+      for (let t = 0; t < tramos.length; t++) {
+        limites.push(accT);
+        for (let i = 0; i < tramos[t].length; i++) muestrasTramo.push(t);
+        accT += tramos[t].length;
+      }
       return {
         coordenadas: planas.map((p) => [p[1], p[0]]),
-        indices: planas.map((_, i) => i),
+        muestrasD: dists.slice(),
+        muestrasTramo,
         planas,
-        total,
+        dists,
         limites,
       };
     }
 
-    // Muestreo INDEPENDIENTE por tramo: cada segmento en carro se muestrea
-    // desde su propio inicio cada `pasoKm` km (siempre con su primer y último
-    // punto), de modo que la altura de un segmento no se mezcle con la del
-    // siguiente en los aeropuertos/puertos. `limites` guarda el índice de
+    // Muestreo UNIFORME por distancia: cada `pasoKm` km se genera un punto a lo
+    // largo del tramo interpolando lon/lat entre vértices consecutivos, de modo
+    // que el relieve se muestrea con resolución regular incluso en tramos rectos
+    // con pocos vértices (p. ej. autopistas). `limites` guarda el índice de
     // inicio de cada tramo en la lista aplanada para que la interpolación no
     // cruce de un tramo a otro.
-    const indices = [];
+    const coordenadas = [];
+    const muestrasD = [];
+    const muestrasTramo = [];
     const limites = [];
     let accT = 0;
-    for (const tramo of tramos) {
+    for (let t = 0; t < tramos.length; t++) {
+      const tramo = tramos[t];
       limites.push(accT);
       if (tramo.length >= 2) {
-        indices.push(accT); // inicio del tramo
-        let acc = 0;
-        let prox = pasoKm;
+        coordenadas.push([tramo[0][1], tramo[0][0]]);
+        muestrasD.push(dists[accT]);
+        muestrasTramo.push(t);
+        const finDist = dists[accT + tramo.length - 1];
+        let prox = dists[accT] + pasoKm;
         for (let i = 1; i < tramo.length; i++) {
-          acc += turf.distance(turf.point(tramo[i - 1]), turf.point(tramo[i]), { units: 'kilometers' });
-          if (acc >= prox) {
-            indices.push(accT + i);
+          const d0 = dists[accT + i - 1];
+          const d1 = dists[accT + i];
+          while (prox <= d1 + 1e-9) {
+            const f = d1 > d0 ? (prox - d0) / (d1 - d0) : 0;
+            const lon = tramo[i - 1][0] + f * (tramo[i][0] - tramo[i - 1][0]);
+            const lat = tramo[i - 1][1] + f * (tramo[i][1] - tramo[i - 1][1]);
+            coordenadas.push([lat, lon]);
+            muestrasD.push(prox);
+            muestrasTramo.push(t);
             prox += pasoKm;
           }
         }
-        indices.push(accT + tramo.length - 1); // fin del tramo
+        if (muestrasD[muestrasD.length - 1] < finDist - 1e-9) {
+          coordenadas.push([tramo[tramo.length - 1][1], tramo[tramo.length - 1][0]]);
+          muestrasD.push(finDist);
+          muestrasTramo.push(t);
+        }
       }
       accT += tramo.length;
     }
 
     // Si se supera `maxPuntos` se adelgazan puntos interiores uniformemente,
     // conservando siempre el inicio y el final de cada tramo.
-    let muestras = indices;
-    if (indices.length > maxPuntos) {
-      const conservar = new Set([0, total - 1]);
-      let a = 0;
-      for (const tramo of tramos) {
-        if (tramo.length >= 2) { conservar.add(a); conservar.add(a + tramo.length - 1); }
-        a += tramo.length;
+    let idx = coordenadas.map((_, i) => i);
+    if (idx.length > maxPuntos) {
+      const conservar = new Set();
+      let inicio = 0;
+      for (let t = 0; t < tramos.length; t++) {
+        const fin = inicio + tramos[t].length;
+        if (tramos[t].length >= 2) {
+          const m0 = muestrasD.findIndex((d, i) => muestrasTramo[i] === t && d === dists[fin - tramos[t].length]);
+          const m1 = muestrasD.length - 1 - [...muestrasD].reverse().findIndex((d, i) => muestrasTramo[muestrasD.length - 1 - i] === t && d === dists[fin - 1]);
+          if (m0 >= 0) conservar.add(m0);
+          if (m1 >= 0) conservar.add(m1);
+        }
+        inicio = fin;
       }
-      const interior = indices.filter((i) => !conservar.has(i));
-      const paso = Math.max(1, interior.length / Math.max(1, maxPuntos - conservar.size));
+      conservar.add(0);
+      conservar.add(idx.length - 1);
+      const interior = idx.filter((i) => !conservar.has(i));
+      const paso = interior.length / Math.max(1, maxPuntos - conservar.size);
       const adelgazados = [];
       let cont = 0;
       for (let i = 0; i < interior.length; i++) {
         cont++;
-        if (cont >= paso) { adelgazados.push(interior[i]); cont = 0; }
+        if (cont >= paso) { adelgazados.push(interior[i]); cont -= paso; }
       }
-      muestras = [...conservar, ...adelgazados].sort((x, y) => x - y);
+      idx = [...conservar, ...adelgazados].sort((x, y) => x - y);
     }
 
-    const coordenadas = muestras.map((i) => [planas[i][1], planas[i][0]]);
-    return { coordenadas, indices: muestras, planas, total, limites };
+    return {
+      coordenadas: idx.map((i) => coordenadas[i]),
+      muestrasD: idx.map((i) => muestrasD[i]),
+      muestrasTramo: idx.map((i) => muestrasTramo[i]),
+      planas,
+      dists,
+      limites,
+    };
   }
 
 
-  function _reconstruirElevacion(elevaciones, indices, planas, limites) {
+  function _reconstruirElevacion(elevaciones, muestrasD, muestrasTramo, planas, dists, limites) {
     const result = new Array(planas.length).fill(null);
-    for (let i = 0; i < indices.length; i++) {
-      result[indices[i]] = elevaciones[i];
-    }
-    // Dos índices están en el mismo tramo si no hay un límite entre ellos; así
-    // la interpolación no cruza de un segmento en carro al siguiente.
-    const mismoTramo = (a, b) => {
-      if (!limites || limites.length < 2) return true;
-      for (const l of limites) {
-        if (l > a && l <= b) return false;
-      }
-      return true;
+    if (!planas.length) return result;
+
+    const tramoDeVertice = (j) => {
+      let t = 0;
+      for (let k = 1; k < limites.length; k++) if (j >= limites[k]) t = k;
+      return t;
     };
-    // Distancia acumulada continua por vértice (mismo criterio que el perfil),
-    // para interpolar la altura proporcional a la distancia real recorrida y no
-    // al número de vértices (que no está repartido uniformemente).
-    const dists = new Array(planas.length).fill(0);
-    let acc = 0;
-    for (let i = 1; i < planas.length; i++) {
-      acc += turf.distance(turf.point(planas[i - 1]), turf.point(planas[i]), { units: 'kilometers' });
-      dists[i] = acc;
+
+    // Agrupar muestras por tramo (ya vienen contiguas). Cada grupo queda
+    // ordenado por distancia, y con un puntero por tramo se interpolan los
+    // vértices en una sola pasada.
+    const porTramo = [];
+    for (let m = 0; m < muestrasD.length; m++) {
+      const t = muestrasTramo[m];
+      if (!porTramo[t]) porTramo[t] = { d: [], e: [] };
+      porTramo[t].d.push(muestrasD[m]);
+      porTramo[t].e.push(elevaciones[m]);
     }
-    let lastKnown = -1;
-    for (let i = 0; i < result.length; i++) {
-      if (result[i] != null) {
-        if (lastKnown >= 0 && i > lastKnown + 1 && mismoTramo(lastKnown, i)) {
-          const start = result[lastKnown];
-          const end = result[i];
-          const span = dists[i] - dists[lastKnown];
-          for (let j = lastKnown + 1; j < i; j++) {
-            const f = span > 0 ? (dists[j] - dists[lastKnown]) / span : (j - lastKnown) / (i - lastKnown);
-            result[j] = start + f * (end - start);
-          }
+    const ptr = new Array(porTramo.length).fill(0);
+    for (let j = 0; j < planas.length; j++) {
+      const t = tramoDeVertice(j);
+      const grupo = porTramo[t];
+      if (!grupo || grupo.d.length === 0) continue;
+      const dj = dists[j];
+      while (ptr[t] + 1 < grupo.d.length && grupo.d[ptr[t] + 1] <= dj + 1e-9) ptr[t]++;
+      const a = ptr[t];
+      const ea = grupo.e[a];
+      if (ea == null) continue;
+      result[j] = ea;
+      if (a + 1 < grupo.d.length) {
+        const eb = grupo.e[a + 1];
+        if (eb != null) {
+          const span = grupo.d[a + 1] - grupo.d[a];
+          const f = span > 0 ? (dj - grupo.d[a]) / span : 0;
+          result[j] = ea + f * (eb - ea);
         }
-        lastKnown = i;
       }
     }
     return result;
@@ -182,10 +229,10 @@
       if (geo && geo.geometry && geo.geometry.coordinates) {
         try {
           const coords = geo.geometry.coordinates;
-          const { coordenadas, indices, planas, limites } = _prepararCoordenadasParaElevacion(coords);
+          const { coordenadas, muestrasD, muestrasTramo, planas, dists, limites } = _prepararCoordenadasParaElevacion(coords);
           const elevBatch = await Utils.obtenerElevacionBatch(coordenadas);
           if (elevBatch.some((e) => e != null)) {
-            state.elevacion = _reconstruirElevacion(elevBatch, indices, planas, limites);
+            state.elevacion = _reconstruirElevacion(elevBatch, muestrasD, muestrasTramo, planas, dists, limites);
             AltimetriaModule.setDatos(geo, state.elevacion, state.altimetriaTotalKm, false);
           }
         } catch (err) {
@@ -217,10 +264,10 @@
     if (!_elevacionRutaArchivo || !_elevacionRutaArchivo.some((e) => e != null)) {
       try {
         const coords = _geoRutaArchivo.geometry.coordinates;
-        const { coordenadas, indices, planas, limites } = _prepararCoordenadasParaElevacion(coords);
+        const { coordenadas, muestrasD, muestrasTramo, planas, dists, limites } = _prepararCoordenadasParaElevacion(coords);
         const elevBatch = await Utils.obtenerElevacionBatch(coordenadas);
         if (elevBatch.some((e) => e != null)) {
-          _elevacionRutaArchivo = _reconstruirElevacion(elevBatch, indices, planas, limites);
+          _elevacionRutaArchivo = _reconstruirElevacion(elevBatch, muestrasD, muestrasTramo, planas, dists, limites);
         }
       } catch (err) {
         console.warn('[ALT] Error al cargar elevación de la ruta de archivo:', err.message);

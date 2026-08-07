@@ -148,26 +148,38 @@ const Utils = (() => {
     if (pendientes.length === 0) return resultados;
 
     const MAX_POR_REQUEST = 100;
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     for (let i = 0; i < pendientes.length; i += MAX_POR_REQUEST) {
       const chunk = pendientes.slice(i, i + MAX_POR_REQUEST);
-      try {
-        const lats = chunk.map((p) => p.lat).join(',');
-        const lons = chunk.map((p) => p.lon).join(',');
-        const res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lons}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const elevs = Array.isArray(data?.elevation) ? data.elevation : [];
-        chunk.forEach((p, j) => {
-          const alt = elevs[j];
-          if (alt != null) {
-            const key = `${p.lat.toFixed(4)},${p.lon.toFixed(4)}`;
-            _cacheElevacion.set(key, alt);
-            resultados[p.idx] = alt;
+      let lats = '';
+      let lons = '';
+      for (let intento = 0; intento < 4; intento++) {
+        try {
+          lats = chunk.map((p) => p.lat).join(',');
+          lons = chunk.map((p) => p.lon).join(',');
+          const res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lons}`);
+          if (res.status === 429) {
+            await sleep(1200 + 800 * intento);
+            continue;
           }
-        });
-      } catch (err) {
-        console.warn('[ELEV] Error en lote:', err.message);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          const elevs = Array.isArray(data?.elevation) ? data.elevation : [];
+          chunk.forEach((p, j) => {
+            const alt = elevs[j];
+            if (alt != null) {
+              const key = `${p.lat.toFixed(4)},${p.lon.toFixed(4)}`;
+              _cacheElevacion.set(key, alt);
+              resultados[p.idx] = alt;
+            }
+          });
+          break;
+        } catch (err) {
+          if (intento < 3) { await sleep(500 + 700 * intento); continue; }
+          console.warn('[ELEV] Error en lote:', err.message);
+        }
       }
+      if (i + MAX_POR_REQUEST < pendientes.length) await sleep(250);
     }
 
     return resultados;
