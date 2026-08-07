@@ -911,11 +911,13 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const prev = turf.along(line, Math.max(0, d - 0.5), { units: 'kilometers' });
     const next = turf.along(line, Math.min(km, d + 0.5), { units: 'kilometers' });
     const bearing = turf.bearing(prev, next);
+    const movil = typeof esMovil === 'function' && esMovil();
+    const tam = movil ? 34 : 26;
     const arrowIcon = L.divIcon({
-      html: TransportConfigModule.divIconoHTML(26, 26, `transform-origin:50% 100%;transform:rotate(${bearing - 90}deg);`),
+      html: TransportConfigModule.divIconoHTML(tam, tam, `transform-origin:50% 100%;transform:rotate(${bearing - 90}deg);`),
       className: '',
-      iconSize: [26, 26],
-      iconAnchor: [13, 26],
+      iconSize: [tam, tam],
+      iconAnchor: [tam / 2, tam],
     });
     const arrowMarker = L.marker([pt.geometry.coordinates[1], pt.geometry.coordinates[0]], {
       icon: arrowIcon,
