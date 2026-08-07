@@ -119,7 +119,7 @@ const TransportConfigModule = (() => {
       return `<img class="transport-vehiculo" src="public/transport/hiking.svg" alt="" style="width:${w};height:${h};${rot}"/>`;
     }
     const path = iconoPath();
-    return `<div class="transport-vehiculo" style="width:${w};height:${h};background-color:${_color};-webkit-mask:url('${path}') no-repeat center/contain;mask:url('${path}') no-repeat center/contain;${rot}"></div>`;
+    return `<div class="transport-vehiculo" style="width:${w};height:${h};background-color:${_color};-webkit-mask-image:url('${path}');-webkit-mask-repeat:no-repeat;-webkit-mask-position:center;-webkit-mask-size:contain;mask-image:url('${path}');mask-repeat:no-repeat;mask-position:center;mask-size:contain;${rot}"></div>`;
   }
 
   // -------------------------------------------------------------------
@@ -146,7 +146,7 @@ const TransportConfigModule = (() => {
       btn.className = 'transport-selector__icono';
       btn.title = icono.nombre;
       btn.dataset.file = icono.file;
-      btn.innerHTML = `<div style="width:26px;height:26px;background-color:${_color};-webkit-mask:url('${icono.path}') no-repeat center/contain;mask:url('${icono.path}') no-repeat center/contain;"></div>`;
+      btn.innerHTML = `<div style="width:26px;height:26px;background-color:${_color};-webkit-mask-image:url('${icono.path}');-webkit-mask-repeat:no-repeat;-webkit-mask-position:center;-webkit-mask-size:contain;mask-image:url('${icono.path}');mask-repeat:no-repeat;mask-position:center;mask-size:contain;"></div>`;
       btn.addEventListener('click', () => setIcono(icono.file));
       grid.appendChild(btn);
     });

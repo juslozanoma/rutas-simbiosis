@@ -116,6 +116,7 @@
     panelSitios: document.getElementById('panel-sites'),
     btnMostrarSitiosCercanos: document.getElementById('btn-mostrar-sitios'),
     btnSubirRutaPropia: document.getElementById('btn-subir-ruta-propia'),
+    btnAccionesRuta: document.querySelector('.btn-acciones-ruta'),
     btnIniciarTour: document.getElementById('btn-iniciar-tour'),
     panelTour: document.getElementById('panel-tour'),
     tourInput: document.getElementById('tour-input'),

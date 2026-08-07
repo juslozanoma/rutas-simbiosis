@@ -153,7 +153,7 @@ input, select{ font-family: inherit; }
 }
 .btn-subir-ruta-propia:hover, .btn-iniciar-tour:hover{ background: var(--bg-subtle); border-color: var(--text-muted); color: var(--text-soft); }
 .btn-subir-ruta-propia:active, .btn-iniciar-tour:active{ transform: translateY(1px); }
-.btn-subir-ruta-propia[hidden], .btn-iniciar-tour[hidden]{ display: none; }
+.btn-subir-ruta-propia[hidden], .btn-iniciar-tour[hidden], .btn-acciones-ruta[hidden]{ display: none; }
 /* Iniciar tour: estado activo (tour en curso). */
 .btn-iniciar-tour[aria-pressed="true"]{
   background: var(--teal-50);
@@ -1767,24 +1767,25 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="ruta"][data-ruta-lista="true"] #row-origen,
   #app[data-mobile-tab="ruta"][data-ruta-lista="true"] #row-destino{ display: none; }
 
-  /* "Subir tu propia ruta" flotante en móvil: centrado horizontal y entre la
-     fila del destino y la barra de pestañas inferior. La altura exacta la
-     fija JS (se re-mide al cambiar el layout y se acota al panel para que
-     nunca quede sobre el mapa). */
-  .btn-subir-ruta-propia{
+  /* "Subir tu propia ruta" y "Tour personalizado" flotantes en móvil: el
+     contenedor (.btn-acciones-ruta) se flota centrado entre la fila del
+     destino y la barra de pestañas inferior, con ambos botones juntos como
+     en PC. La altura exacta la fija JS (se re-mide al cambiar el layout y
+     se acota al panel para que nunca quede sobre el mapa). */
+  .btn-acciones-ruta{
     position: fixed;
     left: 50%;
     transform: translateX(-50%);
     width: auto;
+    max-width: calc(100% - 24px);
     margin: 0;
-    white-space: nowrap;
     z-index: 1090;
   }
-  .btn-subir-ruta-propia:active{ transform: translateX(-50%) translateY(1px); }
-  #app[data-mobile-tab="descubre"] .btn-subir-ruta-propia,
-  #app[data-mobile-tab="altimetria"] .btn-subir-ruta-propia,
-  #app[data-mobile-panel="collapsed"] .btn-subir-ruta-propia,
-  #app.combo-enfocado .btn-subir-ruta-propia{ display: none; }
+  .btn-acciones-ruta:active{ transform: translateX(-50%) translateY(1px); }
+  #app[data-mobile-tab="descubre"] .btn-acciones-ruta,
+  #app[data-mobile-tab="altimetria"] .btn-acciones-ruta,
+  #app[data-mobile-panel="collapsed"] .btn-acciones-ruta,
+  #app.combo-enfocado .btn-acciones-ruta{ display: none; }
 
   /* En Descubre: panel-sites llena el panel, hint y desvíos ocultos */
   #app[data-mobile-tab="descubre"] .panel-sites{ flex: 1; min-height: 0; }

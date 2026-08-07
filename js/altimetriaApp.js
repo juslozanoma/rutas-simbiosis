@@ -6,13 +6,28 @@
  * ---------------------------------------------------------------------------
  */
 
-  function _prepararCoordenadasParaElevacion(coords, maxPuntos = 300, pasoKm = 1.5) {
+  function _prepararCoordenadasParaElevacion(coords, maxPuntos = 900, pasoKm = 0.35) {
     // LineString (plano) o MultiLineString (varios tramos): se aplanan para
     // consultar la elevación en el mismo orden en que el perfil acumula km.
     const esMulti = coords && Array.isArray(coords[0]) && Array.isArray(coords[0][0]);
     const tramos = esMulti ? coords : [coords];
     const planas = esMulti ? coords.reduce((acc, tramo) => acc.concat(tramo), []) : coords;
     const total = planas.length;
+
+    // Rutas cortas: se consulta TODOS los vértices (máxima precisión, sin
+    // interpolar). En rutas largas se muestrea por distancia.
+    if (total <= maxPuntos) {
+      const limites = [];
+      let accT = 0;
+      for (const tramo of tramos) { limites.push(accT); accT += tramo.length; }
+      return {
+        coordenadas: planas.map((p) => [p[1], p[0]]),
+        indices: planas.map((_, i) => i),
+        planas,
+        total,
+        limites,
+      };
+    }
 
     // Muestreo INDEPENDIENTE por tramo: cada segmento en carro se muestrea
     // desde su propio inicio cada `pasoKm` km (siempre con su primer y último
@@ -63,12 +78,12 @@
     }
 
     const coordenadas = muestras.map((i) => [planas[i][1], planas[i][0]]);
-    return { coordenadas, indices: muestras, total, limites };
+    return { coordenadas, indices: muestras, planas, total, limites };
   }
 
 
-  function _reconstruirElevacion(elevaciones, indices, totalCoords, limites) {
-    const result = new Array(totalCoords).fill(null);
+  function _reconstruirElevacion(elevaciones, indices, planas, limites) {
+    const result = new Array(planas.length).fill(null);
     for (let i = 0; i < indices.length; i++) {
       result[indices[i]] = elevaciones[i];
     }
@@ -81,15 +96,25 @@
       }
       return true;
     };
+    // Distancia acumulada continua por vértice (mismo criterio que el perfil),
+    // para interpolar la altura proporcional a la distancia real recorrida y no
+    // al número de vértices (que no está repartido uniformemente).
+    const dists = new Array(planas.length).fill(0);
+    let acc = 0;
+    for (let i = 1; i < planas.length; i++) {
+      acc += turf.distance(turf.point(planas[i - 1]), turf.point(planas[i]), { units: 'kilometers' });
+      dists[i] = acc;
+    }
     let lastKnown = -1;
     for (let i = 0; i < result.length; i++) {
       if (result[i] != null) {
         if (lastKnown >= 0 && i > lastKnown + 1 && mismoTramo(lastKnown, i)) {
           const start = result[lastKnown];
           const end = result[i];
-          const span = i - lastKnown;
+          const span = dists[i] - dists[lastKnown];
           for (let j = lastKnown + 1; j < i; j++) {
-            result[j] = start + (end - start) * ((j - lastKnown) / span);
+            const f = span > 0 ? (dists[j] - dists[lastKnown]) / span : (j - lastKnown) / (i - lastKnown);
+            result[j] = start + f * (end - start);
           }
         }
         lastKnown = i;
@@ -157,10 +182,10 @@
       if (geo && geo.geometry && geo.geometry.coordinates) {
         try {
           const coords = geo.geometry.coordinates;
-          const { coordenadas, indices, total, limites } = _prepararCoordenadasParaElevacion(coords);
+          const { coordenadas, indices, planas, limites } = _prepararCoordenadasParaElevacion(coords);
           const elevBatch = await Utils.obtenerElevacionBatch(coordenadas);
           if (elevBatch.some((e) => e != null)) {
-            state.elevacion = _reconstruirElevacion(elevBatch, indices, total, limites);
+            state.elevacion = _reconstruirElevacion(elevBatch, indices, planas, limites);
             AltimetriaModule.setDatos(geo, state.elevacion, state.altimetriaTotalKm, false);
           }
         } catch (err) {
@@ -192,10 +217,10 @@
     if (!_elevacionRutaArchivo || !_elevacionRutaArchivo.some((e) => e != null)) {
       try {
         const coords = _geoRutaArchivo.geometry.coordinates;
-        const { coordenadas, indices, limites } = _prepararCoordenadasParaElevacion(coords);
+        const { coordenadas, indices, planas, limites } = _prepararCoordenadasParaElevacion(coords);
         const elevBatch = await Utils.obtenerElevacionBatch(coordenadas);
         if (elevBatch.some((e) => e != null)) {
-          _elevacionRutaArchivo = _reconstruirElevacion(elevBatch, indices, coords.length, limites);
+          _elevacionRutaArchivo = _reconstruirElevacion(elevBatch, indices, planas, limites);
         }
       } catch (err) {
         console.warn('[ALT] Error al cargar elevación de la ruta de archivo:', err.message);

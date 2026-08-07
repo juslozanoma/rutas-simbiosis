@@ -917,12 +917,13 @@ const RutaArchivoModule = (() => {
     _offsetFilaDestino = fila.getBoundingClientRect().bottom - panel.getBoundingClientRect().top;
   }
 
-  // Centra el botón "Subir tu propia ruta" (solo móvil) entre la fila del
-  // destino y la barra de pestañas inferior. La posición se acota al panel
-  // lateral para que el botón nunca quede flotando sobre el mapa.
+  // Centra el contenedor con "Subir tu propia ruta" y "Tour personalizado"
+  // (solo móvil) entre la fila del destino y la barra de pestañas inferior,
+  // con ambos botones juntos como en PC. La posición se acota al panel
+  // lateral para que nunca quede flotando sobre el mapa.
   function _posicionarBotonSubirRuta() {
-    const btn = el.btnSubirRutaPropia;
-    if (!btn || !esMovil()) return;
+    const cont = el.btnAccionesRuta || el.btnSubirRutaPropia;
+    if (!cont || !esMovil()) return;
     _medirOffsetFilaDestino();
     const panel = document.querySelector('.side-panel');
     const barra = el.mobileTabBar;
@@ -933,10 +934,10 @@ const RutaArchivoModule = (() => {
       : panelTop + 140;
     const barraTop = barra.getBoundingClientRect().top;
     let centro = filaBottom + (barraTop - filaBottom) / 2;
-    const bordeSuperior = panelTop + btn.offsetHeight / 2 + 4;
-    const bordeInferior = barraTop - btn.offsetHeight / 2 - 4;
+    const bordeSuperior = panelTop + cont.offsetHeight / 2 + 4;
+    const bordeInferior = barraTop - cont.offsetHeight / 2 - 4;
     centro = Math.max(bordeSuperior, Math.min(bordeInferior, centro));
-    btn.style.top = Math.round(centro - btn.offsetHeight / 2) + 'px';
+    cont.style.top = Math.round(centro - cont.offsetHeight / 2) + 'px';
   }
 
   // -------------------------------------------------------------------
