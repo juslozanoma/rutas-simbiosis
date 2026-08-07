@@ -822,7 +822,7 @@
       li.dataset.tipoParada = 'puerto';
       const num = document.createElement('span');
       num.className = 'parada-item__num parada-item__num--ico';
-      num.innerHTML = '<img src="public/transport/boat.svg" alt="Puerto" style="width:12px;height:12px;filter:brightness(0) invert(1);">';
+      num.innerHTML = '<img src="public/boat.svg" alt="Puerto" style="width:12px;height:12px;filter:brightness(0) invert(1);">';
       const nombreEl = document.createElement('span');
       nombreEl.className = 'parada-item__nombre';
       nombreEl.textContent = (prefijo ? prefijo + ': ' : '') + (puerto || '');

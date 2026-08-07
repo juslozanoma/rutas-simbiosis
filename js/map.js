@@ -217,11 +217,11 @@ const MapModule = (() => {
   }
 
   function iconoPuertoGlobal() {
-    return _iconoInfraGlobal('<img src="public/transport/boat.svg" alt="Puerto"/>');
+    return _iconoInfraGlobal('<img src="public/boat.svg" alt="Puerto"/>');
   }
 
   function iconoAeropuertoGlobal() {
-    return _iconoInfraGlobal('<img src="public/transport/airplane.svg" alt="Aeropuerto"/>');
+    return _iconoInfraGlobal('<img src="public/airplane.svg" alt="Aeropuerto"/>');
   }
 
   /** Ícono numerado verde de departamento (D) y municipio (M): el número indica
@@ -1181,7 +1181,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     lista.forEach(({ p, titulo }) => {
       if (!p) return;
       const icono = L.divIcon({
-        html: '<div class="puerto-pin"><img src="public/transport/boat.svg" alt="" style="width:16px;height:16px;filter:brightness(0) invert(1);"></div>',
+        html: '<div class="puerto-pin"><img src="public/boat.svg" alt="" style="width:16px;height:16px;filter:brightness(0) invert(1);"></div>',
         className: '',
         iconSize: [30, 30],
         iconAnchor: [15, 15],

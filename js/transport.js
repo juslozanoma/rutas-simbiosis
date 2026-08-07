@@ -4,7 +4,7 @@
  * Configuración del vehículo que sigue la ruta terrestre en el mapa y en el
  * perfil de altimetría: al hacer clic sobre el ícono (en el mapa o en la
  * altimetría) se abre un selector con los distintos vehículos disponibles en
- * public/transport/ y una paleta de colores. La elección se guarda en
+ * public/ y una paleta de colores. La elección se guarda en
  * localStorage y se aplica al instante en todos los puntos donde aparece el
  * vehículo (flecha del mapa, carro del perfil y marcador hover del mapa).
  *
@@ -18,21 +18,21 @@ const TransportConfigModule = (() => {
 
   /** Vehículos disponibles. `path` es la ubicación del SVG (negro, monocromo). */
   const ICONOS = [
-    { file: 'car.svg', path: 'public/transport/car.svg', nombre: 'Carro' },
-    { file: 'car2.svg', path: 'public/transport/car2.svg', nombre: 'Carro deportivo' },
-    { file: 'car3.svg', path: 'public/transport/car3.svg', nombre: 'Auto' },
-    { file: 'people-in-car-side-view-svgrepo-com.svg', path: 'public/transport/people-in-car-side-view-svgrepo-com.svg', nombre: 'Carro familiar' },
-    { file: 'suv-transportation-car-suv-svgrepo-com.svg', path: 'public/transport/suv-transportation-car-suv-svgrepo-com.svg', nombre: 'SUV' },
-    { file: 'pickup-svgrepo-com.svg', path: 'public/transport/pickup-svgrepo-com.svg', nombre: 'Camioneta' },
-    { file: 'motorcycle.svg', path: 'public/transport/motorcycle.svg', nombre: 'Moto' },
-    { file: 'motorcycle2.svg', path: 'public/transport/motorcycle2.svg', nombre: 'Motocicleta' },
-    { file: 'motorcycle3.svg', path: 'public/transport/motorcycle3.svg', nombre: 'Moto clásica' },
-    { file: 'scooter-transport-svgrepo-com.svg', path: 'public/transport/scooter-transport-svgrepo-com.svg', nombre: 'Scooter' },
-    { file: 'bike.svg', path: 'public/transport/bike.svg', nombre: 'Bicicleta' },
-    { file: 'boat.svg', path: 'public/transport/boat.svg', nombre: 'Barco' },
-    { file: 'airplane.svg', path: 'public/transport/airplane.svg', nombre: 'Avión' },
-    { file: 'hiking.svg', path: 'public/transport/hiking.svg', nombre: 'Senderista' },
-    { file: 'helicopter.svg', path: 'public/transport/helicopter.svg', nombre: 'Helicóptero' },
+    { file: 'car.svg', path: 'public/car.svg', nombre: 'Carro' },
+    { file: 'car2.svg', path: 'public/car2.svg', nombre: 'Carro deportivo' },
+    { file: 'car3.svg', path: 'public/car3.svg', nombre: 'Auto' },
+    { file: 'people-in-car-side-view-svgrepo-com.svg', path: 'public/people-in-car-side-view-svgrepo-com.svg', nombre: 'Carro familiar' },
+    { file: 'suv-transportation-car-suv-svgrepo-com.svg', path: 'public/suv-transportation-car-suv-svgrepo-com.svg', nombre: 'SUV' },
+    { file: 'pickup-svgrepo-com.svg', path: 'public/pickup-svgrepo-com.svg', nombre: 'Camioneta' },
+    { file: 'motorcycle.svg', path: 'public/motorcycle.svg', nombre: 'Moto' },
+    { file: 'motorcycle2.svg', path: 'public/motorcycle2.svg', nombre: 'Motocicleta' },
+    { file: 'motorcycle3.svg', path: 'public/motorcycle3.svg', nombre: 'Moto clásica' },
+    { file: 'scooter-transport-svgrepo-com.svg', path: 'public/scooter-transport-svgrepo-com.svg', nombre: 'Scooter' },
+    { file: 'bike.svg', path: 'public/bike.svg', nombre: 'Bicicleta' },
+    { file: 'boat.svg', path: 'public/boat.svg', nombre: 'Barco' },
+    { file: 'airplane.svg', path: 'public/airplane.svg', nombre: 'Avión' },
+    { file: 'hiking.svg', path: 'public/hiking.svg', nombre: 'Senderista' },
+    { file: 'helicopter.svg', path: 'public/helicopter.svg', nombre: 'Helicóptero' },
   ];
 
   /** Paleta de colores ofrecida al usuario. */
@@ -75,9 +75,9 @@ const TransportConfigModule = (() => {
 
   /** Ruta del SVG (monocromo) que se muestra como vehículo. */
   function iconoPath() {
-    if (esHiking()) return 'public/transport/hiking.svg';
+    if (esHiking()) return 'public/hiking.svg';
     const def = ICONOS.find((i) => i.file === _icono);
-    return def ? def.path : 'public/transport/car.svg';
+    return def ? def.path : 'public/car.svg';
   }
 
   /** Color actual (negro en modo senderista). */
@@ -116,7 +116,7 @@ const TransportConfigModule = (() => {
     const h = (height || 26) + 'px';
     const rot = rotateStyle || '';
     if (esHiking()) {
-      return `<img class="transport-vehiculo" src="public/transport/hiking.svg" alt="" style="width:${w};height:${h};${rot}"/>`;
+      return `<img class="transport-vehiculo" src="public/hiking.svg" alt="" style="width:${w};height:${h};${rot}"/>`;
     }
     const path = iconoPath();
     return `<div class="transport-vehiculo" style="width:${w};height:${h};background-color:${_color};-webkit-mask-image:url('${path}');-webkit-mask-repeat:no-repeat;-webkit-mask-position:center;-webkit-mask-size:contain;mask-image:url('${path}');mask-repeat:no-repeat;mask-position:center;mask-size:contain;${rot}"></div>`;
