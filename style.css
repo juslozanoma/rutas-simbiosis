@@ -163,7 +163,7 @@ input, select{ font-family: inherit; }
 /* Los dos botones (Subir tu propia ruta / Iniciar tour) en la misma línea,
    con margen y letra verde teal. */
 .btn-acciones-ruta{
-  display: flex;
+  display: grid;
   gap: 8px;
   justify-content: center;
   margin: 0px 10px 0px 10px;

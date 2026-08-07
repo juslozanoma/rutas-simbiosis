@@ -6,7 +6,7 @@
  * ---------------------------------------------------------------------------
  */
 
-  function _prepararCoordenadasParaElevacion(coords, maxPuntos = 2000, pasoKm = 0.1) {
+  function _prepararCoordenadasParaElevacion(coords, maxPuntos = 300, pasoKm = 1.5) {
     // LineString (plano) o MultiLineString (varios tramos): se aplanan para
     // consultar la elevación en el mismo orden en que el perfil acumula km.
     const esMulti = coords && Array.isArray(coords[0]) && Array.isArray(coords[0][0]);
