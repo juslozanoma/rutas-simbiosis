@@ -171,6 +171,11 @@
     garantizarVisibilidadMovil();
     reordenarAereoMovil();
 
+    // Cargar el grafo de ríos una sola vez al iniciar (motor fluvial).
+    if (typeof FluvialModule !== 'undefined' && typeof FluvialModule.cargar === 'function') {
+      FluvialModule.cargar();
+    }
+
     // Mostrar todos los sitios de frontera (tecla F los oculta/muestra),
     // todos los puertos del catálogo (tecla P) y aeropuertos (tecla A).
     _syncFrontera();
@@ -199,6 +204,10 @@
       } else if (tecla === 'k') {
         if (typeof RutaArchivoModule !== 'undefined' && typeof RutaArchivoModule.toggleK === 'function') {
           RutaArchivoModule.toggleK();
+        }
+      } else if (tecla === 'w') {
+        if (typeof MapModule !== 'undefined' && typeof MapModule.toggleRedFluvial === 'function') {
+          MapModule.toggleRedFluvial();
         }
       }
     });
@@ -299,8 +308,13 @@
             if (typeof _mostrarNotificacion !== 'function') return;
             if (res === true) _mostrarNotificacion('Puerto actualizado: ' + nombre + ' — JSON guardado.');
             else if (res === false) _mostrarNotificacion('Puerto actualizado; no se pudo sobrescribir el JSON, se descargó una copia.');
-          });
-        }
+    });
+
+    // Cargar el grafo de ríos una sola vez al iniciar (motor fluvial).
+    if (typeof FluvialModule !== 'undefined' && typeof FluvialModule.cargar === 'function') {
+      FluvialModule.cargar();
+    }
+  }
       }
       return;
     }

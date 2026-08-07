@@ -29,6 +29,9 @@ const MapModule = (() => {
   let capaDepartamentosGlobal = null; // L.layerGroup con los departamentos en sus capitales (tecla D)
   let capaMunicipiosGlobal = null;    // L.layerGroup con los municipios filtrados (tecla M)
   let capaConexiones = null;    // L.layerGroup con las líneas de conexión de un puerto/aeropuerto
+  let capaRedFluvial = null;    // L.geoJSON con la red fluvial del grafo (tecla W)
+  let _redFluvialVisible = false;
+  let _capaBaseOSM = null;      // capa base estándar OpenStreetMap
   let clusterSitios = null;     // L.markerClusterGroup con los sitios candidatos filtrados
   let _capaFlechas = null;      // L.layerGroup con flechas de dirección sobre la ruta
   let _altimetriaActiva = false; // con la altimetría abierta se oculta la flecha de dirección
@@ -78,7 +81,7 @@ const MapModule = (() => {
     map.boxZoom.disable();
     map.doubleClickZoom.disable();
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    _capaBaseOSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap',
     }).addTo(map);
@@ -1058,8 +1061,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
    * arreglo de tramos [{ coords:[lon,lat], distanciaMetros, duracionSegundos },
    * ...] y un estilo { color, iconoEmoji, iconoHtml(bearing) }.
    */
-  function _dibujarTramo(tramos, estilo) {
-    if (capaAerea) capaAerea.clearLayers();
+  function _dibujarTramo(tramos, estilo, limpiar = true) {
+    if (limpiar && capaAerea) capaAerea.clearLayers();
     if (!capaAerea || !tramos || !tramos.length) return;
     tramos.forEach((t) => {
       const coords = t.coords;
@@ -1069,7 +1072,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         color: estilo.color,
         weight: 3,
         opacity: 0.9,
-        dashArray: estilo.dashArray != null ? estilo.dashArray : '8 8',
+        dashArray: estilo.dashArray !== undefined ? estilo.dashArray : '8 8',
         lineCap: 'round',
         interactive: true,
       }).addTo(capaAerea);
@@ -1106,23 +1109,33 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     });
   }
 
+  const _ESTILO_AEREO = {
+    color: '#4a6fa5',
+    iconoEmoji: '✈',
+    iconoHtml: (bearing) => `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#ffffff;border:1px solid #ffffff;box-shadow:0 1px 4px rgba(20,32,27,0.55);"><svg viewBox="0 0 24 24" style="width:16px;height:16px;transform:rotate(${bearing - 90}deg);display:block;"><path d="M11.92,19.58,15.84,14H20a2,2,0,0,0,0-4H15.84L11.92,4.42A1,1,0,0,0,11.11,4h-.93a1,1,0,0,0-1,1.16L10,10H6.38L4.68,8.29A1.05,1.05,0,0,0,4,8H3a1,1,0,0,0-.89,1.45L3.38,12,2.11,14.55A1,1,0,0,0,3,16H4a1.05,1.05,0,0,0,.71-.29L6.38,14H10l-.81,4.84a1,1,0,0,0,1,1.16h.93A1,1,0,0,0,11.92,19.58Z" fill="#4a6fa5"/></svg></div>`,
+  };
+  const _ESTILO_FLUVIAL = {
+    color: '#2f7a6b',
+    dashArray: null,
+    iconoEmoji: '🚢',
+    iconoHtml: () => `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#ffffff;border:1px solid #ffffff;box-shadow:0 1px 4px rgba(20,32,27,0.55);"><svg viewBox="0 0 512 512" style="width:16px;height:16px;display:block;"><path d="M510.652,230.062c-1.357-2.116-3.567-3.524-6.05-3.857l-128-17.067c-4.617-0.606-8.96,2.662-9.591,7.33c-0.631,4.668,2.662,8.969,7.33,9.591l14.49,1.929c2.116,0.282,3.703,2.091,3.703,4.224v13.193c0,2.534-2.202,4.514-4.719,4.241l-34.133-3.661c-2.167-0.222-3.814-2.057-3.814-4.233v-37.35c0-0.845,0.247-1.664,0.717-2.364l14.916-22.374c1.707-2.56,1.903-5.837,0.521-8.576c-1.391-2.748-4.147-4.54-7.219-4.685l-179.2-8.533c-2.876-0.026-5.666,1.212-7.347,3.567c0,0-34.099,47.923-41.574,58.47c-0.896,1.263-2.398,1.937-3.934,1.766L9.438,209.113c-2.423-0.256-4.813,0.521-6.613,2.133C1.033,212.868,0,215.172,0,217.595c0,8.218,1.067,16.273,3.081,24.09c0.444,1.724,1.946,2.978,3.712,3.183L488.9,299.191c2.039,0.23,3.951-1.024,4.557-2.987l18.168-59.034C512.358,234.773,512,232.17,510.652,230.062z M246.255,182.796l-6.656,46.609c-0.324,2.261-2.33,3.874-4.608,3.644c-16.648-1.681-79.198-8.26-79.198-8.26c-3.243-0.35-4.915-4.062-3.021-6.724l29.312-41.037c0.845-1.178,2.227-1.852,3.678-1.783l56.474,2.688C244.745,178.052,246.613,180.304,246.255,182.796z M338.765,189.017l-5.248,7.851c-0.469,0.7-0.717,1.527-0.717,2.372v39.774c0,2.534-2.202,4.514-4.719,4.241l-67.721-7.253c-2.398-0.256-4.113-2.458-3.772-4.847l6.903-48.324c0.307-2.176,2.227-3.763,4.429-3.661l67.499,3.217C338.731,182.54,340.608,186.252,338.765,189.017z M443.733,250.892c0,2.534-2.202,4.514-4.719,4.241c0,0-17.715-1.997-25.32-4.386-0.565c0,0-18.9-2.021-18.9-2.021c-2.131-0.177-3.95,1.439-4.134,3.577c-0.185,2.13,1.431,3.96,3.569,4.145l17.293,1.502c2.13,0.168,3.941-1.45,4.117-3.588c0.047-0.571-0.034-1.153-0.231-1.702L338.765,189.017z" fill="#2f7a6b"/></svg></div>`,
+  };
+
   /** Dibuja los tramos aéreos (líneas punteadas curvas). */
   function dibujarTramoAereo(tramos) {
-    _dibujarTramo(tramos, {
-      color: '#4a6fa5',
-      iconoEmoji: '✈',
-      iconoHtml: (bearing) => `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#ffffff;border:1px solid #ffffff;box-shadow:0 1px 4px rgba(20,32,27,0.55);"><img src="public/transport/airplane.svg" style="width:16px;height:16px;transform:rotate(${bearing - 90}deg);filter:brightness(0) saturate(100%) invert(40%) sepia(11%) saturate(716%) hue-rotate(118deg) brightness(94%) contrast(92%);"/></div>`,
-    });
+    _dibujarTramo(tramos, _ESTILO_AEREO);
   }
 
-  /** Dibuja los tramos fluviales (líneas punteadas sobre el río). */
+  /** Dibuja los tramos fluviales (línea continua sobre el río). */
   function dibujarTramoFluvial(tramos) {
-    _dibujarTramo(tramos, {
-      color: '#2f7a6b',
-      dashArray: null, // línea continua: el trayecto del río
-      iconoEmoji: '🚢',
-      iconoHtml: () => `<div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#ffffff;border:1px solid #ffffff;box-shadow:0 1px 4px rgba(20,32,27,0.55);"><img src="public/transport/boat.svg" alt="" style="width:16px;height:16px;filter:brightness(0) saturate(100%) invert(40%) sepia(11%) saturate(716%) hue-rotate(118deg) brightness(94%) contrast(92%);"/></div>`,
-    });
+    _dibujarTramo(tramos, _ESTILO_FLUVIAL);
+  }
+
+  /** Dibuja juntos los tramos aéreos y fluviales de una ruta multimodal
+   *  (avión + barco): no se limpia la capa entre ambos estilos. */
+  function dibujarTramoMixto(tramosAereo, tramosFluvial) {
+    _dibujarTramo(tramosAereo, _ESTILO_AEREO, true);
+    _dibujarTramo(tramosFluvial, _ESTILO_FLUVIAL, false);
   }
 
   function limpiarTramoAereo() {
@@ -1492,6 +1505,43 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     return _conexionCentroId === tipo + '_' + id && capaConexiones && capaConexiones.getLayers().length > 0;
   }
 
+  /** Muestra/oculta la red fluvial completa (tramos del grafo) sobre el mapa
+   *  base normal. No cambia la capa base: dibuja la geometría real de los
+   *  cauces resuelta por el motor fluvial (FluvialModule.red()). */
+  function toggleRedFluvial() {
+    if (!map) return false;
+    if (_redFluvialVisible) {
+      if (capaRedFluvial) { map.removeLayer(capaRedFluvial); capaRedFluvial = null; }
+      _redFluvialVisible = false;
+      return false;
+    }
+    _redFluvialVisible = true;
+    _dibujarRedFluvial();
+    return true;
+  }
+
+  function _dibujarRedFluvial() {
+    if (capaRedFluvial) { map.removeLayer(capaRedFluvial); capaRedFluvial = null; }
+    if (typeof FluvialModule === 'undefined' || typeof FluvialModule.red !== 'function') return;
+    FluvialModule.red().then((lineas) => {
+      if (!_redFluvialVisible || !lineas || !lineas.length) return;
+      const feature = {
+        type: 'Feature',
+        geometry: { type: 'MultiLineString', coordinates: lineas },
+      };
+      capaRedFluvial = L.geoJSON(feature, {
+        renderer: L.canvas(),
+        style: { color: '#2f7a6b', weight: 1.2, opacity: 0.65, lineCap: 'round' },
+        interactive: false,
+      }).addTo(map);
+    });
+  }
+
+  /** Indica si la red fluvial completa está visible en el mapa. */
+  function redFluvialVisible() {
+    return _redFluvialVisible;
+  }
+
   function limpiarTodo() {
     // Si el catálogo de puertos/aeropuertos (P/A) ocultó capas, esas
     // referencias quedan obsoletas al limpiar todo: no restaurarlas después.
@@ -1504,6 +1554,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarPuntosDesvio();
     limpiarAlertas();
     limpiarConexiones();
+    if (capaRedFluvial) { map.removeLayer(capaRedFluvial); capaRedFluvial = null; _redFluvialVisible = false; }
     clusterSitios.clearLayers();
   }
 
@@ -1867,6 +1918,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     dibujarConexiones,
     limpiarConexiones,
     estanConexionesAbiertas,
+    toggleRedFluvial,
+    redFluvialVisible,
     ocultarRutasYSitios,
     limpiarMarcadoresRuta,
     setMarcadoresParadas,
@@ -1887,6 +1940,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     setAltimetriaActiva,
     habilitarArrastreRuta,
     dibujarTramoAereo,
+    dibujarTramoMixto,
     limpiarTramoAereo,
     setMarcadoresAeropuertos,
     limpiarMarcadoresAeropuertos,

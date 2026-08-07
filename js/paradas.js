@@ -997,6 +997,17 @@
       while (itemsRestantes.length) {
         el.paradasLista.appendChild(construirFilaItem(itemsRestantes.shift(), etiquetaIntermedia(idxItem++)));
       }
+      // Ruta multimodal (avión + barco): tras el tramo aéreo se intercalan los
+      // puertos fluviales (salida del barco, conexión y llegada).
+      if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.po) {
+        el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.po, 'Salida 🚢', state.tramosFluviales.distCarro1));
+      }
+      if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.hub && state.tramosFluviales.tramos && state.tramosFluviales.tramos[0]) {
+        el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.hub, 'Conexión 🚢', state.tramosFluviales.tramos[0].distanciaMetros));
+      }
+      if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.pd) {
+        el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.pd, 'Llegada 🚢', state.tramosFluviales.distCarro2));
+      }
     } else {
       if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.po) {
         el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.po, 'Salida', state.tramosFluviales.distCarro1));
