@@ -24,6 +24,8 @@ const RutaArchivoModule = (() => {
   const _rutasOcultas = new Set(); // ids de rutas ocultas del mapa (clic en su ficha)
   let _secuencia = 0;            // generador de ids
   let _watcherId = null;
+  let _orientationHandler = null; // listener de orientación del dispositivo
+  let _rumboActual = null;        // último rumbo de la brújula (grados)
 
   // Ruta elegida con "Unir esta ruta con otra": su ficha queda resaltada
   // hasta elegir la segunda ruta, momento en que se unen en una sola.
@@ -785,11 +787,16 @@ const RutaArchivoModule = (() => {
     const linea = turf.lineString(rutaActual.coords.map((c) => [c[1], c[0]]));
     if (el.seguirRuta) el.seguirRuta.hidden = false;
     if (el.btnGps) el.btnGps.classList.add('activo');
+    _rumboActual = null;
     _watcherId = navigator.geolocation.watchPosition(
       (pos) => {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
-        MapModule.actualizarPosicionUsuario(lat, lon);
+        // Si el GPS entrega rumbo del desplazamiento, se prefiere sobre la brújula.
+        const rumbo = typeof pos.coords.heading === 'number' && pos.coords.heading >= 0
+          ? pos.coords.heading
+          : _rumboActual;
+        MapModule.actualizarPosicionUsuario(lat, lon, rumbo);
         MapModule.centrarEn(lat, lon, 15);
         const km = _progresoKm(linea, lat, lon);
         if (el.seguirRutaContenido) {
@@ -802,6 +809,56 @@ const RutaArchivoModule = (() => {
       },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
     );
+    _iniciarOrientacion();
+  }
+
+  /** Convierte el evento de orientación del dispositivo en un rumbo de la
+   *  brújula (0-360, sentido horario desde el norte) o null si no hay datos. */
+  function _rumboDesdeOrientacion(evento) {
+    if (evento && typeof evento.webkitCompassHeading === 'number' && isFinite(evento.webkitCompassHeading)) {
+      return ((evento.webkitCompassHeading % 360) + 360) % 360;
+    }
+    if (evento && typeof evento.alpha === 'number' && isFinite(evento.alpha)) {
+      return ((360 - evento.alpha) % 360 + 360) % 360;
+    }
+    return null;
+  }
+
+  /** Suscribe el listener de orientación del dispositivo (brújula). En iOS se
+   *  solicita permiso primero si hace falta. */
+  function _iniciarOrientacion() {
+    if (_orientationHandler) return;
+    const escuchar = () => {
+      if (_orientationHandler) return;
+      _orientationHandler = (evento) => {
+        const rumbo = _rumboDesdeOrientacion(evento);
+        if (rumbo == null) return;
+        _rumboActual = rumbo;
+        MapModule.actualizarDireccionUsuario(rumbo);
+      };
+      window.addEventListener('deviceorientationabsolute', _orientationHandler, true);
+      window.addEventListener('deviceorientation', _orientationHandler, true);
+    };
+    if (typeof DeviceOrientationEvent === 'undefined' || !DeviceOrientationEvent) {
+      escuchar();
+      return;
+    }
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission()
+        .then((estado) => { if (estado === 'granted') escuchar(); })
+        .catch(() => escuchar());
+    } else {
+      escuchar();
+    }
+  }
+
+  function _desactivarOrientacion() {
+    if (_orientationHandler) {
+      window.removeEventListener('deviceorientationabsolute', _orientationHandler, true);
+      window.removeEventListener('deviceorientation', _orientationHandler, true);
+      _orientationHandler = null;
+    }
+    _rumboActual = null;
   }
 
   function _progresoKm(linea, lat, lon) {
@@ -815,6 +872,7 @@ const RutaArchivoModule = (() => {
       navigator.geolocation.clearWatch(_watcherId);
       _watcherId = null;
     }
+    _desactivarOrientacion();
     MapModule.limpiarPosicionUsuario();
     if (el.seguirRuta) el.seguirRuta.hidden = true;
     if (el.btnGps) el.btnGps.classList.remove('activo');

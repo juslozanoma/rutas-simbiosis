@@ -1873,24 +1873,56 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     if (bounds.isValid()) map.fitBounds(bounds, { padding: padding || [40, 40] });
   }
 
-  /** Crea (o mueve) el indicador de la posición GPS del usuario: un círculo
-   *  verde sin bordes con la etiqueta permanente "Mi ubicación". */
-  function actualizarPosicionUsuario(lat, lon) {
+  /** Ícono del indicador GPS: un punto en el centro y una flecha que apunta
+   *  hacia donde orienta el dispositivo móvil (rumbo en grados, 0 = norte). */
+  function _iconoUsuarioGPS(rumbo) {
+    const r = rumbo == null ? 0 : rumbo;
+    return L.divIcon({
+      html: `<div class="gps-indicador">
+        <svg class="gps-indicador__flecha" viewBox="0 0 24 24" width="24" height="24" style="transform:rotate(${r}deg)">
+          <path d="M12 2L18 22L12 17.5L6 22Z" fill="${COLOR_RUTA_ARCHIVO}" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <span class="gps-indicador__punto"></span>
+      </div>`,
+      className: '',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12],
+    });
+  }
+
+  /** Rota la flecha del indicador GPS según el rumbo del dispositivo. */
+  function _rotarIndicadorGPS(rumbo) {
+    if (!_marcadorUsuario || rumbo == null) return;
+    const el = _marcadorUsuario.getElement();
+    if (!el) return;
+    const flecha = el.querySelector('.gps-indicador__flecha');
+    if (flecha) flecha.style.transform = 'rotate(' + rumbo + 'deg)';
+  }
+
+  /** Crea (o mueve) el indicador de la posición GPS del usuario: un punto con
+   *  una flecha que apunta hacia donde orienta el dispositivo móvil y la
+   *  etiqueta permanente "Mi ubicación". `rumbo` son los grados de la brújula
+   *  (0 = norte, en el sentido de las agujas del reloj). */
+  function actualizarPosicionUsuario(lat, lon, rumbo) {
     if (!_marcadorUsuario) {
-      _marcadorUsuario = L.circleMarker([lat, lon], {
-        radius: 6,
-        color: COLOR_RUTA_ARCHIVO,
-        weight: 0,
-        fillColor: COLOR_RUTA_ARCHIVO,
-        fillOpacity: 0.9,
+      _marcadorUsuario = L.marker([lat, lon], {
+        icon: _iconoUsuarioGPS(rumbo),
+        zIndexOffset: 1050,
       }).addTo(map);
       _marcadorUsuario.bindTooltip('Mi ubicación', {
-        permanent: true, direction: 'top', offset: [0, -8],
+        permanent: true, direction: 'top', offset: [0, -14],
         className: 'gps-ubicacion-tooltip',
       });
     } else {
       _marcadorUsuario.setLatLng([lat, lon]);
+      _rotarIndicadorGPS(rumbo);
     }
+  }
+
+  /** Actualiza únicamente la dirección (rumbo) del indicador GPS, sin mover la
+   *  posición. Si no hay indicador, no hace nada. */
+  function actualizarDireccionUsuario(rumbo) {
+    _rotarIndicadorGPS(rumbo);
   }
 
   function limpiarPosicionUsuario() {
@@ -1968,6 +2000,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarRutasArchivo,
     ajustarVista,
     actualizarPosicionUsuario,
+    actualizarDireccionUsuario,
     limpiarPosicionUsuario,
     limpiarSitios,
     agregarMarcadorSitio,

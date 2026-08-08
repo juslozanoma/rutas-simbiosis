@@ -1403,6 +1403,31 @@ input, select{ font-family: inherit; }
 }
 .gps-ubicacion-tooltip::before{ border-top-color: var(--teal-600); }
 
+/* Indicador GPS con flecha de dirección (apunta hacia donde orienta el dispositivo) */
+.gps-indicador{
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+.gps-indicador__flecha{
+  display: block;
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  transition: transform 0.2s ease-out;
+}
+.gps-indicador__punto{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(47,122,107,0.9);
+}
+
 /* Botón flotante de toggle sitios en el mapa */
 .btn-toggle-sitios--float{
   display: flex;
