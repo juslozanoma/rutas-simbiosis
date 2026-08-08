@@ -1571,6 +1571,57 @@ input, select{ font-family: inherit; }
 #btn-gps.activo img{
   filter: invert(17%) sepia(93%) saturate(7488%) hue-rotate(358deg) brightness(92%) contrast(119%) !important;
 }
+/* Rosa de los vientos: arrastrar alrededor del botón rota el mapa y un clic
+   lo vuelve a orientar al norte. En móvil va debajo del botón de pantalla
+   completa; en PC arriba a la derecha del mapa. */
+.btns-map--compass{
+  top: 78px;
+  bottom: auto;
+  left: auto;
+  right: 12px;
+}
+@media (min-width: 861px){
+  .btns-map--compass{ top: 12px; }
+}
+.rosa-vientos{
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--line-300);
+  background: rgba(255,255,255,0.95);
+  box-shadow: 0 1px 6px rgba(20,32,27,0.25);
+  padding: 0;
+  cursor: grab;
+  touch-action: none;
+}
+.rosa-vientos:active{ cursor: grabbing; }
+.rosa-vientos__aguja{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 14px;
+  margin: -14px 0 0 -1.5px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #e34f4f 0%, #e34f4f 55%, #2f7a6b 55%, #2f7a6b 100%);
+  transform-origin: 50% 100%;
+  transition: transform 0.2s ease;
+}
+.rosa-vientos__n{
+  position: absolute;
+  left: 50%;
+  top: -7px;
+  transform: translateX(-50%);
+  padding: 0 3px;
+  border-radius: 3px;
+  background: var(--teal-600);
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.5;
+  pointer-events: none;
+}
 /* Botón "+" para añadir una nueva ruta desde la barra de pestañas móvil */
 .mobile-tab-btn--anadir{ flex: 0 0 44px; color: var(--teal-500); }
 /* Botón "+" de la barra de pestañas de escritorio */
@@ -1823,6 +1874,9 @@ input, select{ font-family: inherit; }
      la izquierda: a la misma distancia de la barra superior que el botón de
      pantalla completa (top: 36px, ver .btn-fullscreen). */
   .btns-map--gps{ display: flex !important; top: 36px; bottom: auto; left: 12px; right: auto; }
+  /* La rosa de los vientos sí se muestra en móvil, debajo del botón de
+     pantalla completa (top: 36px + 34px de alto + 8px de margen). */
+  #btns-map-compass{ display: flex !important; top: 78px; bottom: auto; left: auto; right: 12px; }
   .mobile-tab-bar{
     display: flex !important;
     position: fixed;

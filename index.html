@@ -10,6 +10,7 @@
 <!-- Leaflet -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="public/leaflet-rotate.js"></script>
 
 <!-- Leaflet MarkerCluster (rendimiento con miles de marcadores) -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
@@ -79,6 +80,8 @@
         <img src="public/gps.svg" alt="" width="22" height="22" style="filter: brightness(0) invert(1);">
       </button>
     </div>
+    <!-- Rosa de los vientos (rotar el mapa en cualquier momento) -->
+    <div class="btns-map btns-map--compass" id="btns-map-compass"></div>
   </main>
 
   <!-- ============ PANEL LATERAL FIJO (escritorio) / CONTENIDO MÓVIL ============ -->

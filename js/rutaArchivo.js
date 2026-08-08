@@ -797,7 +797,8 @@ const RutaArchivoModule = (() => {
           ? pos.coords.heading
           : _rumboActual;
         MapModule.actualizarPosicionUsuario(lat, lon, rumbo);
-        MapModule.centrarEn(lat, lon, 15);
+        MapModule.centrarEn(lat, lon);
+        MapModule.alinearConRumbo(rumbo);
         const km = _progresoKm(linea, lat, lon);
         if (el.seguirRutaContenido) {
           el.seguirRutaContenido.textContent = 'Seguir ruta · ' + km.toFixed(1) + ' km';

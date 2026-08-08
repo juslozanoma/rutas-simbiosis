@@ -75,6 +75,9 @@ const MapModule = (() => {
       maxZoom: 18,
       zoomSnap: 0.25,
       zoomDelta: 0.25,
+      rotate: true,
+      rotateControl: false,
+      touchRotate: true,
     }).setView(CENTRO_COLOMBIA, ZOOM_INICIAL);
 
     // Desactivar boxZoom (evita rectángulo al hacer clic en la ruta)
@@ -145,6 +148,8 @@ const MapModule = (() => {
     map.on('moveend', () => {
       if (_capaFlechas) _actualizarFlechaRuta();
     });
+
+    _crearRosaVientos();
 
     return map;
   }
@@ -1932,6 +1937,109 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     }
   }
 
+  // ---------------------------------------------------------------------
+  // Rotación del mapa (rosa de los vientos) y alineación con el rumbo GPS
+  // ---------------------------------------------------------------------
+
+  // Hasta cuándo queda suspendida la alineación automática con el rumbo del
+  // GPS tras una rotación manual del usuario con la rosa de los vientos.
+  let _pausaAlineacionHasta = 0;
+  const PAUSA_ALINEACION_MS = 8000;
+
+  function _setBearing(grados) {
+    if (map && typeof map.setBearing === 'function') map.setBearing(grados);
+  }
+
+  function getBearing() {
+    if (!map || typeof map.getBearing !== 'function') return 0;
+    return map.getBearing();
+  }
+
+  /** Rotación manual (arrastre de la rosa de los vientos o teclado): rota el
+   *  mapa y suspende un rato la alineación automática con el rumbo del GPS. */
+  function setBearing(grados) {
+    _pausaAlineacionHasta = Date.now() + PAUSA_ALINEACION_MS;
+    _setBearing(grados);
+  }
+
+  /** Alinea el mapa con el rumbo del desplazamiento (frente de ruta hacia
+   *  arriba). Respeta una rotación manual reciente del usuario. */
+  function alinearConRumbo(grados) {
+    if (grados == null || Date.now() < _pausaAlineacionHasta) return;
+    _setBearing(grados);
+  }
+
+  /** Crea la rosa de los vientos: arrastrar alrededor del botón rota el mapa
+   *  y un clic (sin arrastre) vuelve a orientarlo al norte. */
+  function _crearRosaVientos() {
+    const contenedor = document.getElementById('btns-map-compass');
+    if (!contenedor) return;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'rosa-vientos';
+    btn.title = 'Arrastrar para rotar el mapa · clic para orientar al norte';
+    btn.setAttribute('aria-label', 'Rotar el mapa: arrastra para girarlo o haz clic para orientar al norte');
+    btn.innerHTML = '<span class="rosa-vientos__aguja" aria-hidden="true"><span class="rosa-vientos__n">N</span></span>';
+    contenedor.appendChild(btn);
+
+    const aguja = btn.querySelector('.rosa-vientos__aguja');
+    const refrescarAguja = () => {
+      if (aguja) aguja.style.transform = 'rotate(' + getBearing() + 'deg)';
+    };
+    map.on('rotate', refrescarAguja);
+
+    let arrastrando = false;
+    let movido = false;
+    let anguloInicial = 0;
+    let rumboInicial = 0;
+
+    const anguloDesdePuntero = (evt) => {
+      const rect = btn.getBoundingClientRect();
+      const dx = evt.clientX - (rect.left + rect.width / 2);
+      const dy = evt.clientY - (rect.top + rect.height / 2);
+      return (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360;
+    };
+
+    btn.addEventListener('pointerdown', (evt) => {
+      evt.preventDefault();
+      if (btn.setPointerCapture) btn.setPointerCapture(evt.pointerId);
+      arrastrando = true;
+      movido = false;
+      anguloInicial = anguloDesdePuntero(evt);
+      rumboInicial = getBearing();
+    });
+
+    btn.addEventListener('pointermove', (evt) => {
+      if (!arrastrando) return;
+      let delta = anguloDesdePuntero(evt) - anguloInicial;
+      delta = ((delta % 360) + 360) % 360;
+      if (delta > 180) delta -= 360;
+      if (Math.abs(delta) > 1) movido = true;
+      setBearing((rumboInicial + delta + 360) % 360);
+    });
+
+    const soltar = (evt) => {
+      if (!arrastrando) return;
+      arrastrando = false;
+      if (btn.hasPointerCapture && btn.hasPointerCapture(evt.pointerId)) {
+        btn.releasePointerCapture(evt.pointerId);
+      }
+      if (!movido) setBearing(0);
+    };
+    btn.addEventListener('pointerup', soltar);
+    btn.addEventListener('pointercancel', soltar);
+
+    btn.addEventListener('keydown', (evt) => {
+      if (evt.key === 'Enter' || evt.key === ' ') {
+        evt.preventDefault();
+        setBearing(0);
+      }
+    });
+
+    refrescarAguja();
+  }
+
   return {
     init,
     getMap,
@@ -2002,6 +2110,9 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     actualizarPosicionUsuario,
     actualizarDireccionUsuario,
     limpiarPosicionUsuario,
+    setBearing,
+    getBearing,
+    alinearConRumbo,
     limpiarSitios,
     agregarMarcadorSitio,
     quitarMarcadorSitio,
