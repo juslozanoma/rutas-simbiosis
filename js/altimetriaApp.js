@@ -6,7 +6,7 @@
  * ---------------------------------------------------------------------------
  */
 
-  function _prepararCoordenadasParaElevacion(coords, maxPuntos = 300, pasoKm = 1.5) {
+  function _prepararCoordenadasParaElevacion(coords, maxPuntos = 300) {
     // LineString (plano) o MultiLineString (varios tramos): se aplanan para
     // consultar la elevación en el mismo orden en que el perfil acumula km.
     const esMulti = coords && Array.isArray(coords[0]) && Array.isArray(coords[0][0]);
@@ -45,12 +45,15 @@
       };
     }
 
-    // Muestreo UNIFORME por distancia: cada `pasoKm` km se genera un punto a lo
-    // largo del tramo interpolando lon/lat entre vértices consecutivos, de modo
-    // que el relieve se muestrea con resolución regular incluso en tramos rectos
-    // con pocos vértices (p. ej. autopistas). `limites` guarda el índice de
-    // inicio de cada tramo en la lista aplanada para que la interpolación no
-    // cruce de un tramo a otro.
+    // Muestreo UNIFORME por distancia: la longitud total se divide en un máximo
+    // de `maxPuntos` puntos equidistantes (espaciado = total / (maxPuntos - 1)),
+    // de modo que la resolución del muestreo se adapta a la distancia de cada
+    // ruta (a más kilómetros, puntos más separados). Se interpola lon/lat entre
+    // vértices consecutivos para que el relieve se muestree con resolución
+    // regular incluso en tramos rectos con pocos vértices (p. ej. autopistas).
+    // `limites` guarda el índice de inicio de cada tramo en la lista aplanada
+    // para que la interpolación no cruce de un tramo a otro.
+    const pasoKm = dists[total - 1] / Math.max(1, maxPuntos - 1);
     const coordenadas = [];
     const muestrasD = [];
     const muestrasTramo = [];
