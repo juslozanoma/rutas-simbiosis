@@ -1878,30 +1878,28 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     if (bounds.isValid()) map.fitBounds(bounds, { padding: padding || [40, 40] });
   }
 
-  /** Ícono del indicador GPS: un punto en el centro y una flecha que apunta
-   *  hacia donde orienta el dispositivo móvil (rumbo en grados, 0 = norte). */
+  /** Ícono del indicador GPS: un círculo con una punta que indica hacia donde
+   *  orienta el dispositivo móvil (rumbo en grados, 0 = norte). */
   function _iconoUsuarioGPS(rumbo) {
     const r = rumbo == null ? 0 : rumbo;
     return L.divIcon({
       html: `<div class="gps-indicador">
-        <svg class="gps-indicador__flecha" viewBox="0 0 24 24" width="24" height="24" style="transform:rotate(${r}deg)">
-          <path d="M12 2L18 22L12 17.5L6 22Z" fill="${COLOR_RUTA_ARCHIVO}" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"/>
-        </svg>
-        <span class="gps-indicador__punto"></span>
+        <span class="gps-indicador__punto" aria-hidden="true"></span>
+        <span class="gps-indicador__punta" style="transform:rotate(${r}deg)" aria-hidden="true"></span>
       </div>`,
       className: '',
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
     });
   }
 
-  /** Rota la flecha del indicador GPS según el rumbo del dispositivo. */
+  /** Rota la punta del indicador GPS según el rumbo del dispositivo. */
   function _rotarIndicadorGPS(rumbo) {
     if (!_marcadorUsuario || rumbo == null) return;
     const el = _marcadorUsuario.getElement();
     if (!el) return;
-    const flecha = el.querySelector('.gps-indicador__flecha');
-    if (flecha) flecha.style.transform = 'rotate(' + rumbo + 'deg)';
+    const punta = el.querySelector('.gps-indicador__punta');
+    if (punta) punta.style.transform = 'rotate(' + rumbo + 'deg)';
   }
 
   /** Crea (o mueve) el indicador de la posición GPS del usuario: un punto con
@@ -1938,35 +1936,18 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   }
 
   // ---------------------------------------------------------------------
-  // Rotación del mapa (rosa de los vientos) y alineación con el rumbo GPS
+  // Rotación del mapa (rosa de los vientos)
   // ---------------------------------------------------------------------
 
-  // Hasta cuándo queda suspendida la alineación automática con el rumbo del
-  // GPS tras una rotación manual del usuario con la rosa de los vientos.
-  let _pausaAlineacionHasta = 0;
-  const PAUSA_ALINEACION_MS = 8000;
-
-  function _setBearing(grados) {
+  /** Rota el mapa a un rumbo dado (arrastre de la rosa de los vientos o
+   *  teclado). El usuario decide siempre la dirección y el zoom. */
+  function setBearing(grados) {
     if (map && typeof map.setBearing === 'function') map.setBearing(grados);
   }
 
   function getBearing() {
     if (!map || typeof map.getBearing !== 'function') return 0;
     return map.getBearing();
-  }
-
-  /** Rotación manual (arrastre de la rosa de los vientos o teclado): rota el
-   *  mapa y suspende un rato la alineación automática con el rumbo del GPS. */
-  function setBearing(grados) {
-    _pausaAlineacionHasta = Date.now() + PAUSA_ALINEACION_MS;
-    _setBearing(grados);
-  }
-
-  /** Alinea el mapa con el rumbo del desplazamiento (frente de ruta hacia
-   *  arriba). Respeta una rotación manual reciente del usuario. */
-  function alinearConRumbo(grados) {
-    if (grados == null || Date.now() < _pausaAlineacionHasta) return;
-    _setBearing(grados);
   }
 
   /** Crea la rosa de los vientos: arrastrar alrededor del botón rota el mapa
@@ -2112,7 +2093,6 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarPosicionUsuario,
     setBearing,
     getBearing,
-    alinearConRumbo,
     limpiarSitios,
     agregarMarcadorSitio,
     quitarMarcadorSitio,

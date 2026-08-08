@@ -26,6 +26,8 @@ const RutaArchivoModule = (() => {
   let _watcherId = null;
   let _orientationHandler = null; // listener de orientación del dispositivo
   let _rumboActual = null;        // último rumbo de la brújula (grados)
+  let _rumboSuave = null;         // rumbo suavizado (para que el indicador no salte)
+  const _FACTOR_SUAVIDAD_RUMBO = 0.25;
 
   // Ruta elegida con "Unir esta ruta con otra": su ficha queda resaltada
   // hasta elegir la segunda ruta, momento en que se unen en una sola.
@@ -796,9 +798,8 @@ const RutaArchivoModule = (() => {
         const rumbo = typeof pos.coords.heading === 'number' && pos.coords.heading >= 0
           ? pos.coords.heading
           : _rumboActual;
-        MapModule.actualizarPosicionUsuario(lat, lon, rumbo);
+        MapModule.actualizarPosicionUsuario(lat, lon, _suavizarRumbo(rumbo));
         MapModule.centrarEn(lat, lon);
-        MapModule.alinearConRumbo(rumbo);
         const km = _progresoKm(linea, lat, lon);
         if (el.seguirRutaContenido) {
           el.seguirRutaContenido.textContent = 'Seguir ruta · ' + km.toFixed(1) + ' km';
@@ -811,6 +812,21 @@ const RutaArchivoModule = (() => {
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
     );
     _iniciarOrientacion();
+  }
+
+  /** Suaviza el rumbo con un filtro de paso bajo circular (maneja el salto de
+   *  0°/360°) para que el indicador de dirección no salte de un lado a otro
+   *  con lecturas ruidosas de la brújula o del GPS. */
+  function _suavizarRumbo(nuevo) {
+    if (nuevo == null) return _rumboSuave;
+    if (_rumboSuave == null) {
+      _rumboSuave = nuevo;
+      return _rumboSuave;
+    }
+    let d = nuevo - _rumboSuave;
+    d = ((d + 540) % 360) - 180;
+    _rumboSuave = (_rumboSuave + d * _FACTOR_SUAVIDAD_RUMBO + 360) % 360;
+    return _rumboSuave;
   }
 
   /** Convierte el evento de orientación del dispositivo en un rumbo de la
@@ -834,8 +850,8 @@ const RutaArchivoModule = (() => {
       _orientationHandler = (evento) => {
         const rumbo = _rumboDesdeOrientacion(evento);
         if (rumbo == null) return;
-        _rumboActual = rumbo;
-        MapModule.actualizarDireccionUsuario(rumbo);
+        _rumboActual = _suavizarRumbo(rumbo);
+        MapModule.actualizarDireccionUsuario(_rumboActual);
       };
       window.addEventListener('deviceorientationabsolute', _orientationHandler, true);
       window.addEventListener('deviceorientation', _orientationHandler, true);
@@ -860,6 +876,7 @@ const RutaArchivoModule = (() => {
       _orientationHandler = null;
     }
     _rumboActual = null;
+    _rumboSuave = null;
   }
 
   function _progresoKm(linea, lat, lon) {
