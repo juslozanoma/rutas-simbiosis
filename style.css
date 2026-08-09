@@ -1390,7 +1390,10 @@ input, select{ font-family: inherit; }
   font-weight: 600;
   box-shadow: 0 2px 10px rgba(0,0,0,0.3);
   pointer-events: none;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.35;
+  max-width: calc(100% - 24px);
 }
 .seguir-ruta__dot{
   width: 8px; height: 8px;
@@ -1593,6 +1596,11 @@ input, select{ font-family: inherit; }
 #btn-gps.activo{ background: #ffffff; border: none; }
 #btn-gps.activo img{
   filter: invert(17%) sepia(93%) saturate(7488%) hue-rotate(358deg) brightness(92%) contrast(119%) !important;
+}
+/* Vista satelital activa: el círculo pasa a blanco y el ícono a azul. */
+#btn-satelite.activo{ background: #ffffff; border: none; }
+#btn-satelite.activo svg{
+  stroke: #2563eb !important;
 }
 /* Rosa de los vientos: arrastrar alrededor del botón rota el mapa y un clic
    lo vuelve a orientar al norte. En móvil va debajo del botón de pantalla

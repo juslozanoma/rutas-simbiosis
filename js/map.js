@@ -32,6 +32,7 @@ const MapModule = (() => {
   let capaRedFluvial = null;    // L.geoJSON con la red fluvial del grafo (tecla W)
   let _redFluvialVisible = false;
   let _capaBaseOSM = null;      // capa base estándar OpenStreetMap
+  let _capaBaseSatelite = null; // capa base satelital (Esri World Imagery)
   let clusterSitios = null;     // L.markerClusterGroup con los sitios candidatos filtrados
   let _capaFlechas = null;      // L.layerGroup con flechas de dirección sobre la ruta
   let _altimetriaActiva = false; // con la altimetría abierta se oculta la flecha de dirección
@@ -88,6 +89,20 @@ const MapModule = (() => {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap',
     }).addTo(map);
+
+    _capaBaseSatelite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: '&copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics',
+    });
+
+    const btnSatelite = document.getElementById('btn-satelite');
+    if (btnSatelite) {
+      btnSatelite.addEventListener('click', () => {
+        const activa = alternarVistaSatelite();
+        btnSatelite.classList.toggle('activo', activa);
+        btnSatelite.setAttribute('aria-pressed', String(activa));
+      });
+    }
 
     // Al cambiar el vehículo o su color se re-dibuja la flecha de la ruta.
     if (typeof TransportConfigModule !== 'undefined' && TransportConfigModule.setOnCambio) {
@@ -162,6 +177,26 @@ const MapModule = (() => {
   /** Fuerza a Leaflet a recalcular el tamaño del contenedor (tras cambios de layout). */
   function invalidateSize() {
     if (map) map.invalidateSize();
+  }
+
+  /** Alterna la capa base entre OpenStreetMap y la vista satelital (Esri).
+   *  Devuelve `true` si la vista satelital quedó activa. */
+  function alternarVistaSatelite() {
+    if (!map || !_capaBaseSatelite) return false;
+    const sateliteActiva = map.hasLayer(_capaBaseSatelite);
+    if (sateliteActiva) {
+      map.removeLayer(_capaBaseSatelite);
+      if (!map.hasLayer(_capaBaseOSM)) _capaBaseOSM.addTo(map);
+    } else {
+      map.removeLayer(_capaBaseOSM);
+      _capaBaseSatelite.addTo(map);
+    }
+    return !sateliteActiva;
+  }
+
+  /** ¿Está activa la vista satelital? */
+  function esVistaSatelite() {
+    return !!(map && _capaBaseSatelite && map.hasLayer(_capaBaseSatelite));
   }
 
   // ---------------------------------------------------------------------
@@ -2039,6 +2074,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     init,
     getMap,
     invalidateSize,
+    alternarVistaSatelite,
+    esVistaSatelite,
     iconoSitio,
     setMarcadorOrigen,
     setMarcadorDestino,

@@ -29,6 +29,9 @@ const RutaArchivoModule = (() => {
   let _rumboSuave = null;         // rumbo suavizado (para que el indicador no salte)
   let _ultimaPosicion = null;     // [lat, lon] de la última fijación GPS
   let _quitarOyenteMoveend = null; // desuscribe el seguimiento del movimiento del mapa
+  let _inicioSeguimientoMs = 0;   // ms en que se activó el seguimiento (velocidad promedio/ETA)
+  let _distanciaRecorridaKm = 0;  // km acumulados entre fijaciones consecutivas
+  let _avisoDesvioActivo = false; // evita repetir la alarma de desvío en cada fijación
   const _FACTOR_SUAVIDAD_RUMBO = 0.25;
 
   // Ruta elegida con "Unir esta ruta con otra": su ficha queda resaltada
@@ -820,11 +823,21 @@ const RutaArchivoModule = (() => {
     _rumboActual = null;
     _rumboSuave = null;
     _ultimaPosicion = null;
+    _inicioSeguimientoMs = Date.now();
+    _distanciaRecorridaKm = 0;
+    _avisoDesvioActivo = false;
     let primeraFijacion = true;
     _watcherId = navigator.geolocation.watchPosition(
       (pos) => {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
+        if (_ultimaPosicion) {
+          _distanciaRecorridaKm += turf.distance(
+            turf.point([_ultimaPosicion[1], _ultimaPosicion[0]]),
+            turf.point([lon, lat]),
+            { units: 'kilometers' }
+          );
+        }
         _ultimaPosicion = [lat, lon];
         // Si el GPS entrega rumbo del desplazamiento, se prefiere sobre la brújula.
         const rumbo = typeof pos.coords.heading === 'number' && pos.coords.heading >= 0
@@ -844,9 +857,8 @@ const RutaArchivoModule = (() => {
           return;
         }
         const km = _progresoKm(linea, lat, lon);
-        if (el.seguirRutaContenido) {
-          el.seguirRutaContenido.textContent = 'Seguir ruta · ' + km.toFixed(1) + ' km';
-        }
+        _actualizarAvanceRuta(rutaActual, km, pos);
+        _verificarDesvio(linea, lat, lon);
       },
       () => {
         _desactivarSeguimiento();
@@ -942,6 +954,69 @@ const RutaArchivoModule = (() => {
     return Math.max(0, snap.properties.location);
   }
 
+  /** Actualiza la etiqueta de seguimiento con: km recorridos sobre la ruta,
+   *  km faltantes, altura actual y —solo tras 30 min de seguimiento—
+   *  velocidad promedio y hora estimada de llegada. */
+  function _actualizarAvanceRuta(rutaActual, km, pos) {
+    if (!el.seguirRutaContenido) return;
+    const faltante = Math.max(0, rutaActual.km - km);
+    const altitud = (pos.coords.altitude != null && isFinite(pos.coords.altitude))
+      ? Math.round(pos.coords.altitude)
+      : null;
+    let texto = 'Seguir ruta · ' + km.toFixed(1) + ' km · faltan ' + faltante.toFixed(1) + ' km';
+    if (altitud != null) texto += ' · ' + altitud + ' m';
+    const transcurridoMs = Date.now() - _inicioSeguimientoMs;
+    if (transcurridoMs >= 30 * 60 * 1000 && _distanciaRecorridaKm > 0) {
+      const horas = transcurridoMs / 3600000;
+      const vel = _distanciaRecorridaKm / horas;
+      if (vel > 0) {
+        const horasRestantes = faltante / vel;
+        const llegada = new Date(Date.now() + horasRestantes * 3600000);
+        const hh = String(llegada.getHours()).padStart(2, '0');
+        const mm = String(llegada.getMinutes()).padStart(2, '0');
+        texto += ' · ' + vel.toFixed(1) + ' km/h · llega ' + hh + ':' + mm;
+      }
+    }
+    el.seguirRutaContenido.textContent = texto;
+  }
+
+  /** Si la ubicación se aleja más de 10 m de la línea de la ruta, muestra una
+   *  notificación y una alerta por voz. Solo vuelve a avisar si el usuario
+   *  regresa a la ruta y se vuelve a desviar. */
+  function _verificarDesvio(linea, lat, lon) {
+    if (!linea) return;
+    let distM;
+    try {
+      distM = turf.pointToLineDistance(turf.point([lon, lat]), linea, { units: 'meters' });
+    } catch (e) {
+      return;
+    }
+    if (distM > 10) {
+      if (!_avisoDesvioActivo) {
+        _avisoDesvioActivo = true;
+        if (typeof _mostrarNotificacion === 'function') {
+          _mostrarNotificacion('Te estás desviando de la ruta (' + Math.round(distM) + ' m).');
+        }
+        _hablar('Te estás desviando de la ruta.');
+      }
+    } else {
+      _avisoDesvioActivo = false;
+    }
+  }
+
+  /** Lee en voz alta un texto usando la síntesis de voz del navegador. */
+  function _hablar(texto) {
+    try {
+      if (typeof window.speechSynthesis === 'undefined') return;
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(texto);
+      u.lang = 'es-ES';
+      u.volume = 1;
+      u.rate = 1;
+      window.speechSynthesis.speak(u);
+    } catch (e) { /* sin voz */ }
+  }
+
   function _desactivarSeguimiento() {
     if (_watcherId != null) {
       navigator.geolocation.clearWatch(_watcherId);
@@ -952,6 +1027,9 @@ const RutaArchivoModule = (() => {
       _quitarOyenteMoveend = null;
     }
     _ultimaPosicion = null;
+    _inicioSeguimientoMs = 0;
+    _distanciaRecorridaKm = 0;
+    _avisoDesvioActivo = false;
     _desactivarOrientacion();
     MapModule.limpiarPosicionUsuario();
     if (el.seguirRuta) el.seguirRuta.hidden = true;
