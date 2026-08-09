@@ -857,6 +857,22 @@ input, select{ font-family: inherit; }
 .sitio-card__top-right{ display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .sitio-card__nombre{ font-size: 0.78rem; font-weight: 600; color: var(--text-strong); display: flex; align-items: baseline; min-width: 0; }
 .sitio-card__num{ color: var(--teal-600); font-weight: 700; margin-right: 3px; }
+/* Números 1 y 2 durante la unión de rutas: círculo verde (origen) y gris (la
+   que se unirá en segundo lugar). */
+.sitio-card__num-badge{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-right: 6px;
+  line-height: 1;
+}
+.sitio-card__num-badge--uno{ background: var(--teal-600); color: #ffffff; }
+.sitio-card__num-badge--dos{ background: #eef2f0; color: var(--text-muted); border: 1px solid var(--line-300); }
 /* Fichas de rutas cargadas: ojo y X anclados arriba a la derecha de la ficha,
    título sin negrilla (solo el número) y margen derecho para el título. */
 .sitio-card[data-ruta-archivo-id] .sitio-card__top-right{

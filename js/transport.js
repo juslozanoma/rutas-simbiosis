@@ -15,6 +15,7 @@ const TransportConfigModule = (() => {
 
   const _KEY_ICONO = 'transport.icono';
   const _KEY_COLOR = 'transport.color';
+  const _KEY_ICONO_HIKING = 'transport.icono-hiking';
 
   /** Vehículos disponibles. `path` es la ubicación del SVG (negro, monocromo). */
   const ICONOS = [
@@ -55,6 +56,9 @@ const TransportConfigModule = (() => {
 
   let _icono = (() => { try { return localStorage.getItem(_KEY_ICONO) || 'car.svg'; } catch (e) { return 'car.svg'; } })();
   let _color = (() => { try { return localStorage.getItem(_KEY_COLOR) || '#1c1c1c'; } catch (e) { return '#1c1c1c'; } })();
+  // Ícono del "caminante" en modo ruta de archivo (K): por defecto senderista,
+  // pero el usuario puede cambiarlo (p. ej. pulsación larga en móvil).
+  let _iconoHiking = (() => { try { return localStorage.getItem(_KEY_ICONO_HIKING) || 'hiking.svg'; } catch (e) { return 'hiking.svg'; } })();
 
   const _onCambio = [];
 
@@ -73,11 +77,15 @@ const TransportConfigModule = (() => {
     return (typeof _rutaArchivoActiva !== 'undefined' && !!_rutaArchivoActiva);
   }
 
+  /** Ruta del SVG de un ícono dado (por defecto senderista si no existe). */
+  function _pathDeIcono(file) {
+    const def = ICONOS.find((i) => i.file === file);
+    return def ? def.path : 'public/hiking.svg';
+  }
+
   /** Ruta del SVG (monocromo) que se muestra como vehículo. */
   function iconoPath() {
-    if (esHiking()) return 'public/hiking.svg';
-    const def = ICONOS.find((i) => i.file === _icono);
-    return def ? def.path : 'public/car.svg';
+    return _pathDeIcono(esHiking() ? _iconoHiking : _icono);
   }
 
   /** Color actual (negro en modo senderista). */
@@ -87,6 +95,16 @@ const TransportConfigModule = (() => {
 
   function getIcono() { return _icono; }
   function getColor() { return _color; }
+  function getIconoHiking() { return _iconoHiking; }
+
+  /** Cambia el ícono usado en modo senderista (ruta de archivo K). */
+  function setIconoHiking(file) {
+    const def = ICONOS.find((i) => i.file === file);
+    if (!def || _iconoHiking === file) return;
+    _iconoHiking = file;
+    try { localStorage.setItem(_KEY_ICONO_HIKING, file); } catch (e) {}
+    _notificar();
+  }
 
   function setIcono(file) {
     const def = ICONOS.find((i) => i.file === file);
@@ -116,7 +134,7 @@ const TransportConfigModule = (() => {
     const h = (height || 26) + 'px';
     const rot = rotateStyle || '';
     if (esHiking()) {
-      return `<img class="transport-vehiculo" src="public/hiking.svg" alt="" style="width:${w};height:${h};${rot}"/>`;
+      return `<img class="transport-vehiculo" src="${_pathDeIcono(_iconoHiking)}" alt="" style="width:${w};height:${h};${rot}"/>`;
     }
     const path = iconoPath();
     return `<div class="transport-vehiculo" style="width:${w};height:${h};background-color:${_color};-webkit-mask-image:url('${path}');-webkit-mask-repeat:no-repeat;-webkit-mask-position:center;-webkit-mask-size:contain;mask-image:url('${path}');mask-repeat:no-repeat;mask-position:center;mask-size:contain;${rot}"></div>`;
@@ -147,7 +165,10 @@ const TransportConfigModule = (() => {
       btn.title = icono.nombre;
       btn.dataset.file = icono.file;
       btn.innerHTML = `<div style="width:26px;height:26px;background-color:${_color};-webkit-mask-image:url('${icono.path}');-webkit-mask-repeat:no-repeat;-webkit-mask-position:center;-webkit-mask-size:contain;mask-image:url('${icono.path}');mask-repeat:no-repeat;mask-position:center;mask-size:contain;"></div>`;
-      btn.addEventListener('click', () => setIcono(icono.file));
+      btn.addEventListener('click', () => {
+        if (esHiking()) setIconoHiking(icono.file);
+        else setIcono(icono.file);
+      });
       grid.appendChild(btn);
     });
     sel.appendChild(grid);
@@ -185,8 +206,9 @@ const TransportConfigModule = (() => {
 
   function _refrescarSelector() {
     if (!_selector) return;
+    const activo = esHiking() ? _iconoHiking : _icono;
     _selector.querySelectorAll('.transport-selector__icono').forEach((btn) => {
-      btn.classList.toggle('transport-selector__icono--activo', btn.dataset.file === _icono);
+      btn.classList.toggle('transport-selector__icono--activo', btn.dataset.file === activo);
       const preview = btn.querySelector('div');
       if (preview) preview.style.backgroundColor = _color;
     });
@@ -212,6 +234,6 @@ const TransportConfigModule = (() => {
     if (_selector) _selector.hidden = true;
   }
 
-  return { ICONOS, COLORES, getIcono, getColor, setIcono, setColor, setOnCambio, esHiking, iconoPath, color, divIconoHTML, abrirSelector, cerrarSelector };
+  return { ICONOS, COLORES, getIcono, getColor, setIcono, setColor, setOnCambio, esHiking, iconoPath, color, divIconoHTML, getIconoHiking, setIconoHiking, abrirSelector, cerrarSelector };
 
 })();

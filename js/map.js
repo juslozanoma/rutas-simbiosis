@@ -1714,6 +1714,20 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     map.setView([lat, lon], zoom != null ? zoom : map.getZoom(), { animate: true });
   }
 
+  /** ¿Está un punto (lat, lon) dentro de la vista actual del mapa? */
+  function puntoEnVista(lat, lon) {
+    if (!map) return true;
+    return map.getBounds().contains([lat, lon]);
+  }
+
+  /** Suscribe un callback a los movimientos del mapa (pan/zoom). Devuelve una
+   *  función para desuscribirse. */
+  function onMoveend(callback) {
+    if (!map) return () => {};
+    map.on('moveend', callback);
+    return () => map.off('moveend', callback);
+  }
+
   // ---------------------------------------------------------------------
   // Rutas cargadas desde archivos KML/GPX + seguimiento GPS (tecla K)
   // ---------------------------------------------------------------------
@@ -2106,5 +2120,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     mostrarTooltipSitio,
     encuadrar,
     centrarEn,
+    puntoEnVista,
+    onMoveend,
   };
 })();

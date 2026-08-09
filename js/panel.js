@@ -263,6 +263,16 @@
     // Altimetría - mobile tab
     if (el.btnTabAltimetria) {
       el.btnTabAltimetria.addEventListener('click', () => toggleMobileTab('altimetria'));
+      // Pulsación larga en el ícono inferior de bicicleta/senderista: abre el
+      // selector de vehículo para cambiar el ícono (en modo ruta de archivo
+      // cambia el del caminante).
+      if (typeof engancharLongPress === 'function') {
+        engancharLongPress(el.btnTabAltimetria, (evt) => {
+          if (typeof TransportConfigModule !== 'undefined' && typeof TransportConfigModule.abrirSelector === 'function') {
+            TransportConfigModule.abrirSelector(evt.clientX, evt.clientY);
+          }
+        });
+      }
     }
     if (el.btnCerrarAltimetria) {
       el.btnCerrarAltimetria.addEventListener('click', () => cerrarAltimetria());

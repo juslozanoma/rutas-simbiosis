@@ -27,6 +27,8 @@ const RutaArchivoModule = (() => {
   let _orientationHandler = null; // listener de orientación del dispositivo
   let _rumboActual = null;        // último rumbo de la brújula (grados)
   let _rumboSuave = null;         // rumbo suavizado (para que el indicador no salte)
+  let _ultimaPosicion = null;     // [lat, lon] de la última fijación GPS
+  let _quitarOyenteMoveend = null; // desuscribe el seguimiento del movimiento del mapa
   const _FACTOR_SUAVIDAD_RUMBO = 0.25;
 
   // Ruta elegida con "Unir esta ruta con otra": su ficha queda resaltada
@@ -321,6 +323,7 @@ const RutaArchivoModule = (() => {
       { etiqueta: 'Cambiar punto de inicio', accion: () => _elegirPuntoEnMapa(id, 'inicio') },
       { etiqueta: 'Cambiar punto de finalización', accion: () => _elegirPuntoEnMapa(id, 'fin') },
       { etiqueta: 'Cambiar sentido de la ruta', accion: () => _cambiarSentido(id) },
+      { etiqueta: 'Descargar ruta', accion: () => _descargarRuta(id) },
     ];
     if (_rutaModificada.has(id)) {
       opciones.push({ etiqueta: 'Revertir cambios', accion: () => _revertirCambiosRuta(id) });
@@ -367,6 +370,31 @@ const RutaArchivoModule = (() => {
     });
   }
 
+  /** Descarga la ruta como archivo GPX (trk) para compartirla o reutilizarla. */
+  function _descargarRuta(id) {
+    const ruta = _rutas.find((r) => r.id === id);
+    if (!ruta || !ruta.coords || ruta.coords.length < 2) return;
+    const nombreBase = String(ruta.nombre || 'ruta').trim()
+      .replace(/[^\w\s.-]/g, '').replace(/\s+/g, '_') || 'ruta';
+    const trkpts = ruta.coords.map((c) => `      <trkpt lat="${c[0]}" lon="${c[1]}"></trkpt>`).join('\n');
+    const gpx = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<gpx version="1.1" creator="Rutas Simbiosis" xmlns="http://www.topografix.com/GPX/1/1">\n' +
+      '  <trk>\n' +
+      '    <name>' + _escapeHtml(ruta.nombre || nombreBase) + '</name>\n' +
+      '    <trkseg>\n' + trkpts + '\n    </trkseg>\n' +
+      '  </trk>\n</gpx>\n';
+    const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombreBase + '.gpx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Ruta descargada: ' + ruta.nombre);
+  }
+
   /** "Unir esta ruta con otra": la primera elección resalta la ficha y la
    *  segunda ejecuta la unión (concatenando el final de la primera con el
    *  inicio de la segunda) pidiendo el nombre de la ruta resultante. */
@@ -379,12 +407,15 @@ const RutaArchivoModule = (() => {
       _rutaUnirSeleccionada = id;
       _renderTarjetas();
       if (typeof _mostrarNotificacion === 'function') {
-        _mostrarNotificacion('Ruta seleccionada. Elige la segunda y pulsa "Unir esta ruta con otra".');
+        _mostrarNotificacion('Ruta 1 seleccionada. El orden es importante: las rutas se unen en el orden en que se agregan y la ruta 1 es el origen. Elige la ruta 2, o pulsa de nuevo la ruta 1 para cambiar el origen.');
       }
       return;
     }
     if (_rutaUnirSeleccionada === id) {
-      if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Esta ruta ya está seleccionada para unirse.');
+      // Volver a pulsar la ruta 1 cancela la selección (permite elegir otro origen).
+      _rutaUnirSeleccionada = null;
+      _renderTarjetas();
+      if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Selección de unión cancelada. Puedes elegir otra ruta de origen.');
       return;
     }
     const r1 = _rutas.find((r) => r.id === _rutaUnirSeleccionada);
@@ -475,13 +506,10 @@ const RutaArchivoModule = (() => {
     }
     function onKey(e) {
       if (e.key === 'Enter') { e.preventDefault(); aceptar(); }
-      else if (e.key === 'Escape') cancelar();
     }
     document.addEventListener('keydown', onKey);
     overlay.querySelector('#pedir-nombre-guardar').addEventListener('click', aceptar);
     overlay.querySelector('#pedir-nombre-cancelar').addEventListener('click', cancelar);
-    overlay.querySelector('.dialog').addEventListener('click', (e) => e.stopPropagation());
-    overlay.addEventListener('click', cancelar);
     input.focus();
     input.select();
   }
@@ -790,16 +818,31 @@ const RutaArchivoModule = (() => {
     if (el.seguirRuta) el.seguirRuta.hidden = false;
     if (el.btnGps) el.btnGps.classList.add('activo');
     _rumboActual = null;
+    _rumboSuave = null;
+    _ultimaPosicion = null;
+    let primeraFijacion = true;
     _watcherId = navigator.geolocation.watchPosition(
       (pos) => {
         const lat = pos.coords.latitude;
         const lon = pos.coords.longitude;
+        _ultimaPosicion = [lat, lon];
         // Si el GPS entrega rumbo del desplazamiento, se prefiere sobre la brújula.
         const rumbo = typeof pos.coords.heading === 'number' && pos.coords.heading >= 0
           ? pos.coords.heading
           : _rumboActual;
         MapModule.actualizarPosicionUsuario(lat, lon, _suavizarRumbo(rumbo));
-        MapModule.centrarEn(lat, lon);
+        // Al activar (primera fijación) se centra una sola vez para mostrar la
+        // ubicación; después el usuario se mueve libremente sin auto-centrado.
+        if (primeraFijacion) {
+          primeraFijacion = false;
+          MapModule.centrarEn(lat, lon);
+        }
+        // Si la ubicación queda fuera de la vista, el seguimiento se desactiva
+        // (el usuario puede volver a centrar pulsando el botón GPS).
+        if (!_enVista()) {
+          _desactivarSeguimiento();
+          return;
+        }
         const km = _progresoKm(linea, lat, lon);
         if (el.seguirRutaContenido) {
           el.seguirRutaContenido.textContent = 'Seguir ruta · ' + km.toFixed(1) + ' km';
@@ -811,7 +854,21 @@ const RutaArchivoModule = (() => {
       },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
     );
+    // Si el usuario aleja la ubicación del mapa con un paneo, se desactiva
+    // enseguida (no espera a la siguiente fijación del GPS).
+    if (typeof MapModule.onMoveend === 'function') {
+      _quitarOyenteMoveend = MapModule.onMoveend(() => {
+        if (_watcherId != null && _ultimaPosicion && !_enVista()) _desactivarSeguimiento();
+      });
+    }
     _iniciarOrientacion();
+  }
+
+  /** ¿La última posición conocida está dentro de la vista actual del mapa? */
+  function _enVista() {
+    if (!_ultimaPosicion) return true;
+    if (typeof MapModule.puntoEnVista !== 'function') return true;
+    return MapModule.puntoEnVista(_ultimaPosicion[0], _ultimaPosicion[1]);
   }
 
   /** Suaviza el rumbo con un filtro de paso bajo circular (maneja el salto de
@@ -890,6 +947,11 @@ const RutaArchivoModule = (() => {
       navigator.geolocation.clearWatch(_watcherId);
       _watcherId = null;
     }
+    if (_quitarOyenteMoveend) {
+      _quitarOyenteMoveend();
+      _quitarOyenteMoveend = null;
+    }
+    _ultimaPosicion = null;
     _desactivarOrientacion();
     MapModule.limpiarPosicionUsuario();
     if (el.seguirRuta) el.seguirRuta.hidden = true;
@@ -925,6 +987,16 @@ const RutaArchivoModule = (() => {
     if (el.paradasContador) el.paradasContador.textContent = _totalKm().toFixed(1) + ' km';
   }
 
+  /** Número que muestra cada ficha del listado. Durante una unión en curso la
+   *  ruta elegida como origen (1) se marca con un círculo verde y las demás
+   *  con un círculo gris (2), para saber cómo se unirán. */
+  function _numeroTarjeta(r, i) {
+    if (_rutaUnirSeleccionada == null) return (i + 1) + '.';
+    return _rutaUnirSeleccionada === r.id
+      ? '<span class="sitio-card__num-badge sitio-card__num-badge--uno">1</span>'
+      : '<span class="sitio-card__num-badge sitio-card__num-badge--dos">2</span>';
+  }
+
   function _renderTarjetas() {
     if (!el.paradasLista) return;
     el.paradasLista.innerHTML = '';
@@ -936,7 +1008,7 @@ const RutaArchivoModule = (() => {
       const li = Utils.crearElemento(`
         <li class="sitio-card${oculta ? ' sitio-card--ruta-oculta' : ''}${_rutaUnirSeleccionada === r.id ? ' sitio-card--unir-seleccionada' : ''}" data-ruta-archivo-id="${r.id}">
           <div class="sitio-card__top">
-            <span class="sitio-card__nombre"><span class="sitio-card__dot" style="background:${r.color || '#2f7a6b'}"></span><span class="sitio-card__num">${i + 1}.</span>${_escapeHtml(r.nombre)}</span>
+            <span class="sitio-card__nombre"><span class="sitio-card__dot" style="background:${r.color || '#2f7a6b'}"></span><span class="sitio-card__num">${_numeroTarjeta(r, i)}</span>${_escapeHtml(r.nombre)}</span>
             <div class="sitio-card__top-right">
               <button type="button" class="sitio-card__ojo" data-toggle-ruta="${r.id}" title="${oculta ? 'Mostrar en el mapa' : 'Ocultar del mapa'}" aria-label="${oculta ? 'Mostrar en el mapa' : 'Ocultar del mapa'}" aria-pressed="${oculta ? 'false' : 'true'}">${ojoSvg}</button>
               <button type="button" class="sitio-card__quitar" data-quitar-ruta="${r.id}" title="Quitar ruta de la memoria" aria-label="Quitar ruta de la memoria">&times;</button>
