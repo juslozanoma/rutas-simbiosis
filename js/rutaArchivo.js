@@ -26,13 +26,14 @@ const RutaArchivoModule = (() => {
   let _watcherId = null;
   let _orientationHandler = null; // listener de orientación del dispositivo
   let _rumboActual = null;        // último rumbo de la brújula (grados)
-  let _rumboSuave = null;         // rumbo suavizado (para que el indicador no salte)
+  let _rumboSuave = null;         // rumbo promediado (para que el indicador no salte)
+  const _MAX_LECTURAS_RUMBO = 3;  // lecturas de dirección que se promedian
+  let _lecturasRumbo = [];        // últimas lecturas (para promediar el rumbo)
   let _ultimaPosicion = null;     // [lat, lon] de la última fijación GPS
   let _quitarOyenteMoveend = null; // desuscribe el seguimiento del movimiento del mapa
   let _inicioSeguimientoMs = 0;   // ms en que se activó el seguimiento (velocidad promedio/ETA)
   let _distanciaRecorridaKm = 0;  // km acumulados entre fijaciones consecutivas
   let _avisoDesvioActivo = false; // evita repetir la alarma de desvío en cada fijación
-  const _FACTOR_SUAVIDAD_RUMBO = 0.25;
 
   // Ruta elegida con "Unir esta ruta con otra": su ficha queda resaltada
   // hasta elegir la segunda ruta, momento en que se unen en una sola.
@@ -813,6 +814,7 @@ const RutaArchivoModule = (() => {
     if (el.btnGps) el.btnGps.classList.add('activo');
     _rumboActual = null;
     _rumboSuave = null;
+    _lecturasRumbo = [];
     _ultimaPosicion = null;
     _inicioSeguimientoMs = Date.now();
     _distanciaRecorridaKm = 0;
@@ -874,18 +876,22 @@ const RutaArchivoModule = (() => {
     return MapModule.puntoEnVista(_ultimaPosicion[0], _ultimaPosicion[1]);
   }
 
-  /** Suaviza el rumbo con un filtro de paso bajo circular (maneja el salto de
-   *  0°/360°) para que el indicador de dirección no salte de un lado a otro
-   *  con lecturas ruidosas de la brújula o del GPS. */
+  /** Suaviza el rumbo promediando las últimas `_MAX_LECTURAS_RUMBO` lecturas
+   *  (media circular, maneja el salto 0°/360°). Así, si llega un salto
+   *  aleatorio de la brújula o del GPS, la dirección mostrada sigue siendo la
+   *  correcta: con 3 mediciones un valor aislado apenas desvía el promedio. */
   function _suavizarRumbo(nuevo) {
     if (nuevo == null) return _rumboSuave;
-    if (_rumboSuave == null) {
-      _rumboSuave = nuevo;
-      return _rumboSuave;
+    _lecturasRumbo.push(((nuevo % 360) + 360) % 360);
+    if (_lecturasRumbo.length > _MAX_LECTURAS_RUMBO) _lecturasRumbo.shift();
+    let sen = 0;
+    let cos = 0;
+    for (const g of _lecturasRumbo) {
+      const rad = (g * Math.PI) / 180;
+      sen += Math.sin(rad);
+      cos += Math.cos(rad);
     }
-    let d = nuevo - _rumboSuave;
-    d = ((d + 540) % 360) - 180;
-    _rumboSuave = (_rumboSuave + d * _FACTOR_SUAVIDAD_RUMBO + 360) % 360;
+    _rumboSuave = (Math.atan2(sen, cos) * 180 / Math.PI + 360) % 360;
     return _rumboSuave;
   }
 
@@ -937,6 +943,7 @@ const RutaArchivoModule = (() => {
     }
     _rumboActual = null;
     _rumboSuave = null;
+    _lecturasRumbo = [];
   }
 
   function _progresoKm(linea, lat, lon) {

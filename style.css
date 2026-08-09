@@ -130,9 +130,9 @@ input, select{ font-family: inherit; }
 .panel-locate__escalas[hidden]{ display: none; }
 
 /* Botón "Subir tu propia ruta": visible en PC (centrado, apenas más ancho que
-   su texto, tras los cuadros de origen/destino) y en móvil (flotante, centrado
-   entre la fila del destino y la barra de pestañas inferior, ver media query).
-   Blanco con texto y borde grises; abre el diálogo del atajo K. */
+   su texto, tras los cuadros de origen/destino) y en móvil (en el flujo del
+   panel, 50px bajo el cuadro de destino, ver media query).
+   Blanco con texto y borde verde #accac4; abre el diálogo del atajo K. */
 .btn-subir-ruta-propia, .btn-iniciar-tour{
   display: flex;
   width: auto;
@@ -144,24 +144,24 @@ input, select{ font-family: inherit; }
   font-size: 0.85rem;
   font-weight: 600;
   font-family: inherit;
-  color: var(--text-muted);
+  color: #accac4;
   background: #ffffff;
-  border: 1.5px solid var(--line-300);
+  border: 1.5px solid #accac4;
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
-.btn-subir-ruta-propia:hover, .btn-iniciar-tour:hover{ background: var(--bg-subtle); border-color: var(--text-muted); color: var(--text-soft); }
+.btn-subir-ruta-propia:hover, .btn-iniciar-tour:hover{ background: var(--bg-subtle); border-color: #6fa393; color: #6fa393; }
 .btn-subir-ruta-propia:active, .btn-iniciar-tour:active{ transform: translateY(1px); }
 .btn-subir-ruta-propia[hidden], .btn-iniciar-tour[hidden], .btn-acciones-ruta[hidden]{ display: none; }
 /* Iniciar tour: estado activo (tour en curso). */
 .btn-iniciar-tour[aria-pressed="true"]{
   background: var(--teal-50);
-  border-color: var(--teal-500);
+  border-color: #accac4;
   color: var(--teal-600);
 }
 /* Los dos botones (Subir tu propia ruta / Iniciar tour) en la misma línea,
-   con margen y letra verde teal. Siempre fijos a 50px bajo el cuadro de
+   con margen y letra verde #accac4. Siempre fijos a 50px bajo el cuadro de
    destino, tanto en PC como en móvil (no flotan ni se centran en mitad de
    ningún espacio). */
 .btn-acciones-ruta{
@@ -171,8 +171,8 @@ input, select{ font-family: inherit; }
   margin: 50px 10px 0px 10px;
   max-width: 480px;
 }
-.btn-acciones-ruta > button{ flex: 1; margin: 0; min-width: 0; color: var(--teal-600); border-color: var(--teal-500); }
-.btn-acciones-ruta > button:hover{ color: var(--teal-500); background: var(--teal-50); }
+.btn-acciones-ruta > button{ flex: 1; margin: 0; min-width: 0; color: #accac4; border-color: #accac4; }
+.btn-acciones-ruta > button:hover{ color: #6fa393; background: var(--teal-50); border-color: #6fa393; }
 /* Con el tour activo se ocultan los cuadros de origen/destino y ambos botones;
    el panel del tour ocupa su lugar y aparece la pestaña X para cerrarlo. */
 #app[data-tour-activo="true"] #panel-locate{ display: none; }
