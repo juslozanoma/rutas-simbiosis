@@ -184,6 +184,11 @@
     _syncDepartamentos();
     _syncMunicipios();
     _syncCategorias();
+    // En móvil se restaura la vista del mapa guardada con el botón flotante
+    // (debajo de "Vista satelital"), si existe.
+    if (typeof esMovil === 'function' && esMovil() && typeof restaurarEstadoMapa === 'function') {
+      restaurarEstadoMapa();
+    }
     document.addEventListener('keydown', (evt) => {
       if (evt.ctrlKey || evt.metaKey || evt.altKey) return;
       const esInput = evt.target && evt.target.tagName && /^(INPUT|TEXTAREA|SELECT)$/.test(evt.target.tagName);
@@ -676,6 +681,67 @@
     if (btn) btn.addEventListener('click', () => { if (typeof _toggleTour === 'function') _toggleTour(); });
   }
 
+  // -------------------------------------------------------------------
+  // Guardar / restaurar el estado del mapa (solo móvil): el botón flotante
+  // debajo de "Vista satelital" persiste en localStorage la vista actual del
+  // mapa (centro, zoom, rotación, vista satelital y altimetría si la hay).
+  // -------------------------------------------------------------------
+
+  const CLAVE_ESTADO_MAPA = 'rutas-simbiosis:estado-mapa';
+
+  function guardarEstadoMapa() {
+    const map = MapModule.getMap();
+    if (!map) return;
+    const centro = map.getCenter();
+    const estado = {
+      centro: [centro.lat, centro.lng],
+      zoom: map.getZoom(),
+      bearing: MapModule.getBearing(),
+      satelite: MapModule.esVistaSatelite(),
+    };
+    if (state.altimetriaGeo && state.elevacion && state.elevacion.some((e) => e != null)) {
+      estado.altimetria = {
+        geo: state.altimetriaGeo,
+        elevacion: state.elevacion,
+        totalKm: state.altimetriaTotalKm,
+      };
+    }
+    try {
+      localStorage.setItem(CLAVE_ESTADO_MAPA, JSON.stringify(estado));
+      if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('Estado del mapa guardado.');
+    } catch (err) {
+      if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('No se pudo guardar el estado del mapa.');
+    }
+  }
+
+  function restaurarEstadoMapa() {
+    let guardado = null;
+    try { guardado = JSON.parse(localStorage.getItem(CLAVE_ESTADO_MAPA)); } catch (err) { return; }
+    if (!guardado || !Array.isArray(guardado.centro)) return;
+    const map = MapModule.getMap();
+    if (!map) return;
+    map.setView(guardado.centro, guardado.zoom, { animate: false });
+    MapModule.setBearing(guardado.bearing || 0);
+    if (guardado.satelite && !MapModule.esVistaSatelite()) {
+      MapModule.alternarVistaSatelite();
+      const btn = document.getElementById('btn-satelite');
+      if (btn) { btn.classList.add('activo'); btn.setAttribute('aria-pressed', 'true'); }
+    }
+    if (guardado.altimetria && typeof AltimetriaModule !== 'undefined') {
+      state.altimetriaGeo = guardado.altimetria.geo;
+      state.elevacion = guardado.altimetria.elevacion;
+      state.altimetriaTotalKm = guardado.altimetria.totalKm;
+      if (typeof AltimetriaModule.setDatos === 'function') {
+        AltimetriaModule.setDatos(state.altimetriaGeo, state.elevacion, state.altimetriaTotalKm);
+      }
+    }
+  }
+
+  function initGuardarMapa() {
+    const btn = document.getElementById('btn-guardar');
+    if (btn) btn.addEventListener('click', guardarEstadoMapa);
+  }
+
   // Recarga automática SOLO cuando el servidor lo anuncia (server.js), y ese
   // servidor solo avisa cuando cambian .html o .js. No recarga al guardar
   // puertos (JSON), ni por cambios de CSS/SVG.
@@ -694,5 +760,6 @@
   document.addEventListener('DOMContentLoaded', initReiniciar);
   document.addEventListener('DOMContentLoaded', initTour);
   document.addEventListener('DOMContentLoaded', initRecargaPorServidor);
+  document.addEventListener('DOMContentLoaded', initGuardarMapa);
 
   document.addEventListener('DOMContentLoaded', init);

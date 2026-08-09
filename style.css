@@ -132,7 +132,8 @@ input, select{ font-family: inherit; }
 /* Botón "Subir tu propia ruta": visible en PC (centrado, apenas más ancho que
    su texto, tras los cuadros de origen/destino) y en móvil (en el flujo del
    panel, 50px bajo el cuadro de destino, ver media query).
-   Blanco con texto y borde verde #accac4; abre el diálogo del atajo K. */
+   Blanco con texto y borde gris (--line-300, el borde de origen/destino);
+   abre el diálogo del atajo K. */
 .btn-subir-ruta-propia, .btn-iniciar-tour{
   display: flex;
   width: auto;
@@ -144,24 +145,24 @@ input, select{ font-family: inherit; }
   font-size: 0.85rem;
   font-weight: 600;
   font-family: inherit;
-  color: #accac4;
+  color: var(--line-300);
   background: #ffffff;
-  border: 1.5px solid #accac4;
+  border: 1.5px solid var(--line-300);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
-.btn-subir-ruta-propia:hover, .btn-iniciar-tour:hover{ background: var(--bg-subtle); border-color: #6fa393; color: #6fa393; }
+.btn-subir-ruta-propia:hover, .btn-iniciar-tour:hover{ background: var(--bg-subtle); border-color: #b8b2a1; color: #b8b2a1; }
 .btn-subir-ruta-propia:active, .btn-iniciar-tour:active{ transform: translateY(1px); }
 .btn-subir-ruta-propia[hidden], .btn-iniciar-tour[hidden], .btn-acciones-ruta[hidden]{ display: none; }
 /* Iniciar tour: estado activo (tour en curso). */
 .btn-iniciar-tour[aria-pressed="true"]{
   background: var(--teal-50);
-  border-color: #accac4;
+  border-color: var(--line-300);
   color: var(--teal-600);
 }
 /* Los dos botones (Subir tu propia ruta / Iniciar tour) en la misma línea,
-   con margen y letra verde #accac4. Siempre fijos a 50px bajo el cuadro de
+   con margen y letra gris (--line-300). Siempre fijos a 50px bajo el cuadro de
    destino, tanto en PC como en móvil (no flotan ni se centran en mitad de
    ningún espacio). */
 .btn-acciones-ruta{
@@ -171,8 +172,8 @@ input, select{ font-family: inherit; }
   margin: 50px 10px 0px 10px;
   max-width: 480px;
 }
-.btn-acciones-ruta > button{ flex: 1; margin: 0; min-width: 0; color: #accac4; border-color: #accac4; }
-.btn-acciones-ruta > button:hover{ color: #6fa393; background: var(--teal-50); border-color: #6fa393; }
+.btn-acciones-ruta > button{ flex: 1; margin: 0; min-width: 0; color: var(--line-300); border-color: var(--line-300); }
+.btn-acciones-ruta > button:hover{ color: #b8b2a1; background: var(--bg-subtle); border-color: #b8b2a1; }
 /* Con el tour activo se ocultan los cuadros de origen/destino y ambos botones;
    el panel del tour ocupa su lugar y aparece la pestaña X para cerrarlo. */
 #app[data-tour-activo="true"] #panel-locate{ display: none; }
@@ -240,6 +241,12 @@ input, select{ font-family: inherit; }
 #app[data-ruta-archivo="true"] #btn-iniciar-tour,
 #app[data-infra-activa="true"] #btn-iniciar-tour,
 #app[data-ruta-lista="true"] #btn-iniciar-tour{ display: none; }
+/* En móvil el contenedor de esos botones conserva su margen superior de 50px
+   incluso con los botones ocultos, dejando un hueco encima del listado de
+   rutas subidas: se oculta junto con ellos. */
+#app[data-ruta-archivo="true"] .btn-acciones-ruta,
+#app[data-infra-activa="true"] .btn-acciones-ruta,
+#app[data-ruta-lista="true"] .btn-acciones-ruta{ display: none; }
 /* Con "Subir tu propia ruta" activo, el listado es de rutas de archivo: se
    ocultan los botones de organizar y reiniciar, que pertenecen a las paradas. */
 #app[data-ruta-archivo="true"] #btn-auto-organizar,
@@ -1577,6 +1584,8 @@ input, select{ font-family: inherit; }
 /* En PC el botón de GPS va arriba a la izquierda del mapa. */
 @media (min-width: 861px){
   .btns-map--gps{ top: 12px; bottom: auto; left: 12px; right: auto; }
+  /* El botón de guardar es exclusivo de móvil. */
+  #btn-guardar{ display: none !important; }
 }
 .btn-map-icon{
   width: 34px;
@@ -1601,8 +1610,8 @@ input, select{ font-family: inherit; }
 }
 /* Vista satelital activa: el círculo pasa a blanco y el ícono a azul. */
 #btn-satelite.activo{ background: #ffffff; border: none; }
-#btn-satelite.activo svg{
-  stroke: #2563eb !important;
+#btn-satelite.activo img{
+  filter: invert(27%) sepia(95%) saturate(3000%) hue-rotate(212deg) brightness(93%) contrast(104%) !important;
 }
 /* Rosa de los vientos: arrastrar alrededor del botón rota el mapa y un clic
    lo vuelve a orientar al norte. En móvil va debajo del botón de pantalla
@@ -1633,13 +1642,19 @@ input, select{ font-family: inherit; }
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 3px;
-  height: 14px;
-  margin: -14px 0 0 -1.5px;
-  border-radius: 2px;
-  background: linear-gradient(180deg, #e34f4f 0%, #e34f4f 55%, #2f7a6b 55%, #2f7a6b 100%);
-  transform-origin: 50% 100%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: 50% 50%;
   transition: transform 0.2s ease;
+}
+.rosa-vientos__aguja img{
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 .rosa-vientos__n{
   position: absolute;
@@ -2160,6 +2175,11 @@ input, select{ font-family: inherit; }
   box-sizing: border-box;
 }
 .transport-selector[hidden]{ display: none; }
+.transport-selector__encabezado{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 .transport-selector__titulo{
   font-size: 0.68rem;
   font-weight: 700;
@@ -2167,6 +2187,20 @@ input, select{ font-family: inherit; }
   letter-spacing: 0.05em;
   color: var(--text-muted);
   margin: 4px 2px 6px;
+}
+.transport-selector__cerrar{
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+.transport-selector__cerrar:hover{
+  background: var(--teal-50);
+  color: var(--teal-600);
 }
 .transport-selector__iconos{
   display: grid;

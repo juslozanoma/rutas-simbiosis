@@ -961,8 +961,8 @@ const RutaArchivoModule = (() => {
     const altitud = (pos.coords.altitude != null && isFinite(pos.coords.altitude))
       ? Math.round(pos.coords.altitude)
       : null;
-    let texto = 'Seguir ruta · ' + km.toFixed(1) + ' km · faltan ' + faltante.toFixed(1) + ' km';
-    if (altitud != null) texto += ' · ' + altitud + ' m';
+    let texto = 'Seguir ruta · ' + km.toFixed(1) + ' km · ' + faltante.toFixed(1) + ' km restantes';
+    if (altitud != null) texto += ' · ' + altitud + ' msnm';
     const transcurridoMs = Date.now() - _inicioSeguimientoMs;
     if (transcurridoMs >= 30 * 60 * 1000 && _distanciaRecorridaKm > 0) {
       const horas = transcurridoMs / 3600000;

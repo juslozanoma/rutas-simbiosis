@@ -151,10 +151,21 @@ const TransportConfigModule = (() => {
     sel.className = 'transport-selector';
     sel.hidden = true;
 
+    const encabezado = document.createElement('div');
+    encabezado.className = 'transport-selector__encabezado';
     const t1 = document.createElement('div');
     t1.className = 'transport-selector__titulo';
     t1.textContent = 'Vehículo';
-    sel.appendChild(t1);
+    const btnCerrar = document.createElement('button');
+    btnCerrar.type = 'button';
+    btnCerrar.className = 'transport-selector__cerrar';
+    btnCerrar.title = 'Cerrar';
+    btnCerrar.setAttribute('aria-label', 'Cerrar selector de vehículo');
+    btnCerrar.textContent = '×';
+    btnCerrar.addEventListener('click', () => { sel.hidden = true; });
+    encabezado.appendChild(t1);
+    encabezado.appendChild(btnCerrar);
+    sel.appendChild(encabezado);
 
     const grid = document.createElement('div');
     grid.className = 'transport-selector__iconos';
