@@ -6,7 +6,7 @@
  * ---------------------------------------------------------------------------
  */
 
-  function _prepararCoordenadasParaElevacion(coords, maxPuntos = 1500) {
+  function _prepararCoordenadasParaElevacion(coords, maxPuntos = 700) {
     // LineString (plano) o MultiLineString (varios tramos): se aplanan para
     // consultar la elevación en el mismo orden en que el perfil acumula km.
     const esMulti = coords && Array.isArray(coords[0]) && Array.isArray(coords[0][0]);
@@ -24,27 +24,6 @@
       dists[i] = acc;
     }
 
-    // Rutas cortas: se consulta TODOS los vértices (máxima precisión, sin
-    // interpolar). En rutas largas se muestrea por distancia.
-    if (total <= maxPuntos) {
-      const limites = [];
-      const muestrasTramo = [];
-      let accT = 0;
-      for (let t = 0; t < tramos.length; t++) {
-        limites.push(accT);
-        for (let i = 0; i < tramos[t].length; i++) muestrasTramo.push(t);
-        accT += tramos[t].length;
-      }
-      return {
-        coordenadas: planas.map((p) => [p[1], p[0]]),
-        muestrasD: dists.slice(),
-        muestrasTramo,
-        planas,
-        dists,
-        limites,
-      };
-    }
-
     // Muestreo UNIFORME por distancia: la longitud total se divide en un máximo
     // de `maxPuntos` puntos equidistantes (espaciado = total / (maxPuntos - 1)),
     // de modo que la resolución del muestreo se adapta a la distancia de cada
@@ -52,7 +31,9 @@
     // vértices consecutivos para que el relieve se muestree con resolución
     // regular incluso en tramos rectos con pocos vértices (p. ej. autopistas).
     // `limites` guarda el índice de inicio de cada tramo en la lista aplanada
-    // para que la interpolación no cruce de un tramo a otro.
+    // para que la interpolación no cruce de un tramo a otro. Se aplica siempre
+    // (también en rutas cortas) para garantizar ~`maxPuntos` puntos repartidos
+    // en TODA la altimetría y evitar zonas sin muestras.
     const pasoKm = dists[total - 1] / Math.max(1, maxPuntos - 1);
     const coordenadas = [];
     const muestrasD = [];

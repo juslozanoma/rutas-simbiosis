@@ -143,16 +143,16 @@ input, select{ font-family: inherit; }
   margin: 0 auto;
   padding: 10px 14px;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: 400;
   font-family: inherit;
-  color: var(--line-300);
+  color: #666666;
   background: #ffffff;
   border: 1.5px solid var(--line-300);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
-.btn-subir-ruta-propia:hover, .btn-iniciar-tour:hover{ background: var(--bg-subtle); border-color: #b8b2a1; color: #b8b2a1; }
+.btn-subir-ruta-propia:hover, .btn-iniciar-tour:hover{ background: var(--bg-subtle); border-color: #b8b2a1; color: #555555; }
 .btn-subir-ruta-propia:active, .btn-iniciar-tour:active{ transform: translateY(1px); }
 .btn-subir-ruta-propia[hidden], .btn-iniciar-tour[hidden], .btn-acciones-ruta[hidden]{ display: none; }
 /* Iniciar tour: estado activo (tour en curso). */
@@ -172,8 +172,8 @@ input, select{ font-family: inherit; }
   margin: 50px 10px 0px 10px;
   max-width: 480px;
 }
-.btn-acciones-ruta > button{ flex: 1; margin: 0; min-width: 0; color: var(--line-300); border-color: var(--line-300); }
-.btn-acciones-ruta > button:hover{ color: #b8b2a1; background: var(--bg-subtle); border-color: #b8b2a1; }
+.btn-acciones-ruta > button{ flex: 1; margin: 0; min-width: 0; color: #666666; border-color: var(--line-300); }
+.btn-acciones-ruta > button:hover{ color: #555555; background: var(--bg-subtle); border-color: #b8b2a1; }
 /* Con el tour activo se ocultan los cuadros de origen/destino y ambos botones;
    el panel del tour ocupa su lugar y aparece la pestaña X para cerrarlo. */
 #app[data-tour-activo="true"] #panel-locate{ display: none; }

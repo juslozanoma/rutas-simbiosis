@@ -81,17 +81,47 @@ const AltimetriaModule = (() => {
     const total = [];
     let acc = 0;
     let ei = 0; // índice aplanado: recorre TODOS los tramos en el mismo orden que `elev`
+    const elevS = _suavizarElevacion(elev, _SUAVIZADO_RADIO);
     for (let si = 0; si < tramos.length; si++) {
       const tramo = tramos[si];
       for (let i = 0; i < tramo.length; i++) {
         if (i > 0) {
           acc += turf.distance(turf.point(tramo[i - 1]), turf.point(tramo[i]), { units: 'kilometers' });
         }
-        total.push({ d: acc, e: elev && elev[ei] != null ? elev[ei] : null, coord: tramo[i], seg: si });
+        total.push({ d: acc, e: elevS && elevS[ei] != null ? elevS[ei] : null, coord: tramo[i], seg: si });
         ei++;
       }
     }
     return total;
+  }
+
+  /** Radio de la media móvil centrada aplicada a la elevación: suaviza el
+   *  ruido de cuantización del SRTM (pasos de metros enteros que crean zonas
+   *  planas falsas y picos dentados) sin descartar ningún punto muestreado. */
+  const _SUAVIZADO_RADIO = 6;
+
+  /** Media móvil centrada sobre los valores de elevación. Conserva el mismo
+   *  número de puntos y sus posiciones; solo redondea las alturas para que la
+   *  curva quede suave. Los extremos (primera/última ventana) usan la media de
+   *  los valores disponibles. Los null se ignoran y no propagan. */
+  function _suavizarElevacion(elev, radio) {
+    if (!elev || elev.length < 3) return elev;
+    const r = Math.max(1, radio || 6);
+    const out = elev.slice();
+    for (let i = 0; i < elev.length; i++) {
+      if (elev[i] == null) continue;
+      let suma = 0;
+      let n = 0;
+      const ini = Math.max(0, i - r);
+      const fin = Math.min(elev.length - 1, i + r);
+      for (let j = ini; j <= fin; j++) {
+        if (elev[j] == null) continue;
+        suma += elev[j];
+        n++;
+      }
+      out[i] = n > 0 ? suma / n : elev[i];
+    }
+    return out;
   }
 
   function setDatos(rutaGeojson, elevacion, totalKm, limpiarParadas = true) {
