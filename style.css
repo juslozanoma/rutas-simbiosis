@@ -139,7 +139,7 @@ input, select{ font-family: inherit; }
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin: 10px auto 0;
+  margin: 0 auto;
   padding: 10px 14px;
   font-size: 0.85rem;
   font-weight: 600;
@@ -161,12 +161,14 @@ input, select{ font-family: inherit; }
   color: var(--teal-600);
 }
 /* Los dos botones (Subir tu propia ruta / Iniciar tour) en la misma línea,
-   con margen y letra verde teal. */
+   con margen y letra verde teal. Siempre fijos a 50px bajo el cuadro de
+   destino, tanto en PC como en móvil (no flotan ni se centran en mitad de
+   ningún espacio). */
 .btn-acciones-ruta{
   display: grid;
   gap: 8px;
   justify-content: center;
-  margin: 0px 10px 0px 10px;
+  margin: 50px 10px 0px 10px;
   max-width: 480px;
 }
 .btn-acciones-ruta > button{ flex: 1; margin: 0; min-width: 0; color: var(--teal-600); border-color: var(--teal-500); }
@@ -1874,21 +1876,11 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="ruta"][data-ruta-lista="true"] #row-origen,
   #app[data-mobile-tab="ruta"][data-ruta-lista="true"] #row-destino{ display: none; }
 
-  /* "Subir tu propia ruta" y "Tour personalizado" flotantes en móvil: el
-     contenedor (.btn-acciones-ruta) se flota centrado entre la fila del
-     destino y la barra de pestañas inferior, con ambos botones juntos como
-     en PC. La altura exacta la fija JS (se re-mide al cambiar el layout y
-     se acota al panel para que nunca quede sobre el mapa). */
-  .btn-acciones-ruta{
-    position: fixed;
-    left: 50%;
-    transform: translateX(-50%);
-    width: auto;
-    max-width: calc(100% - 24px);
-    margin: 0;
-    z-index: 1090;
-  }
-  .btn-acciones-ruta:active{ transform: translateX(-50%) translateY(1px); }
+  /* "Subir tu propia ruta" y "Tour personalizado" en móvil: quedan en el
+     flujo del panel, siempre 50px bajo el cuadro de destino (igual que en
+     PC), sin flotar sobre el mapa ni centrarse en mitad de ningún espacio.
+     El `order` los coloca justo después del panel de origen/destino. */
+  .side-panel > .btn-acciones-ruta{ order: 1; }
   #app[data-mobile-tab="descubre"] .btn-acciones-ruta,
   #app[data-mobile-tab="altimetria"] .btn-acciones-ruta,
   #app[data-mobile-panel="collapsed"] .btn-acciones-ruta,

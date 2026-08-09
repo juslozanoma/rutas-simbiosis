@@ -38,12 +38,6 @@ const RutaArchivoModule = (() => {
   // hasta elegir la segunda ruta, momento en que se unen en una sola.
   let _rutaUnirSeleccionada = null;
 
-  // Offset vertical (px) entre el borde superior del side-panel y el borde
-  // inferior de la fila del destino. Se re-mide cada vez que se reposiciona el
-  // botón (mientras la fila esté visible), para que el centrado del botón
-  // "Subir tu propia ruta" siga siendo correcto al añadir/quitar pueblos.
-  let _offsetFilaDestino = null;
-
   // Copia de las coordenadas originales de cada ruta (id -> coords) para
   // poder "Revertir cambios" tras modificar inicio/fin/sentido, y conjunto de
   // ids con modificaciones aún no revertidas.
@@ -695,9 +689,6 @@ const RutaArchivoModule = (() => {
     cerrarDialogo();
     // El listado vuelve al título normal de paradas (no el de las fichas K).
     if (el.paradasTitulo) el.paradasTitulo.textContent = 'Paradas';
-    // Tras reiniciar se recoloca el botón "Subir tu propia ruta" (móvil), ya
-    // que el panel volvió a mostrar la fila del destino.
-    _posicionarBotonSubirRuta();
   }
 
   /** Re-renderiza las tarjetas de rutas en la pestaña Ruta (si el modo sigue
@@ -1133,39 +1124,6 @@ const RutaArchivoModule = (() => {
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
-  // Mide el offset de la fila del destino mientras esté visible; si no está
-  // visible conserva la última medición (p. ej. tras calcular la ruta).
-  function _medirOffsetFilaDestino() {
-    const fila = document.getElementById('row-destino');
-    const panel = document.querySelector('.side-panel');
-    if (!fila || !panel) return;
-    if (getComputedStyle(fila).display === 'none') return;
-    _offsetFilaDestino = fila.getBoundingClientRect().bottom - panel.getBoundingClientRect().top;
-  }
-
-  // Centra el contenedor con "Subir tu propia ruta" y "Tour personalizado"
-  // (solo móvil) entre la fila del destino y la barra de pestañas inferior,
-  // con ambos botones juntos como en PC. La posición se acota al panel
-  // lateral para que nunca quede flotando sobre el mapa.
-  function _posicionarBotonSubirRuta() {
-    const cont = el.btnAccionesRuta || el.btnSubirRutaPropia;
-    if (!cont || !esMovil()) return;
-    _medirOffsetFilaDestino();
-    const panel = document.querySelector('.side-panel');
-    const barra = el.mobileTabBar;
-    if (!panel || !barra) return;
-    const panelTop = panel.getBoundingClientRect().top;
-    const filaBottom = _offsetFilaDestino != null
-      ? panelTop + _offsetFilaDestino
-      : panelTop + 140;
-    const barraTop = barra.getBoundingClientRect().top;
-    let centro = filaBottom + (barraTop - filaBottom) / 2;
-    const bordeSuperior = panelTop + cont.offsetHeight / 2 + 4;
-    const bordeInferior = barraTop - cont.offsetHeight / 2 - 4;
-    centro = Math.max(bordeSuperior, Math.min(bordeInferior, centro));
-    cont.style.top = Math.round(centro - cont.offsetHeight / 2) + 'px';
-  }
-
   // -------------------------------------------------------------------
   // Eventos
   // -------------------------------------------------------------------
@@ -1200,20 +1158,6 @@ const RutaArchivoModule = (() => {
     // (modo K activo): añadir una ruta nueva.
     if (el.btnAnadirRutaTab) el.btnAnadirRutaTab.addEventListener('click', abrirDialogo);
     if (el.btnAnadirRutaDesktop) el.btnAnadirRutaDesktop.addEventListener('click', abrirDialogo);
-    // Centrar el botón entre la fila del destino y la barra inferior, y
-    // re-posicionarlo cuando cambia el alto del viewport (fullscreen, teclado,
-    // rotación), al hacer scroll o cuando cambia el tamaño del panel (p. ej.
-    // al añadir/quitar un pueblo intermedio la fila del destino baja y el
-    // botón debe seguirla; sin esto quedaba flotando sobre el mapa).
-    _posicionarBotonSubirRuta();
-    window.addEventListener('resize', _posicionarBotonSubirRuta);
-    window.addEventListener('orientationchange', _posicionarBotonSubirRuta);
-    const appShellScroll = document.querySelector('.app-shell');
-    if (appShellScroll) appShellScroll.addEventListener('scroll', _posicionarBotonSubirRuta, { passive: true });
-    const panelLocate = document.getElementById('panel-locate');
-    if (panelLocate && typeof ResizeObserver === 'function') {
-      new ResizeObserver(_posicionarBotonSubirRuta).observe(panelLocate);
-    }
     // X roja junto a la pestaña Rutas (móvil y PC): cierra las rutas de archivo
     // y vuelve al menú normal de Rutas y Descubre Colombia.
     if (el.btnCerrarRutasArchivo) el.btnCerrarRutasArchivo.addEventListener('click', salirModo);
