@@ -48,12 +48,16 @@
     // Muestreo UNIFORME por distancia: la longitud total se divide en un máximo
     // de `maxPuntos` puntos equidistantes (espaciado = total / (maxPuntos - 1)),
     // de modo que la resolución del muestreo se adapta a la distancia de cada
-    // ruta (a más kilómetros, puntos más separados). Se interpola lon/lat entre
-    // vértices consecutivos para que el relieve se muestree con resolución
-    // regular incluso en tramos rectos con pocos vértices (p. ej. autopistas).
-    // `limites` guarda el índice de inicio de cada tramo en la lista aplanada
-    // para que la interpolación no cruce de un tramo a otro.
-    const pasoKm = dists[total - 1] / Math.max(1, maxPuntos - 1);
+    // ruta (a más kilómetros, puntos más separados). Se impone un paso mínimo de
+    // 1.5 km para que las rutas normales conserven curvas suaves (un muestreo
+    // demasiado denso captura el ruido de cuantización del SRTM y el perfil se
+    // ve dentado); en rutas muy largas se sigue acotando a `maxPuntos` puntos.
+    // Se interpola lon/lat entre vértices consecutivos para que el relieve se
+    // muestree con resolución regular incluso en tramos rectos con pocos
+    // vértices (p. ej. autopistas). `limites` guarda el índice de inicio de cada
+    // tramo en la lista aplanada para que la interpolación no cruce de un tramo
+    // a otro.
+    const pasoKm = Math.max(1.5, dists[total - 1] / Math.max(1, maxPuntos - 1));
     const coordenadas = [];
     const muestrasD = [];
     const muestrasTramo = [];
