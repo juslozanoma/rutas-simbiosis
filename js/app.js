@@ -637,6 +637,7 @@
     state.escalas = [];
     state.orden = [];
     state.paradas = [];
+    state.dias = 1;
     state.rutaBase = null;
     state.rutaActual = null;
     state.modoAereo = false;

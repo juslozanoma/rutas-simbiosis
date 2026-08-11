@@ -337,20 +337,23 @@ const AltimetriaModule = (() => {
     const zoomEnd = cont._zoomEnd;
     const span = zoomEnd - zoomStart;
 
-    // Eje vertical independiente por tramo: la altura máxima del recorrido
-    // activo fija el tope del eje y la mínima el límite inferior. El eje no
-    // cambia con el zoom horizontal.
+    // Eje vertical dinámico: el tope y el límite inferior del eje Y se fijan
+    // con las alturas del tramo visible (rango zoomStart..zoomEnd). Así el
+    // perfil ocupa toda la altura del gráfico y la escala se actualiza en cada
+    // cambio de visualización (parada asignada como inicio/fin, zoom o cambio
+    // de segmento), sin quedarse nunca fija al rango completo de la ruta.
     const ptsSeg = (_segmentoActivo != null && _segmentoActivo < _nSegmentos)
       ? puntos.filter(p => p.seg === _segmentoActivo)
       : puntos;
-    const alturasSeg = ptsSeg.filter(p => p.e != null).map(p => p.e);
+    const ptsVisibles = ptsSeg.filter(p => p.e != null && p.d >= zoomStart - 0.001 && p.d <= zoomEnd + 0.001);
     let minAlt, maxAlt, rangoAlt;
-    if (alturasSeg.length) {
-      minAlt = Math.min(...alturasSeg);
-      maxAlt = Math.max(...alturasSeg);
+    if (ptsVisibles.length) {
+      minAlt = Math.min(...ptsVisibles.map(p => p.e));
+      maxAlt = Math.max(...ptsVisibles.map(p => p.e));
     } else {
-      minAlt = 0;
-      maxAlt = 1;
+      const alturasSeg = ptsSeg.filter(p => p.e != null).map(p => p.e);
+      minAlt = alturasSeg.length ? Math.min(...alturasSeg) : 0;
+      maxAlt = alturasSeg.length ? Math.max(...alturasSeg) : 1;
     }
     rangoAlt = Math.max(maxAlt - minAlt, 10);
 
@@ -589,6 +592,11 @@ const AltimetriaModule = (() => {
         else if (bb.x + bb.width > ancho - 2) lbl.setAttribute('x', lbl.getAttribute('x') - (bb.x + bb.width - ancho + 2));
       } catch (e) { /* ignorar */ }
     });
+
+    // Tras reposicionar/ajustar, las etiquetas de la escala del eje X podrían
+    // haberse corrido sobre las de los extremos (p. ej. tapar la distancia
+    // total). Se vuelven a ocultar las que quedan superpuestas.
+    _quitarEtiquetasSolapadas(labelsEjeX, labelsBordeX);
 
     // Hover listeners
     hit.addEventListener('mousemove', (ev) => { if (!_arrastrePerfil) _onHover(cont, ev); });

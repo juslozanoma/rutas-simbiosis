@@ -583,6 +583,34 @@ input, select{ font-family: inherit; }
   border-left-color: var(--teal-500);
   background: #f2f6f4;
 }
+.parada-item--dia{
+  border-left: 3px solid var(--teal-500);
+  background: transparent;
+  padding: 3px 6px;
+  cursor: default;
+}
+.parada-item__dia-nombre{
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--teal-600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex: 1;
+}
+.parada-item__dia-km{
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+.parada-item--dia .parada-item__dia-add{
+  width: 20px;
+  height: 20px;
+  color: var(--teal-600);
+  border: 1px solid var(--teal-500);
+  border-radius: 50%;
+  background: #ffffff;
+}
+.parada-item--dia .parada-item__dia-add:hover{ background: var(--teal-500); color: #ffffff; }
 .parada-item__num{
   width: 20px;
   height: 20px;
@@ -809,6 +837,29 @@ input, select{ font-family: inherit; }
   overflow-y: auto;
   padding-right: 2px;
 }
+.panel-sites__busqueda{
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line-300);
+  border-radius: var(--radius-md);
+  padding: 0 10px;
+  height: 36px;
+  background: #ffffff;
+  color: var(--text-muted);
+}
+.panel-sites__buscar{
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.78rem;
+  color: var(--text-strong);
+}
+.panel-sites__buscar::placeholder{ color: var(--text-muted); }
 .sitios-sort{
   display: flex;
   align-items: center;
@@ -842,7 +893,12 @@ input, select{ font-family: inherit; }
   margin: 8px auto 14px;
   object-fit: contain;
 }
-.empty-state__texto{ font-size: 0.72rem; }
+.empty-state__texto{
+  font-size: 0.72rem;
+  display: block;
+  max-width: 210px;
+  margin: 0 auto;
+}
 
 .sitios-lista{
   list-style: none;
@@ -1595,7 +1651,7 @@ input, select{ font-family: inherit; }
   /* El botón de guardar es exclusivo de móvil. */
   #btn-guardar{ display: none !important; }
   /* Estado vacío de Descubre: imagen de simbiosis más grande en PC. */
-  .empty-state__icono{ width: 150px; height: 150px; }
+  .empty-state__icono{ width: 200px; height: 200px; }
 }
 .btn-map-icon{
   width: 34px;
@@ -1880,6 +1936,7 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="ruta"] .panel-paradas{ flex: 1; min-height: 0; overflow-y: auto; }
   #app[data-mobile-tab="ruta"] .paradas-lista{ flex: 1; min-height: 0; }
   #app[data-mobile-tab="ruta"] .panel-sites__scroll{ display: none; }
+  #app[data-mobile-tab="ruta"] .panel-sites__busqueda{ display: none; }
   #app[data-mobile-tab="ruta"] .panel-sites > h2{ display: none; }
   #app[data-mobile-tab="ruta"] .panel-categorias{ display: none !important; }
 
@@ -1941,6 +1998,7 @@ input, select{ font-family: inherit; }
   /* Control de visibilidad por pestaña */
   #app[data-mobile-tab="ruta"]  .panel-categorias{ display: none !important; }
   #app[data-mobile-tab="ruta"]  .panel-sites__scroll{ display: none; }
+  #app[data-mobile-tab="ruta"]  .panel-sites__busqueda{ display: none; }
   #app[data-mobile-tab="ruta"]  .panel-sites > h2{ display: none; }
   #app[data-mobile-tab="ruta"]  .panel-descubre-actions{ display: none !important; }
 

@@ -684,6 +684,13 @@
     renderizarParadas();
   }
 
+  /** Agrega un día más al reparto de paradas y vuelve a dividir la ruta. */
+
+  function agregarDia() {
+    state.dias = (state.dias || 1) + 1;
+    renderizarParadas();
+  }
+
   function renderizarParadas() {
     sincronizarOrden();
     // Con el catálogo de puertos/aeropuertos (A/P) o la ruta desde archivo (K)
@@ -706,6 +713,66 @@
     const incluirExtremos = Boolean(state.rutaActual && state.origen && state.destino);
     el.paradasContador.textContent = String(incluirExtremos ? total : total);
     el.paradasContador.hidden = total === 0;
+
+    // Días de viaje: las paradas se reparten en `state.dias` grupos lo más
+    // parejos posible y cada día muestra los km de su tramo.
+    const dias = Math.max(1, state.dias || 1);
+    const totalKm = state.rutaActual && state.rutaActual.distanciaMetros ? state.rutaActual.distanciaMetros / 1000 : 0;
+    const base = Math.floor(total / dias);
+    const resto = total % dias;
+    const bordes = [];
+    let acc = 0;
+    for (let d = 0; d < dias; d++) { bordes.push(acc); acc += base + (d < resto ? 1 : 0); }
+    bordes.push(total);
+    const diaDeItemIdx = (idx) => {
+      for (let d = 0; d < dias; d++) if (idx < bordes[d + 1]) return d + 1;
+      return dias;
+    };
+    const kmsDia = (() => {
+      const kms = [];
+      let prev = 0;
+      for (let d = 1; d <= dias; d++) {
+        let end;
+        if (d === dias) {
+          end = totalKm;
+        } else {
+          const ultimo = bordes[d] - 1;
+          const it = ultimo >= bordes[d - 1] ? items[ultimo] : null;
+          end = it && it.datos && it.datos._distKm != null ? it.datos._distKm : prev;
+        }
+        kms.push(Math.max(0, end - prev));
+        prev = end;
+      }
+      return kms;
+    })();
+    let diaInsertado = 0;
+    function crearFilaDia(d) {
+      const li = document.createElement('li');
+      li.className = 'parada-item parada-item--dia';
+      li.dataset.tipoParada = 'dia';
+      const etiqueta = document.createElement('span');
+      etiqueta.className = 'parada-item__dia-nombre';
+      etiqueta.textContent = 'Día ' + d;
+      const km = document.createElement('span');
+      km.className = 'parada-item__dia-km';
+      km.textContent = kmsDia[d - 1].toFixed(1) + ' km';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'parada-item__btn parada-item__dia-add';
+      btn.title = 'Agregar un día más';
+      btn.setAttribute('aria-label', 'Agregar un día más');
+      btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+      btn.addEventListener('click', (e) => { e.stopPropagation(); agregarDia(); });
+      li.appendChild(etiqueta);
+      li.appendChild(km);
+      li.appendChild(btn);
+      return li;
+    }
+    function asegurarDiaPara(idx) {
+      const d = diaDeItemIdx(idx);
+      while (diaInsertado < d) { diaInsertado++; el.paradasLista.appendChild(crearFilaDia(diaInsertado)); }
+    }
+
     // En la pestaña Descubre las paradas no deben aparecer aunque haya paradas;
     // tampoco antes de calcular la ruta inicial (seleccionando pueblos
     // intermedios): las paradas se muestran solo tras el primer cálculo.
@@ -961,6 +1028,11 @@
       return li;
     }
 
+    if (incluirExtremos || total > 0) {
+      diaInsertado = 1;
+      el.paradasLista.appendChild(crearFilaDia(1));
+    }
+
     if (incluirExtremos) {
       el.paradasLista.appendChild(crearFilaExtremo('A', formatMunicipio(state.origen), 'origen'));
     }
@@ -987,14 +1059,17 @@
           const pueblo = itemsRestantes.find((it) => it.tipo === 'escala');
           if (pueblo) {
             itemsRestantes.splice(itemsRestantes.indexOf(pueblo), 1);
+            asegurarDiaPara(idxItem);
             el.paradasLista.appendChild(construirFilaItem(pueblo, etiquetaIntermedia(idxItem++)));
           }
           while (itemsRestantes.length && itemsRestantes[0].tipo !== 'escala') {
+            asegurarDiaPara(idxItem);
             el.paradasLista.appendChild(construirFilaItem(itemsRestantes.shift(), etiquetaIntermedia(idxItem++)));
           }
         }
       }
       while (itemsRestantes.length) {
+        asegurarDiaPara(idxItem);
         el.paradasLista.appendChild(construirFilaItem(itemsRestantes.shift(), etiquetaIntermedia(idxItem++)));
       }
       // Ruta multimodal (avión + barco): tras el tramo aéreo se intercalan los
@@ -1016,12 +1091,14 @@
         el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.hub, 'Conexión', state.tramosFluviales.tramos[0].distanciaMetros));
       }
       items.forEach((item, idx) => {
+        asegurarDiaPara(idx);
         el.paradasLista.appendChild(construirFilaItem(item, etiquetaIntermedia(idx)));
       });
       if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.pd) {
         el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.pd, 'Llegada', state.tramosFluviales.distCarro2));
       }
     }
+    asegurarDiaPara(total);
     if (incluirExtremos) {
       el.paradasLista.appendChild(crearFilaExtremo('Z', formatMunicipio(state.destino), 'destino'));
     }

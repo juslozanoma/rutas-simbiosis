@@ -215,6 +215,9 @@
     }
     if (el.btnOrdenOrigen) el.btnOrdenOrigen.addEventListener('click', () => aplicarOrdenSitios('origen'));
     if (el.btnOrdenDestino) el.btnOrdenDestino.addEventListener('click', () => aplicarOrdenSitios('destino'));
+    if (el.buscarSitios) {
+      el.buscarSitios.addEventListener('input', _aplicarBusquedaSitios);
+    }
     state.ordenSitios = 'origen';
     actualizarBotonesOrden();
     _actualizarEstadoBotonesDescubre();

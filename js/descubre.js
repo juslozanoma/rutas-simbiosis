@@ -158,6 +158,7 @@
     state.sitiosFiltradosBase = [];
     state.modoVisibilidad = 'completa';
     conteoCategoriasBase = new Map();
+    if (el.buscarSitios) el.buscarSitios.value = '';
     _sincronizarBotonVisibles();
     _actualizarEstadoBotonesDescubre();
     _syncBotonSitios();
@@ -381,6 +382,32 @@
       MapModule.agregarMarcadorSitio(marker);
       el.sitiosLista.appendChild(crearTarjetaSitio(sitio, i));
     });
+    _aplicarBusquedaSitios();
+  }
+
+  /** Filtra las tarjetas ya renderizadas según la caja de búsqueda del panel. */
+
+  function _aplicarBusquedaSitios() {
+    if (!el.buscarSitios) return;
+    const q = (el.buscarSitios.value || '').trim().toLowerCase();
+    const cards = el.sitiosLista.querySelectorAll('.sitio-card');
+    if (!cards.length) return;
+    let visibles = 0;
+    cards.forEach((card) => {
+      const texto = (card.textContent || '').toLowerCase();
+      const coincide = !q || texto.includes(q);
+      card.style.display = coincide ? '' : 'none';
+      if (coincide) visibles++;
+    });
+    if (el.sitiosContador) el.sitiosContador.textContent = String(visibles);
+    if (q && visibles === 0) {
+      el.sitiosVacio.hidden = false;
+      el.sitiosVacio.textContent = 'Ningún sitio coincide con la búsqueda.';
+      el.sitiosLista.hidden = true;
+    } else {
+      el.sitiosVacio.hidden = true;
+      el.sitiosLista.hidden = false;
+    }
   }
 
   /** Construye la tarjeta de un sitio en la lista, con acciones de previsualizar y agregar. */

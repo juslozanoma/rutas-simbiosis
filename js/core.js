@@ -31,6 +31,7 @@
     destino: null,
     escalas: [],          // municipios intermedios (recalculan ruta + turf)
     orden: [],            // orden combinado de escalas + paradas para visualización
+    dias: 1,              // número de días en que se dividen las paradas de la ruta
     rutaBase: null,
     rutaActual: null,
     paradas: [],
@@ -72,6 +73,7 @@
     filtroDistanciaValor: document.getElementById('filtro-distancia-valor'),
     sitiosVacio: document.getElementById('sitios-vacio'),
     sitiosLista: document.getElementById('sitios-lista'),
+    buscarSitios: document.getElementById('buscar-sitios'),
     sitiosContador: document.getElementById('sitios-contador'),
     btnOrdenOrigen: document.getElementById('btn-orden-origen'),
     btnOrdenDestino: document.getElementById('btn-orden-destino'),
