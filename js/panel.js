@@ -46,6 +46,7 @@
       el.panelParadas.hidden = true;
       el.panelDescubreActions.hidden = false;
       el.panelSitios.hidden = false;
+      _syncBotonSitios();
       el.btnMostrarSitiosCercanos.hidden = true;
       if (el.btnSubirRutaPropia) el.btnSubirRutaPropia.hidden = true;
       if (el.btnIniciarTour) el.btnIniciarTour.hidden = true;

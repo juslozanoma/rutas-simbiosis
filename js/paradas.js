@@ -199,6 +199,246 @@
     });
   }
 
+  // -------------------------------------------------------------------
+  // Días de viaje: nombre y fecha personalizados
+  // -------------------------------------------------------------------
+
+  const DIAS_SEMANA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+  function _pad2(n) { return String(n).padStart(2, '0'); }
+
+  /** Fecha del día `d` (1-based) según la fecha base fijada (o null si no hay). */
+  function _fechaDeDia(d) {
+    if (!state.diaFechaBase || !state.diaFechaValor) return null;
+    const p = String(state.diaFechaValor).split('-').map(Number);
+    if (p.length !== 3 || p.some((n) => !isFinite(n))) return null;
+    const base = new Date(p[0], p[1] - 1, p[2]);
+    base.setDate(base.getDate() + (d - state.diaFechaBase));
+    return base;
+  }
+
+  /** "miércoles 2 de octubre" (día de la semana + fecha en español). */
+  function _formatoDiaSemana(fecha) {
+    return `${DIAS_SEMANA[fecha.getDay()]} ${fecha.getDate()} de ${MESES[fecha.getMonth()]}`;
+  }
+
+  /** Etiqueta mostrada en el encabezado del día: nombre, fecha o "Día N". */
+  function _etiquetaDia(d) {
+    if (state.diasNombres[d]) return state.diasNombres[d];
+    const fecha = _fechaDeDia(d);
+    if (fecha) return _formatoDiaSemana(fecha);
+    return 'Día ' + d;
+  }
+
+  /** Opciones del menú contextual de un encabezado de día. */
+  function _opcionesDia(d) {
+    const opciones = [
+      { etiqueta: 'Cambiar nombre', accion: () => _cambiarNombreDia(d) },
+      { etiqueta: 'Asignar fecha', accion: () => _mostrarCalendarioDia(d) },
+    ];
+    if (state.diasNombres[d]) {
+      opciones.push({ etiqueta: 'Quitar nombre', accion: () => { delete state.diasNombres[d]; renderizarParadas(); } });
+    }
+    if (state.diaFechaBase) {
+      opciones.push({ etiqueta: 'Quitar fecha', accion: () => { state.diaFechaBase = null; state.diaFechaValor = null; renderizarParadas(); } });
+    }
+    return opciones;
+  }
+
+  function _cambiarNombreDia(d) {
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    overlay.innerHTML = `
+      <div class="dialog">
+        <h3 class="dialog__title">Nombre del día ${d}</h3>
+        <input type="text" id="dia-nombre-input" class="nuevo-puerto__input" placeholder="P. ej. Día de la Alegría" autocomplete="off" maxlength="60">
+        <p class="dialog__error" id="dia-nombre-error" hidden></p>
+        <div class="dialog__actions">
+          <button type="button" class="dialog__btn dialog__btn--cancel" id="dia-nombre-cancelar">Cancelar</button>
+          <button type="button" class="dialog__btn dialog__btn--save" id="dia-nombre-guardar">Guardar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector('#dia-nombre-input');
+    const error = overlay.querySelector('#dia-nombre-error');
+    input.value = state.diasNombres[d] || '';
+
+    function cerrar() {
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+    }
+    function aceptar() {
+      const nombre = input.value.trim();
+      if (!nombre) {
+        error.textContent = 'Escribe un nombre para el día.';
+        error.hidden = false;
+        input.focus();
+        return;
+      }
+      cerrar();
+      state.diasNombres[d] = nombre;
+      renderizarParadas();
+    }
+    function onKey(e) {
+      if (e.key === 'Enter') { e.preventDefault(); aceptar(); }
+    }
+    document.addEventListener('keydown', onKey);
+    overlay.querySelector('#dia-nombre-guardar').addEventListener('click', aceptar);
+    overlay.querySelector('#dia-nombre-cancelar').addEventListener('click', () => { cerrar(); });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+    overlay.querySelector('.dialog').addEventListener('click', (e) => e.stopPropagation());
+    input.focus();
+    input.select();
+  }
+
+  /** Calendario pequeño para asignar la fecha base a un día (mes y día). */
+  function _mostrarCalendarioDia(d) {
+    const existente = _fechaDeDia(d);
+    const hoy = new Date();
+    let y = existente ? existente.getFullYear() : hoy.getFullYear();
+    let m = existente ? existente.getMonth() : hoy.getMonth();
+    let diaSel = existente ? existente.getDate() : hoy.getDate();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    overlay.innerHTML = `
+      <div class="dialog dialog--calendario">
+        <h3 class="dialog__title">Asignar fecha al día ${d}</h3>
+        <div class="cal-nav">
+          <button type="button" class="dialog__btn cal-nav__btn" id="cal-prev" aria-label="Mes anterior">‹</button>
+          <select id="cal-mes" class="cal-nav__sel" aria-label="Mes"></select>
+          <select id="cal-anio" class="cal-nav__sel" aria-label="Año"></select>
+          <button type="button" class="dialog__btn cal-nav__btn" id="cal-next" aria-label="Mes siguiente">›</button>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <p class="cal-resumen" id="cal-resumen"></p>
+        <p class="dialog__error" id="cal-error" hidden></p>
+        <div class="dialog__actions">
+          <button type="button" class="dialog__btn dialog__btn--cancel" id="cal-cancelar">Cancelar</button>
+          <button type="button" class="dialog__btn dialog__btn--save" id="cal-asignar">Asignar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const selMes = overlay.querySelector('#cal-mes');
+    const selAnio = overlay.querySelector('#cal-anio');
+    const grid = overlay.querySelector('#cal-grid');
+    const resumen = overlay.querySelector('#cal-resumen');
+
+    const anioActual = hoy.getFullYear();
+    MESES.forEach((nombre, i) => {
+      const op = document.createElement('option');
+      op.value = i;
+      op.textContent = nombre;
+      selMes.appendChild(op);
+    });
+    for (let a = anioActual - 5; a <= anioActual + 5; a++) {
+      const op = document.createElement('option');
+      op.value = a;
+      op.textContent = a;
+      selAnio.appendChild(op);
+    }
+    selMes.value = m;
+    selAnio.value = y;
+
+    function renderCalendario() {
+      grid.innerHTML = '';
+      ['l', 'm', 'x', 'j', 'v', 's', 'd'].forEach((letra) => {
+        const h = document.createElement('span');
+        h.className = 'cal-grid__head';
+        h.textContent = letra;
+        grid.appendChild(h);
+      });
+      const primerDia = new Date(y, m, 1);
+      const diasMes = new Date(y, m + 1, 0).getDate();
+      const inicio = (primerDia.getDay() + 6) % 7; // semana desde el lunes
+      for (let i = 0; i < inicio; i++) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'cal-grid__dia cal-grid__dia--otro';
+        b.disabled = true;
+        b.tabIndex = -1;
+        grid.appendChild(b);
+      }
+      const hoyNum = hoy.getDate();
+      for (let dia = 1; dia <= diasMes; dia++) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'cal-grid__dia';
+        b.textContent = dia;
+        if (y === hoy.getFullYear() && m === hoy.getMonth() && dia === hoyNum) b.classList.add('cal-grid__dia--hoy');
+        if (dia === diaSel) b.classList.add('cal-grid__dia--sel');
+        b.addEventListener('click', () => {
+          diaSel = dia;
+          renderCalendario();
+          _actualizarResumen();
+        });
+        grid.appendChild(b);
+      }
+    }
+
+    function _actualizarResumen() {
+      const fecha = new Date(y, m, diaSel);
+      resumen.textContent = _formatoDiaSemana(fecha) + ' de ' + y;
+    }
+
+    function cerrar() {
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+    }
+
+    function onKey(e) {
+      if (e.key === 'Escape') cerrar();
+    }
+
+    selMes.addEventListener('change', () => {
+      m = Number(selMes.value);
+      diaSel = Math.min(diaSel, new Date(y, m + 1, 0).getDate());
+      renderCalendario();
+      _actualizarResumen();
+    });
+    selAnio.addEventListener('change', () => {
+      y = Number(selAnio.value);
+      diaSel = Math.min(diaSel, new Date(y, m + 1, 0).getDate());
+      renderCalendario();
+      _actualizarResumen();
+    });
+    overlay.querySelector('#cal-prev').addEventListener('click', () => {
+      m--;
+      if (m < 0) { m = 11; y--; }
+      selMes.value = m;
+      selAnio.value = y;
+      renderCalendario();
+      _actualizarResumen();
+    });
+    overlay.querySelector('#cal-next').addEventListener('click', () => {
+      m++;
+      if (m > 11) { m = 0; y++; }
+      selMes.value = m;
+      selAnio.value = y;
+      renderCalendario();
+      _actualizarResumen();
+    });
+    overlay.querySelector('#cal-cancelar').addEventListener('click', cerrar);
+    overlay.querySelector('#cal-asignar').addEventListener('click', () => {
+      state.diaFechaBase = d;
+      state.diaFechaValor = `${y}-${_pad2(m + 1)}-${_pad2(diaSel)}`;
+      cerrar();
+      renderizarParadas();
+      if (typeof _mostrarNotificacion === 'function') {
+        _mostrarNotificacion('Fecha asignada: ' + _formatoDiaSemana(new Date(y, m, diaSel)) + '. Las demás fechas se ajustaron.');
+      }
+    });
+    document.addEventListener('keydown', onKey);
+
+    renderCalendario();
+    _actualizarResumen();
+    // Cerrar al hacer clic fuera del diálogo.
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrar(); });
+    overlay.querySelector('.dialog').addEventListener('click', (e) => e.stopPropagation());
+  }
+
   /** Modo "cambiar origen/destino": mientras está activo, al seleccionar el nuevo
    *  extremo se ocultan los cuadros al instante y se recalcula la ruta (OSRM). */
 
@@ -759,7 +999,8 @@
       flecha.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
       const etiqueta = document.createElement('span');
       etiqueta.className = 'parada-item__dia-nombre';
-      etiqueta.textContent = 'Día ' + d;
+      etiqueta.textContent = _etiquetaDia(d);
+      if (etiqueta.textContent.length > 16) etiqueta.title = etiqueta.textContent;
       const km = document.createElement('span');
       km.className = 'parada-item__dia-km';
       km.textContent = kmsDia[d - 1].toFixed(1) + ' km';
@@ -780,6 +1021,14 @@
       li.addEventListener('click', (e) => { e.stopPropagation(); alternarDia(li); });
       li.addEventListener('keydown', (evt) => {
         if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); alternarDia(li); }
+      });
+      // Clic derecho / pulsación larga: cambiar nombre o asignar fecha.
+      li.addEventListener('contextmenu', (evt) => {
+        evt.preventDefault();
+        abrirMenuFila(_opcionesDia(d), evt.clientX, evt.clientY);
+      });
+      engancharLongPress(li, (evt) => {
+        abrirMenuFila(_opcionesDia(d), evt.clientX, evt.clientY);
       });
       return li;
     }

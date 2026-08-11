@@ -472,6 +472,8 @@
 
   function _syncBotonSitios() {
     if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.hidden = state.sitiosFiltrados.length === 0;
+    // El cuadro de búsqueda solo aparece cuando se generó una lista de sitios.
+    if (el.buscarSitiosWrap) el.buscarSitiosWrap.hidden = state.sitiosFiltrados.length === 0;
   }
 
 

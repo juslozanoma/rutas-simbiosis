@@ -638,6 +638,9 @@
     state.orden = [];
     state.paradas = [];
     state.dias = 1;
+    state.diasNombres = {};
+    state.diaFechaBase = null;
+    state.diaFechaValor = null;
     state.rutaBase = null;
     state.rutaActual = null;
     state.modoAereo = false;

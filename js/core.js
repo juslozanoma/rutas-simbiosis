@@ -32,6 +32,9 @@
     escalas: [],          // municipios intermedios (recalculan ruta + turf)
     orden: [],            // orden combinado de escalas + paradas para visualización
     dias: 1,              // número de días en que se dividen las paradas de la ruta
+    diasNombres: {},      // día (1-based) → nombre personalizado del día
+    diaFechaBase: null,   // día (1-based) al que se le fijó una fecha
+    diaFechaValor: null,  // fecha base 'YYYY-MM-DD' de ese día
     rutaBase: null,
     rutaActual: null,
     paradas: [],
@@ -74,6 +77,7 @@
     sitiosVacio: document.getElementById('sitios-vacio'),
     sitiosLista: document.getElementById('sitios-lista'),
     buscarSitios: document.getElementById('buscar-sitios'),
+    buscarSitiosWrap: document.querySelector('.panel-sites__busqueda'),
     sitiosContador: document.getElementById('sitios-contador'),
     btnOrdenOrigen: document.getElementById('btn-orden-origen'),
     btnOrdenDestino: document.getElementById('btn-orden-destino'),

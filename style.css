@@ -616,9 +616,11 @@ input, select{ font-family: inherit; }
   font-size: 0.72rem;
   font-weight: 700;
   color: var(--teal-600);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .parada-item__dia-km{
   font-size: 0.72rem;
@@ -872,6 +874,7 @@ input, select{ font-family: inherit; }
   background: #ffffff;
   color: var(--text-muted);
 }
+.panel-sites__busqueda[hidden]{ display: none; }
 .panel-sites__buscar{
   flex: 1;
   min-width: 0;
@@ -1820,6 +1823,10 @@ input, select{ font-family: inherit; }
 }
 @media (max-width: 860px){
   #descubre-dropdown-categorias{ max-height: 100px; } /* 3 filas en celular */
+  /* Estado vacío (perfil y Descubre): imagen de simbiosis más pequeña y
+     pegada al texto debajo. */
+  .empty-state__icono{ width: 132px; height: 132px; margin: 4px auto 2px; }
+  .empty-state__texto{ max-width: 220px; }
 }
 #descubre-dropdown-categorias::-webkit-scrollbar{ width: 6px; height: 6px; }
 #descubre-dropdown-categorias::-webkit-scrollbar-thumb{ background: #9adcc8; border-radius: 4px; }
@@ -2551,6 +2558,69 @@ input, select{ font-family: inherit; }
   color: #b23b2e;
   text-align: center;
 }
+/* Calendario pequeño para asignar fecha a un día de viaje */
+.dialog--calendario{ max-width: 310px; }
+.cal-nav{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.cal-nav__btn{
+  min-width: 32px;
+  padding: 4px 10px;
+  font-size: 0.95rem;
+}
+.cal-nav__sel{
+  flex: 1;
+  min-width: 0;
+  padding: 6px 4px;
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  border: 1px solid var(--line-200);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--text-strong);
+}
+.cal-grid{
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.cal-grid__head{
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 2px 0;
+}
+.cal-grid__dia{
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-family: var(--font-body);
+  border: none;
+  background: transparent;
+  color: var(--text-strong);
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+}
+.cal-grid__dia:hover{ background: var(--teal-50); }
+.cal-grid__dia--otro{ visibility: hidden; }
+.cal-grid__dia--hoy{ box-shadow: inset 0 0 0 1px var(--teal-500); }
+.cal-grid__dia--sel{ background: var(--teal-500); color: #ffffff; }
+.cal-resumen{
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-strong);
+  text-align: center;
+}
+
 .cargar-ruta__file{
   display: flex;
   align-items: center;
