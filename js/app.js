@@ -214,6 +214,15 @@
         if (typeof MapModule !== 'undefined' && typeof MapModule.toggleRedFluvial === 'function') {
           MapModule.toggleRedFluvial();
         }
+      } else if (tecla === 's') {
+        if (typeof MapModule !== 'undefined' && typeof MapModule.alternarVistaSatelite === 'function') {
+          const activa = MapModule.alternarVistaSatelite();
+          const btn = document.getElementById('btn-satelite');
+          if (btn) {
+            btn.classList.toggle('activo', activa);
+            btn.setAttribute('aria-pressed', String(activa));
+          }
+        }
       }
     });
   }
@@ -458,7 +467,9 @@
     else if (tipo === 'municipio') datos = state.municipios;
     else return;
     PersistenciaJsonModule.guardarJson(clave, datos).then((res) => {
-      if (res !== true) _mostrarNotificacion('No se pudo escribir el archivo; se guardó una copia en el navegador.');
+      if (typeof _mostrarNotificacion !== 'function') return;
+      if (res === true) _mostrarNotificacion(_etiquetaTipo(tipo) + ' guardado — JSON actualizado.');
+      else _mostrarNotificacion('No se pudo guardar el JSON de ' + _etiquetaTipo(tipo) + '; se guardó una copia en el navegador.');
     });
   }
 

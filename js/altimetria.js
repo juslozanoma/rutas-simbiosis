@@ -98,7 +98,7 @@ const AltimetriaModule = (() => {
   /** Radio de la media móvil centrada aplicada a la elevación: suaviza el
    *  ruido de cuantización del SRTM (pasos de metros enteros que crean zonas
    *  planas falsas y picos dentados) sin descartar ningún punto muestreado. */
-  const _SUAVIZADO_RADIO = 6;
+  const _SUAVIZADO_RADIO = 8;
 
   /** Media móvil centrada sobre los valores de elevación. Conserva el mismo
    *  número de puntos y sus posiciones; solo redondea las alturas para que la
@@ -106,7 +106,7 @@ const AltimetriaModule = (() => {
    *  los valores disponibles. Los null se ignoran y no propagan. */
   function _suavizarElevacion(elev, radio) {
     if (!elev || elev.length < 3) return elev;
-    const r = Math.max(1, radio || 6);
+    const r = Math.max(1, radio || 8);
     const out = elev.slice();
     for (let i = 0; i < elev.length; i++) {
       if (elev[i] == null) continue;

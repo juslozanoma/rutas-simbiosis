@@ -1,3 +1,19 @@
+# Testing Policy
+
+## Mandatory
+
+- Agents must NOT run tests of any kind to verify possible errors (no unit tests, no HTTP requests against the running server, no synthetic saves, no endpoint probes, nothing).
+- Testing is done exclusively by the user.
+- Agents focus on executing the requested tasks and deliver the changes ready for the user to verify.
+- If in doubt about whether something works, do not run a probe: leave verification to the user.
+
+# Code Investigation Rules
+
+## Mandatory
+
+- Do NOT search old versions of the code in git history unless the user explicitly asks you to compare something.
+- Always solve the problem by looking at the current code as it is now.
+
 # Browser Automation Rules
 
 ## Mandatory

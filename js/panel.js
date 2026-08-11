@@ -37,6 +37,8 @@
       el.btnMostrarSitiosCercanos.disabled = ocultarTestigo;
       sincronizarModoRutaMovil();
       if (el.btnSubirRutaPropia) el.btnSubirRutaPropia.hidden = false;
+      if (el.btnIniciarTour) el.btnIniciarTour.hidden = false;
+      if (el.btnAccionesRuta) el.btnAccionesRuta.hidden = false;
     } else {
       el.btnTabPanelDescubre.classList.add('panel-tab--active');
       el.panelLocate.hidden = true;
@@ -46,9 +48,11 @@
       el.panelSitios.hidden = false;
       el.btnMostrarSitiosCercanos.hidden = true;
       if (el.btnSubirRutaPropia) el.btnSubirRutaPropia.hidden = true;
+      if (el.btnIniciarTour) el.btnIniciarTour.hidden = true;
+      if (el.btnAccionesRuta) el.btnAccionesRuta.hidden = true;
       if (!state.rutaActual && el.sitiosVacio && state.sitiosFiltrados.length === 0) {
         el.sitiosVacio.hidden = false;
-        el.sitiosVacio.textContent = 'Calcula una ruta para descubrir sitios turísticos.';
+        el.sitiosVacio.innerHTML = '<img src="public/simbiosis.png" alt="" class="empty-state__icono"><span class="empty-state__texto">Calcula primero una ruta para descubrir nuevos sitios turísticos.</span>';
         if (el.sitiosLista) el.sitiosLista.hidden = true;
       } else {
         _asegurarListadoSitios();

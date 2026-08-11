@@ -48,7 +48,7 @@ const TransportConfigModule = (() => {
     { hex: '#16a085', nombre: 'Turquesa' },
     { hex: '#d05278', nombre: 'Rosa' },
     { hex: '#6b7280', nombre: 'Gris' },
-    { hex: '#8b5e3c', nombre: 'Marrón' },
+    { hex: '#ffffff', nombre: 'Blanco' },
     { hex: '#00bcd4', nombre: 'Cian' },
     { hex: '#9e9d24', nombre: 'Lima' },
     { hex: '#d4a017', nombre: 'Oro' },

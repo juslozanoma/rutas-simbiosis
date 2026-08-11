@@ -2010,12 +2010,14 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     btn.className = 'rosa-vientos';
     btn.title = 'Arrastrar para rotar el mapa · clic para orientar al norte';
     btn.setAttribute('aria-label', 'Rotar el mapa: arrastra para girarlo o haz clic para orientar al norte');
-    btn.innerHTML = '<span class="rosa-vientos__aguja" aria-hidden="true"><img src="public/direction.svg" alt="" width="16" height="16"><span class="rosa-vientos__n">N</span></span>';
+    btn.innerHTML = '<span class="rosa-vientos__aguja" aria-hidden="true"><img src="public/direction.svg" alt="" width="20" height="20"></span>';
     contenedor.appendChild(btn);
 
     const aguja = btn.querySelector('.rosa-vientos__aguja');
+    // El SVG de direction.svg apunta 45° a la derecha; se compensa restando
+    // 45° para que a rumbo 0 la aguja apunte al norte.
     const refrescarAguja = () => {
-      if (aguja) aguja.style.transform = 'rotate(' + getBearing() + 'deg)';
+      if (aguja) aguja.style.transform = 'rotate(' + (getBearing() - 45) + 'deg)';
     };
     map.on('rotate', refrescarAguja);
 

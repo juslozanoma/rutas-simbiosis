@@ -834,7 +834,15 @@ input, select{ font-family: inherit; }
   border-color: var(--teal-500);
   color: #ffffff;
 }
-.empty-state{ margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+.empty-state{ margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; text-align: center; }
+.empty-state__icono{
+  display: block;
+  width: 110px;
+  height: 110px;
+  margin: 8px auto 14px;
+  object-fit: contain;
+}
+.empty-state__texto{ font-size: 0.72rem; }
 
 .sitios-lista{
   list-style: none;
@@ -1586,6 +1594,8 @@ input, select{ font-family: inherit; }
   .btns-map--gps{ top: 12px; bottom: auto; left: 12px; right: auto; }
   /* El botón de guardar es exclusivo de móvil. */
   #btn-guardar{ display: none !important; }
+  /* Estado vacío de Descubre: imagen de simbiosis más grande en PC. */
+  .empty-state__icono{ width: 150px; height: 150px; }
 }
 .btn-map-icon{
   width: 34px;
@@ -1627,24 +1637,24 @@ input, select{ font-family: inherit; }
 }
 .rosa-vientos{
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  border: 1px solid var(--line-300);
-  background: rgba(255,255,255,0.95);
-  box-shadow: 0 1px 6px rgba(20,32,27,0.25);
+  border: none;
+  background: var(--teal-500);
+  box-shadow: none;
   padding: 0;
   cursor: grab;
   touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+.rosa-vientos:hover{ background: var(--teal-600); }
 .rosa-vientos:active{ cursor: grabbing; }
 .rosa-vientos__aguja{
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 16px;
-  height: 16px;
-  margin: -8px 0 0 -8px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1652,23 +1662,10 @@ input, select{ font-family: inherit; }
   transition: transform 0.2s ease;
 }
 .rosa-vientos__aguja img{
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   display: block;
-}
-.rosa-vientos__n{
-  position: absolute;
-  left: 50%;
-  top: -7px;
-  transform: translateX(-50%);
-  padding: 0 3px;
-  border-radius: 3px;
-  background: var(--teal-600);
-  color: #ffffff;
-  font-size: 9px;
-  font-weight: 700;
-  line-height: 1.5;
-  pointer-events: none;
+  filter: brightness(0) invert(1);
 }
 /* Botón "+" para añadir una nueva ruta desde la barra de pestañas móvil */
 .mobile-tab-btn--anadir{ flex: 0 0 44px; color: var(--teal-500); }
