@@ -746,10 +746,17 @@
       return kms;
     })();
     let diaInsertado = 0;
+    let diaGrupo = null;       // contenedor (div) de las paradas del día actual
+    let ultimoRegular = null;  // {item, etiqueta} de la última parada/pueblo renderizada
+
+    /** Fila de encabezado de día; al pulsarla se pliegan/despliegan sus paradas. */
     function crearFilaDia(d) {
       const li = document.createElement('li');
       li.className = 'parada-item parada-item--dia';
       li.dataset.tipoParada = 'dia';
+      const flecha = document.createElement('span');
+      flecha.className = 'parada-item__dia-flecha';
+      flecha.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
       const etiqueta = document.createElement('span');
       etiqueta.className = 'parada-item__dia-nombre';
       etiqueta.textContent = 'Día ' + d;
@@ -763,14 +770,54 @@
       btn.setAttribute('aria-label', 'Agregar un día más');
       btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
       btn.addEventListener('click', (e) => { e.stopPropagation(); agregarDia(); });
+      li.appendChild(flecha);
       li.appendChild(etiqueta);
       li.appendChild(km);
       li.appendChild(btn);
+      li.role = 'button';
+      li.tabIndex = 0;
+      li.setAttribute('aria-expanded', 'true');
+      li.addEventListener('click', (e) => { e.stopPropagation(); alternarDia(li); });
+      li.addEventListener('keydown', (evt) => {
+        if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); alternarDia(li); }
+      });
       return li;
     }
+
+    function alternarDia(li) {
+      const grupo = li._grupo;
+      if (!grupo) return;
+      const oculto = grupo.style.display === 'none';
+      grupo.style.display = oculto ? '' : 'none';
+      li.classList.toggle('parada-item--dia-cerrado', !oculto);
+      li.setAttribute('aria-expanded', String(oculto));
+    }
+
     function asegurarDiaPara(idx) {
       const d = diaDeItemIdx(idx);
-      while (diaInsertado < d) { diaInsertado++; el.paradasLista.appendChild(crearFilaDia(diaInsertado)); }
+      while (diaInsertado < d) {
+        // Continuidad de viaje: el día nuevo arranca donde terminó el anterior.
+        const continuacion = ultimoRegular;
+        diaInsertado++;
+        const filaDia = crearFilaDia(diaInsertado);
+        const grupo = document.createElement('div');
+        grupo.className = 'parada-dia__grupo';
+        filaDia._grupo = grupo;
+        el.paradasLista.appendChild(filaDia);
+        el.paradasLista.appendChild(grupo);
+        diaGrupo = grupo;
+        if (continuacion) {
+          const duplicado = construirFilaItem(continuacion.item, continuacion.etiqueta);
+          duplicado.classList.add('parada-item--continua');
+          grupo.appendChild(duplicado);
+        }
+      }
+    }
+
+    /** Agrega una fila al grupo del día actual y recuerda la última parada. */
+    function agregarItem(li, info) {
+      (diaGrupo || el.paradasLista).appendChild(li);
+      if (info && (info.item.tipo === 'escala' || info.item.tipo === 'parada')) ultimoRegular = info;
     }
 
     // En la pestaña Descubre las paradas no deben aparecer aunque haya paradas;
@@ -1029,12 +1076,11 @@
     }
 
     if (incluirExtremos || total > 0) {
-      diaInsertado = 1;
-      el.paradasLista.appendChild(crearFilaDia(1));
+      asegurarDiaPara(0);
     }
 
     if (incluirExtremos) {
-      el.paradasLista.appendChild(crearFilaExtremo('A', formatMunicipio(state.origen), 'origen'));
+      agregarItem(crearFilaExtremo('A', formatMunicipio(state.origen), 'origen'));
     }
 
     // Ruta aérea: la lista sigue el orden físico de la ruta
@@ -1053,54 +1099,60 @@
           ? state.tramosAereo.distCarro2
           : (seg.vuelos && seg.vuelos.length > 1 ? seg.vuelos[1].distanciaMetros
               : (seg.vuelos && seg.vuelos[0] ? seg.vuelos[0].distanciaMetros : null));
-        if (seg.apOri) el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, seg.apOri, 'Salida', dSalida));
-        if (seg.apDes) el.paradasLista.appendChild(construirFilaAeropuerto(state.tramosAereo, seg.apDes, 'Llegada', dLlegada));
+        if (seg.apOri) agregarItem(construirFilaAeropuerto(state.tramosAereo, seg.apOri, 'Salida', dSalida));
+        if (seg.apDes) agregarItem(construirFilaAeropuerto(state.tramosAereo, seg.apDes, 'Llegada', dLlegada));
         if (i < segsAereos.length - 1) {
           const pueblo = itemsRestantes.find((it) => it.tipo === 'escala');
           if (pueblo) {
             itemsRestantes.splice(itemsRestantes.indexOf(pueblo), 1);
             asegurarDiaPara(idxItem);
-            el.paradasLista.appendChild(construirFilaItem(pueblo, etiquetaIntermedia(idxItem++)));
+            const etiqueta = etiquetaIntermedia(idxItem++);
+            agregarItem(construirFilaItem(pueblo, etiqueta), { item: pueblo, etiqueta });
           }
           while (itemsRestantes.length && itemsRestantes[0].tipo !== 'escala') {
             asegurarDiaPara(idxItem);
-            el.paradasLista.appendChild(construirFilaItem(itemsRestantes.shift(), etiquetaIntermedia(idxItem++)));
+            const it = itemsRestantes.shift();
+            const etiqueta = etiquetaIntermedia(idxItem++);
+            agregarItem(construirFilaItem(it, etiqueta), { item: it, etiqueta });
           }
         }
       }
       while (itemsRestantes.length) {
         asegurarDiaPara(idxItem);
-        el.paradasLista.appendChild(construirFilaItem(itemsRestantes.shift(), etiquetaIntermedia(idxItem++)));
+        const it = itemsRestantes.shift();
+        const etiqueta = etiquetaIntermedia(idxItem++);
+        agregarItem(construirFilaItem(it, etiqueta), { item: it, etiqueta });
       }
       // Ruta multimodal (avión + barco): tras el tramo aéreo se intercalan los
       // puertos fluviales (salida del barco, conexión y llegada).
       if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.po) {
-        el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.po, 'Salida 🚢', state.tramosFluviales.distCarro1));
+        agregarItem(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.po, 'Salida 🚢', state.tramosFluviales.distCarro1));
       }
       if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.hub && state.tramosFluviales.tramos && state.tramosFluviales.tramos[0]) {
-        el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.hub, 'Conexión 🚢', state.tramosFluviales.tramos[0].distanciaMetros));
+        agregarItem(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.hub, 'Conexión 🚢', state.tramosFluviales.tramos[0].distanciaMetros));
       }
       if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.pd) {
-        el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.pd, 'Llegada 🚢', state.tramosFluviales.distCarro2));
+        agregarItem(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.pd, 'Llegada 🚢', state.tramosFluviales.distCarro2));
       }
     } else {
       if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.po) {
-        el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.po, 'Salida', state.tramosFluviales.distCarro1));
+        agregarItem(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.po, 'Salida', state.tramosFluviales.distCarro1));
       }
       if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.hub && state.tramosFluviales.tramos && state.tramosFluviales.tramos[0]) {
-        el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.hub, 'Conexión', state.tramosFluviales.tramos[0].distanciaMetros));
+        agregarItem(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.hub, 'Conexión', state.tramosFluviales.tramos[0].distanciaMetros));
       }
       items.forEach((item, idx) => {
         asegurarDiaPara(idx);
-        el.paradasLista.appendChild(construirFilaItem(item, etiquetaIntermedia(idx)));
+        const etiqueta = etiquetaIntermedia(idx);
+        agregarItem(construirFilaItem(item, etiqueta), { item, etiqueta });
       });
       if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.pd) {
-        el.paradasLista.appendChild(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.pd, 'Llegada', state.tramosFluviales.distCarro2));
+        agregarItem(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.pd, 'Llegada', state.tramosFluviales.distCarro2));
       }
     }
     asegurarDiaPara(total);
     if (incluirExtremos) {
-      el.paradasLista.appendChild(crearFilaExtremo('Z', formatMunicipio(state.destino), 'destino'));
+      agregarItem(crearFilaExtremo('Z', formatMunicipio(state.destino), 'destino'));
     }
   }
 

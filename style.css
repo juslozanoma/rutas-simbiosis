@@ -587,7 +587,30 @@ input, select{ font-family: inherit; }
   border-left: 3px solid var(--teal-500);
   background: transparent;
   padding: 3px 6px;
-  cursor: default;
+  cursor: pointer;
+}
+.parada-item__dia-flecha{
+  display: flex;
+  align-items: center;
+  color: var(--teal-600);
+  transition: transform 0.15s ease;
+}
+.parada-item--dia-cerrado{
+  background: #f2f6f4;
+}
+.parada-item--dia-cerrado .parada-item__dia-flecha{
+  transform: rotate(-90deg);
+}
+/* Contenedor de las paradas de cada día: se pliega al pulsar el encabezado. */
+.parada-dia__grupo{
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+/* Continuidad de viaje: el día nuevo arranca en la última parada del anterior. */
+.parada-item--continua{
+  border-left: 3px dashed var(--teal-500);
+  background: #f6faf8;
 }
 .parada-item__dia-nombre{
   font-size: 0.72rem;
@@ -2173,6 +2196,41 @@ input, select{ font-family: inherit; }
   font-weight: 500;
 }
 .altimetria__hover-info span:empty{ display: none; }
+/* Comparación de puntos: el texto de distancia/altura del perfil se compacta
+   para mostrar la distancia y la altura entre los dos puntos elegidos. */
+.altimetria__hover-info--comparar{ font-size: 0.62rem; gap: 8px; }
+/* Aviso flotante de comparación (selecciona el otro sitio / comparación activa) */
+.comparar-banner{
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 92vw;
+  background: var(--teal-600);
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  white-space: nowrap;
+}
+.comparar-banner__cerrar{
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0.85;
+}
+.comparar-banner__cerrar:hover{ opacity: 1; }
 .altimetria-map-tooltip{
   background: #246054;
   border: none;

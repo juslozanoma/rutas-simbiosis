@@ -62,6 +62,10 @@ const MapModule = (() => {
   let _marcandoPtoA = null;
   let _marcandoSegmento = null;
   let _marcandoLinea = null;
+
+  // Selección del segundo punto de comparación sobre el mapa
+  let _onSeleccionComparar = null;
+  let _seleccionCompararContainer = null;
   let _marcandoMarkerA = null;
   let _onTramoCompletado = null;
 
@@ -715,6 +719,17 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         accion: () => { if (_onAgregarPuertoEn) _onAgregarPuertoEn(e.latlng.lat, e.latlng.lng); },
       });
     }
+    if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.tieneDatos && AltimetriaModule.tieneDatos()) {
+      items.push({
+        texto: 'Comparar este sitio',
+        accion: () => {
+          if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.puntoCompararDesdeLatLng && AltimetriaModule.seleccionarPuntoComparacion) {
+            const punto = AltimetriaModule.puntoCompararDesdeLatLng(e.latlng.lat, e.latlng.lng);
+            if (punto) AltimetriaModule.seleccionarPuntoComparacion(punto);
+          }
+        },
+      });
+    }
     if (!items.length) return;
     const div = document.createElement('div');
     div.className = 'ctx-menu';
@@ -736,6 +751,41 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
   function _cerrarCtxMenu() {
     if (_ctxMenu) { _ctxMenu.remove(); _ctxMenu = null; }
+  }
+
+  /** Durante la comparación de puntos, un clic/toque en el mapa selecciona el
+   *  segundo punto. Se captura en fase de captura para que también funcionen
+   *  los clics sobre marcadores sin abrir sus menús. */
+  function activarSeleccionComparar(cb) {
+    if (!map) return;
+    desactivarSeleccionComparar();
+    _onSeleccionComparar = cb;
+    _seleccionCompararContainer = map.getContainer();
+    _seleccionCompararContainer.style.cursor = 'crosshair';
+    _seleccionCompararContainer.addEventListener('click', _onSeleccionCompararClick, true);
+  }
+
+  function desactivarSeleccionComparar() {
+    if (_seleccionCompararContainer) {
+      _seleccionCompararContainer.removeEventListener('click', _onSeleccionCompararClick, true);
+      _seleccionCompararContainer.style.cursor = '';
+      _seleccionCompararContainer = null;
+    }
+    _onSeleccionComparar = null;
+  }
+
+  function _onSeleccionCompararClick(ev) {
+    if (!_onSeleccionComparar || !map) return;
+    // No interceptar los clics sobre el menú contextual del mapa.
+    if (ev.target && ev.target.closest && ev.target.closest('.ctx-menu')) return;
+    const rect = map.getContainer().getBoundingClientRect();
+    const latlng = map.containerPointToLatLng(L.point(ev.clientX - rect.left, ev.clientY - rect.top));
+    ev.stopPropagation();
+    ev.preventDefault();
+    if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.puntoCompararDesdeLatLng) {
+      const punto = AltimetriaModule.puntoCompararDesdeLatLng(latlng.lat, latlng.lng);
+      if (punto && _onSeleccionComparar) _onSeleccionComparar(punto);
+    }
   }
 
   function _limpiarMarcadoTramo() {
@@ -2113,6 +2163,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarAlertas,
     setOnTramoCompletado,
     cancelarMarcadoTramo,
+    activarSeleccionComparar,
+    desactivarSeleccionComparar,
     dibujarRuta,
     setAltimetriaActiva,
     habilitarArrastreRuta,

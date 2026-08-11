@@ -26,6 +26,21 @@ const AltimetriaModule = (() => {
   // Arrastre horizontal del perfil (clic + mover para desplazarse lateralmente).
   let _arrastrePerfil = null; // {cont, startX, startZs, startZe}
 
+  // Comparación de puntos: A y B sobre el perfil (distancia/altura entre ellos).
+  let _compararA = null;           // {lat, lon, coord, distKm, alt}
+  let _compararB = null;           // {lat, lon, coord, distKm, alt}
+  let _compararActivo = false;     // A y B definidos → el perfil muestra A→B
+  let _esperandoComparar = false;  // A elegido, se espera el segundo punto
+
+  // Pulsación larga en el perfil (móvil) para abrir el menú "Comparar este sitio".
+  let _longPressTimer = null;
+  let _longPressX = 0;
+  let _longPressY = 0;
+  let _touchTap = null;          // {x, y} de un toque de 1 dedo sin mover
+  let _suprimirClicComparar = false;
+
+  let _bannerComparar = null;
+
   function _onPerfilDragMove(ev) {
     const arr = _arrastrePerfil;
     if (!arr || !arr.cont) return;
@@ -135,6 +150,13 @@ const AltimetriaModule = (() => {
       _inicioAsignado = false;
       _finAsignado = false;
       _segmentoActivo = 0;
+      _cancelarLongPress();
+      _compararA = null;
+      _compararB = null;
+      _compararActivo = false;
+      _esperandoComparar = false;
+      _activarSeleccionMapa(false);
+      _ocultarBannerComparar();
     }
     const geo = rutaGeojson && rutaGeojson.geometry;
     const coords = geo && geo.coordinates;
@@ -253,6 +275,168 @@ const AltimetriaModule = (() => {
     return null;
   }
 
+  /** Coordenadas interpoladas del perfil en una distancia dada (km). */
+  function _coordEn(puntos, distKm) {
+    let lo = 0;
+    while (lo < puntos.length - 1 && puntos[lo + 1].d < distKm) lo++;
+    const hi = Math.min(lo + 1, puntos.length - 1);
+    const pLo = puntos[lo];
+    const pHi = puntos[hi];
+    if (!pLo) return null;
+    if (pHi && pHi.coord && pHi.d > pLo.d) {
+      const f = (distKm - pLo.d) / (pHi.d - pLo.d);
+      return [pLo.coord[0] + f * (pHi.coord[0] - pLo.coord[0]), pLo.coord[1] + f * (pHi.coord[1] - pLo.coord[1])];
+    }
+    return pLo.coord;
+  }
+
+  /** Altitud interpolada sobre la ruta actual del perfil en una distancia (km). */
+  function _alturaEnDist(distKm) {
+    if (!_rutaGeojson || !_rutaGeojson.geometry) return null;
+    try {
+      const puntos = _acumular(_rutaGeojson.geometry.coordinates, _elevacion);
+      return _alturaEn(puntos, distKm);
+    } catch (e) { return null; }
+  }
+
+  /** Distancia (km) del punto de la ruta del perfil más cercano a un lat/lon. */
+  function _distKmCercaDe(lat, lon) {
+    if (!_rutaGeojson || !_rutaGeojson.geometry) return null;
+    const gc = _rutaGeojson.geometry.coordinates;
+    if (!gc || gc.length < 2) return null;
+    const coords = _rutaGeojson.geometry.type === 'MultiLineString'
+      ? gc.reduce((acc, tramo) => acc.concat(tramo), [])
+      : gc;
+    if (coords.length < 2) return null;
+    try {
+      const nearest = turf.nearestPointOnLine(turf.lineString(coords), turf.point([lon, lat]), { units: 'kilometers' });
+      const loc = nearest.properties.location;
+      return loc != null ? Number(loc) : 0;
+    } catch (e) { return null; }
+  }
+
+  /** Convierte un lat/lon del mapa en el punto equivalente del perfil. */
+  function puntoCompararDesdeLatLng(lat, lon) {
+    const distKm = _distKmCercaDe(lat, lon);
+    if (distKm == null) return null;
+    return { lat, lon, coord: [lon, lat], distKm, alt: _alturaEnDist(distKm) };
+  }
+
+  /** Normaliza un punto de comparación (dist/alt numéricos). */
+  function _normalizarPunto(p) {
+    const distKm = Number(p.distKm);
+    if (!isFinite(distKm)) return null;
+    const alt = p.alt != null ? Number(p.alt) : _alturaEnDist(distKm);
+    return {
+      lat: p.lat, lon: p.lon,
+      coord: p.coord || [p.lon, p.lat],
+      distKm,
+      alt: alt != null && isFinite(alt) ? alt : null,
+    };
+  }
+
+  /** Activa/desactiva la selección del segundo punto en el mapa. */
+  function _activarSeleccionMapa(activo) {
+    if (typeof MapModule === 'undefined') return;
+    if (activo) {
+      if (typeof MapModule.activarSeleccionComparar === 'function') {
+        MapModule.activarSeleccionComparar((punto) => seleccionarPuntoComparacion(punto));
+      }
+    } else if (typeof MapModule.desactivarSeleccionComparar === 'function') {
+      MapModule.desactivarSeleccionComparar();
+    }
+  }
+
+  function _getBannerComparar() {
+    if (_bannerComparar) return _bannerComparar;
+    _bannerComparar = document.createElement('div');
+    _bannerComparar.className = 'comparar-banner';
+    const msg = document.createElement('span');
+    msg.className = 'comparar-banner__msg';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'comparar-banner__cerrar';
+    btn.setAttribute('aria-label', 'Terminar comparación');
+    btn.innerHTML = '&times;';
+    btn.addEventListener('click', () => cancelarComparacion());
+    _bannerComparar.appendChild(msg);
+    _bannerComparar.appendChild(btn);
+    _bannerComparar.style.display = 'none';
+    document.body.appendChild(_bannerComparar);
+    return _bannerComparar;
+  }
+
+  function _mostrarBannerComparar(texto) {
+    const b = _getBannerComparar();
+    b.querySelector('.comparar-banner__msg').textContent = texto;
+    b.style.display = 'flex';
+  }
+
+  function _ocultarBannerComparar() {
+    if (_bannerComparar) _bannerComparar.style.display = 'none';
+  }
+
+  /** Punto del perfil bajo una posición de pantalla (para menú contextual). */
+  function _puntoDeEvento(cont, clientX, clientY) {
+    if (!cont._svg || !cont._plotW || !cont._puntos) return null;
+    const rect = cont._svg.getBoundingClientRect();
+    const mx = clientX - rect.left;
+    const rat = Math.max(0, Math.min(1, (mx - cont._padLeft) / cont._plotW));
+    const dist = cont._zoomStart + rat * (cont._zoomEnd - cont._zoomStart);
+    let lo = 0;
+    while (lo < cont._puntos.length - 1 && cont._puntos[lo + 1].d < dist) lo++;
+    const hi = Math.min(lo + 1, cont._puntos.length - 1);
+    const pLo = cont._puntos[lo];
+    const pHi = cont._puntos[hi];
+    if (!pLo) return null;
+    let alt = null;
+    if (pLo.e != null) {
+      if (pHi && pHi.e != null && pHi.d > pLo.d) {
+        const f = (dist - pLo.d) / (pHi.d - pLo.d);
+        alt = pLo.e + f * (pHi.e - pLo.e);
+      } else alt = pLo.e;
+    }
+    return { lat: pLo.coord[1], lon: pLo.coord[0], coord: pLo.coord, distKm: dist, alt };
+  }
+
+  /** Entrada única de comparación: primer punto o segundo punto según el estado. */
+  function seleccionarPuntoComparacion(punto) {
+    const norm = _normalizarPunto(punto);
+    if (!norm) return;
+    if (_compararActivo || !_esperandoComparar) {
+      _compararA = norm;
+      _compararB = null;
+      _compararActivo = false;
+      _esperandoComparar = true;
+      _mostrarBannerComparar('Selecciona el otro sitio para comparar');
+      _activarSeleccionMapa(true);
+    } else {
+      _compararB = norm;
+      _compararActivo = true;
+      _esperandoComparar = false;
+      _activarSeleccionMapa(false);
+      _mostrarBannerComparar('Comparación de puntos activa');
+      _renderizarTodo();
+    }
+  }
+
+  /** Termina la comparación y restaura el perfil. */
+  function cancelarComparacion() {
+    const habia = _compararActivo || _esperandoComparar;
+    _compararA = null;
+    _compararB = null;
+    _compararActivo = false;
+    _esperandoComparar = false;
+    _activarSeleccionMapa(false);
+    _ocultarBannerComparar();
+    if (habia) _renderizarTodo();
+  }
+
+  /** ¿El perfil tiene datos para comparar? (ruta + altimetría cargadas). */
+  function tieneDatos() {
+    return !!(_rutaGeojson && _rutaGeojson.geometry && _rutaGeojson.geometry.coordinates && _rutaGeojson.geometry.coordinates.length >= 2);
+  }
+
   /** Ajusta el rango horizontal visible conservando la proporción bajo el cursor. */
   function _aplicarZoom(cont, factor, cxRel) {    const maxD = cont._maxD || 1;
     const minSpan = Math.min(MIN_SPAN_ZOOM, maxD);
@@ -310,9 +494,15 @@ const AltimetriaModule = (() => {
     // Dominio mostrado: desde el punto asignado como inicio hasta el asignado como fin.
     let domInicio = Math.max(0, Math.min(_inicioOffset != null ? _inicioOffset : 0, maxD));
     let domFin = Math.max(domInicio, Math.min(_finOffset != null ? _finOffset : maxD, maxD));
-    // Con un segmento activo el perfil se limita a ese tramo en carro (respeta
-    // los puntos de inicio/fin asignados dentro del segmento).
-    if (_segmentoActivo != null && _segmentoActivo < _nSegmentos) {
+    // Comparación de puntos: el perfil se limita al tramo entre A y B.
+    if (_compararActivo && _compararA && _compararB) {
+      const dA = Math.max(0, Math.min(Number(_compararA.distKm), maxD));
+      const dB = Math.max(0, Math.min(Number(_compararB.distKm), maxD));
+      domInicio = Math.min(dA, dB);
+      domFin = Math.max(dA, dB);
+    } else if (_segmentoActivo != null && _segmentoActivo < _nSegmentos) {
+      // Con un segmento activo el perfil se limita a ese tramo en carro (respeta
+      // los puntos de inicio/fin asignados dentro del segmento).
       const segPts = puntos.filter((p) => p.seg === _segmentoActivo);
       if (segPts.length) {
         domInicio = segPts[0].d;
@@ -342,9 +532,11 @@ const AltimetriaModule = (() => {
     // perfil ocupa toda la altura del gráfico y la escala se actualiza en cada
     // cambio de visualización (parada asignada como inicio/fin, zoom o cambio
     // de segmento), sin quedarse nunca fija al rango completo de la ruta.
-    const ptsSeg = (_segmentoActivo != null && _segmentoActivo < _nSegmentos)
-      ? puntos.filter(p => p.seg === _segmentoActivo)
-      : puntos;
+    const ptsSeg = _compararActivo
+      ? puntos
+      : ((_segmentoActivo != null && _segmentoActivo < _nSegmentos)
+        ? puntos.filter(p => p.seg === _segmentoActivo)
+        : puntos);
     const ptsVisibles = ptsSeg.filter(p => p.e != null && p.d >= zoomStart - 0.001 && p.d <= zoomEnd + 0.001);
     let minAlt, maxAlt, rangoAlt;
     if (ptsVisibles.length) {
@@ -565,22 +757,48 @@ const AltimetriaModule = (() => {
     // Marcadores de extremos del tramo visible: cada borde muestra el icono
     // correcto según lo que hay ahí (A en el origen real, Z en el destino real,
     // ✈ en aeropuertos, 🚢 en puertos); los bordes de pueblo (escala) no se
-    // marcan porque su letra ya la pinta la parada en ese mismo punto.
-    let idxA = 0, idxZ = puntos.length - 1;
-    let extremoIni = { nombre: _nombreOrigen, tipo: 'origen' };
-    let extremoFin = { nombre: _nombreDestino, tipo: 'destino' };
-    if (_segmentoActivo != null && _segmentoActivo < _nSegmentos) {
-      const idxs = [];
-      for (let i = 0; i < puntos.length; i++) { if (puntos[i].seg === _segmentoActivo) idxs.push(i); }
-      if (idxs.length) { idxA = idxs[0]; idxZ = idxs[idxs.length - 1]; }
-      if (_segmentoExtremos && _segmentoExtremos[_segmentoActivo]) {
-        const par = _segmentoExtremos[_segmentoActivo];
-        if (par && par[0]) extremoIni = par[0];
-        if (par && par[1]) extremoFin = par[1];
+    // marcan porque su letra ya la pinta la parada en ese mismo punto. Durante
+    // una comparación se omiten y en su lugar se pintan A y B de comparación.
+    if (!_compararActivo) {
+      let idxA = 0, idxZ = puntos.length - 1;
+      let extremoIni = { nombre: _nombreOrigen, tipo: 'origen' };
+      let extremoFin = { nombre: _nombreDestino, tipo: 'destino' };
+      if (_segmentoActivo != null && _segmentoActivo < _nSegmentos) {
+        const idxs = [];
+        for (let i = 0; i < puntos.length; i++) { if (puntos[i].seg === _segmentoActivo) idxs.push(i); }
+        if (idxs.length) { idxA = idxs[0]; idxZ = idxs[idxs.length - 1]; }
+        if (_segmentoExtremos && _segmentoExtremos[_segmentoActivo]) {
+          const par = _segmentoExtremos[_segmentoActivo];
+          if (par && par[0]) extremoIni = par[0];
+          if (par && par[1]) extremoFin = par[1];
+        }
       }
+      _agregarIndicadorExtremo(svg, puntos, idxA, extremoIni, zoomStart, zoomEnd, x, y, minAlt, rangoAlt);
+      _agregarIndicadorExtremo(svg, puntos, idxZ, extremoFin, zoomStart, zoomEnd, x, y, minAlt, rangoAlt);
+    } else if (_compararA && _compararB) {
+      _agregarIndicadorComparar(svg, puntos, Number(_compararA.distKm), 'A', zoomStart, zoomEnd, x, y, minAlt, rangoAlt);
+      _agregarIndicadorComparar(svg, puntos, Number(_compararB.distKm), 'B', zoomStart, zoomEnd, x, y, minAlt, rangoAlt);
     }
-    _agregarIndicadorExtremo(svg, puntos, idxA, extremoIni, zoomStart, zoomEnd, x, y, minAlt, rangoAlt);
-    _agregarIndicadorExtremo(svg, puntos, idxZ, extremoFin, zoomStart, zoomEnd, x, y, minAlt, rangoAlt);
+
+    // Comparación: en el lugar del texto de distancia/altura se muestran la
+    // distancia y la altura entre los dos puntos elegidos.
+    const suffixC = cont.id.includes('-panel') ? '-panel' : '';
+    const distElC = document.getElementById('altimetria-dist' + suffixC);
+    const altElC = document.getElementById('altimetria-alt' + suffixC);
+    const hoverInfoC = cont.parentNode && cont.parentNode.querySelector ? cont.parentNode.querySelector('.altimetria__hover-info') : null;
+    if (_compararActivo && _compararA && _compararB) {
+      const dA = Number(_compararA.distKm);
+      const dB = Number(_compararB.distKm);
+      const distEntre = Math.abs(dB - dA);
+      const altA = _alturaEn(puntos, dA);
+      const altB = _alturaEn(puntos, dB);
+      const altEntre = (altA != null && altB != null) ? Math.abs(altB - altA) : null;
+      if (distElC) distElC.textContent = `Distancia entre ellos: ${distEntre.toFixed(1)} km`;
+      if (altElC) altElC.textContent = altEntre != null ? `Altura entre ellos: ${altEntre.toFixed(0)} m` : 'Altura entre ellos: —';
+      if (hoverInfoC) hoverInfoC.classList.add('altimetria__hover-info--comparar');
+    } else {
+      if (hoverInfoC) hoverInfoC.classList.remove('altimetria__hover-info--comparar');
+    }
 
     // Las etiquetas del eje X se dibujan al final (z alto) para no quedar ocultas
     // ni cortadas (por ejemplo el "km" del último valor).
@@ -601,9 +819,24 @@ const AltimetriaModule = (() => {
     // Hover listeners
     hit.addEventListener('mousemove', (ev) => { if (!_arrastrePerfil) _onHover(cont, ev); });
     hit.addEventListener('mouseleave', () => { if (!_arrastrePerfil) _onLeave(cont); });
-    // Clic sobre el perfil con el vehículo visible: abre el selector de
+    // Clic secundario sobre el perfil: menú "Comparar este sitio" en el punto.
+    hit.addEventListener('contextmenu', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (_arrastrePerfil || _suprimirClicComparar) return;
+      const punto = _puntoDeEvento(cont, ev.clientX, ev.clientY);
+      if (punto) _mostrarMenuComparar(ev.clientX, ev.clientY, punto);
+    });
+    // Clic sobre el perfil: mientras se espera el segundo punto de comparación
+    // selecciona ese punto; con el vehículo visible abre el selector de
     // vehículo/color (el carro sigue al cursor, por eso el clic se captura aquí).
     hit.addEventListener('click', (ev) => {
+      if (_esperandoComparar) {
+        ev.stopPropagation();
+        const punto = _puntoDeEvento(cont, ev.clientX, ev.clientY);
+        if (punto) seleccionarPuntoComparacion(punto);
+        return;
+      }
       if (_puntoHover) {
         ev.stopPropagation();
         TransportConfigModule.abrirSelector(ev.clientX, ev.clientY);
@@ -614,12 +847,12 @@ const AltimetriaModule = (() => {
       _arrastrePerfil = { cont, startX: ev.clientX, startZs: cont._zoomStart, startZe: cont._zoomEnd };
       ev.preventDefault();
     });
-    // Touch support for mobile (hover de un dedo y zoom con dos dedos)
+    // Touch support for mobile (hover de un dedo, zoom con dos dedos y
+    // pulsación larga para comparar)
     hit.addEventListener('touchstart', (ev) => { ev.preventDefault(); _onTouchStart(cont, ev); }, { passive: false });
     hit.addEventListener('touchmove', (ev) => { ev.preventDefault(); _onTouchMove(cont, ev); }, { passive: false });
-    // Al soltar el dedo se oculta el hover del perfil y el tooltip del mapa.
-    hit.addEventListener('touchend', (ev) => { ev.preventDefault(); if (ev.touches.length === 0) _onLeave(cont); }, { passive: false });
-    hit.addEventListener('touchcancel', () => { _onLeave(cont); });
+    hit.addEventListener('touchend', (ev) => { ev.preventDefault(); _onTouchEnd(cont, ev); }, { passive: false });
+    hit.addEventListener('touchcancel', (ev) => { _cancelarLongPress(); _onLeave(cont); });
 
     // Zoom horizontal con la rueda del ratón; doble clic para restablecer
     svg.addEventListener('wheel', (ev) => {
@@ -657,7 +890,7 @@ const AltimetriaModule = (() => {
   }
 
   /** Crea el indicador circular (con su letra incluida en el área clickeable) y tooltip al pasar el mouse. */
-  function _crearIndicador(svg, px, py, letra, data, tooltipTexto, labelNombre) {
+  function _crearIndicador(svg, px, py, letra, data, tooltipTexto, labelNombre, color, interactivo) {
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     g.style.cursor = 'pointer';
 
@@ -665,7 +898,7 @@ const AltimetriaModule = (() => {
     circle.setAttribute('cx', px);
     circle.setAttribute('cy', py);
     circle.setAttribute('r', '11');
-    circle.setAttribute('fill', '#4a6fa5');
+    circle.setAttribute('fill', color || '#4a6fa5');
     g.appendChild(circle);
 
     if (letra) {
@@ -682,23 +915,26 @@ const AltimetriaModule = (() => {
       g.appendChild(text);
     }
 
-    // Clic instantáneo: abre el menú; si ya está abierto para ESTE marcador, lo cierra.
-    g.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      if (_menuFlotante && _menuFlotante._menuTarget === g && _menuFlotante.style.display !== 'none') {
-        _cerrarMenuFlotante();
-      } else {
-        _mostrarMenu(ev, data, g);
-      }
-    });
-    g.addEventListener('contextmenu', (ev) => { ev.preventDefault(); ev.stopPropagation(); _mostrarMenu(ev, data, g); });
-    // En táctiles la etiqueta de hover no debe aparecer al tocar los marcadores.
-    if (!_esTactil) {
-      g.addEventListener('mouseenter', (ev) => _mostrarTooltipIndicador(ev, tooltipTexto));
-      g.addEventListener('mousemove', (ev) => _mostrarTooltipIndicador(ev, tooltipTexto));
-      g.addEventListener('mouseleave', () => _ocultarTooltipIndicador());
-    }
     svg.appendChild(g);
+
+    // Clic instantáneo: abre el menú; si ya está abierto para ESTE marcador, lo cierra.
+    if (interactivo !== false) {
+      g.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        if (_menuFlotante && _menuFlotante._menuTarget === g && _menuFlotante.style.display !== 'none') {
+          _cerrarMenuFlotante();
+        } else {
+          _mostrarMenu(ev, data, g);
+        }
+      });
+      g.addEventListener('contextmenu', (ev) => { ev.preventDefault(); ev.stopPropagation(); _mostrarMenu(ev, data, g); });
+      // En táctiles la etiqueta de hover no debe aparecer al tocar los marcadores.
+      if (!_esTactil) {
+        g.addEventListener('mouseenter', (ev) => _mostrarTooltipIndicador(ev, tooltipTexto));
+        g.addEventListener('mousemove', (ev) => _mostrarTooltipIndicador(ev, tooltipTexto));
+        g.addEventListener('mouseleave', () => _ocultarTooltipIndicador());
+      }
+    }
 
     // Etiqueta muy pequeña con el nombre (sin departamento) sobre el indicador.
     // Puede salirse por arriba del área de los ejes pero se dibuja al final (z alto).
@@ -748,6 +984,20 @@ const AltimetriaModule = (() => {
     const py = y(alt);
     const tooltip = pt.e != null ? `${_nombreSinDepartamento(nombre)} · ${pt.e.toFixed(0)} msnm` : _nombreSinDepartamento(nombre);
     _crearIndicador(svg, px, py, letra, { tipo: letra, lat: pt.coord[1], lon: pt.coord[0], nombre: letra, distKm: dist }, tooltip, _nombreSinDepartamento(nombre));
+  }
+
+  /** Marcador de un punto de comparación (A o B) sobre el perfil. */
+  function _agregarIndicadorComparar(svg, puntos, dist, letra, zoomStart, zoomEnd, x, y, minAlt, rangoAlt) {
+    if (dist < zoomStart - 0.001 || dist > zoomEnd + 0.001) return;
+    const px = x(dist);
+    const alt = _alturaEn(puntos, dist);
+    const py = alt != null ? y(alt) : (minAlt + rangoAlt * 0.5);
+    const coord = _coordEn(puntos, dist);
+    _crearIndicador(
+      svg, px, py, letra,
+      { tipo: 'comparar', letra, lat: coord ? coord[1] : null, lon: coord ? coord[0] : null, nombre: 'Punto ' + letra, distKm: dist },
+      '', '', '#d96c2f', false
+    );
   }
 
   function _mostrarTooltipIndicador(ev, texto) {
@@ -843,10 +1093,19 @@ const AltimetriaModule = (() => {
     _puntoHover = { lat: pt.coord[1], lon: pt.coord[0], dist: dist.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A', bearing };
     if (_onHoverMapa) _onHoverMapa(_puntoHover);
     if (_followActivo && _onCentrarMapa) { _onCentrarMapa(_puntoHover); }
+    // En una comparación el perfil va de A a B: la distancia mostrada es la
+    // recorrida desde el inicio del perfil y entre paréntesis el total A→B.
     const suffix = cont.id.includes('-panel') ? '-panel' : '';
     const distEl = document.getElementById('altimetria-dist' + suffix);
     const altEl = document.getElementById('altimetria-alt' + suffix);
-    if (distEl) distEl.textContent = `${dist.toFixed(1)} km`;
+    if (distEl) {
+      if (_compararActivo) {
+        const total = cont._zoomEnd - cont._zoomStart;
+        distEl.textContent = `${(dist - cont._zoomStart).toFixed(1)} km (de ${total.toFixed(1)} km)`;
+      } else {
+        distEl.textContent = `${dist.toFixed(1)} km`;
+      }
+    }
     if (altEl) altEl.textContent = alt != null ? alt.toFixed(0) + ' msnm' : '';
   }
 
@@ -868,16 +1127,43 @@ const AltimetriaModule = (() => {
     return Math.hypot(t0.clientX - t1.clientX, t0.clientY - t1.clientY);
   }
 
+  function _cancelarLongPress() {
+    if (_longPressTimer) { clearTimeout(_longPressTimer); _longPressTimer = null; }
+  }
+
+  function _iniciarLongPress(cont, touch) {
+    _cancelarLongPress();
+    const x = touch.clientX;
+    const y = touch.clientY;
+    _touchTap = { x, y };
+    _longPressX = x;
+    _longPressY = y;
+    _longPressTimer = setTimeout(() => {
+      _longPressTimer = null;
+      _touchTap = null;
+      _suprimirClicComparar = true;
+      setTimeout(() => { _suprimirClicComparar = false; }, 700);
+      navigator.vibrate && navigator.vibrate(20);
+      const punto = _puntoDeEvento(cont, _longPressX, _longPressY);
+      if (punto) _mostrarMenuComparar(_longPressX, _longPressY, punto);
+    }, 550);
+  }
+
   function _onTouchStart(cont, ev) {
     if (ev.touches.length === 2) {
+      _cancelarLongPress();
+      _touchTap = null;
       cont._pinchDist = _distTouches(ev);
       return;
     }
+    _iniciarLongPress(cont, ev.touches[0]);
     _onTouchHover(cont, ev);
   }
 
   function _onTouchMove(cont, ev) {
     if (ev.touches.length === 2 && cont._pinchDist) {
+      _cancelarLongPress();
+      _touchTap = null;
       const d = _distTouches(ev);
       if (d > 0) {
         const factor = cont._pinchDist / d;
@@ -890,7 +1176,29 @@ const AltimetriaModule = (() => {
       }
       return;
     }
-    if (ev.touches.length === 1) _onTouchHover(cont, ev);
+    if (ev.touches.length === 1) {
+      const t = ev.touches[0];
+      if (_touchTap && (Math.abs(t.clientX - _touchTap.x) > 10 || Math.abs(t.clientY - _touchTap.y) > 10)) _touchTap = null;
+      _onTouchHover(cont, ev);
+    }
+  }
+
+  function _onTouchEnd(cont, ev) {
+    const fueTap = _touchTap;
+    _cancelarLongPress();
+    _touchTap = null;
+    if (ev.touches.length !== 0) return;
+    const changed = ev.changedTouches && ev.changedTouches[0];
+    if (_suprimirClicComparar) {
+      _suprimirClicComparar = false;
+      _onLeave(cont);
+      return;
+    }
+    if (_esperandoComparar && changed && fueTap) {
+      const punto = _puntoDeEvento(cont, changed.clientX, changed.clientY);
+      if (punto) seleccionarPuntoComparacion(punto);
+    }
+    _onLeave(cont);
   }
 
   function _onTouchHover(cont, ev) {
@@ -932,10 +1240,19 @@ const AltimetriaModule = (() => {
     _puntoHover = { lat: pt.coord[1], lon: pt.coord[0], dist: dist.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A', bearing };
     if (_onHoverMapa) _onHoverMapa(_puntoHover);
     if (_followActivo && _onCentrarMapa) { _onCentrarMapa(_puntoHover); }
+    // En una comparación el perfil va de A a B: la distancia mostrada es la
+    // recorrida desde el inicio del perfil y entre paréntesis el total A→B.
     const suffix = cont.id.includes('-panel') ? '-panel' : '';
     const distEl = document.getElementById('altimetria-dist' + suffix);
     const altEl = document.getElementById('altimetria-alt' + suffix);
-    if (distEl) distEl.textContent = `${dist.toFixed(1)} km`;
+    if (distEl) {
+      if (_compararActivo) {
+        const total = cont._zoomEnd - cont._zoomStart;
+        distEl.textContent = `${(dist - cont._zoomStart).toFixed(1)} km (de ${total.toFixed(1)} km)`;
+      } else {
+        distEl.textContent = `${dist.toFixed(1)} km`;
+      }
+    }
     if (altEl) altEl.textContent = alt != null ? alt.toFixed(0) + ' msnm' : '';
   }
 
@@ -944,11 +1261,13 @@ const AltimetriaModule = (() => {
     if (cont._hoverCircle) cont._hoverCircle.style.display = 'none';
     _puntoHover = null;
     if (_onLeaveMapa) _onLeaveMapa();
-    const suffix = cont.id.includes('-panel') ? '-panel' : '';
-    const distEl = document.getElementById('altimetria-dist' + suffix);
-    const altEl = document.getElementById('altimetria-alt' + suffix);
-    if (distEl) distEl.textContent = '';
-    if (altEl) altEl.textContent = '';
+    if (!_compararActivo) {
+      const suffix = cont.id.includes('-panel') ? '-panel' : '';
+      const distEl = document.getElementById('altimetria-dist' + suffix);
+      const altEl = document.getElementById('altimetria-alt' + suffix);
+      if (distEl) distEl.textContent = '';
+      if (altEl) altEl.textContent = '';
+    }
   }
 
   function _mostrarTooltip(cont, ev) {
@@ -962,6 +1281,7 @@ const AltimetriaModule = (() => {
     _menuFlotante = document.createElement('div');
     _menuFlotante.className = 'altimetria-floating-menu';
     const definiciones = [
+      ['comparar', 'Comparar este sitio'],
       ['inicio', 'Asignar como punto inicial'],
       ['fin', 'Asignar como punto final'],
       ['ver', 'Ver en el mapa'],
@@ -991,6 +1311,7 @@ const AltimetriaModule = (() => {
     const menu = _crearMenuFlotante();
     menu._menuData = data;
     menu._menuTarget = target || null;
+    const btnComparar = menu.querySelector('[data-action="comparar"]');
     const btnInicio = menu.querySelector('[data-action="inicio"]');
     const btnFin = menu.querySelector('[data-action="fin"]');
     const btnVer = menu.querySelector('[data-action="ver"]');
@@ -1005,11 +1326,13 @@ const AltimetriaModule = (() => {
     // (muestra "Quitar..."), no debe ofrecer la opción contraria de "Asignar...".
     const asignableInicio = !esExtremo && data.tipo !== 'Z' && !esInicioActual && !esFinActual;
     const asignableFin = !esExtremo && data.tipo !== 'A' && !esInicioActual && !esFinActual;
+    if (btnComparar) btnComparar.style.display = '';
     btnInicio.style.display = asignableInicio ? '' : 'none';
     btnFin.style.display = asignableFin ? '' : 'none';
     if (btnEliminar) btnEliminar.style.display = esExtremo ? 'none' : '';
     if (btnQuitarIni) btnQuitarIni.style.display = esInicioActual ? '' : 'none';
     if (btnQuitarFin) btnQuitarFin.style.display = esFinActual ? '' : 'none';
+    if (btnComparar) btnComparar.onclick = () => { _cerrarMenuFlotante(); seleccionarPuntoComparacion(data); };
     btnInicio.onclick = () => { _cerrarMenuFlotante(); if (_onSetInicio) _onSetInicio(data); };
     btnFin.onclick = () => { _cerrarMenuFlotante(); if (_onSetFin) _onSetFin(data); };
     btnVer.onclick = () => { _cerrarMenuFlotante(); if (_onVerMapa) _onVerMapa(data); };
@@ -1025,6 +1348,28 @@ const AltimetriaModule = (() => {
     menu.style.top = Math.max(4, Math.min(ev.clientY - 10, window.innerHeight - mh - 4)) + 'px';
   }
 
+  /** Menú contextual del perfil (clic derecho / pulsación larga): solo
+   *  "Comparar este sitio" en el punto bajo el cursor. */
+  function _mostrarMenuComparar(clientX, clientY, punto) {
+    const menu = _crearMenuFlotante();
+    menu._menuData = punto;
+    menu._menuTarget = null;
+    ['inicio', 'fin', 'ver', 'eliminar', 'quitar-inicio', 'quitar-fin'].forEach((acc) => {
+      const b = menu.querySelector('[data-action="' + acc + '"]');
+      if (b) b.style.display = 'none';
+    });
+    const btnComparar = menu.querySelector('[data-action="comparar"]');
+    if (btnComparar) {
+      btnComparar.style.display = '';
+      btnComparar.onclick = () => { _cerrarMenuFlotante(); seleccionarPuntoComparacion(punto); };
+    }
+    menu.style.display = 'flex';
+    const mw = menu.offsetWidth || 180;
+    const mh = menu.offsetHeight || 200;
+    menu.style.left = Math.max(4, Math.min(clientX + 8, window.innerWidth - mw - 4)) + 'px';
+    menu.style.top = Math.max(4, Math.min(clientY - 10, window.innerHeight - mh - 4)) + 'px';
+  }
+
   function limpiar() {
     _rutaGeojson = null;
     _elevacion = null;
@@ -1034,6 +1379,13 @@ const AltimetriaModule = (() => {
     _nSegmentos = 1;
     _segmentoActivo = 0;
     _segmentoExtremos = null;
+    _cancelarLongPress();
+    _compararA = null;
+    _compararB = null;
+    _compararActivo = false;
+    _esperandoComparar = false;
+    _activarSeleccionMapa(false);
+    _ocultarBannerComparar();
     ['altimetria-segmentos', 'altimetria-segmentos-panel'].forEach((id) => {
       const c = document.getElementById(id);
       if (c) { c.innerHTML = ''; c.hidden = true; }
@@ -1043,6 +1395,10 @@ const AltimetriaModule = (() => {
       const a = document.getElementById('altimetria-alt' + suffix);
       if (d) d.textContent = '';
       if (a) a.textContent = '';
+      const hi = suffix === '-panel'
+        ? document.querySelector('#altimetria-panel .altimetria__hover-info')
+        : document.querySelector('#altimetria .altimetria__hover-info');
+      if (hi) hi.classList.remove('altimetria__hover-info--comparar');
     });
   }
 
@@ -1084,11 +1440,13 @@ const AltimetriaModule = (() => {
       const pt = cont._puntos[lo];
       if (pt) { _onCentrarMapa({ lat: pt.coord[1], lon: pt.coord[0], dist: distKm.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A' }); }
     }
-    const suffix = cont.id.includes('-panel') ? '-panel' : '';
-    const distEl = document.getElementById('altimetria-dist' + suffix);
-    const altEl = document.getElementById('altimetria-alt' + suffix);
-    if (distEl) distEl.textContent = `${distKm.toFixed(1)} km`;
-    if (altEl) altEl.textContent = alt != null ? alt.toFixed(0) + ' msnm' : '';
+    if (!_compararActivo) {
+      const suffix = cont.id.includes('-panel') ? '-panel' : '';
+      const distEl = document.getElementById('altimetria-dist' + suffix);
+      const altEl = document.getElementById('altimetria-alt' + suffix);
+      if (distEl) distEl.textContent = `${distKm.toFixed(1)} km`;
+      if (altEl) altEl.textContent = alt != null ? alt.toFixed(0) + ' msnm' : '';
+    }
   }
 
   function ocultarHover() {
@@ -1113,5 +1471,5 @@ const AltimetriaModule = (() => {
     TransportConfigModule.setOnCambio(() => renderizarVisibles());
   }
 
-  return { setDatos, setSegmentosExtremos, setSegmentoActivo, agregarParada, renderizar, renderizarVisibles, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa, setOnHover, setOnLeave, setOnCentrarMapa, setOnEliminarParada, setExtremos, setRangoInicio, setRangoFin, quitarRangoInicio, quitarRangoFin, toggleFollow, setFollowActivo, isFollowActivo, mostrarHoverEn, ocultarHover, getInfoAt };
+  return { setDatos, setSegmentosExtremos, setSegmentoActivo, agregarParada, renderizar, renderizarVisibles, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa, setOnHover, setOnLeave, setOnCentrarMapa, setOnEliminarParada, setExtremos, setRangoInicio, setRangoFin, quitarRangoInicio, quitarRangoFin, toggleFollow, setFollowActivo, isFollowActivo, mostrarHoverEn, ocultarHover, getInfoAt, seleccionarPuntoComparacion, cancelarComparacion, puntoCompararDesdeLatLng, tieneDatos };
 })();
