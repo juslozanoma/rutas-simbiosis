@@ -74,11 +74,15 @@
         <img src="public/bike.svg" alt="" width="20" height="20" style="filter: brightness(0) invert(1);">
       </button>
     </div>
-    <!-- Botón GPS (esquina inferior derecha; ruta desde archivo KML/GPX) -->
-    <div class="btns-map btns-map--gps" id="btns-map-gps">
+    <!-- Botón GPS (ruta desde archivo KML/GPX; en PC va debajo de la rosa de
+         los vientos, arriba a la derecha del mapa) -->
+    <div class="btns-map btns-map--gps-solo" id="btns-map-gps-solo">
       <button type="button" id="btn-gps" class="btn-map-icon" title="Activar ubicación GPS" aria-label="Activar ubicación GPS" hidden>
         <img src="public/gps.svg" alt="" width="22" height="22" style="filter: brightness(0) invert(1);">
       </button>
+    </div>
+    <!-- Botones de satélite y guardar -->
+    <div class="btns-map btns-map--gps" id="btns-map-gps">
       <button type="button" id="btn-satelite" class="btn-map-icon" title="Cambiar a vista satelital" aria-label="Cambiar a vista satelital" aria-pressed="false">
         <img src="public/satellite.svg" alt="" width="20" height="20" style="filter: brightness(0) invert(1);">
       </button>

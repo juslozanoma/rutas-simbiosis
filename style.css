@@ -888,15 +888,15 @@ input, select{ font-family: inherit; }
 .empty-state{ margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; text-align: center; }
 .empty-state__icono{
   display: block;
-  width: 110px;
-  height: 110px;
-  margin: 8px auto 14px;
+  width: 170px;
+  height: 170px;
+  margin: 8px auto 6px;
   object-fit: contain;
 }
 .empty-state__texto{
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   display: block;
-  max-width: 210px;
+  max-width: 260px;
   margin: 0 auto;
 }
 
@@ -1645,9 +1645,17 @@ input, select{ font-family: inherit; }
   gap: 6px;
 }
 .btns-map--gps{ left: auto; right: 12px; }
-/* En PC el botón de GPS va arriba a la izquierda del mapa. */
+/* Contenedor exclusivo del botón GPS (ruta desde archivo). En PC va arriba a
+   la derecha, debajo de la rosa de los vientos; en móvil arriba a la
+   izquierda, primera posición del bloque de botones. */
+.btns-map--gps-solo{ left: auto; right: 12px; }
+/* En PC el botón de satélite va debajo de la barra superior de
+   distancia/tiempo, el GPS a la derecha debajo de la rosa de los vientos y el
+   de mostrar/ocultar sitios debajo del satélite. */
 @media (min-width: 861px){
-  .btns-map--gps{ top: 12px; bottom: auto; left: 12px; right: auto; }
+  .btns-map--gps{ top: 44px; bottom: auto; left: 12px; right: auto; }
+  .btns-map--gps-solo{ top: 84px; bottom: auto; left: auto; right: 12px; }
+  .btn-toggle-sitios--float{ top: 84px; }
   /* El botón de guardar es exclusivo de móvil. */
   #btn-guardar{ display: none !important; }
   /* Estado vacío de Descubre: imagen de simbiosis más grande en PC. */
@@ -1689,7 +1697,7 @@ input, select{ font-family: inherit; }
   right: 12px;
 }
 @media (min-width: 861px){
-  .btns-map--compass{ top: 12px; }
+  .btns-map--compass{ top: 44px; }
 }
 .rosa-vientos{
   position: relative;
@@ -1962,10 +1970,14 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="descubre"] .sitios-sort{ display: none !important; }
   .panel-tab-bar{ display: none !important; }
   .btns-map{ display: none !important; }
-  /* El botón GPS de la ruta desde archivo sí se muestra en móvil, arriba a
-     la izquierda: a la misma distancia de la barra superior que el botón de
-     pantalla completa (top: 36px, ver .btn-fullscreen). */
+  /* El botón GPS de la ruta desde archivo sí se muestra en móvil, arriba a la
+     izquierda: a la misma distancia de la barra superior que el botón de
+     pantalla completa (top: 36px, ver .btn-fullscreen). Al estar ahora en su
+     propio contenedor, cuando está visible el bloque de satélite/guardar baja
+     una fila para no superponerse. */
   .btns-map--gps{ display: flex !important; top: 36px; bottom: auto; left: 12px; right: auto; }
+  .btns-map--gps-solo{ display: flex !important; top: 36px; bottom: auto; left: 12px; right: auto; }
+  #app[data-ruta-archivo="true"] .btns-map--gps{ top: 76px; }
   /* La rosa de los vientos sí se muestra en móvil, debajo del botón de
      pantalla completa (top: 36px + 34px de alto + 8px de margen). */
   #btns-map-compass{ display: flex !important; top: 78px; bottom: auto; left: auto; right: 12px; }

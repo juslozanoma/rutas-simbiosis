@@ -79,6 +79,7 @@ const MapModule = (() => {
       rotate: true,
       rotateControl: false,
       touchRotate: true,
+      rotationSensitivity: 0.4,
     }).setView(CENTRO_COLOMBIA, ZOOM_INICIAL);
 
     // Desactivar boxZoom (evita rectángulo al hacer clic en la ruta)
