@@ -15,9 +15,9 @@
  * ---------------------------------------------------------------------------
  */
 
-const VERSION = 'simbiosis-v1';
+const VERSION = 'simbiosis-v2';
 const CACHE_PRIMARIO = VERSION;
-const CACHE_OPACO = 'simbiosis-cdn-v1';
+const CACHE_OPACO = 'simbiosis-cdn-v2';
 
 const PRECACHE = [
   './',
@@ -151,9 +151,15 @@ self.addEventListener('fetch', (ev) => {
   }
 
   // Origen cruzado (CDNs, tiles, OSRM, fuentes): caché primero con refresco.
+  // Una respuesta "opaque" (p. ej. la de un <link> sin crossorigin) SOLO puede
+  // servirse a peticiones no-CORS. Si se entrega a una petición CORS el
+  // navegador la descarta con "an opaque response was used for a request whose
+  // type is not no-cors". Por eso se valida la compatibilidad antes de servir
+  // desde la caché y en la caída de red.
   ev.respondWith(
     caches.open(CACHE_OPACO).then(async (cache) => {
       const enCache = await cache.match(req);
+      const cacheUsable = enCache && !(enCache.type === 'opaque' && req.mode !== 'no-cors');
       const refresco = fetch(req)
         .then((res) => {
           if (res && (res.type === 'opaque' || res.ok) && Number(res.headers.get('content-length') || 0) < 10 * 1024 * 1024) {
@@ -161,8 +167,8 @@ self.addEventListener('fetch', (ev) => {
           }
           return res;
         })
-        .catch(() => enCache || new Response('', { status: 504 }));
-      return enCache || refresco;
+        .catch(() => (cacheUsable ? enCache : new Response('', { status: 504 })));
+      return (cacheUsable ? enCache : null) || refresco;
     })
   );
 });

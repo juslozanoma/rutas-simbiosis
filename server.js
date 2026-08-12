@@ -47,6 +47,9 @@ const MIME = {
 };
 
 const server = http.createServer((req, res) => {
+  // Marca propia para que el cliente sepa que lo sirve server.js (y no, p. ej.,
+  // el Live Server de VSCode) y solo entonces consulte /__server_info__.
+  res.setHeader('X-Simbiosis-Server', '1');
   let url;
   try {
     url = new URL(req.url, 'http://' + (req.headers.host || 'localhost'));

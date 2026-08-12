@@ -759,10 +759,13 @@
 
   // Recarga automática SOLO cuando el servidor lo anuncia (server.js), y ese
   // servidor solo avisa cuando cambian .html o .js. No recarga al guardar
-  // puertos (JSON), ni por cambios de CSS/SVG.
+  // puertos (JSON), ni por cambios de CSS/SVG. La cabecera X-Simbiosis-Server
+  // la añade server.js: si la app corre en otro servidor (p. ej. Live Server
+  // de VSCode) no se consulta /__server_info__ y se evita un 404 en consola.
   function initRecargaPorServidor() {
-    fetch('/__server_info__')
-      .then((res) => (res.ok ? res.json() : null))
+    fetch(location.pathname, { method: 'HEAD' })
+      .then((res) => (res && res.headers.get('X-Simbiosis-Server') === '1' ? fetch('/__server_info__') : null))
+      .then((res) => (res && res.ok ? res.json() : null))
       .then((info) => {
         if (!info || !info.events) return;
         const es = new EventSource('/events');
