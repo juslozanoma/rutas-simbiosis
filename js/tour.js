@@ -22,9 +22,17 @@
     if (el.appRoot) el.appRoot.setAttribute('data-tour-activo', 'true');
     state.tourDestinos = [];
     _sitiosTour = [];
+    state.categoriasSeleccionadas = [];
+    _tourOrdenActivo = 'distancia';
+    _tourOrdenDirNombre = 'asc';
+    _tourOrdenDirDistancia = 'asc';
+    const filaDist = document.getElementById('filtro-distancia-tour-row');
+    if (filaDist) filaDist.hidden = true;
     _limpiarSitiosTour();
     _crearComboTour();
     _crearCerrarTour();
+    _configurarFiltroDistanciaTour();
+    _actualizarBotonesOrdenTour();
     if (el.panelLocate) el.panelLocate.hidden = true;
     if (el.panelTour) el.panelTour.hidden = false;
     if (el.btnIniciarTour) el.btnIniciarTour.setAttribute('aria-pressed', 'true');
@@ -48,6 +56,9 @@
     if (el.panelLocate) el.panelLocate.hidden = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles || _rutaArchivoActiva;
     if (el.btnIniciarTour) el.btnIniciarTour.setAttribute('aria-pressed', 'false');
     if (el.tourDestinosLista) el.tourDestinosLista.innerHTML = '';
+    const filaDist = document.getElementById('filtro-distancia-tour-row');
+    if (filaDist) filaDist.hidden = true;
+    if (el.filtroDistancia) { el.filtroDistancia.disabled = !(el.checkDistancia && el.checkDistancia.checked); el.filtroDistancia.max = '60'; }
     _restaurarEtiquetasTour();
     renderizarParadas();
   }
@@ -150,9 +161,22 @@
     _sitiosTour = [...mapa.values()];
     _mostrarSitiosTour();
     _renderTourDestinos();
-    // Centrar la ciudad elegida en el mapa (zoom de municipio).
-    if (typeof MapModule !== 'undefined' && typeof MapModule.centrarEn === 'function') {
-      MapModule.centrarEn(Number(m.lat), Number(m.lon), 12);
+    // Tras elegir el primer destino se muestra la barra de distancia bajo el
+    // cuadro "Añadir otro destino".
+    const filaDist = document.getElementById('filtro-distancia-tour-row');
+    if (filaDist && state.tourDestinos.length >= 1) filaDist.hidden = false;
+    // Encuadrar el mapa para que se vean todos los sitios del destino (y no
+    // solo el centro del pueblo). Sin sitios, se muestra la zona a zoom 10.
+    if (typeof MapModule !== 'undefined') {
+      const coords = sitios
+        .filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)))
+        .map((s) => [Number(s.lat), Number(s.lon)]);
+      if (coords.length && typeof MapModule.encuadrar === 'function') {
+        coords.push([Number(m.lat), Number(m.lon)]);
+        MapModule.encuadrar(coords, [40, 40]);
+      } else if (typeof MapModule.centrarEn === 'function') {
+        MapModule.centrarEn(Number(m.lat), Number(m.lon), 10);
+      }
     }
     // Reiniciar el cuadro con el texto "Añadir otro destino" (solo mostrarlo,
     // sin enfocarlo ni abrir el teclado/lista).
@@ -167,20 +191,129 @@
       _sitiosDePueblo(d).forEach((s) => mapa.set(String(s.id), s));
     });
     _sitiosTour = [...mapa.values()];
+    // Si ya no queda ningún destino se oculta la barra de distancia del tour.
+    const filaDist = document.getElementById('filtro-distancia-tour-row');
+    if (filaDist) filaDist.hidden = state.tourDestinos.length < 1;
     _mostrarSitiosTour();
     _renderTourDestinos();
   }
 
   function _mostrarSitiosTour() {
     state.sitiosFiltradosBase = _sitiosTour;
-    state.sitiosFiltrados = _sitiosTour;
+    const filtrados = _sitiosTourFiltrados();
+    state.sitiosFiltrados = filtrados;
     state.modoVisibilidad = 'completa';
-    if (typeof renderizarSitios === 'function') renderizarSitios(_sitiosTour);
+    if (typeof renderizarSitios === 'function') renderizarSitios(filtrados);
+    // Categorías disponibles de los sitios del tour.
+    if (typeof renderizarCategoriasMenu === 'function') {
+      const cats = new Map();
+      _sitiosTour.forEach((s) => {
+        if (!s.categoria) return;
+        const c = s.categoria.trim();
+        cats.set(c, (cats.get(c) || 0) + 1);
+      });
+      renderizarCategoriasMenu([...cats.entries()]);
+    }
     // La pestaña Descubre queda disponible.
     if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.hidden = false;
     if (el.btnTabDescubre) el.btnTabDescubre.hidden = false;
     if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
     if (el.btnTabDescubre) el.btnTabDescubre.disabled = false;
+  }
+
+  /** Sitios del tour aplicando las categorías elegidas y el tope de distancia
+   *  del filtro (distancia al destino elegido más cercano). */
+  function _sitiosTourFiltrados() {
+    const cap = el.filtroDistancia && !el.filtroDistancia.disabled ? Number(el.filtroDistancia.value) : 30;
+    const catsNorm = state.categoriasSeleccionadas.length
+      ? new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase().trim()))
+      : null;
+    return _sitiosTour.filter((s) => {
+      if (catsNorm && !catsNorm.has((s.categoria || '').toLowerCase().trim())) return false;
+      if (_distanciaAlDestinoMasCercano(s) > cap) return false;
+      return true;
+    });
+  }
+
+  /** Distancia en km del sitio al destino del tour más cercano. */
+  function _distanciaAlDestinoMasCercano(sitio) {
+    if (!state.tourDestinos || !state.tourDestinos.length) return Infinity;
+    if (sitio.lat == null || sitio.lon == null) return Infinity;
+    let min = Infinity;
+    state.tourDestinos.forEach((d) => {
+      if (d.lat == null || d.lon == null) return;
+      const dist = turf.distance(
+        turf.point([Number(sitio.lon), Number(sitio.lat)]),
+        turf.point([Number(d.lon), Number(d.lat)]),
+        { units: 'kilometers' }
+      );
+      if (dist < min) min = dist;
+    });
+    return min;
+  }
+
+  // Orden de los sitios del tour: dos toggles INDEPENDIENTES. El de "Orden"
+  // ordena por nombre (ascendente/descendente) y el de "Distancia" por la
+  // distancia al destino más cercano (menor/mayor). El último tocado define el
+  // orden activo.
+  let _tourOrdenActivo = 'distancia';   // 'nombre' | 'distancia'
+  let _tourOrdenDirNombre = 'asc';
+  let _tourOrdenDirDistancia = 'asc';
+
+  function _aplicarOrdenTour() {
+    if (!_tourActivo) return;
+    if (_tourOrdenActivo === 'nombre') {
+      const dir = _tourOrdenDirNombre === 'desc' ? -1 : 1;
+      _sitiosTour.sort((a, b) => dir * String(a.nombre).localeCompare(String(b.nombre), 'es'));
+    } else {
+      const dir = _tourOrdenDirDistancia === 'desc' ? -1 : 1;
+      _sitiosTour.sort((a, b) => dir * (_distanciaAlDestinoMasCercano(a) - _distanciaAlDestinoMasCercano(b)));
+    }
+    _actualizarBotonesOrdenTour();
+    _mostrarSitiosTour();
+  }
+
+  function _actualizarBotonesOrdenTour() {
+    const dirBtn = document.getElementById('btn-orden-dir');
+    const distBtn = document.getElementById('btn-orden-dist');
+    if (dirBtn) dirBtn.textContent = _tourOrdenDirNombre === 'desc' ? 'Orden descendente' : 'Orden ascendente';
+    if (distBtn) distBtn.textContent = _tourOrdenDirDistancia === 'desc' ? 'Mayor distancia' : 'Menor distancia';
+  }
+
+  /** Pone el valor en km en letra pequeña sobre el pulgar del deslizador. */
+  function _actualizarThumbKm(slider, span) {
+    if (!slider || !span) return;
+    const min = Number(slider.min) || 1;
+    const max = Number(slider.max) || 30;
+    const val = Number(slider.value);
+    const pct = Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
+    span.textContent = `${val} km`;
+    span.style.left = `${pct}%`;
+  }
+
+  /** Sincroniza ambas barras de distancia (la del desplegable y la de la
+   *  pestaña del tour) y vuelve a filtrar los sitios. */
+  function _sincronizarFiltroDistancia(valor, sliderOrigen) {
+    const val = Math.max(1, Math.min(30, Number(valor) || 30));
+    const descubre = el.filtroDistancia;
+    const tourSlider = document.getElementById('filtro-distancia-tour');
+    if (descubre && descubre.id !== sliderOrigen) descubre.value = String(val);
+    if (tourSlider && tourSlider.id !== sliderOrigen) tourSlider.value = String(val);
+    if (el.filtroDistanciaValor) el.filtroDistanciaValor.textContent = `${val} km`;
+    _actualizarThumbKm(descubre, document.getElementById('filtro-distancia-thumb'));
+    _actualizarThumbKm(tourSlider, document.getElementById('filtro-distancia-tour-thumb'));
+    _mostrarSitiosTour();
+  }
+
+  /** En el tour el filtro de distancia queda activo por defecto (sin check) y
+   *  sus barras filtran la lista en vivo. */
+  function _configurarFiltroDistanciaTour() {
+    const tourSlider = document.getElementById('filtro-distancia-tour');
+    if (tourSlider) { tourSlider.max = '30'; tourSlider.value = '30'; tourSlider.disabled = false; }
+    if (el.filtroDistancia) { el.filtroDistancia.max = '30'; el.filtroDistancia.value = '30'; el.filtroDistancia.disabled = false; }
+    if (el.filtroDistanciaValor) el.filtroDistanciaValor.textContent = '30 km';
+    _actualizarThumbKm(el.filtroDistancia, document.getElementById('filtro-distancia-thumb'));
+    _actualizarThumbKm(tourSlider, document.getElementById('filtro-distancia-tour-thumb'));
   }
 
   function _limpiarSitiosTour() {
@@ -203,6 +336,13 @@
           <button type="button" class="tour-destino-item__btn" title="Quitar destino" aria-label="Quitar ${d.nombre}">&times;</button>
         </li>
       `);
+      // Clic en el destino: centra el mapa en su sector con sus sitios.
+      li.addEventListener('click', (evt) => {
+        if (evt.target.closest('.tour-destino-item__btn')) return;
+        lista.querySelectorAll('.tour-destino-item--activo').forEach((el) => el.classList.remove('tour-destino-item--activo'));
+        li.classList.add('tour-destino-item--activo');
+        _centrarDestinoTour(d);
+      });
       li.querySelector('.tour-destino-item__btn').addEventListener('click', (evt) => {
         evt.stopPropagation();
         _quitarDestinoTour(d.id);
@@ -210,3 +350,55 @@
       lista.appendChild(li);
     });
   }
+
+  /** Centra el mapa en el sector de un destino del tour (sus sitios a 30 km). */
+  function _centrarDestinoTour(d) {
+    if (!d || d.lat == null || d.lon == null) return;
+    if (typeof MapModule === 'undefined') return;
+    const sitios = _sitiosDePueblo(d);
+    const coords = sitios
+      .filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)))
+      .map((s) => [Number(s.lat), Number(s.lon)]);
+    if (coords.length && typeof MapModule.encuadrar === 'function') {
+      coords.push([Number(d.lat), Number(d.lon)]);
+      MapModule.encuadrar(coords, [40, 40]);
+    } else if (typeof MapModule.centrarEn === 'function') {
+      MapModule.centrarEn(Number(d.lat), Number(d.lon), 10);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const dirBtn = document.getElementById('btn-orden-dir');
+    const distBtn = document.getElementById('btn-orden-dist');
+    if (dirBtn) {
+      dirBtn.addEventListener('click', () => {
+        if (!_tourActivo) return;
+        _tourOrdenDirNombre = _tourOrdenDirNombre === 'asc' ? 'desc' : 'asc';
+        _tourOrdenActivo = 'nombre';
+        _aplicarOrdenTour();
+      });
+    }
+    if (distBtn) {
+      distBtn.addEventListener('click', () => {
+        if (!_tourActivo) return;
+        _tourOrdenDirDistancia = _tourOrdenDirDistancia === 'asc' ? 'desc' : 'asc';
+        _tourOrdenActivo = 'distancia';
+        _aplicarOrdenTour();
+      });
+    }
+    // En el tour las barras de distancia filtran la lista en vivo y se
+    // mantienen sincronizadas (desplegable y pestaña del tour).
+    const tourSlider = document.getElementById('filtro-distancia-tour');
+    if (tourSlider) {
+      tourSlider.addEventListener('input', () => {
+        if (!_tourActivo) return;
+        _sincronizarFiltroDistancia(tourSlider.value, tourSlider.id);
+      });
+    }
+    if (el.filtroDistancia) {
+      el.filtroDistancia.addEventListener('input', () => {
+        if (!_tourActivo) return;
+        _sincronizarFiltroDistancia(el.filtroDistancia.value, el.filtroDistancia.id);
+      });
+    }
+  });

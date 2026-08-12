@@ -145,14 +145,14 @@ input, select{ font-family: inherit; }
   font-size: 0.85rem;
   font-weight: 400;
   font-family: inherit;
-  color: #666666;
+  color: #8a867d;
   background: #ffffff;
   border: 1.5px solid var(--line-300);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
-.btn-subir-ruta-propia:hover, .btn-iniciar-tour:hover{ background: var(--bg-subtle); border-color: #b8b2a1; color: #555555; }
+.btn-subir-ruta-propia:hover, .btn-iniciar-tour:hover{ background: var(--bg-subtle); border-color: #b8b2a1; color: #6e6a62; }
 .btn-subir-ruta-propia:active, .btn-iniciar-tour:active{ transform: translateY(1px); }
 .btn-subir-ruta-propia[hidden], .btn-iniciar-tour[hidden], .btn-acciones-ruta[hidden]{ display: none; }
 /* Iniciar tour: estado activo (tour en curso). */
@@ -172,8 +172,8 @@ input, select{ font-family: inherit; }
   margin: 50px 10px 0px 10px;
   max-width: 480px;
 }
-.btn-acciones-ruta > button{ flex: 1; margin: 0; min-width: 0; color: #666666; border-color: var(--line-300); }
-.btn-acciones-ruta > button:hover{ color: #555555; background: var(--bg-subtle); border-color: #b8b2a1; }
+.btn-acciones-ruta > button{ flex: 1; margin: 0; min-width: 0; color: #8a867d; border-color: var(--line-300); }
+.btn-acciones-ruta > button:hover{ color: #6e6a62; background: var(--bg-subtle); border-color: #b8b2a1; }
 /* Con el tour activo se ocultan los cuadros de origen/destino y ambos botones;
    el panel del tour ocupa su lugar y aparece la pestaña X para cerrarlo. */
 #app[data-tour-activo="true"] #panel-locate{ display: none; }
@@ -183,12 +183,12 @@ input, select{ font-family: inherit; }
 #app[data-origen-puesto="true"] .btn-subir-ruta-propia,
 #app[data-origen-puesto="true"] #btn-iniciar-tour{ display: none; }
 
-/* Pestañas X para cerrar el tour (escritorio y móvil), como en "Subir tu
-   propia ruta". */
+/* Pestañas X para cerrar el tour (escritorio y móvil): 40px de ancho, en el
+   extremo derecho de la barra de pestañas. */
 .panel-tab--cerrar-tour,
 .mobile-tab-btn--cerrar-tour{
   display: none;
-  flex: 0 0 44px;
+  flex: 0 0 40px;
   color: #d64545;
   border-bottom-color: transparent;
 }
@@ -219,7 +219,10 @@ input, select{ font-family: inherit; }
   border-radius: var(--radius-sm);
   background: #ffffff;
   border: 1px solid var(--line-300);
+  cursor: pointer;
 }
+.tour-destino-item:hover{ border-color: var(--teal-500); }
+.tour-destino-item--activo{ background: var(--teal-50); border-color: var(--teal-500); }
 .tour-destino-item__info{ display: flex; flex-direction: column; min-width: 0; }
 .tour-destino-item__nombre{ font-size: 0.8rem; font-weight: 600; color: var(--text-strong); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tour-destino-item__meta{ font-size: 0.68rem; color: var(--text-muted); }
@@ -1782,6 +1785,26 @@ input, select{ font-family: inherit; }
   #btn-guardar{ display: none !important; }
   /* Estado vacío de Descubre: imagen de simbiosis más grande en PC. */
   .empty-state__icono{ width: 200px; height: 200px; }
+  /* En PC el buscador queda integrado en la barra superior como un cuadro
+     visible sin lupa; la lupa que lo desplegaba se oculta. El fondo es gris
+     translúcido como el de los botones de la barra. */
+  #btn-buscar-lugar{ display: none !important; }
+  .buscar-lugar[hidden]{ display: block; }
+  .buscar-lugar{
+    top: 5px;
+    left: auto;
+    right: 42px;
+    transform: none;
+    width: min(340px, calc(100% - 320px));
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    background: rgba(255,255,255,0.12);
+  }
+  .buscar-lugar__btn{ display: none; }
+  .buscar-lugar__input{ padding: 7px 12px; font-size: 0.8rem; color: #ffffff; }
+  .buscar-lugar__input::placeholder{ color: rgba(255,255,255,0.55); }
+  .buscar-lugar__lista{ background: #ffffff; }
+  .buscar-lugar__item--activo{ background: var(--teal-50); }
 }
 .btn-map-icon{
   width: 34px;
@@ -1983,9 +2006,60 @@ input, select{ font-family: inherit; }
 #descubre-dropdown-ordenar .descubre-dropdown__item--active{ background: #4a6fa5; border-color: #4a6fa5; color: #ffffff; }
 #descubre-dropdown-ordenar .descubre-dropdown__item--active:hover{ background: #3b5e8a; border-color: #3b5e8a; }
 
+/* En modo Tour el botón Ordenar muestra dos toggles (orden ascendente/descendente
+   y menor/mayor distancia) en vez de "Desde Origen/Destino". */
+#btn-orden-dir, #btn-orden-dist{ display: none; }
+#app[data-tour-activo="true"] #btn-orden-dir,
+#app[data-tour-activo="true"] #btn-orden-dist{ display: block; }
+#app[data-tour-activo="true"] #btn-descubre-orden-origen,
+#app[data-tour-activo="true"] #btn-descubre-orden-destino{ display: none; }
+
+/* En modo Tour el filtro de distancia se simplifica: solo la barra, sin check
+   ni texto, y sin la fila de tiempo ni el botón de aplicar. */
+#app[data-tour-activo="true"] #check-distancia{ display: none; }
+#app[data-tour-activo="true"] .filter-row__label-text{ display: none; }
+#app[data-tour-activo="true"] #btn-aplicar-distancia{ display: none; }
+#app[data-tour-activo="true"] #descubre-dropdown-desvios .filter-row:last-child{ display: none; }
+#app[data-tour-activo="true"] #filtro-distancia-valor{ display: none; }
+
+/* Barra de distancia: etiqueta pequeña con el valor en km sobre el indicador
+   (el pulgar) del deslizador. Solo se muestra en el modo Tour, donde el valor
+   lateral queda oculto. */
+.filter-row__range{
+  position: relative;
+}
+.filter-row__thumb-val{
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 1px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--teal-600);
+  padding: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+#app[data-tour-activo="true"] .filter-row__thumb-val{ display: block; }
+
+/* Barra de distancia en la pestaña del tour (bajo el cuadro "Añadir otro
+   destino"), visible tras elegir el primer destino. Sin borde y con poco
+   padding. */
+.filter-row[hidden]{ display: none !important; }
+.filter-row--tour-distancia{
+  margin-top: 8px;
+  padding: 11px 0 1px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+.filter-row--tour-distancia .filter-row__field{ gap: 0; }
+.filter-row--tour-distancia .filter-row__range{ margin-top: 0; }
+
 /* Distancia en paradas */
 .parada-item__dist{
-  font-size: 0.68rem;
+  font-size: 0.4rem;
   color: var(--text-muted);
   white-space: nowrap;
 }

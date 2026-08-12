@@ -58,12 +58,33 @@ const BuscarLugarModule = (() => {
     return _indice.items;
   }
 
+  /** Puntaje de relevancia sobre el nombre: a menor valor, más coincide.
+   *  Exacto < empieza por < empieza por una palabra < contiene. A igualdad,
+   *  los nombres más cortos van primero. */
+  function _puntajeNombre(nom, q) {
+    let base;
+    if (nom === q) base = 0;
+    else if (nom.startsWith(q)) base = 10;
+    else if (nom.split(' ').some((w) => w.startsWith(q))) base = 20;
+    else base = 30;
+    return base * 1000 + Math.min(nom.length, 999);
+  }
+
   function _buscar(query) {
     const q = _normalizar(query);
     if (!q) return [];
-    return _getIndice()
-      .filter((i) => i.busca.indexOf(q) !== -1)
-      .slice(0, 15);
+    const conScore = [];
+    for (const i of _getIndice()) {
+      const nom = _normalizar(i.nombre);
+      if (nom.indexOf(q) !== -1) {
+        conScore.push({ i, score: _puntajeNombre(nom, q) });
+      } else if (_normalizar(i.subtitulo || '').indexOf(q) !== -1) {
+        // Coincidencia secundaria en el subtítulo (departamento, ciudad, río…).
+        conScore.push({ i, score: 1000000 });
+      }
+    }
+    conScore.sort((a, b) => a.score - b.score);
+    return conScore.slice(0, 15).map((x) => x.i);
   }
 
   function _seleccionar(r) {
@@ -77,8 +98,17 @@ const BuscarLugarModule = (() => {
     }
     // Abrir la ficha informativa del lugar seleccionado.
     _abrirFichaLugar(r);
-    _input.value = r.nombre;
+    // Tras una búsqueda el cuadro se reinicia: queda vacío y la lista oculta.
+    _input.value = '';
     _cerrar(true);
+  }
+
+  /** Resalta un elemento de la lista (navegación con teclado). */
+  function _resaltar(indice) {
+    const items = Array.from(_lista.children);
+    items.forEach((li, i) => li.classList.toggle('buscar-lugar__item--activo', i === indice));
+    const el = items[indice];
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
   }
 
   /** Abre la ficha informativa del lugar elegido en el buscador, buscando el
@@ -166,7 +196,18 @@ const BuscarLugarModule = (() => {
       if (e.key === 'Enter') {
         e.preventDefault();
         const resultados = _buscar(input.value);
-        if (resultados.length) _seleccionar(resultados[0]);
+        if (!resultados.length) return;
+        const items = Array.from(lista.children);
+        const activo = items.findIndex((li) => li.classList.contains('buscar-lugar__item--activo'));
+        _seleccionar(resultados[activo >= 0 ? activo : 0]);
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const items = Array.from(lista.children);
+        if (!items.length) return;
+        let idx = items.findIndex((li) => li.classList.contains('buscar-lugar__item--activo'));
+        if (idx < 0) idx = e.key === 'ArrowDown' ? -1 : items.length;
+        idx = e.key === 'ArrowDown' ? Math.min(items.length - 1, idx + 1) : Math.max(0, idx - 1);
+        _resaltar(idx);
       } else if (e.key === 'Escape') {
         _cerrar();
       }
@@ -180,6 +221,16 @@ const BuscarLugarModule = (() => {
     document.addEventListener('click', (e) => {
       if (!box.contains(e.target) && !btn.contains(e.target)) {
         lista.hidden = true;
+      }
+    });
+
+    // Ctrl+F (o Cmd+F) enfoca y resalta el buscador (solo en PC).
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F')) {
+        if (typeof esMovil === 'function' && esMovil()) return;
+        e.preventDefault();
+        input.focus();
+        input.select();
       }
     });
   }

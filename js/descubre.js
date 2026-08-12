@@ -89,7 +89,12 @@
     } else {
       state.categoriasSeleccionadas.push(cat);
     }
-    if (state.rutaActual) ejecutarFiltrado();
+    if (state.rutaActual) {
+      ejecutarFiltrado();
+    } else if (typeof _tourActivo !== 'undefined' && _tourActivo && typeof _mostrarSitiosTour === 'function') {
+      // En el tour las categorías filtran los sitios del destino.
+      _mostrarSitiosTour();
+    }
   }
 
   // -------------------------------------------------------------------

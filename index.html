@@ -73,7 +73,7 @@
     <!-- Cuadro de búsqueda global (se despliega bajo la barra superior) -->
     <div class="buscar-lugar" id="buscar-lugar" hidden>
       <div class="buscar-lugar__barra">
-        <input type="search" id="buscar-lugar-input" class="buscar-lugar__input" placeholder="Buscar municipio, departamento, sitio, aeropuerto, puerto…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Buscar un sitio en el mapa">
+        <input type="search" id="buscar-lugar-input" class="buscar-lugar__input" placeholder="Busca cualquier sitio aquí…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Buscar un sitio en el mapa">
         <button type="button" id="buscar-lugar-btn" class="buscar-lugar__btn" title="Buscar" aria-label="Buscar">
           <svg class="summary-btn__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
         </button>
@@ -183,6 +183,16 @@
         <svg class="combo__chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
         <ul class="combo__list" id="tour-list" role="listbox" hidden></ul>
       </div>
+      <!-- Barra de distancia del tour: aparece bajo el cuadro tras elegir el
+           primer destino. -->
+      <div class="filter-row filter-row--tour-distancia" id="filtro-distancia-tour-row" hidden>
+        <div class="filter-row__field">
+          <div class="filter-row__range">
+            <span class="filter-row__thumb-val" id="filtro-distancia-tour-thumb">30 km</span>
+            <input type="range" id="filtro-distancia-tour" min="1" max="30" value="30" step="1">
+          </div>
+        </div>
+      </div>
       <ul class="tour-destinos-lista" id="tour-destinos-lista"></ul>
     </section>
 
@@ -230,7 +240,7 @@
     <div class="panel-descubre-actions" id="panel-descubre-actions" hidden>
       <button type="button" id="btn-descubre-categorias" class="descubre-btn">Categorías</button>
       <button type="button" id="btn-descubre-ordenar" class="descubre-btn">Ordenar</button>
-      <button type="button" id="btn-descubre-desvios" class="descubre-btn">Desvíos</button>
+      <button type="button" id="btn-descubre-desvios" class="descubre-btn">Distancia</button>
       <button type="button" id="btn-descubre-visibles-btn" class="descubre-btn descubre-btn--round" title="Ver solo sitios visibles en el mapa" aria-label="Ver solo sitios visibles en el mapa" aria-pressed="false">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       </button>
@@ -240,16 +250,21 @@
       <div class="descubre-dropdown" id="descubre-dropdown-ordenar" hidden>
         <button type="button" id="btn-descubre-orden-origen" class="descubre-dropdown__item">Desde Origen</button>
         <button type="button" id="btn-descubre-orden-destino" class="descubre-dropdown__item">Desde Destino</button>
+        <button type="button" id="btn-orden-dir" class="descubre-dropdown__item">Orden ascendente</button>
+        <button type="button" id="btn-orden-dist" class="descubre-dropdown__item">Menor distancia</button>
       </div>
       <div class="descubre-dropdown" id="descubre-dropdown-desvios" hidden>
       <div class="filter-row">
         <input type="checkbox" id="check-distancia" class="filter-row__check">
         <div class="filter-row__field">
           <label for="filtro-distancia">
-            <span>Distancia máxima a la ruta</span>
+            <span class="filter-row__label-text">Distancia máxima a la ruta</span>
             <span class="filter-row__value mono" id="filtro-distancia-valor">5 km</span>
           </label>
-          <input type="range" id="filtro-distancia" min="1" max="60" value="5" step="1" disabled>
+          <div class="filter-row__range">
+            <span class="filter-row__thumb-val" id="filtro-distancia-thumb">5 km</span>
+            <input type="range" id="filtro-distancia" min="1" max="60" value="5" step="1" disabled>
+          </div>
         </div>
         <button type="button" id="btn-aplicar-distancia" class="icon-btn" title="Aplicar filtro de distancia" aria-label="Aplicar filtro de distancia" disabled>
           <svg class="icon-btn__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
