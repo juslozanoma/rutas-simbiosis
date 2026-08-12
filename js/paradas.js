@@ -207,6 +207,7 @@
   const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
   let _observadorParadas = null; // re-mide el marquee al volver visible el panel
+  let _sortablesParadas = [];    // instancias de Sortable de la lista de paradas
 
   /** Marca los nombres largos (incluyendo distancias) para que el texto se
    *  desplace dentro de la ficha y pueda leerse completo. */
@@ -236,6 +237,150 @@
     });
     _observadorParadas.observe(el.panelParadas, { attributes: true, attributeFilter: ['hidden'] });
     window.addEventListener('resize', () => _marcarMarqueeParadas());
+  }
+
+  /** Inicializa el drag & drop entre las paradas de la lista. Los días y los
+   *  puntos de conexión (aeropuerto/puerto) no se mueven; el origen y el
+   *  destino sí pueden arrastrarse. */
+  function _initDragParadas() {
+    if (typeof Sortable === 'undefined' || !el.paradasLista) return;
+    _sortablesParadas.forEach((s) => { try { s.destroy(); } catch (e) {} });
+    _sortablesParadas = [];
+    const draggable = '.parada-item:not(.parada-item--dia):not(.parada-item--continua)'
+      + ':not([data-tipo-parada="aeropuerto"]):not([data-tipo-parada="puerto"])';
+    el.paradasLista.querySelectorAll('.parada-dia__grupo').forEach((grupo) => {
+      const sortable = Sortable.create(grupo, {
+        group: 'paradas',
+        animation: 150,
+        draggable,
+        ghostClass: 'no-ghost',
+        delay: 150,
+        delayOnTouchOnly: true,
+        onEnd: (evt) => _aplicarDragParadas(evt),
+      });
+      _sortablesParadas.push(sortable);
+    });
+  }
+
+  /** Tras soltar una parada, lee el nuevo orden desde el DOM y lo aplica.
+   *  Si solo se reordenaron paradas/pueblos usa reordenar(); si cambió el
+   *  origen o el destino (o un extremo quedó en medio) se reconstruye la ruta
+   *  y se recalcula con las distancias actualizadas. */
+  function _aplicarDragParadas(evt) {
+    if (!evt || !evt.item) return;
+    const tipo = evt.item.dataset.tipoParada;
+    if (!['parada', 'escala', 'origen', 'destino'].includes(tipo)) return;
+
+    sincronizarOrden();
+    const previo = _ordenMovible();
+    const nuevo = _ordenMovibleDOM();
+    const clave = (arr) => arr.map((o) => o.tipo + ':' + o.id).join('|');
+    if (clave(previo) === clave(nuevo)) return;
+
+    const claveItem = (o) => o.tipo + ':' + o.id;
+    const primerCambio = previo[0] && nuevo[0] && claveItem(previo[0]) !== claveItem(nuevo[0]);
+    const ultimoCambio = previo[previo.length - 1] && nuevo[nuevo.length - 1]
+      && claveItem(previo[previo.length - 1]) !== claveItem(nuevo[nuevo.length - 1]);
+
+    if (primerCambio || ultimoCambio || tipo === 'origen' || tipo === 'destino') {
+      _aplicarOrdenNuevo(nuevo);
+      return;
+    }
+
+    // Reorden normal entre paradas/pueblos (sin extremos).
+    const previoOrden = state.orden.map((o) => ({ tipo: o.tipo, id: o.id }));
+    const desde = previoOrden.findIndex((o) => o.tipo === tipo && String(o.id) === String(evt.item.dataset.paradaId));
+    const nuevoOrden = nuevo.filter((o) => o.tipo === 'parada' || o.tipo === 'escala');
+    const hasta = nuevoOrden.findIndex((o) => o.tipo === tipo && String(o.id) === String(evt.item.dataset.paradaId));
+    if (desde < 0 || hasta < 0) return;
+    reordenar(desde, hasta);
+  }
+
+  /** Orden completo actual (origen + paradas/escalas + destino). */
+  function _ordenMovible() {
+    const lista = [];
+    if (state.origen && state.origen.id != null) lista.push({ tipo: 'origen', id: String(state.origen.id) });
+    state.orden.forEach((o) => lista.push({ tipo: o.tipo, id: String(o.id) }));
+    if (state.destino && state.destino.id != null) lista.push({ tipo: 'destino', id: String(state.destino.id) });
+    return lista;
+  }
+
+  /** Orden completo según el DOM (origen + paradas/escalas + destino), sin
+   *  días, extremos de conexión ni filas de continuación de día. */
+  function _ordenMovibleDOM() {
+    const lista = [];
+    el.paradasLista.querySelectorAll('.parada-item').forEach((li) => {
+      if (li.classList.contains('parada-item--dia')) return;
+      if (li.classList.contains('parada-item--continua')) return;
+      const tipo = li.dataset.tipoParada;
+      if (!['origen', 'destino', 'parada', 'escala'].includes(tipo)) return;
+      lista.push({ tipo, id: String(li.dataset.paradaId) });
+    });
+    return lista;
+  }
+
+  /** Aplica un nuevo orden completo (origen + medio + destino): actualiza
+   *  state.origen/state.destino, rearma paradas/escalas y recalcula la ruta.
+   *  Si un extremo quedó en medio pasa a ser una parada. */
+  async function _aplicarOrdenNuevo(nuevo) {
+    if (!nuevo || nuevo.length < 2) return;
+    const resolver = (o) => {
+      if (o.tipo === 'origen') return state.origen;
+      if (o.tipo === 'destino') return state.destino;
+      if (o.tipo === 'escala') return state.escalas.find((e) => e.id === o.id);
+      if (o.tipo === 'parada') return state.paradas.find((p) => p.id === o.id);
+      return null;
+    };
+
+    const origObj = resolver(nuevo[0]);
+    const destObj = resolver(nuevo[nuevo.length - 1]);
+    if (!origObj || !destObj) return;
+
+    const cambiaOrigen = !state.origen || String(state.origen.id) !== String(origObj.id);
+    const cambiaDestino = !state.destino || String(state.destino.id) !== String(destObj.id);
+    if (!cambiaOrigen && !cambiaDestino) return;
+
+    const nuevasEscalas = [];
+    const nuevasParadas = [];
+    for (let i = 1; i < nuevo.length - 1; i++) {
+      const obj = resolver(nuevo[i]);
+      if (!obj) continue;
+      if (nuevo[i].tipo === 'escala') nuevasEscalas.push(obj);
+      else nuevasParadas.push(obj);
+    }
+
+    state.origen = origObj;
+    state.destino = destObj;
+    state.escalas.splice(0, state.escalas.length, ...nuevasEscalas);
+    state.paradas.splice(0, state.paradas.length, ...nuevasParadas);
+    sincronizarOrden();
+
+    if (typeof actualizarEstadoBotonCalcular === 'function') actualizarEstadoBotonCalcular();
+    if (typeof _actualizarTextoBotonesOrden === 'function') _actualizarTextoBotonesOrden();
+    if (typeof _limpiarTurfYListado === 'function') _limpiarTurfYListado();
+    if (typeof calcularRutaPrincipal === 'function') {
+      try {
+        await calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
+      } catch (err) {
+        console.warn('Error al recalcular tras mover extremos:', err);
+      }
+    }
+    renderizarParadas();
+  }
+
+  /** Desde el menú contextual de una parada: hace que ese lugar sea el destino
+   *  y calcula la ruta en avión hasta él. */
+  function llegarEnAvionAParada(parada) {
+    if (!parada || typeof calcularRutaAerea !== 'function') return;
+    if (state.destino && state.destino.id != null && String(state.destino.id) === String(parada.id)) return;
+    state.destino = parada;
+    state.paradas = state.paradas.filter((p) => String(p.id) !== String(parada.id));
+    sincronizarOrden();
+    if (typeof actualizarEstadoBotonCalcular === 'function') actualizarEstadoBotonCalcular();
+    if (typeof _actualizarTextoBotonesOrden === 'function') _actualizarTextoBotonesOrden();
+    if (typeof _limpiarTurfYListado === 'function') _limpiarTurfYListado();
+    calcularRutaAerea();
+    renderizarParadas();
   }
 
   function _pad2(n) { return String(n).padStart(2, '0'); }
@@ -1033,6 +1178,7 @@
     let diaInsertado = 0;
     let diaGrupo = null;       // contenedor (div) de las paradas del día actual
     let ultimoRegular = null;  // {item, etiqueta} de la última parada/pueblo renderizada
+    let kmActual = 0;          // km acumulados (desde el origen) al renderizar
 
     /** Fila de encabezado de día; al pulsarla se pliegan/despliegan sus paradas. */
     function crearFilaDia(d) {
@@ -1123,6 +1269,8 @@
       const li = document.createElement('li');
       li.className = 'parada-item parada-item--endpoint';
       li.dataset.tipoParada = tipo;
+      const extremo = tipo === 'origen' ? state.origen : state.destino;
+      if (extremo && extremo.id != null) li.dataset.paradaId = extremo.id;
 
       const num = document.createElement('span');
       num.className = 'parada-item__num';
@@ -1199,13 +1347,18 @@
       num.textContent = '✈';
       const nombreEl = document.createElement('span');
       nombreEl.className = 'parada-item__nombre';
-      nombreEl.textContent = (prefijo ? prefijo + ': ' : '') + (aeropuerto || '');
+      const marquee = document.createElement('span');
+      marquee.className = 'parada-item__marquee';
+      marquee.appendChild(document.createTextNode((prefijo ? prefijo + ': ' : '') + (aeropuerto || '')));
       if (distKm != null) {
         const distEl = document.createElement('span');
         distEl.className = 'parada-item__dist';
-        distEl.textContent = ' — ' + distKm.toFixed(1) + ' km';
-        nombreEl.appendChild(distEl);
+        const totalKm = kmActual + distKm;
+        distEl.textContent = ` — ${distKm.toFixed(1)} km (${totalKm.toFixed(1)} km)`;
+        marquee.appendChild(distEl);
+        kmActual = totalKm;
       }
+      nombreEl.appendChild(marquee);
       li.appendChild(num);
       li.appendChild(nombreEl);
       li.role = 'button';
@@ -1239,13 +1392,18 @@
       num.innerHTML = '<img src="public/boat.svg" alt="Puerto" style="width:12px;height:12px;filter:brightness(0) invert(1);">';
       const nombreEl = document.createElement('span');
       nombreEl.className = 'parada-item__nombre';
-      nombreEl.textContent = (prefijo ? prefijo + ': ' : '') + (puerto || '');
+      const marquee = document.createElement('span');
+      marquee.className = 'parada-item__marquee';
+      marquee.appendChild(document.createTextNode((prefijo ? prefijo + ': ' : '') + (puerto || '')));
       if (distKm != null) {
         const distEl = document.createElement('span');
         distEl.className = 'parada-item__dist';
-        distEl.textContent = ' — ' + distKm.toFixed(1) + ' km';
-        nombreEl.appendChild(distEl);
+        const totalKm = kmActual + distKm;
+        distEl.textContent = ` — ${distKm.toFixed(1)} km (${totalKm.toFixed(1)} km)`;
+        marquee.appendChild(distEl);
+        kmActual = totalKm;
       }
+      nombreEl.appendChild(marquee);
       li.appendChild(num);
       li.appendChild(nombreEl);
       li.role = 'button';
@@ -1292,6 +1450,7 @@
         distEl.textContent = e._segKm != null
           ? ` — ${e._segKm.toFixed(1)} km (${e._distKm.toFixed(1)} km)`
           : ` — (${e._distKm.toFixed(1)} km)`;
+        kmActual = Number(e._distKm);
       }
       marquee.appendChild(document.createTextNode(item.tipo === 'escala' ? formatMunicipio(e) : e.nombre));
       marquee.appendChild(distEl);
@@ -1359,6 +1518,7 @@
       const construirOpcionesContexto = () => {
         if (item.tipo === 'parada') {
           return [
+            { etiqueta: 'Llegar en avión a este lugar', accion: () => llegarEnAvionAParada(e) },
             { etiqueta: 'Ubicar en el mapa', accion: () => mostrarCuadroParada(e) },
             { etiqueta: 'Eliminar de la ruta', accion: () => eliminarParada(e.id) },
           ];
@@ -1468,5 +1628,7 @@
     _iniciarObservadorParadas();
     // Re-medir tras el layout (por si el panel aún no tenía dimensiones).
     requestAnimationFrame(() => _marcarMarqueeParadas());
+    // Drag & drop entre las paradas (los días no se mueven).
+    _initDragParadas();
   }
 

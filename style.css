@@ -498,7 +498,7 @@ input, select{ font-family: inherit; }
 /* Botón "Reiniciar" (PC): pequeño, con borde y letras rojas, a la derecha del
    título de paradas. En móvil no se muestra (ahí vive el botón flotante). */
 .btn-reiniciar-pc{
-  margin-left: 4px;
+  margin-left: auto;
   padding: 3px 10px;
   border: 1px solid #d64545;
   border-radius: 6px;
@@ -2077,8 +2077,7 @@ input, select{ font-family: inherit; }
 }
 
 /* Texto de la parada (nombre + distancias): cuando es muy largo se desplaza
-   gradualmente para poder leerse completo. En PC solo al pasar el cursor;
-   en móvil siempre. */
+   gradualmente para poder leerse completo, tanto en PC como en celular. */
 .parada-item__marquee{
   display: inline-block;
   white-space: nowrap;
@@ -2090,10 +2089,6 @@ input, select{ font-family: inherit; }
 @keyframes parada-marquee{
   from{ transform: translateX(0); }
   to{ transform: translateX(var(--overflow, -80px)); }
-}
-@media (min-width: 861px){
-  .parada-item__nombre--marquee .parada-item__marquee{ animation: none; }
-  .parada-item:hover .parada-item__nombre--marquee .parada-item__marquee{ animation: parada-marquee 3s linear infinite alternate; }
 }
 
 /* Tab altimetría en móvil */
@@ -2944,4 +2939,19 @@ input, select{ font-family: inherit; }
 .parada-item:hover{ background: #f0f4f2; border-color: var(--teal-500); }
 .parada-item:active{ background: #e6eee8; }
 .parada-item:focus-visible{ outline: 2px solid var(--teal-500); outline-offset: 1px; }
+
+/* Las paradas arrastrables (no días, ni conexiones aeropuerto/puerto, ni filas
+   de continuación) se indican con cursor de arrastre. El origen y el destino
+   también se pueden arrastrar. */
+.parada-item:not(.parada-item--dia):not(.parada-item--continua):not([data-tipo-parada="aeropuerto"]):not([data-tipo-parada="puerto"]){
+  cursor: grab;
+}
+.parada-item:not(.parada-item--dia):not(.parada-item--continua):not([data-tipo-parada="aeropuerto"]):not([data-tipo-parada="puerto"]):active{
+  cursor: grabbing;
+}
+/* El ghost (copia que queda en el lugar de la parada al arrastrar) se oculta:
+   solo se ve la parada que sigue al cursor. */
+.no-ghost{
+  opacity: 0;
+}
 

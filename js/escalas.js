@@ -10,21 +10,6 @@
     el.btnAgregarEscala.addEventListener('click', () => {
       agregarEscala();
     });
-    // El botón "Organizar" alterna la ordenación automática de pueblos y
-    // paradas; al activarlo se ordenan al instante.
-    if (el.btnAutoOrganizar) {
-      el.btnAutoOrganizar.addEventListener('click', () => {
-        const activo = el.btnAutoOrganizar.getAttribute('aria-pressed') === 'true';
-        el.btnAutoOrganizar.setAttribute('aria-pressed', String(!activo));
-        if (activo) {
-          // Al apagar la ordenación automática se muestran las flechas
-          // arriba/abajo para mover las paradas manualmente.
-          renderizarParadas();
-        } else {
-          organizarAutomaticamente();
-        }
-      });
-    }
   }
 
 
@@ -383,28 +368,46 @@
   /** Centra el mapa y muestra la ficha centrada de una parada (como la de un sitio). */
 
   async function organizarAutomaticamente(invalidarSitios = false) {
-    // Con el botón "Organizar" desactivado no se reordena nada: cada parada o
-    // pueblo se inserta en el orden que se agrega (la ruta se recalcula igual).
-    if (el.btnAutoOrganizar && el.btnAutoOrganizar.getAttribute('aria-pressed') !== 'true') return;
     if (!state.origen) return;
     sincronizarOrden();
-    const itemsConDistancia = state.orden.map((o) => {
+
+    // Criterio de cercanía mutua (vecino más cercano): se parte del origen A y
+    // se elige el punto más cercano a él (B), luego el más cercano a B (C), y
+    // así sucesivamente hasta agotar los puntos intermedios; el destino Z queda
+    // siempre al final.
+    const puntos = state.orden.map((o) => {
       if (o.tipo === 'escala') {
         const e = state.escalas.find((ee) => ee.id === o.id);
         if (!e || e.lat == null) return null;
-        const dist = FiltersModule.distanciaAOrigen(e, state.origen);
-        if (dist == null) return null;
-        return { ...o, distancia: dist };
+        return { tipo: 'escala', id: o.id, lat: Number(e.lat), lon: Number(e.lon) };
       }
       const p = state.paradas.find((pp) => pp.id === o.id);
-      if (!p) return null;
-      const dist = p.distanciaOrigenKm ?? FiltersModule.distanciaAOrigen(p, state.origen);
-      if (dist == null) return { ...o, distancia: Infinity };
-      return { ...o, distancia: dist };
+      if (!p || p.lat == null) return null;
+      return { tipo: 'parada', id: o.id, lat: Number(p.lat), lon: Number(p.lon) };
     }).filter(Boolean);
 
-    itemsConDistancia.sort((a, b) => (a.distancia ?? Infinity) - (b.distancia ?? Infinity));
-    state.orden = itemsConDistancia.map(({ tipo, id }) => ({ tipo, id }));
+    if (puntos.length) {
+      const ordenados = [];
+      const restantes = puntos.slice();
+      let actual = { lat: Number(state.origen.lat), lon: Number(state.origen.lon) };
+      while (restantes.length) {
+        let mejor = 0;
+        let mejorDist = Infinity;
+        for (let i = 0; i < restantes.length; i++) {
+          const d = turf.distance(
+            turf.point([actual.lon, actual.lat]),
+            turf.point([restantes[i].lon, restantes[i].lat]),
+            { units: 'kilometers' }
+          );
+          if (d < mejorDist) { mejorDist = d; mejor = i; }
+        }
+        ordenados.push(restantes.splice(mejor, 1)[0]);
+        actual = ordenados[ordenados.length - 1];
+      }
+      state.orden = ordenados.map(({ tipo, id }) => ({ tipo, id }));
+    } else {
+      state.orden = [];
+    }
 
     const nuevasEscalas = state.orden
       .filter((o) => o.tipo === 'escala')

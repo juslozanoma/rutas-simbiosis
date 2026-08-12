@@ -1859,8 +1859,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
   /** Dibuja/mueve el único marcador del lugar elegido en el buscador superior
    *  (municipio, departamento, sitio turístico, aeropuerto o puerto). Cada
-   *  selección reemplaza el marcador anterior. En un sitio turístico, un clic
-   *  en el marcador vuelve a abrir su ficha informativa. */
+   *  selección reemplaza el marcador anterior. Al hacer clic en el marcador se
+   *  vuelve a abrir su ficha informativa. */
   function mostrarLugarBuscado(tipo, item) {
     if (!capaLugarBuscado || !item) return;
     capaLugarBuscado.clearLayers();
@@ -1869,19 +1869,35 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     if (!isFinite(lat) || !isFinite(lon)) return;
     const marker = L.marker([lat, lon], { icon: _iconoLugarBuscado(tipo), zIndexOffset: 1200 });
     marker.bindTooltip(item.nombre || '', { direction: 'top', offset: [0, -16], className: 'site-label' });
-    if (tipo === 'Sitio turístico') {
-      marker.on('click', () => {
-        const sitios = (typeof TourismModule !== 'undefined' && typeof TourismModule.getSitios === 'function')
-          ? TourismModule.getSitios()
-          : [];
-        const sitio = sitios.find((s) => Number(s.lat) === lat && Number(s.lon) === lon)
-          || sitios.find((s) => String(s.nombre) === String(item.nombre));
-        if (sitio && typeof TourismModule.mostrarPopupSitio === 'function') {
-          TourismModule.mostrarPopupSitio(sitio);
-        }
-      });
-    }
+    marker.on('click', () => _abrirFichaMarcadorBuscado(tipo, item, lat, lon));
     marker.addTo(capaLugarBuscado);
+  }
+
+  /** Abre la ficha informativa del marcador elegido en el buscador superior,
+   *  buscando el objeto completo en el estado. */
+  function _abrirFichaMarcadorBuscado(tipo, item, lat, lon) {
+    if (tipo === 'Sitio turístico') {
+      if (typeof TourismModule === 'undefined' || typeof TourismModule.getSitios !== 'function') return;
+      const sitios = TourismModule.getSitios();
+      const sitio = sitios.find((s) => Number(s.lat) === lat && Number(s.lon) === lon)
+        || sitios.find((s) => String(s.nombre) === String(item.nombre));
+      if (sitio && typeof TourismModule.mostrarPopupSitio === 'function') TourismModule.mostrarPopupSitio(sitio);
+      return;
+    }
+    if (typeof mostrarCuadroInfra !== 'function') return;
+    if (tipo === 'Municipio') {
+      const m = (state.municipios || []).find((s) => Number(s.lat) === lat && Number(s.lon) === lon);
+      if (m) mostrarCuadroInfra('municipio', m);
+    } else if (tipo === 'Departamento') {
+      const d = (state.departamentos || []).find((s) => Number(s.lat) === lat && Number(s.lon) === lon);
+      if (d) mostrarCuadroInfra('departamento', d);
+    } else if (tipo === 'Aeropuerto') {
+      const a = (state.aeropuertos || []).find((s) => Number(s.latitud) === lat && Number(s.longitud) === lon);
+      if (a) mostrarCuadroInfra('aeropuerto', a);
+    } else if (tipo === 'Puerto') {
+      const p = (state.puertos || []).find((s) => Number(s.latitud) === lat && Number(s.longitud) === lon);
+      if (p) mostrarCuadroInfra('puerto', p);
+    }
   }
 
   function limpiarLugarBuscado() {

@@ -31,6 +31,9 @@
 <!-- Turf.js (análisis espacial) -->
 <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 
+<!-- Sortable.js (drag & drop de las paradas de la ruta) -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
 <!-- Tipografías -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -227,7 +230,6 @@
         <button type="button" id="btn-agregar-intermedio" class="btn-agregar-intermedio" title="Agregar pueblo intermedio" aria-label="Agregar pueblo intermedio">
           <svg class="icon-btn__icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
         </button>
-        <button type="button" id="btn-auto-organizar" class="auto-organizar-btn" title="Ordenar automáticamente pueblos y paradas por su distancia al origen" aria-label="Ordenar automáticamente pueblos y paradas" aria-pressed="true">Organizar</button>
         <button type="button" id="btn-reiniciar-pc" class="btn-reiniciar-pc" title="Reiniciar desde cero (borra las rutas subidas y el viaje)" aria-label="Reiniciar desde cero">Reiniciar</button>
       </h2>
       <select id="filtro-municipios-departamento" class="filtro-municipios-departamento" hidden aria-label="Filtrar municipios por departamento">
