@@ -1327,6 +1327,21 @@ input, select{ font-family: inherit; }
   background: #4a6fa5;
   box-shadow: 0 2px 6px rgba(20,32,27,0.35);
 }
+/* Marcador del lugar elegido en el buscador superior: círculo verde de 34px
+   (igual que el botón de vista satelital) con el símbolo blanco. */
+.lugar-buscado-pin{
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--teal-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(20,32,27,0.35);
+}
+.lugar-buscado-pin img{
+  width: 20px; height: 20px;
+  filter: brightness(0) invert(1);
+}
 
 .popup-sitio{ font-family: var(--font-body); min-width: 190px; }
 .popup-sitio__cat{
@@ -1909,6 +1924,15 @@ input, select{ font-family: inherit; }
   .empty-state__icono{ width: 132px; height: 132px; margin: 4px auto 2px; }
   .empty-state__texto{ max-width: 220px; }
 }
+/* Estado vacío de Descubre en celular: icono de simbiosis grande (180px) y
+   texto pegado a la imagen. */
+@media (max-width: 860px){
+  #sitios-vacio .empty-state__icono{
+    width: 180px;
+    height: 180px;
+    margin: 0px auto -10px;
+  }
+}
 #descubre-dropdown-categorias::-webkit-scrollbar{ width: 6px; height: 6px; }
 #descubre-dropdown-categorias::-webkit-scrollbar-thumb{ background: #9adcc8; border-radius: 4px; }
 #descubre-dropdown-categorias::-webkit-scrollbar-track{ background: transparent; }
@@ -2078,6 +2102,15 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="descubre"] .panel-desvios{ display: none !important; }
   #app[data-mobile-tab="descubre"] .panel-descubre-actions{ display: flex !important; }
   #app[data-mobile-tab="descubre"] .sitios-sort{ display: none !important; }
+  /* En Descubre (móvil): buscador con bordes ligeramente redondeados. */
+  #app[data-mobile-tab="descubre"] .panel-sites__busqueda{
+    height: auto;
+    padding: 7px 7px;
+    margin: 0 0 -1px;
+    border: 1px solid var(--line-300);
+    border-radius: 5px;
+    background: #ffffff;
+  }
   .panel-tab-bar{ display: none !important; }
   .btns-map{ display: none !important; }
   /* En móvil: el satélite va bajo la barra superior a la izquierda, la rosa de
@@ -2086,6 +2119,8 @@ input, select{ font-family: inherit; }
   .btns-map--gps{ display: flex !important; top: 50px; bottom: auto; left: 12px; right: auto; }
   .btns-map--gps-solo{ display: flex !important; top: 90px; bottom: auto; left: 12px; right: auto; }
   #btns-map-compass{ display: flex !important; top: 50px; bottom: auto; left: auto; right: 12px; }
+  /* El botón flotante de mostrar/ocultar sitios va debajo del satélite. */
+  .btn-toggle-sitios--float{ top: 90px; left: 12px; }
   .mobile-tab-bar{
     display: flex !important;
     position: fixed;
@@ -2107,7 +2142,7 @@ input, select{ font-family: inherit; }
 
   /* El panel de sitios siempre visible en móvil (muestra u oculta hijos según pestaña) */
   .panel-sites[hidden]{ display: flex !important; }
-  .panel-sites{ min-height: 0; gap: 6px; }
+  .panel-sites{ min-height: 0; gap: 0; }
 
   /* Las categorías siempre visibles en móvil en la pestaña Descubre */
   .panel-categorias[hidden]{ display: flex !important; }
@@ -2267,9 +2302,15 @@ input, select{ font-family: inherit; }
 .altimetria__chart{ width: 100%; height: 140px; position: relative; flex-shrink: 0; }
 .altimetria__chart svg{ width: 100%; height: 100%; display: block; }
 /* Altimetría vacía en móvil (sin rutas cargadas): la imagen de simbiosis sube
-   y queda superpuesta a la parte superior del cuadro del perfil. */
+   y queda superpuesta a la parte superior del cuadro del perfil, un poco más
+   grande y con el texto pegado a la imagen. */
 @media (max-width: 860px){
-  #altimetria-panel .empty-state__icono{ margin-top: -30px; }
+  #altimetria-panel .empty-state__icono{
+    width: 150px;
+    height: 150px;
+    margin-top: -25px;
+    margin-bottom: -8px;
+  }
 }
 .altimetria__hover-info{
   position: absolute;

@@ -44,6 +44,9 @@
       el.panelLocate.hidden = true;
       el.panelEscalas.hidden = true;
       el.panelParadas.hidden = true;
+      // En el tour, al abrir Descubre se ocultan el cuadro "Añadir otro
+      // destino" y la lista de destinos/sitios añadidos previamente.
+      if (el.panelTour) el.panelTour.hidden = true;
       el.panelDescubreActions.hidden = false;
       el.panelSitios.hidden = false;
       _syncBotonSitios();

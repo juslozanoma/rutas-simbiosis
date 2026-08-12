@@ -80,7 +80,7 @@
 
   function _aplicarEtiquetasTour() {
     if (el.btnTabPanelRutaLabel) el.btnTabPanelRutaLabel.textContent = 'TOUR';
-    if (el.btnTabRutaLabel) el.btnTabRutaLabel.textContent = 'tour';
+    if (el.btnTabRutaLabel) el.btnTabRutaLabel.textContent = 'Tour';
     if (el.icoTabRutaDesktop) {
       el.icoTabRutaDesktop.classList.remove('tab-icon--sign-post');
       el.icoTabRutaDesktop.classList.add('tab-icon--tour');
@@ -150,10 +150,14 @@
     _sitiosTour = [...mapa.values()];
     _mostrarSitiosTour();
     _renderTourDestinos();
-    // Reiniciar el cuadro con el texto "Añadir otro destino".
+    // Centrar la ciudad elegida en el mapa (zoom de municipio).
+    if (typeof MapModule !== 'undefined' && typeof MapModule.centrarEn === 'function') {
+      MapModule.centrarEn(Number(m.lat), Number(m.lon), 12);
+    }
+    // Reiniciar el cuadro con el texto "Añadir otro destino" (solo mostrarlo,
+    // sin enfocarlo ni abrir el teclado/lista).
     if (_comboTour && typeof _comboTour.limpiarTexto === 'function') _comboTour.limpiarTexto();
     if (el.tourInput) el.tourInput.placeholder = 'Añadir otro destino';
-    setTimeout(() => { if (el.tourInput) el.tourInput.focus(); }, 30);
   }
 
   function _quitarDestinoTour(id) {

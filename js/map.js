@@ -1834,20 +1834,33 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     map.setView([lat, lon], zoom != null ? zoom : map.getZoom(), { animate: true });
   }
 
-  /** Ícono del lugar seleccionado en el buscador superior, según su tipo:
-   *  municipio/departamento usan el pin con letra, el sitio turístico su SVG
-   *  de encrucijada y el aeropuerto/puerto su círculo verde con símbolo. */
+  /** Símbolo blanco del marcador del lugar elegido en el buscador superior,
+   *  según su tipo. Municipios y departamentos usan el mismo sign-post. */
+  const SIMBOLO_LUGAR_BUSCADO = {
+    'Sitio turístico': 'sign-post.svg',
+    'Municipio': 'sign-post.svg',
+    'Departamento': 'sign-post.svg',
+    'Aeropuerto': 'airplane.svg',
+    'Puerto': 'boat.svg',
+  };
+
+  /** Marcador del lugar elegido en el buscador superior: círculo verde de
+   *  34px (igual que el botón de vista satelital) con el símbolo blanco. */
   function _iconoLugarBuscado(tipo) {
-    if (tipo === 'Sitio turístico') return iconoSitio();
-    if (tipo === 'Aeropuerto') return iconoAeropuertoGlobal();
-    if (tipo === 'Puerto') return iconoPuertoGlobal();
-    const letra = tipo === 'Departamento' ? 'D' : 'M';
-    return _pinDivIcon(letra);
+    const simbolo = SIMBOLO_LUGAR_BUSCADO[tipo] || 'sign-post.svg';
+    return L.divIcon({
+      html: `<div class="lugar-buscado-pin"><img src="public/${simbolo}" alt="" width="20" height="20"/></div>`,
+      className: '',
+      iconSize: [34, 34],
+      iconAnchor: [17, 17],
+      popupAnchor: [0, -17],
+    });
   }
 
   /** Dibuja/mueve el único marcador del lugar elegido en el buscador superior
    *  (municipio, departamento, sitio turístico, aeropuerto o puerto). Cada
-   *  selección reemplaza el marcador anterior. */
+   *  selección reemplaza el marcador anterior. En un sitio turístico, un clic
+   *  en el marcador vuelve a abrir su ficha informativa. */
   function mostrarLugarBuscado(tipo, item) {
     if (!capaLugarBuscado || !item) return;
     capaLugarBuscado.clearLayers();
@@ -1856,6 +1869,17 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     if (!isFinite(lat) || !isFinite(lon)) return;
     const marker = L.marker([lat, lon], { icon: _iconoLugarBuscado(tipo), zIndexOffset: 1200 });
     marker.bindTooltip(item.nombre || '', { direction: 'top', offset: [0, -16], className: 'site-label' });
+    if (tipo === 'Sitio turístico') {
+      marker.on('click', () => {
+        const sitios = (typeof TourismModule !== 'undefined' && typeof TourismModule.getSitios === 'function')
+          ? TourismModule.getSitios()
+          : [];
+        const sitio = sitios.find((s) => Number(s.lat) === lat && Number(s.lon) === lon);
+        if (sitio && typeof TourismModule.mostrarPopupSitio === 'function') {
+          TourismModule.mostrarPopupSitio(sitio);
+        }
+      });
+    }
     marker.addTo(capaLugarBuscado);
   }
 

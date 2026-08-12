@@ -75,8 +75,38 @@ const BuscarLugarModule = (() => {
         MapModule.mostrarLugarBuscado(r.tipo, r);
       }
     }
+    // Abrir la ficha informativa del lugar seleccionado.
+    _abrirFichaLugar(r);
     _input.value = r.nombre;
     _cerrar(true);
+  }
+
+  /** Abre la ficha informativa del lugar elegido en el buscador, buscando el
+   *  objeto completo en el estado (municipios, departamentos, sitios,
+   *  aeropuertos o puertos). */
+  function _abrirFichaLugar(r) {
+    if (typeof TourismModule === 'undefined') return;
+    const porLatLon = (lat, lon, dato) => (dato || []).find((s) => Number(s.lat) === lat && Number(s.lon) === lon);
+    const porLatLonExt = (lat, lon, dato) => (dato || []).find((s) => Number(s.latitud) === lat && Number(s.longitud) === lon);
+    if (r.tipo === 'Sitio turístico') {
+      const sitio = porLatLon(r.lat, r.lon, state.sitios);
+      if (sitio && typeof TourismModule.mostrarPopupSitio === 'function') TourismModule.mostrarPopupSitio(sitio);
+      return;
+    }
+    if (typeof mostrarCuadroInfra !== 'function') return;
+    if (r.tipo === 'Municipio') {
+      const m = porLatLon(r.lat, r.lon, state.municipios);
+      if (m) mostrarCuadroInfra('municipio', m);
+    } else if (r.tipo === 'Departamento') {
+      const d = porLatLon(r.lat, r.lon, state.departamentos);
+      if (d) mostrarCuadroInfra('departamento', d);
+    } else if (r.tipo === 'Aeropuerto') {
+      const a = porLatLonExt(r.lat, r.lon, state.aeropuertos);
+      if (a) mostrarCuadroInfra('aeropuerto', a);
+    } else if (r.tipo === 'Puerto') {
+      const p = porLatLonExt(r.lat, r.lon, state.puertos);
+      if (p) mostrarCuadroInfra('puerto', p);
+    }
   }
 
   function _cerrar(conservarTexto) {
