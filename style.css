@@ -1082,11 +1082,16 @@ input, select{ font-family: inherit; }
   padding: 20px;
   pointer-events: none;
 }
-/* En celular, los cuadros de pueblos/paradas aparecen en la mitad inferior de la pantalla. */
+/* En celular, los cuadros de pueblos/paradas/sitios se integran al panel
+   inferior de la app: ocupan la franja del panel (mitad inferior) quedando
+   por encima de la barra de pestañas, en vez de flotar sobre el mapa. */
 .sitio-overlay--abajo{
   position: fixed;
-  inset: auto 0 0 0;
-  height: 50%;
+  top: 50%;
+  right: 0;
+  bottom: 56px;
+  left: 0;
+  height: auto;
   align-items: stretch;
   justify-content: stretch;
   padding: 0;
