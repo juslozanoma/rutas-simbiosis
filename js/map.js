@@ -30,6 +30,7 @@ const MapModule = (() => {
   let capaMunicipiosGlobal = null;    // L.layerGroup con los municipios filtrados (tecla M)
   let capaConexiones = null;    // L.layerGroup con las líneas de conexión de un puerto/aeropuerto
   let capaComparacion = null;   // L.layerGroup con los círculos naranjas de comparación (1 y 2)
+  let capaLugarBuscado = null;  // L.layerGroup con el marcador del lugar seleccionado en el buscador superior
   let _marcadoresComparacion = []; // L.marker de los círculos naranjas 1 y 2
   let capaRedFluvial = null;    // L.geoJSON con la red fluvial del grafo (tecla W)
   let _redFluvialVisible = false;
@@ -157,6 +158,7 @@ const MapModule = (() => {
     capaMunicipiosGlobal = L.layerGroup().addTo(map);
     capaConexiones = L.layerGroup().addTo(map);
     capaComparacion = L.layerGroup().addTo(map);
+    capaLugarBuscado = L.layerGroup().addTo(map);
 
     // El contenedor del mapa nace con un tamaño definido por CSS (flex),
     // por lo que conviene forzar un recálculo tras el primer render.
@@ -1679,6 +1681,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarAlertas();
     limpiarConexiones();
     if (capaRedFluvial) { map.removeLayer(capaRedFluvial); capaRedFluvial = null; _redFluvialVisible = false; }
+    limpiarLugarBuscado();
     clusterSitios.clearLayers();
   }
 
@@ -1829,6 +1832,35 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
   function centrarEn(lat, lon, zoom) {
     map.setView([lat, lon], zoom != null ? zoom : map.getZoom(), { animate: true });
+  }
+
+  /** Ícono del lugar seleccionado en el buscador superior, según su tipo:
+   *  municipio/departamento usan el pin con letra, el sitio turístico su SVG
+   *  de encrucijada y el aeropuerto/puerto su círculo verde con símbolo. */
+  function _iconoLugarBuscado(tipo) {
+    if (tipo === 'Sitio turístico') return iconoSitio();
+    if (tipo === 'Aeropuerto') return iconoAeropuertoGlobal();
+    if (tipo === 'Puerto') return iconoPuertoGlobal();
+    const letra = tipo === 'Departamento' ? 'D' : 'M';
+    return _pinDivIcon(letra);
+  }
+
+  /** Dibuja/mueve el único marcador del lugar elegido en el buscador superior
+   *  (municipio, departamento, sitio turístico, aeropuerto o puerto). Cada
+   *  selección reemplaza el marcador anterior. */
+  function mostrarLugarBuscado(tipo, item) {
+    if (!capaLugarBuscado || !item) return;
+    capaLugarBuscado.clearLayers();
+    const lat = Number(item.lat);
+    const lon = Number(item.lon);
+    if (!isFinite(lat) || !isFinite(lon)) return;
+    const marker = L.marker([lat, lon], { icon: _iconoLugarBuscado(tipo), zIndexOffset: 1200 });
+    marker.bindTooltip(item.nombre || '', { direction: 'top', offset: [0, -16], className: 'site-label' });
+    marker.addTo(capaLugarBuscado);
+  }
+
+  function limpiarLugarBuscado() {
+    if (capaLugarBuscado) capaLugarBuscado.clearLayers();
   }
 
   /** ¿Está un punto (lat, lon) dentro de la vista actual del mapa? */
@@ -2244,6 +2276,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     mostrarTooltipSitio,
     encuadrar,
     centrarEn,
+    mostrarLugarBuscado,
+    limpiarLugarBuscado,
     puntoEnVista,
     onMoveend,
   };

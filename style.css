@@ -2261,6 +2261,11 @@ input, select{ font-family: inherit; }
 .altimetria__seguimiento[aria-pressed="false"] img{ filter: brightness(0) invert(0.5); }
 .altimetria__chart{ width: 100%; height: 140px; position: relative; flex-shrink: 0; }
 .altimetria__chart svg{ width: 100%; height: 100%; display: block; }
+/* Altimetría vacía en móvil (sin rutas cargadas): la imagen de simbiosis sube
+   y queda superpuesta a la parte superior del cuadro del perfil. */
+@media (max-width: 860px){
+  #altimetria-panel .empty-state__icono{ margin-top: -30px; }
+}
 .altimetria__hover-info{
   position: absolute;
   left: 50%;

@@ -11,6 +11,10 @@
 const BuscarLugarModule = (() => {
   let _abierto = false;
   let _indice = null; // { total, items }
+  let _box = null;
+  let _btn = null;
+  let _input = null;
+  let _lista = null;
 
   /** Normaliza texto para comparar sin tildes ni mayúsculas. */
   function _normalizar(s) {
@@ -62,12 +66,25 @@ const BuscarLugarModule = (() => {
       .slice(0, 15);
   }
 
-  function _seleccionar(r, input, lista) {
-    if (typeof MapModule !== 'undefined' && typeof MapModule.centrarEn === 'function') {
-      MapModule.centrarEn(r.lat, r.lon, r.zoom);
+  function _seleccionar(r) {
+    if (typeof MapModule !== 'undefined') {
+      if (typeof MapModule.centrarEn === 'function') {
+        MapModule.centrarEn(r.lat, r.lon, r.zoom);
+      }
+      if (typeof MapModule.mostrarLugarBuscado === 'function') {
+        MapModule.mostrarLugarBuscado(r.tipo, r);
+      }
     }
-    lista.hidden = true;
-    input.value = r.nombre;
+    _input.value = r.nombre;
+    _cerrar(true);
+  }
+
+  function _cerrar(conservarTexto) {
+    _abierto = false;
+    _box.hidden = true;
+    _btn.setAttribute('aria-pressed', 'false');
+    _lista.hidden = true;
+    if (!conservarTexto) _input.value = '';
   }
 
   function init() {
@@ -77,14 +94,10 @@ const BuscarLugarModule = (() => {
     const btnBuscar = document.getElementById('buscar-lugar-btn');
     const lista = document.getElementById('buscar-lugar-lista');
     if (!btn || !box || !input || !btnBuscar || !lista) return;
-
-    function cerrar() {
-      _abierto = false;
-      box.hidden = true;
-      btn.setAttribute('aria-pressed', 'false');
-      lista.hidden = true;
-      input.value = '';
-    }
+    _box = box;
+    _btn = btn;
+    _input = input;
+    _lista = lista;
 
     function renderLista(query) {
       const resultados = _buscar(query);
@@ -102,14 +115,14 @@ const BuscarLugarModule = (() => {
         li.appendChild(nom);
         li.appendChild(sub);
         li.addEventListener('mousedown', (e) => e.preventDefault());
-        li.addEventListener('click', () => _seleccionar(r, input, lista));
+        li.addEventListener('click', () => _seleccionar(r));
         lista.appendChild(li);
       });
       lista.hidden = false;
     }
 
     btn.addEventListener('click', () => {
-      if (_abierto) { cerrar(); return; }
+      if (_abierto) { _cerrar(); return; }
       _abierto = true;
       box.hidden = false;
       btn.setAttribute('aria-pressed', 'true');
@@ -123,19 +136,17 @@ const BuscarLugarModule = (() => {
       if (e.key === 'Enter') {
         e.preventDefault();
         const resultados = _buscar(input.value);
-        if (resultados.length) _seleccionar(resultados[0], input, lista);
+        if (resultados.length) _seleccionar(resultados[0]);
       } else if (e.key === 'Escape') {
-        cerrar();
+        _cerrar();
       }
     });
 
     btnBuscar.addEventListener('click', () => {
       const resultados = _buscar(input.value);
-      if (resultados.length) _seleccionar(resultados[0], input, lista);
+      if (resultados.length) _seleccionar(resultados[0]);
     });
 
-    // El cuadro se mantiene abierto hasta volver a pulsar la lupa; solo se
-    // cierra el listado de resultados al hacer clic fuera de él.
     document.addEventListener('click', (e) => {
       if (!box.contains(e.target) && !btn.contains(e.target)) {
         lista.hidden = true;
