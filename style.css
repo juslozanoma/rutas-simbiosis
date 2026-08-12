@@ -726,7 +726,7 @@ input, select{ font-family: inherit; }
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0px;
 }
 #app[data-mobile-tab="descubre"] .panel-sites{
   width: auto;
@@ -867,8 +867,7 @@ input, select{ font-family: inherit; }
   display: flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid var(--line-300);
-  border-radius: var(--radius-md);
+  border-top: 1px solid #edebe6;
   padding: 0 10px;
   height: 36px;
   background: #ffffff;
@@ -922,7 +921,7 @@ input, select{ font-family: inherit; }
 .empty-state__texto{
   font-size: 0.8rem;
   display: block;
-  max-width: 260px;
+  max-width: 230px;
   margin: 0 auto;
 }
 
@@ -1460,16 +1459,115 @@ input, select{ font-family: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 7px 16px;
+  gap: 8px;
+  padding: 7px 8px 7px 16px;
   background: var(--ink-900);
   color: #ffffff;
   font-size: 0.8rem;
   font-weight: 500;
+  font-family: var(--font-body);
   pointer-events: none;
 }
 .mobile-summary strong{ color: #ffffff; font-weight: 700; }
-.stat-mobile--sep{ color: rgba(255,255,255,0.35); font-size: 0.9rem; }
+.stat-mobile{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-mobile--sep{ color: rgba(255,255,255,0.35); font-size: 0.9rem; flex-shrink: 0; }
+/* Botones de la barra superior (buscar, guardar, pantalla completa) */
+.mobile-summary__acciones{
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  pointer-events: auto;
+}
+.summary-btn{
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.12s;
+}
+.summary-btn:hover{ background: rgba(255,255,255,0.28); }
+.summary-btn[aria-pressed="true"]{ background: var(--teal-500); }
+.summary-btn__icon{ display: block; }
+
+/* Cuadro de búsqueda global, desplegado justo bajo la barra superior */
+.buscar-lugar{
+  position: absolute;
+  top: 42px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(520px, calc(100% - 24px));
+  z-index: 1100;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.28);
+  overflow: hidden;
+}
+.buscar-lugar[hidden]{ display: none; }
+.buscar-lugar__barra{
+  display: flex;
+  align-items: stretch;
+}
+.buscar-lugar__input{
+  flex: 1;
+  min-width: 0;
+  border: none;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  font-family: var(--font-body);
+  color: var(--text-strong);
+  background: transparent;
+}
+.buscar-lugar__input::placeholder{ color: var(--text-muted); }
+.buscar-lugar__input:focus{ outline: none; }
+.buscar-lugar__btn{
+  width: 42px;
+  border: none;
+  background: var(--teal-500);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.buscar-lugar__btn:hover{ background: var(--teal-600); }
+.buscar-lugar__lista{
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border-top: 1px solid var(--line-200);
+  max-height: 260px;
+  overflow-y: auto;
+}
+.buscar-lugar__lista[hidden]{ display: none; }
+.buscar-lugar__item{
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.buscar-lugar__item:hover{ background: var(--teal-50); }
+.buscar-lugar__item--first{ background: var(--teal-50); }
+.buscar-lugar__item-nombre{
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-strong);
+}
+.buscar-lugar__item-tipo{
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
 
 /* Etiqueta flotante "Seguir ruta" (parte superior del mapa) */
 .seguir-ruta{
@@ -1570,25 +1668,6 @@ input, select{ font-family: inherit; }
 .btn-toggle-sitios--float[aria-pressed="false"]{ background: var(--bg-subtle); color: var(--text-muted); opacity: 0.5; }
 .btn-toggle-sitios--float[hidden]{ display: none !important; }
 .btn-toggle-sitios--float .btn-toggle-sitios__icon{ width: 20px; height: 20px; }
-
-/* Botón flotante de pantalla completa (solo móvil, debajo de la barra) */
-.btn-fullscreen{
-  display: none;
-  position: absolute;
-  top: 36px;
-  right: 12px;
-  z-index: 1000;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: none;
-  background: var(--teal-500);
-  color: #ffffff;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-.btn-fullscreen .btn-toggle-sitios__icon{ width: 20px; height: 20px; }
 
 /* Pestañas del panel (escritorio) */
 .panel-tab-bar{
@@ -1714,8 +1793,8 @@ input, select{ font-family: inherit; }
   filter: invert(27%) sepia(95%) saturate(3000%) hue-rotate(212deg) brightness(93%) contrast(104%) !important;
 }
 /* Rosa de los vientos: arrastrar alrededor del botón rota el mapa y un clic
-   lo vuelve a orientar al norte. En móvil va debajo del botón de pantalla
-   completa; en PC arriba a la derecha del mapa. */
+   lo vuelve a orientar al norte. En móvil va a la derecha de la barra
+   superior; en PC arriba a la derecha del mapa. */
 .btns-map--compass{
   top: 78px;
   bottom: auto;
@@ -1956,7 +2035,6 @@ input, select{ font-family: inherit; }
   .map-full{ flex: 0 0 50%; min-height: 0; }
   #app[data-mobile-panel="collapsed"] .map-full{ flex: 1 !important; }
   #app[data-mobile-panel="collapsed"] .side-panel{ display: none !important; }
-  .btn-fullscreen{ display: flex; }
 
   .side-panel{
     width: 100%;
@@ -2000,17 +2078,12 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="descubre"] .sitios-sort{ display: none !important; }
   .panel-tab-bar{ display: none !important; }
   .btns-map{ display: none !important; }
-  /* El botón GPS de la ruta desde archivo sí se muestra en móvil, arriba a la
-     izquierda: a la misma distancia de la barra superior que el botón de
-     pantalla completa (top: 36px, ver .btn-fullscreen). Al estar ahora en su
-     propio contenedor, cuando está visible el bloque de satélite/guardar baja
-     una fila para no superponerse. */
-  .btns-map--gps{ display: flex !important; top: 36px; bottom: auto; left: 12px; right: auto; }
-  .btns-map--gps-solo{ display: flex !important; top: 36px; bottom: auto; left: 12px; right: auto; }
-  #app[data-ruta-archivo="true"] .btns-map--gps{ top: 76px; }
-  /* La rosa de los vientos sí se muestra en móvil, debajo del botón de
-     pantalla completa (top: 36px + 34px de alto + 8px de margen). */
-  #btns-map-compass{ display: flex !important; top: 78px; bottom: auto; left: auto; right: 12px; }
+  /* En móvil: el satélite va bajo la barra superior a la izquierda, la rosa de
+     los vientos (direction) a la misma altura a la derecha y el GPS de la ruta
+     desde archivo debajo del satélite. */
+  .btns-map--gps{ display: flex !important; top: 50px; bottom: auto; left: 12px; right: auto; }
+  .btns-map--gps-solo{ display: flex !important; top: 90px; bottom: auto; left: 12px; right: auto; }
+  #btns-map-compass{ display: flex !important; top: 50px; bottom: auto; left: auto; right: 12px; }
   .mobile-tab-bar{
     display: flex !important;
     position: fixed;
@@ -2203,28 +2276,34 @@ input, select{ font-family: inherit; }
   font-weight: 500;
 }
 .altimetria__hover-info span:empty{ display: none; }
-/* Comparación de puntos: el texto de distancia/altura del perfil se compacta
-   para mostrar la distancia y la altura entre los dos puntos elegidos. */
-.altimetria__hover-info--comparar{ font-size: 0.62rem; gap: 8px; }
-/* Aviso flotante de comparación (selecciona el otro sitio / comparación activa) */
+/* Aviso flotante de comparación: centrado sobre el mapa (sin tener en cuenta el
+   panel), justo debajo de la barra superior de resumen. */
 .comparar-banner{
-  position: fixed;
-  top: 12px;
+  position: absolute;
+  top: 44px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 3000;
+  z-index: 5000;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
-  max-width: 92vw;
+  max-width: 92%;
+  flex-wrap: wrap;
   background: var(--teal-600);
   color: #ffffff;
   padding: 8px 14px;
-  border-radius: 999px;
+  border-radius: 14px;
   font-size: 0.78rem;
   font-weight: 600;
   font-family: var(--font-body);
   box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
+.comparar-banner__titulo{ white-space: nowrap; }
+.comparar-banner__stats{
+  font-weight: 600;
+  font-size: 0.74rem;
+  opacity: 0.95;
   white-space: nowrap;
 }
 .comparar-banner__cerrar{
@@ -2505,6 +2584,23 @@ input, select{ font-family: inherit; }
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 .marcando-pin--a{ background: #e5a000; }
+
+/* Círculos naranjas de comparación (puntos 1 y 2) sobre la ruta */
+.comparar-pin{
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #d96c2f;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  border: 2px solid #ffffff;
+}
 
 /* Diálogo modal de confirmación */
 .dialog-overlay{

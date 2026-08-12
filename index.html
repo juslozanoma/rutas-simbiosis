@@ -39,20 +39,38 @@
   <!-- ============ MAPA A PANTALLA COMPLETA ============ -->
   <main class="map-full">
     <div class="mobile-summary" id="mobile-summary">
-      <span class="stat-mobile stat-mobile--dist">Distancia: <strong class="mono" id="stat-distancia-mobile">—</strong></span>
+      <span class="stat-mobile stat-mobile--dist">Distancia: <strong id="stat-distancia-mobile">—</strong></span>
       <span class="stat-mobile stat-mobile--sep" aria-hidden="true">·</span>
-      <span class="stat-mobile stat-mobile--dur">Tiempo: <strong class="mono" id="stat-tiempo-mobile">—</strong></span>
+      <span class="stat-mobile stat-mobile--dur">Tiempo: <strong id="stat-tiempo-mobile">—</strong></span>
+      <div class="mobile-summary__acciones">
+        <button type="button" id="btn-buscar-lugar" class="summary-btn" title="Buscar un sitio en el mapa" aria-label="Buscar un sitio en el mapa" aria-pressed="false">
+          <svg class="summary-btn__icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+        </button>
+        <button type="button" id="btn-guardar" class="summary-btn" title="Guardar el estado del mapa" aria-label="Guardar el estado del mapa">
+          <img src="public/save.svg" alt="" width="15" height="15" style="filter: brightness(0) invert(1);">
+        </button>
+        <button type="button" id="btn-fullscreen" class="summary-btn" title="Pantalla completa" aria-label="Activar o desactivar pantalla completa">
+          <svg class="summary-btn__icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        </button>
+      </div>
     </div>
     <div class="seguir-ruta" id="seguir-ruta" hidden>
       <span class="seguir-ruta__dot" aria-hidden="true"></span>
       <span id="seguir-ruta-contenido">Seguir ruta</span>
     </div>
     <div id="map" role="application" aria-label="Mapa interactivo de la ruta y los sitios turísticos"></div>
+    <!-- Cuadro de búsqueda global (se despliega bajo la barra superior) -->
+    <div class="buscar-lugar" id="buscar-lugar" hidden>
+      <div class="buscar-lugar__barra">
+        <input type="search" id="buscar-lugar-input" class="buscar-lugar__input" placeholder="Buscar municipio, departamento, sitio, aeropuerto, puerto…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Buscar un sitio en el mapa">
+        <button type="button" id="buscar-lugar-btn" class="buscar-lugar__btn" title="Buscar" aria-label="Buscar">
+          <svg class="summary-btn__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+        </button>
+      </div>
+      <ul class="buscar-lugar__lista" id="buscar-lugar-lista" hidden></ul>
+    </div>
     <button type="button" id="btn-toggle-sitios-float" class="btn-toggle-sitios btn-toggle-sitios--float" title="Mostrar/ocultar sitios en el mapa" aria-pressed="true" hidden>
       <svg class="btn-toggle-sitios__icon" viewBox="0 0 32 32" width="20" height="20" fill="currentColor"><path d="M29.83,17.45l-2-3A1,1,0,0,0,27,14H17V12h8a1,1,0,0,0,1-1V5a1,1,0,0,0-1-1H17V3a1,1,0,0,0-2,0V4H6a1,1,0,0,0-.71.29l-3,3a1,1,0,0,0,0,1.41l3,3A1,1,0,0,0,6,12h9v2H7a1,1,0,0,0-1,1v6a1,1,0,0,0,1,1h8v6H11a1,1,0,0,0,0,2H21a1,1,0,0,0,0-2H17V22H27a1,1,0,0,0,.83-.45l2-3A1,1,0,0,0,29.83,17.45Z"/></svg>
-    </button>
-    <button type="button" id="btn-fullscreen" class="btn-fullscreen" title="Pantalla completa" aria-label="Activar o desactivar pantalla completa">
-      <svg class="btn-toggle-sitios__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
     </button>
     <!-- Altimetría panel (sobre el mapa) -->
     <div id="altimetria" class="altimetria" hidden>
@@ -81,13 +99,10 @@
         <img src="public/gps.svg" alt="" width="22" height="22" style="filter: brightness(0) invert(1);">
       </button>
     </div>
-    <!-- Botones de satélite y guardar -->
+    <!-- Botones de satélite -->
     <div class="btns-map btns-map--gps" id="btns-map-gps">
       <button type="button" id="btn-satelite" class="btn-map-icon" title="Cambiar a vista satelital" aria-label="Cambiar a vista satelital" aria-pressed="false">
         <img src="public/satellite.svg" alt="" width="20" height="20" style="filter: brightness(0) invert(1);">
-      </button>
-      <button type="button" id="btn-guardar" class="btn-map-icon" title="Guardar el estado del mapa" aria-label="Guardar el estado del mapa">
-        <img src="public/save.svg" alt="" width="20" height="20" style="filter: brightness(0) invert(1);">
       </button>
     </div>
     <!-- Rosa de los vientos (rotar el mapa en cualquier momento) -->
@@ -414,6 +429,7 @@
 <script src="js/rutaArchivo.js"></script>
 <script src="js/tour.js"></script>
 <script src="js/fluvial.js"></script>
+<script src="js/buscarLugar.js"></script>
 <script src="js/persistenciaJson.js"></script>
 <script src="js/app.js"></script>
 <!-- <script src="https://cdn.jsdelivr.net/npm/eruda"></script>

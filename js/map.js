@@ -29,6 +29,8 @@ const MapModule = (() => {
   let capaDepartamentosGlobal = null; // L.layerGroup con los departamentos en sus capitales (tecla D)
   let capaMunicipiosGlobal = null;    // L.layerGroup con los municipios filtrados (tecla M)
   let capaConexiones = null;    // L.layerGroup con las líneas de conexión de un puerto/aeropuerto
+  let capaComparacion = null;   // L.layerGroup con los círculos naranjas de comparación (1 y 2)
+  let _marcadoresComparacion = []; // L.marker de los círculos naranjas 1 y 2
   let capaRedFluvial = null;    // L.geoJSON con la red fluvial del grafo (tecla W)
   let _redFluvialVisible = false;
   let _capaBaseOSM = null;      // capa base estándar OpenStreetMap
@@ -154,6 +156,7 @@ const MapModule = (() => {
     capaDepartamentosGlobal = L.layerGroup().addTo(map);
     capaMunicipiosGlobal = L.layerGroup().addTo(map);
     capaConexiones = L.layerGroup().addTo(map);
+    capaComparacion = L.layerGroup().addTo(map);
 
     // El contenedor del mapa nace con un tamaño definido por CSS (flex),
     // por lo que conviene forzar un recálculo tras el primer render.
@@ -719,7 +722,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         accion: () => { if (_onAgregarPuertoEn) _onAgregarPuertoEn(e.latlng.lat, e.latlng.lng); },
       });
     }
-    if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.tieneDatos && AltimetriaModule.tieneDatos()) {
+    // "Comparar este sitio" se ofrece siempre que haya una ruta dibujada en el
+    // mapa (haya o no altimetría abierta), para elegir puntos de comparación.
+    const hayRuta = _rutaGeojson && _rutaGeojson.geometry && _rutaGeojson.geometry.coordinates && _rutaGeojson.geometry.coordinates.length >= 2;
+    if (hayRuta && typeof AltimetriaModule !== 'undefined') {
       items.push({
         texto: 'Comparar este sitio',
         accion: () => {
@@ -776,8 +782,9 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
   function _onSeleccionCompararClick(ev) {
     if (!_onSeleccionComparar || !map) return;
-    // No interceptar los clics sobre el menú contextual del mapa.
-    if (ev.target && ev.target.closest && ev.target.closest('.ctx-menu')) return;
+    // No interceptar los clics sobre el menú contextual del mapa ni sobre el
+    // aviso flotante de comparación (botón de cerrar).
+    if (ev.target && ev.target.closest && ev.target.closest('.ctx-menu, .comparar-banner')) return;
     const rect = map.getContainer().getBoundingClientRect();
     const latlng = map.containerPointToLatLng(L.point(ev.clientX - rect.left, ev.clientY - rect.top));
     ev.stopPropagation();
@@ -786,6 +793,27 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       const punto = AltimetriaModule.puntoCompararDesdeLatLng(latlng.lat, latlng.lng);
       if (punto && _onSeleccionComparar) _onSeleccionComparar(punto);
     }
+  }
+
+  /** Dibuja/actualiza los círculos naranjas de los puntos de comparación (1 y 2)
+   *  sobre la ruta en el mapa. `puntos` es un arreglo con {lat, lon}. */
+  function actualizarMarcadoresComparacion(puntos) {
+    if (!capaComparacion) return;
+    capaComparacion.clearLayers();
+    _marcadoresComparacion = [];
+    if (!puntos || !puntos.length) return;
+    puntos.forEach((p, i) => {
+      if (!p || p.lat == null || p.lon == null) return;
+      const icon = L.divIcon({
+        html: '<div class="comparar-pin">' + (i + 1) + '</div>',
+        className: '',
+        iconSize: [26, 26],
+        iconAnchor: [13, 13],
+      });
+      const marker = L.marker([p.lat, p.lon], { icon, zIndexOffset: 1100, interactive: false });
+      marker.addTo(capaComparacion);
+      _marcadoresComparacion.push(marker);
+    });
   }
 
   function _limpiarMarcadoTramo() {
@@ -1145,6 +1173,9 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     if (_capaRutaVisible) { map.removeLayer(_capaRutaVisible); _capaRutaVisible = null; }
     if (_capaRutaHover) { map.removeLayer(_capaRutaHover); _capaRutaHover = null; }
     if (_capaFlechas) { map.removeLayer(_capaFlechas); _capaFlechas = null; }
+    if (capaComparacion) capaComparacion.clearLayers();
+    _marcadoresComparacion = [];
+    _rutaGeojson = null;
     limpiarTramoAereo();
     capaRuta = null;
   }
@@ -2165,6 +2196,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     cancelarMarcadoTramo,
     activarSeleccionComparar,
     desactivarSeleccionComparar,
+    actualizarMarcadoresComparacion,
     dibujarRuta,
     setAltimetriaActiva,
     habilitarArrastreRuta,
