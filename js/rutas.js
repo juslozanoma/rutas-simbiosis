@@ -17,6 +17,7 @@
       ponerEnCargaRuta(true, true);
       try {
         await aplicarRutaConDesvios({ mantenerMapa: true, conservarAltimetria: true });
+        limpiarCuadrosEscala();
         renderizarParadas();
       } catch (err) {
         console.warn('Error al recalcular ruta de transporte', err);
@@ -140,9 +141,9 @@
       }
 
       await aplicarRutaCalculada(ruta, { mantenerMapa: Boolean(conservarParadas) || opciones.mantenerMapa });
-      // Clean up escala DOM rows (pasan a la lista de paradas)
-      state.escalas.forEach((e) => { if (e._row && e._row.parentNode) e._row.remove(); });
-      state.escalas.forEach((e) => { delete e._row; });
+      // Los pueblos intermedios ya quedaron dentro de la ruta: se limpian sus
+      // cuadros de entrada para que no queden cuadros visibles sin usar.
+      limpiarCuadrosEscala();
       renderizarParadas();
 
       if (!conservarParadas) {
@@ -564,7 +565,7 @@
       // Los pueblos ya quedaron dentro de la ruta (en el perfil y las paradas):
       // se limpian sus cuadros de entrada para que no queden cuadros visibles
       // ni se acumulen al oprimir "+" de nuevo.
-      state.escalas.forEach((e) => { if (e._row && e._row.parentNode) e._row.remove(); });
+      limpiarCuadrosEscala();
       activarPanelTab('ruta');
       // Bug 1: el botón de altimetría debe quedar visible con la ruta aérea.
       _syncBotonAltimetria();
@@ -854,7 +855,7 @@
       // Los pueblos intermedios no forman parte de la ruta por río: se limpian
       // sus cuadros de entrada y se sincronizan los botones, igual que en la
       // ruta aérea.
-      state.escalas.forEach((e) => { if (e._row && e._row.parentNode) e._row.remove(); });
+      limpiarCuadrosEscala();
       activarPanelTab('ruta');
       _syncBotonAltimetria();
       _habilitarMostrarSitios();
@@ -1114,6 +1115,7 @@
       activarPanelTab('ruta');
       _syncBotonAltimetria();
       _habilitarMostrarSitios();
+      limpiarCuadrosEscala();
       if (!silencioso) {
         _mostrarNotificacion(`Ruta mixta: ${ao.ciudad || 'aeropuerto'} ✈ → ${ad.ciudad || ''} → 🚢 ${pd.ciudad || 'puerto'}`);
       }

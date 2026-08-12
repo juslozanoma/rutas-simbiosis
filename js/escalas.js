@@ -120,6 +120,15 @@
   }
 
 
+  /** Elimina los cuadros de entrada de los pueblos intermedios pendientes
+   *  (ya quedaron registrados en state.escalas y dentro de la ruta/perfil): se
+   *  quitan sus filas del panel y se libera la referencia `_row`. */
+  function limpiarCuadrosEscala() {
+    state.escalas.forEach((e) => { if (e._row && e._row.parentNode) e._row.remove(); });
+    state.escalas.forEach((e) => { delete e._row; });
+  }
+
+
   async function actualizarEscalas() {
     state.escalas.forEach((e) => {
       if (!e._row) return;

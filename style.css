@@ -576,11 +576,9 @@ input, select{ font-family: inherit; }
   border-radius: var(--radius-sm);
   background: #f9faf8;
   border: 1px solid var(--line-200);
-  border-left: 3px solid #4a6fa5;
   font-size: 0.78rem;
 }
 .parada-item--endpoint{
-  border-left-color: var(--teal-500);
   background: #f2f6f4;
 }
 .parada-item--dia{
@@ -609,7 +607,6 @@ input, select{ font-family: inherit; }
 }
 /* Continuidad de viaje: el día nuevo arranca en la última parada del anterior. */
 .parada-item--continua{
-  border-left: 3px dashed var(--teal-500);
   background: #f6faf8;
 }
 .parada-item__dia-nombre{

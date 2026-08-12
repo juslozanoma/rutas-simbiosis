@@ -188,7 +188,9 @@ const TourismModule = (() => {
       });
     }
 
-    _montarCuadroCentrado(nodo);
+    // En celular la ficha se muestra como hoja inferior (como con aeropuertos,
+    // municipios y puertos); en escritorio se mantiene centrada sobre el mapa.
+    _montarCuadroCentrado(nodo, true);
   }
 
   /**
