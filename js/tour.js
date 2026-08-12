@@ -10,7 +10,8 @@
  */
 
   let _comboTour = null;
-  let _sitiosTour = [];   // sitios acumulados de los destinos elegidos
+  let _sitiosTour = [];      // sitios acumulados de los destinos elegidos
+  let _sitiosTourActivos = []; // sitios que pasan los filtros (en el mapa)
 
   function _toggleTour() {
     if (_tourActivo) _desactivarTour();
@@ -22,6 +23,7 @@
     if (el.appRoot) el.appRoot.setAttribute('data-tour-activo', 'true');
     state.tourDestinos = [];
     _sitiosTour = [];
+    _sitiosTourActivos = [];
     state.categoriasSeleccionadas = [];
     _tourOrdenActivo = 'distancia';
     _tourOrdenDirNombre = 'asc';
@@ -48,6 +50,7 @@
     if (el.appRoot) el.appRoot.removeAttribute('data-tour-activo');
     state.tourDestinos = [];
     _sitiosTour = [];
+    _sitiosTourActivos = [];
     _limpiarSitiosTour();
     _quitarCerrarTour();
     if (_comboTour && typeof _comboTour.limpiarTexto === 'function') _comboTour.limpiarTexto();
@@ -152,6 +155,7 @@
         lat: m.lat,
         lon: m.lon,
         totalSitios: sitios.length,
+        sitios, // caché de los sitios a 30 km de este destino
       });
     }
     // Acumular los sitios únicos de todos los destinos.
@@ -160,7 +164,6 @@
     sitios.forEach((s) => mapa.set(String(s.id), s));
     _sitiosTour = [...mapa.values()];
     _mostrarSitiosTour();
-    _renderTourDestinos();
     // Tras elegir el primer destino se muestra la barra de distancia bajo el
     // cuadro "Añadir otro destino".
     const filaDist = document.getElementById('filtro-distancia-tour-row');
@@ -195,12 +198,12 @@
     const filaDist = document.getElementById('filtro-distancia-tour-row');
     if (filaDist) filaDist.hidden = state.tourDestinos.length < 1;
     _mostrarSitiosTour();
-    _renderTourDestinos();
   }
 
   function _mostrarSitiosTour() {
     state.sitiosFiltradosBase = _sitiosTour;
     const filtrados = _sitiosTourFiltrados();
+    _sitiosTourActivos = filtrados;
     state.sitiosFiltrados = filtrados;
     state.modoVisibilidad = 'completa';
     if (typeof renderizarSitios === 'function') renderizarSitios(filtrados);
@@ -219,6 +222,8 @@
     if (el.btnTabDescubre) el.btnTabDescubre.hidden = false;
     if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
     if (el.btnTabDescubre) el.btnTabDescubre.disabled = false;
+    // Refrescar la lista de destinos con los conteos activos según el filtro.
+    _renderTourDestinos();
   }
 
   /** Sitios del tour aplicando las categorías elegidas y el tope de distancia
@@ -324,15 +329,23 @@
   function _renderTourDestinos() {
     const lista = el.tourDestinosLista;
     if (!lista) return;
+    // Sitios activos en el mapa en este momento (según el filtro de distancia
+    // y las categorías elegidas).
+    const activos = new Set(
+      (_sitiosTourActivos && _sitiosTourActivos.length ? _sitiosTourActivos : _sitiosTourFiltrados())
+        .map((s) => String(s.id))
+    );
     lista.innerHTML = '';
     state.tourDestinos.forEach((d) => {
+      const sitios = d.sitios || _sitiosDePueblo(d);
+      const n = sitios.filter((s) => activos.has(String(s.id))).length;
       const li = Utils.crearElemento(`
         <li class="tour-destino-item">
           <span class="tour-destino-item__info">
             <span class="tour-destino-item__nombre">${d.nombre}</span>
             <span class="tour-destino-item__meta">${d.departamento || ''}</span>
           </span>
-          <span class="tour-destino-item__count">(${d.totalSitios})</span>
+          <span class="tour-destino-item__count">(${n})</span>
           <button type="button" class="tour-destino-item__btn" title="Quitar destino" aria-label="Quitar ${d.nombre}">&times;</button>
         </li>
       `);
@@ -355,7 +368,7 @@
   function _centrarDestinoTour(d) {
     if (!d || d.lat == null || d.lon == null) return;
     if (typeof MapModule === 'undefined') return;
-    const sitios = _sitiosDePueblo(d);
+    const sitios = d.sitios || _sitiosDePueblo(d);
     const coords = sitios
       .filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)))
       .map((s) => [Number(s.lat), Number(s.lon)]);

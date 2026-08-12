@@ -206,6 +206,38 @@
   const DIAS_SEMANA = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
   const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
+  let _observadorParadas = null; // re-mide el marquee al volver visible el panel
+
+  /** Marca los nombres largos (incluyendo distancias) para que el texto se
+   *  desplace dentro de la ficha y pueda leerse completo. */
+  function _marcarMarqueeParadas() {
+    if (!el.paradasLista) return;
+    el.paradasLista.querySelectorAll('.parada-item__nombre').forEach((nom) => {
+      const inner = nom.querySelector('.parada-item__marquee');
+      if (!inner) return;
+      if (nom.clientWidth < 1) return;
+      const overflow = inner.scrollWidth - nom.clientWidth;
+      if (overflow > 1) {
+        nom.classList.add('parada-item__nombre--marquee');
+        nom.style.setProperty('--overflow', -(overflow) + 'px');
+      } else {
+        nom.classList.remove('parada-item__nombre--marquee');
+        nom.style.removeProperty('--overflow');
+      }
+    });
+  }
+
+  /** Cuando el panel de paradas pasa de oculto a visible, se re-mide el
+   *  marquee (si se midió estando oculto el ancho era 0). */
+  function _iniciarObservadorParadas() {
+    if (_observadorParadas || !el.panelParadas) return;
+    _observadorParadas = new MutationObserver(() => {
+      if (!el.panelParadas.hidden) _marcarMarqueeParadas();
+    });
+    _observadorParadas.observe(el.panelParadas, { attributes: true, attributeFilter: ['hidden'] });
+    window.addEventListener('resize', () => _marcarMarqueeParadas());
+  }
+
   function _pad2(n) { return String(n).padStart(2, '0'); }
 
   /** Fecha del día `d` (1-based) según la fecha base fijada (o null si no hay). */
@@ -948,6 +980,19 @@
       return { tipo: 'parada', datos: p };
     }).filter(Boolean).filter((item) => !item.datos._dragGenerated);
 
+    // Distancia desde la parada anterior: diferencia del km acumulado entre
+    // paradas consecutivas (la primera mide desde el origen, km 0).
+    let prevKm = 0;
+    items.forEach((it) => {
+      const e = it.datos;
+      if (e && e._distKm != null) {
+        e._segKm = Math.max(0, Number(e._distKm) - prevKm);
+        prevKm = Number(e._distKm);
+      } else if (e) {
+        e._segKm = null;
+      }
+    });
+
     const total = items.length;
     el.paradasLista.innerHTML = '';
     const incluirExtremos = Boolean(state.rutaActual && state.origen && state.destino);
@@ -1090,7 +1135,13 @@
       if (tipo === 'destino' && state.rutaActual?.distanciaMetros) {
         const distEl = document.createElement('span');
         distEl.className = 'parada-item__dist';
-        distEl.textContent = ' — ' + (state.rutaActual.distanciaMetros / 1000).toFixed(1) + ' km';
+        // Distancia del tramo final + (distancia total desde el origen).
+        const totalKm = state.rutaActual.distanciaMetros / 1000;
+        const prevKm = (ultimoRegular && ultimoRegular.item && ultimoRegular.item.datos && ultimoRegular.item.datos._distKm != null)
+          ? Number(ultimoRegular.item.datos._distKm)
+          : 0;
+        const segKm = Math.max(0, totalKm - prevKm);
+        distEl.textContent = ` — ${segKm.toFixed(1)} km (${totalKm.toFixed(1)} km)`;
         nombreEl.appendChild(distEl);
       }
 
@@ -1232,13 +1283,19 @@
 
       const nombre = document.createElement('span');
       nombre.className = 'parada-item__nombre';
+      const marquee = document.createElement('span');
+      marquee.className = 'parada-item__marquee';
       const distEl = document.createElement('span');
       distEl.className = 'parada-item__dist';
       if (e._distKm != null) {
-        distEl.textContent = ' — ' + e._distKm.toFixed(1) + ' km';
+        // Guion largo + distancia desde la parada anterior + (desde el origen).
+        distEl.textContent = e._segKm != null
+          ? ` — ${e._segKm.toFixed(1)} km (${e._distKm.toFixed(1)} km)`
+          : ` — (${e._distKm.toFixed(1)} km)`;
       }
-      nombre.appendChild(document.createTextNode(item.tipo === 'escala' ? formatMunicipio(e) : e.nombre));
-      nombre.appendChild(distEl);
+      marquee.appendChild(document.createTextNode(item.tipo === 'escala' ? formatMunicipio(e) : e.nombre));
+      marquee.appendChild(distEl);
+      nombre.appendChild(marquee);
 
       const acciones = document.createElement('div');
       acciones.className = 'parada-item__acciones';
@@ -1403,5 +1460,13 @@
     if (incluirExtremos) {
       agregarItem(crearFilaExtremo('Z', formatMunicipio(state.destino), 'destino'));
     }
+
+    // Nombres largos (incluyendo distancias): se marcan para que el texto se
+    // desplace y pueda leerse completo. En PC la animación solo corre al pasar
+    // el cursor; en móvil siempre.
+    _marcarMarqueeParadas();
+    _iniciarObservadorParadas();
+    // Re-medir tras el layout (por si el panel aún no tenía dimensiones).
+    requestAnimationFrame(() => _marcarMarqueeParadas());
   }
 

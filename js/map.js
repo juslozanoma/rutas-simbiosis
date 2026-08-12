@@ -1874,7 +1874,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         const sitios = (typeof TourismModule !== 'undefined' && typeof TourismModule.getSitios === 'function')
           ? TourismModule.getSitios()
           : [];
-        const sitio = sitios.find((s) => Number(s.lat) === lat && Number(s.lon) === lon);
+        const sitio = sitios.find((s) => Number(s.lat) === lat && Number(s.lon) === lon)
+          || sitios.find((s) => String(s.nombre) === String(item.nombre));
         if (sitio && typeof TourismModule.mostrarPopupSitio === 'function') {
           TourismModule.mostrarPopupSitio(sitio);
         }

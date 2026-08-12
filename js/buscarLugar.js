@@ -205,7 +205,11 @@ const BuscarLugarModule = (() => {
         const items = Array.from(lista.children);
         if (!items.length) return;
         let idx = items.findIndex((li) => li.classList.contains('buscar-lugar__item--activo'));
-        if (idx < 0) idx = e.key === 'ArrowDown' ? -1 : items.length;
+        if (idx < 0) {
+          // Sin resaltado, el usuario ya está posicionado en el primer resultado
+          // (--first): bajar va al segundo; subir resalta el primero.
+          idx = e.key === 'ArrowDown' ? 0 : -1;
+        }
         idx = e.key === 'ArrowDown' ? Math.min(items.length - 1, idx + 1) : Math.max(0, idx - 1);
         _resaltar(idx);
       } else if (e.key === 'Escape') {

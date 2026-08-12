@@ -612,6 +612,13 @@ input, select{ font-family: inherit; }
 .parada-item--continua{
   background: #f6faf8;
 }
+/* Paradas de conexión (aeropuerto/puerto): un poco de sangría para distinguir
+   los puntos de enlace de los pueblos/paradas de la ruta. */
+.parada-item[data-tipo-parada="aeropuerto"],
+.parada-item[data-tipo-parada="puerto"]{
+  margin-left: 20px;
+  padding-left: 10px;
+}
 .parada-item__dia-nombre{
   font-size: 0.72rem;
   font-weight: 700;
@@ -2066,6 +2073,27 @@ input, select{ font-family: inherit; }
 .parada-item__nombre .parada-item__dist{
   display: inline;
   font-weight: 400;
+  font-size: 11px; /* un poco más pequeño que el nombre */
+}
+
+/* Texto de la parada (nombre + distancias): cuando es muy largo se desplaza
+   gradualmente para poder leerse completo. En PC solo al pasar el cursor;
+   en móvil siempre. */
+.parada-item__marquee{
+  display: inline-block;
+  white-space: nowrap;
+  will-change: transform;
+}
+.parada-item__nombre--marquee .parada-item__marquee{
+  animation: parada-marquee 3s linear infinite alternate;
+}
+@keyframes parada-marquee{
+  from{ transform: translateX(0); }
+  to{ transform: translateX(var(--overflow, -80px)); }
+}
+@media (min-width: 861px){
+  .parada-item__nombre--marquee .parada-item__marquee{ animation: none; }
+  .parada-item:hover .parada-item__nombre--marquee .parada-item__marquee{ animation: parada-marquee 3s linear infinite alternate; }
 }
 
 /* Tab altimetría en móvil */
