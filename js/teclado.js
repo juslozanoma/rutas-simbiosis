@@ -27,22 +27,15 @@
     // Lift MÍNIMO: el bloque sube solo lo necesario para que el cuadro
     // enfocado quede sobre el teclado, no el teclado completo (eso los
     // llevaba demasiado arriba). Si el cuadro ya está visible, no se sube.
-    // Con la lista del cuadro ABIERTA, se reserva además su alto para que
-    // el menú quepa desplegándose hacia abajo.
+    // Con el teclado abierto la lista del cuadro se despliega hacia ARRIBA
+    // (ver ajustarComboAlTeclado): el menú va sobre el cuadro, dentro del
+    // panel, así que el lift solo necesita despejar el cuadro del teclado.
     const altoVisible = window.innerHeight - cubierto;
     let lift = cubierto;
     const act = document.activeElement;
     if (esCampoTeclado(act)) {
       const r = act.getBoundingClientRect();
-      let extra = 0;
-      if (esTriggerCombo(act)) {
-        const lista = act.parentElement && act.parentElement.querySelector('.combo__list');
-        if (lista && !lista.hidden) {
-          const tope = lista.classList.contains('combo__list--6') ? 200 : 170;
-          extra = Math.min(tope, Math.max(40, lista.scrollHeight));
-        }
-      }
-      const necesario = Math.max(0, Math.round(r.bottom + 8 + extra - altoVisible));
+      const necesario = Math.max(0, Math.round(r.bottom + 8 - altoVisible));
       lift = Math.min(cubierto, necesario);
     }
     app.style.setProperty('--teclado-alto', lift + 'px');
@@ -147,11 +140,12 @@
     });
   }
 
-  /** En móvil, el menú de opciones del cuadro se despliega SIEMPRE hacia
-   *  abajo; su alto máximo se limita al espacio visible bajo el cuadro (el
-   *  bloque completo sube con el teclado lo necesario para que quepa, ver
-   *  reposicionarInterfazTeclado). El cuadro enfocado lo sube el bloque
-   *  (teclado-abierto), por eso aquí no se usa scrollIntoView: sumado al
+  /** En móvil, el menú de opciones del cuadro se despliega hacia abajo cuando
+   *  el teclado está cerrado y hacia ARRIBA cuando el teclado está abierto (el
+   *  teclado taparía la zona inferior). Su alto máximo se limita al espacio
+   *  visible sobre el cuadro (el bloque sube con el teclado lo necesario para
+   *  que quepa, ver reposicionarInterfazTeclado). El cuadro enfocado lo sube el
+   *  bloque (teclado-abierto), por eso aquí no se usa scrollIntoView: sumado al
    *  transform subiría el cuadro fuera de la pantalla. */
 
   function ajustarComboAlTeclado(trigger, listEl) {
@@ -162,12 +156,27 @@
       listEl.style.bottom = '';
       return;
     }
-    const altoVisible = window.innerHeight - _tecladoCubierto();
-    const espacioAbajo = Math.max(0, altoVisible - trigger.getBoundingClientRect().bottom - 6);
+    const cubierto = _tecladoCubierto();
     const tope = listEl.classList.contains('combo__list--6') ? 200 : 170; // 6 u 5 elementos
-    listEl.style.maxHeight = Math.min(tope, Math.max(40, espacioAbajo)) + 'px';
-    listEl.style.top = 'calc(100% + 6px)';
-    listEl.style.bottom = 'auto';
+    const r = trigger.getBoundingClientRect();
+    if (cubierto > 0) {
+      // Teclado abierto: la lista se despliega hacia arriba. Se limita al
+      // espacio sobre el cuadro dentro del panel (su borde superior) para no
+      // cortarse con el overflow del side-panel.
+      const panel = listEl.closest('.side-panel');
+      const topePanel = panel ? panel.getBoundingClientRect().top : 0;
+      const espacioArriba = Math.max(0, Math.round(r.top - topePanel - 6));
+      listEl.style.maxHeight = Math.min(tope, Math.max(40, espacioArriba)) + 'px';
+      listEl.style.top = 'auto';
+      listEl.style.bottom = 'calc(100% + 6px)';
+    } else {
+      // Teclado cerrado: la lista se despliega hacia abajo.
+      const altoVisible = window.innerHeight;
+      const espacioAbajo = Math.max(0, altoVisible - r.bottom - 6);
+      listEl.style.maxHeight = Math.min(tope, Math.max(40, espacioAbajo)) + 'px';
+      listEl.style.top = 'calc(100% + 6px)';
+      listEl.style.bottom = 'auto';
+    }
   }
 
   /** Con el teclado abierto y un cuadro enfocado, recalcula el lift del bloque

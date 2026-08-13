@@ -282,7 +282,7 @@ input, select{ font-family: inherit; }
   align-items: center;
   gap: 8px;
   padding-left: 4px;
-  margin-top: -12px;
+  margin-top: -1px;
 }
 .escala-row .combo{ flex: 1; }
 .escala-row__remove{
@@ -315,9 +315,6 @@ input, select{ font-family: inherit; }
 }
 .escala-row__calc:hover{ background: var(--teal-600); border-color: var(--teal-600); }
 .escala-row__calc:active{ transform: translateY(1px); }
-.escala-row__calc .icon-btn__spinner{ width: 14px; height: 14px; border-width: 2px; }
-.escala-row__calc[data-loading="true"] .icon-btn__icon{ visibility: hidden; }
-.escala-row__calc[data-loading="true"] .icon-btn__spinner{ display: inline-block; animation: spin 0.75s linear infinite; }
 .combo{ position: relative; flex: 1; min-width: 0; }
 .combo__trigger{
   width: 100%;
@@ -439,30 +436,10 @@ input, select{ font-family: inherit; }
   mask-size: contain;
 }
 .icon-btn[data-loading="true"] .icon-btn__icon{ visibility: hidden; }
+#btn-calcular[data-loading="true"] .icon-btn__icon{ visibility: visible; }
 .icon-btn[data-loading="true"] .icon-btn__spinner{ display: inline-block; animation: spin 0.75s linear infinite; }
 @keyframes spin{ to{ transform: rotate(360deg); } }
 @keyframes spin{ to{ transform: rotate(360deg); } }
-
-/* Worm spinner dentro de btn-calcular */
-#btn-calcular .icon-btn__spinner{
-  width: 28px; height: 28px;
-  border: none;
-  border-radius: 0;
-  animation: none;
-  align-items: center;
-  justify-content: center;
-}
-#btn-calcular:not([data-loading="true"]) .icon-btn__spinner{
-  display: none;
-}
-#btn-calcular[data-loading="true"] .icon-btn__spinner{
-  display: flex;
-}
-#btn-calcular .icon-btn__spinner .pl{
-  width: 28px;
-  height: 28px;
-  display: block;
-}
 
 /* --- Paradas agregadas a la ruta --- */
 .panel-paradas{
@@ -2210,6 +2187,7 @@ input, select{ font-family: inherit; }
     overflow: hidden;
     padding: 12px 12px calc(var(--tabbar-h) + 1px);
     gap: 12px;
+    background: #ffffff;
   }
 
   /* En Ruta: panel-sites muestra solo el hint; paradas toma solo su altura de
@@ -2370,6 +2348,12 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="descubre"] .panel-descubre-actions{ padding-left: 12px; padding-right: 12px; }
   #app[data-mobile-tab="descubre"] .loading-sitios{ padding-left: 12px; padding-right: 12px; }
   #app[data-mobile-tab="descubre"] .panel-sites{ padding-left: 12px; padding-right: 12px; }
+
+  /* En celular los cuadros de información (sitios, paradas, escalas) se
+     integran al panel inferior: sin sombra, se apoyan plano sobre él. */
+  .sitio-overlay .popup-sitio{ box-shadow: none; }
+  .leaflet-popup-content-wrapper,
+  .leaflet-popup-tip{ box-shadow: none; }
 
 }
 

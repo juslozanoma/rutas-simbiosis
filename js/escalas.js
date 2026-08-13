@@ -59,8 +59,7 @@
     calcBtn.title = 'Calcular ruta con este pueblo intermedio';
     calcBtn.setAttribute('aria-label', 'Calcular ruta con este pueblo intermedio');
     calcBtn.innerHTML = `
-      <img class="icon-btn__icon" src="public/car.svg" alt="" width="18" height="18" style="filter:brightness(0) invert(1);">
-      <span class="icon-btn__spinner" aria-hidden="true"></span>`;
+      <img class="icon-btn__icon" src="public/car.svg" alt="" width="18" height="18" style="filter:brightness(0) invert(1);">`;
 
     row.appendChild(calcBtn);
 
@@ -72,8 +71,7 @@
     aereoBtn.title = 'Calcular la ruta en avión pasando por este pueblo';
     aereoBtn.setAttribute('aria-label', 'Calcular la ruta en avión pasando por este pueblo');
     aereoBtn.innerHTML = `
-      <svg class="icon-btn__icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
-      <span class="icon-btn__spinner" aria-hidden="true"></span>`;
+      <svg class="icon-btn__icon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>`;
 
     row.appendChild(aereoBtn);
     el.panelEscalas.appendChild(row);
