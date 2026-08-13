@@ -27,6 +27,9 @@
   --radius-md: 10px;
   --radius-lg: 14px;
   --bg-subtle: #f0efea;
+  /* Alto de la barra de pestañas inferior en móvil (48px de botones + 1px de
+     borde superior). El padding inferior del panel se ancla a este valor. */
+  --tabbar-h: 48px;
 }
 
 .side-panel *::-webkit-scrollbar{ width: 4px; height: 4px; }
@@ -522,19 +525,20 @@ input, select{ font-family: inherit; }
 /* Botón "Añadir parada" (agregar pueblo intermedio): centrado, debajo del
    listado de paradas (panel-paradas). */
 .btn-agregar-intermedio{
-  border-radius: 4px;
-  border: 1px solid var(--teal-500);
-  background: #ffffff;
-  color: var(--teal-600);
+  width: auto;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  padding: 7px 11px;
-  margin: 10px auto;
-  font-size: 12px;
-  font-weight: 500;
+  gap: 6px;
+  margin: 0 auto;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  font-weight: 400;
   font-family: inherit;
-  line-height: 1;
+  color: #8a867d;
+  background: #ffffff;
+  border: 1.5px solid var(--line-300);
+  border-radius: var(--radius-md);
+  cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 .btn-agregar-intermedio:hover{ background: var(--teal-500); color: #ffffff; }
@@ -2120,7 +2124,7 @@ input, select{ font-family: inherit; }
 }
 .mobile-tab-btn{
   flex: auto;
-  height: 48px;
+  height: var(--tabbar-h);
   border: none;
   background: transparent;
   color: var(--text-muted);
@@ -2204,7 +2208,7 @@ input, select{ font-family: inherit; }
     flex: 0 0 50%;
     min-height: 0;
     overflow: hidden;
-    padding: 12px 12px 56px;
+    padding: 12px 12px calc(var(--tabbar-h) + 1px);
     gap: 12px;
   }
 
@@ -2267,6 +2271,14 @@ input, select{ font-family: inherit; }
     right: 0;
     z-index: 1100;
   }
+
+  /* En móvil la barra de scroll de las listas largas se vuelve visible y verde
+     (delgada) para que el usuario note que la lista se puede desplazar. */
+  .side-panel *::-webkit-scrollbar{ width: 4px; height: 4px; }
+  .side-panel *::-webkit-scrollbar-track{ background: transparent; }
+  .side-panel *::-webkit-scrollbar-thumb{ background: var(--teal-500); border-radius: 999px; }
+  .side-panel *::-webkit-scrollbar-button{ display: none; }
+  .side-panel *{ scrollbar-width: thin; scrollbar-color: var(--teal-500) transparent; }
 
   /* Ocultar elementos de escritorio en móvil */
   #btn-categorias{ display: none !important; }
@@ -2342,7 +2354,7 @@ input, select{ font-family: inherit; }
   #app.teclado-abierto .side-panel{ z-index: 1050; }
 
   /* Ajuste de padding del panel en móvil */
-  .side-panel{ padding: 12px 12px 56px; gap: 0px; }
+  .side-panel{ padding: 12px 12px calc(var(--tabbar-h) + 1px); gap: 0px; }
 
   /* Filtros más compactos en móvil */
   .filter-row{ gap: 6px; }

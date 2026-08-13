@@ -32,13 +32,15 @@
     const altoVisible = window.innerHeight - cubierto;
     let lift = cubierto;
     const act = document.activeElement;
-    if (esTriggerCombo(act)) {
+    if (esCampoTeclado(act)) {
       const r = act.getBoundingClientRect();
       let extra = 0;
-      const lista = act.parentElement && act.parentElement.querySelector('.combo__list');
-      if (lista && !lista.hidden) {
-        const tope = lista.classList.contains('combo__list--6') ? 200 : 170;
-        extra = Math.min(tope, Math.max(40, lista.scrollHeight));
+      if (esTriggerCombo(act)) {
+        const lista = act.parentElement && act.parentElement.querySelector('.combo__list');
+        if (lista && !lista.hidden) {
+          const tope = lista.classList.contains('combo__list--6') ? 200 : 170;
+          extra = Math.min(tope, Math.max(40, lista.scrollHeight));
+        }
       }
       const necesario = Math.max(0, Math.round(r.bottom + 8 + extra - altoVisible));
       lift = Math.min(cubierto, necesario);
@@ -85,6 +87,7 @@
 
 
   const esTriggerCombo = (t) => Boolean(t && t.classList && t.classList.contains('combo__trigger'));
+  const esCampoTeclado = (t) => esTriggerCombo(t) || Boolean(t && t.id === 'buscar-sitios');
 
   // VirtualKeyboard API en modo superposición: el layout NO se encoge con el
   // teclado (el panel conserva su altura y las opciones no se cortan) y
@@ -99,18 +102,19 @@
   // intermedios que se crean dinámicamente desde las paradas).
 
   document.addEventListener('focusin', (e) => {
-    if (esTriggerCombo(e.target)) {
-      // Al editar un cuadro (origen, pueblo intermedio o destino) la barra
-      // inferior se oculta: no sube flotando sobre el teclado.
-      // El lift del bloque NO se aplica aquí: lo disparan los manejadores de
-      // focus/toggle de cada cuadro y los eventos del teclado, usando el
-      // estado FINAL de la lista (aplicar dos veces producía el doble salto).
+    if (esCampoTeclado(e.target)) {
+      // Al editar un cuadro (origen, pueblo intermedio, destino o el buscador
+      // de Descubre) la barra inferior se oculta: no sube flotando sobre el
+      // teclado. El lift del bloque NO se aplica aquí: lo disparan los
+      // manejadores de focus/toggle de cada cuadro y los eventos del teclado,
+      // usando el estado FINAL de la lista (aplicar dos veces producía el
+      // doble salto).
       el.appRoot.classList.add('combo-enfocado');
     }
   });
 
   document.addEventListener('focusout', (e) => {
-    if (!esTriggerCombo(e.relatedTarget)) {
+    if (!esCampoTeclado(e.relatedTarget)) {
       el.appRoot.classList.remove('combo-enfocado');
       reposicionarInterfazTeclado(false);
     }
@@ -118,17 +122,17 @@
 
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => {
-      if (esTriggerCombo(document.activeElement)) reposicionarInterfazTeclado(true);
+      if (esCampoTeclado(document.activeElement)) reposicionarInterfazTeclado(true);
       else reposicionarInterfazTeclado(false);
     });
     window.visualViewport.addEventListener('scroll', () => {
-      if (esTriggerCombo(document.activeElement)) reposicionarInterfazTeclado(true);
+      if (esCampoTeclado(document.activeElement)) reposicionarInterfazTeclado(true);
     });
   }
 
   if (navigator.virtualKeyboard && typeof navigator.virtualKeyboard.addEventListener === 'function') {
     navigator.virtualKeyboard.addEventListener('geometrychange', () => {
-      if (esTriggerCombo(document.activeElement)) reposicionarInterfazTeclado(true);
+      if (esCampoTeclado(document.activeElement)) reposicionarInterfazTeclado(true);
       else reposicionarInterfazTeclado(false);
     });
   }
@@ -172,7 +176,7 @@
    *  temporizadores. */
 
   function reencajarConTeclado() {
-    if (esMovil() && _tecladoCubierto() > 0 && esTriggerCombo(document.activeElement)) {
+    if (esMovil() && _tecladoCubierto() > 0 && esCampoTeclado(document.activeElement)) {
       reposicionarInterfazTeclado(true);
     }
   }
