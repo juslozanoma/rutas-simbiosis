@@ -137,6 +137,9 @@
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="#d64545" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
       <button type="button" id="btn-tab-panel-descubre" class="panel-tab">Descubre Colombia <span class="tab-icon tab-icon--colombia tab-icon--18" aria-hidden="true" id="ico-descubre-tab-desktop"></span><span class="badge-count mono" id="sitios-contador-tab-desktop" hidden>0</span></button>
+      <button type="button" id="btn-reiniciar-pc" class="panel-tab panel-tab--reiniciar" title="Reiniciar desde cero (borra las rutas subidas y el viaje)" aria-label="Reiniciar desde cero">
+        <span class="panel-tab--reiniciar__icon" aria-hidden="true"></span>
+      </button>
     </div>
 
     <!-- Ruta: origen/destino + paradas + monalisa -->
@@ -226,22 +229,18 @@
       <span class="loading-ruta__msg">Calculando la mejor ruta…</span>
     </div>
     <section class="panel-paradas" id="panel-paradas" hidden>
-      <h2 class="panel-paradas__title">
-        <span id="paradas-titulo">Paradas</span> <span class="badge-count mono" id="paradas-contador">0</span>
-        <button type="button" id="btn-agregar-intermedio" class="btn-agregar-intermedio" title="Agregar parada" aria-label="Agregar parada">Añadir parada</button>
-        <button type="button" id="btn-reiniciar-pc" class="btn-reiniciar-pc" title="Reiniciar desde cero (borra las rutas subidas y el viaje)" aria-label="Reiniciar desde cero">Reiniciar</button>
-      </h2>
       <select id="filtro-municipios-departamento" class="filtro-municipios-departamento" hidden aria-label="Filtrar municipios por departamento">
         <option value="">Filtrar por departamento…</option>
       </select>
       <ul class="paradas-lista" id="paradas-lista"></ul>
     </section>
+    <button type="button" id="btn-agregar-intermedio" class="btn-agregar-intermedio" title="Agregar parada" aria-label="Agregar parada">Añadir parada</button>
 
     <!-- Descubre Colombia -->
     <div class="panel-descubre-actions" id="panel-descubre-actions" hidden>
       <button type="button" id="btn-descubre-categorias" class="descubre-btn">Categorías</button>
       <button type="button" id="btn-descubre-ordenar" class="descubre-btn">Ordenar</button>
-      <button type="button" id="btn-descubre-desvios" class="descubre-btn">Distancia</button>
+      <button type="button" id="btn-descubre-desvios" class="descubre-btn">Filtrar</button>
       <button type="button" id="btn-descubre-visibles-btn" class="descubre-btn descubre-btn--round" title="Ver solo sitios visibles en el mapa" aria-label="Ver solo sitios visibles en el mapa" aria-pressed="false">
         <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
       </button>
@@ -258,31 +257,28 @@
       <div class="filter-row">
         <input type="checkbox" id="check-distancia" class="filter-row__check">
         <div class="filter-row__field">
-          <label for="filtro-distancia">
-            <span class="filter-row__label-text">Distancia máxima a la ruta</span>
-            <span class="filter-row__value mono" id="filtro-distancia-valor">5 km</span>
-          </label>
+          <span class="filter-row__label-text">Distancia</span>
           <div class="filter-row__range">
             <span class="filter-row__thumb-val" id="filtro-distancia-thumb">5 km</span>
             <input type="range" id="filtro-distancia" min="1" max="60" value="5" step="1" disabled>
           </div>
         </div>
-        <button type="button" id="btn-aplicar-distancia" class="icon-btn" title="Aplicar filtro de distancia" aria-label="Aplicar filtro de distancia" disabled>
-          <svg class="icon-btn__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+        <button type="button" id="btn-aplicar-distancia" class="icon-btn" title="Recalcular filtro de distancia" aria-label="Recalcular filtro de distancia" disabled>
+          <span class="icon-btn__icon icon-btn__replay" aria-hidden="true"></span>
           <span class="icon-btn__spinner" aria-hidden="true"></span>
         </button>
       </div>
       <div class="filter-row">
         <input type="checkbox" id="check-tiempo" class="filter-row__check">
         <div class="filter-row__field">
-          <label for="filtro-tiempo">
-            <span>Tiempo máximo de desvío</span>
-            <span class="filter-row__value mono" id="filtro-tiempo-valor">20 min</span>
-          </label>
-          <input type="range" id="filtro-tiempo" min="1" max="120" value="20" step="1" disabled>
+          <span class="filter-row__label-text">Tiempo</span>
+          <div class="filter-row__range">
+            <span class="filter-row__thumb-val" id="filtro-tiempo-thumb">20 min</span>
+            <input type="range" id="filtro-tiempo" min="1" max="120" value="20" step="1" disabled>
+          </div>
         </div>
-        <button type="button" id="btn-aplicar-tiempo" class="icon-btn" title="Aplicar filtro de tiempo" aria-label="Aplicar filtro de tiempo" disabled>
-          <svg class="icon-btn__icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+        <button type="button" id="btn-aplicar-tiempo" class="icon-btn" title="Recalcular filtro de tiempo" aria-label="Recalcular filtro de tiempo" disabled>
+          <span class="icon-btn__icon icon-btn__replay" aria-hidden="true"></span>
           <span class="icon-btn__spinner" aria-hidden="true"></span>
         </button>
       </div>

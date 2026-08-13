@@ -124,7 +124,7 @@
     el.checkDistancia.checked = true;
     el.filtroDistancia.disabled = false;
     el.filtroDistancia.value = '5';
-    el.filtroDistanciaValor.textContent = '5 km';
+    _actualizarThumbValor(el.filtroDistancia, 'filtro-distancia-thumb', 'km');
     if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
     if (el.btnTabDescubre) el.btnTabDescubre.disabled = false;
     if (el.icoDescubreTab) el.icoDescubreTab.hidden = true;

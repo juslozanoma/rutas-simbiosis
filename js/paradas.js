@@ -1067,9 +1067,6 @@
       const hint = Utils.crearElemento('<li class="paradas-vacio">Elige un departamento para ver sus municipios en el mapa y en la lista.</li>');
       el.paradasLista.appendChild(hint);
     }
-    el.paradasContador.textContent = (_categoriasVisibles && _categoriasFiltro)
-      ? String(state.sitiosFiltrados.length)
-      : String(n);
     if (el.paradasTitulo) el.paradasTitulo.textContent = _tituloInfra(tipos);
     if (el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = true;
     el.panelParadas.hidden = false;
@@ -1196,8 +1193,6 @@
     const total = items.length;
     el.paradasLista.innerHTML = '';
     const incluirExtremos = Boolean(state.rutaActual && state.origen && state.destino);
-    el.paradasContador.textContent = String(incluirExtremos ? total : total);
-    el.paradasContador.hidden = total === 0;
 
     // Días de viaje: cada parada queda en su día. Si se arrastró una parada a
     // otro día (state.diasOrden) se respeta esa posición manual; si no, se usa

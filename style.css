@@ -110,6 +110,7 @@ input, select{ font-family: inherit; }
   gap: 6px;
   flex-shrink: 0;
   padding: 0;
+  margin: 10px;
 }
 .panel-locate[hidden]{ display: none; }
 .panel-locate__row[hidden]{ display: none; }
@@ -423,6 +424,22 @@ input, select{ font-family: inherit; }
   border-top-color: var(--teal-500);
   border-radius: 50%;
 }
+/* Icono de recalcular de las barras de filtrar: símbolo replay.svg en el mismo
+   tono del texto del botón (mask con el archivo SVG). */
+.icon-btn__replay{
+  position: relative;
+  width: 16px; height: 16px;
+  display: block;
+  background-color: var(--text-strong);
+  -webkit-mask-image: url('public/replay.svg');
+  mask-image: url('public/replay.svg');
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
 .icon-btn[data-loading="true"] .icon-btn__icon{ visibility: hidden; }
 .icon-btn[data-loading="true"] .icon-btn__spinner{ display: inline-block; animation: spin 0.75s linear infinite; }
 @keyframes spin{ to{ transform: rotate(360deg); } }
@@ -458,18 +475,6 @@ input, select{ font-family: inherit; }
   padding: 0px 10px 8px 10px;
 }
 .panel-paradas[hidden]{ display: none; }
-.panel-paradas__title{
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  padding-left: 2px;
-}
 /* Botón "Organizar" del título de paradas: activo por defecto (verde, igual
    que Reiniciar pero verde); al desactivarlo se pone con borde y letra gris. */
 .auto-organizar-btn{
@@ -495,32 +500,33 @@ input, select{ font-family: inherit; }
   background: #ffffff;
 }
 .auto-organizar-btn[aria-pressed="false"]:hover{ background: var(--bg-subtle); }
-/* Botón "Reiniciar" (PC): pequeño, con borde y letras rojas, a la derecha del
-   título de paradas. En móvil no se muestra (ahí vive el botón flotante). */
-.btn-reiniciar-pc{
+/* Pestaña "Reiniciar" (PC): solo el símbolo de replay en rojo, 40px de ancho,
+   al extremo derecho de la barra de pestañas. En móvil no se muestra (ahí vive
+   el botón flotante). */
+.panel-tab--reiniciar{
+  flex: 0 0 40px;
+  height: 38px;
   margin-left: auto;
-  padding: 3px 10px;
-  border: 1px solid #d64545;
-  border-radius: 6px;
-  background: #ffffff;
-  color: #d64545;
-  font-size: 0.68rem;
-  font-weight: 600;
-  font-family: inherit;
-  text-transform: none;
-  letter-spacing: 0;
-  line-height: 1.4;
-  cursor: pointer;
-  transition: background 0.12s ease;
 }
-.btn-reiniciar-pc:hover{ background: #fdf0f0; }
-
-/* En modo infraestructura (P/A) el listado de puertos/aeropuertos no lleva la
-   fila de título (la palabra Puertos/Aeropuertos, ni Organizar ni Reiniciar). */
-#app[data-infra-activa="true"] .panel-paradas__title{ display: none; }
-/* Botón "Añadir parada" (agregar pueblo intermedio) */
-.btn-agregar-intermedio{
+#btn-reiniciar-pc.panel-tab:hover{ color: var(--text-strong); }
+.panel-tab--reiniciar__icon{
+  display: inline-block;
   flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  background-color: #d64545;
+  -webkit-mask-image: url('public/replay.svg');
+  mask-image: url('public/replay.svg');
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+/* Botón "Añadir parada" (agregar pueblo intermedio): centrado, debajo del
+   listado de paradas (panel-paradas). */
+.btn-agregar-intermedio{
   border-radius: 4px;
   border: 1px solid var(--teal-500);
   background: #ffffff;
@@ -530,7 +536,7 @@ input, select{ font-family: inherit; }
   justify-content: center;
   cursor: pointer;
   padding: 3px 10px;
-  margin: 0;
+  margin: 0 auto;
   font-size: 0.68rem;
   font-weight: 600;
   font-family: inherit;
@@ -541,8 +547,8 @@ input, select{ font-family: inherit; }
 .btn-agregar-intermedio{ display: none; }
 .btn-agregar-intermedio[hidden]{ display: none; }
 /* El "+" junto al cuadro de Origen no existe (igual en móvil y PC): el avión
-   ocupa su lugar en la fila del origen. Los pueblos intermedios se agregan
-   desde las paradas (botón "+" del título de la lista). */
+   ocupa su lugar en la fila del origen. Los pueblos intermedios se agregan con
+   el botón "Añadir parada", centrado debajo del listado de paradas. */
 #btn-agregar-escala{ display: none !important; }
 
 /* Tras calcular la ruta: se ocultan los cuadros de origen y destino y aparece el botón "+" */
@@ -717,14 +723,13 @@ input, select{ font-family: inherit; }
   flex-shrink: 0;
   cursor: pointer;
 }
-.filter-row__field{ flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
-.filter-row__field label{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 11px;
+.filter-row__field{ flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.filter-row__label-text{
+  font-size: 10px;
   color: var(--text-muted);
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 .filter-row__value{ color: var(--text-strong); font-size: 0.72rem; font-weight: 600; }
 .filter-row__field input[type="range"]{
@@ -789,10 +794,6 @@ input, select{ font-family: inherit; }
 }
 .btn-toggle-pill[aria-pressed="false"]{ background: #ffffff; color: var(--teal-500); }
 .btn-toggle-pill[aria-pressed="false"]:hover{ background: #f5f3ec; }
-.panel-paradas__title .badge-count{
-  background: var(--text-muted);
-  color: #ffffff;
-}
 .badge-count{
   background: var(--ink-900);
   color: #ffffff;
@@ -2038,16 +2039,13 @@ input, select{ font-family: inherit; }
 #app[data-tour-activo="true"] .filter-row__label-text{ display: none; }
 #app[data-tour-activo="true"] #btn-aplicar-distancia{ display: none; }
 #app[data-tour-activo="true"] #descubre-dropdown-desvios .filter-row:last-child{ display: none; }
-#app[data-tour-activo="true"] #filtro-distancia-valor{ display: none; }
 
-/* Barra de distancia: etiqueta pequeña con el valor en km sobre el indicador
-   (el pulgar) del deslizador. Solo se muestra en el modo Tour, donde el valor
-   lateral queda oculto. */
+/* Barra de distancia/tiempo: etiqueta pequeña con el valor (km o min) sobre el
+   indicador (el pulgar) del deslizador. */
 .filter-row__range{
   position: relative;
 }
 .filter-row__thumb-val{
-  display: none;
   position: absolute;
   bottom: calc(100% + 1px);
   left: 50%;
@@ -2059,7 +2057,6 @@ input, select{ font-family: inherit; }
   pointer-events: none;
   white-space: nowrap;
 }
-#app[data-tour-activo="true"] .filter-row__thumb-val{ display: block; }
 
 /* Barra de distancia en la pestaña del tour (bajo el cuadro "Añadir otro
    destino"), visible tras elegir el primer destino. Sin borde y con poco
@@ -2095,7 +2092,7 @@ input, select{ font-family: inherit; }
   will-change: transform;
 }
 .parada-item__nombre--marquee .parada-item__marquee{
-  animation: parada-marquee 3s linear infinite alternate;
+  animation: parada-marquee 5s linear infinite alternate;
 }
 @keyframes parada-marquee{
   from{ transform: translateX(0); }
@@ -2108,7 +2105,7 @@ input, select{ font-family: inherit; }
     animation: none;
   }
   .parada-item__nombre--marquee:hover .parada-item__marquee{
-    animation: parada-marquee 3s linear 1;
+    animation: parada-marquee 5s linear 1;
   }
 }
 
@@ -2274,6 +2271,7 @@ input, select{ font-family: inherit; }
 
   #app[data-mobile-tab="altimetria"] .panel-locate{ display: none; }
   #app[data-mobile-tab="altimetria"] .panel-paradas{ display: none; }
+  #app[data-mobile-tab="altimetria"] .btn-agregar-intermedio{ display: none !important; }
   #app[data-mobile-tab="altimetria"] #btn-mostrar-sitios{ display: none !important; }
   #app[data-mobile-tab="altimetria"] .panel-sites{ display: none !important; }
   #app[data-mobile-tab="altimetria"] .panel-descubre-actions{ display: none !important; }
@@ -2294,6 +2292,7 @@ input, select{ font-family: inherit; }
 
   #app[data-mobile-tab="descubre"] .panel-locate{ display: none; }
   #app[data-mobile-tab="descubre"] .panel-paradas{ display: none; }
+  #app[data-mobile-tab="descubre"] .btn-agregar-intermedio{ display: none !important; }
 
   /* En móvil, el panel de desvíos se muestra tras calcular la ruta */
   #app[data-mobile-tab="descubre"] .panel-sites > h2{ display: none; }
@@ -2352,7 +2351,7 @@ input, select{ font-family: inherit; }
 .altimetria[hidden]{ display: none; }
 
 /* Altimetría como pestaña del panel (móvil) */
-.altimetria-panel{ display: none; flex-direction: column; padding: 0px 2px; margin-top: 1px; }
+.altimetria-panel{ display: none; flex-direction: column; padding: 0px 2px; margin-top: 1px; position: relative; }
 .altimetria-panel[hidden]{ display: none; }
 
 .altimetria__header{
@@ -2446,36 +2445,41 @@ input, select{ font-family: inherit; }
    panel), justo debajo de la barra superior de resumen. */
 .comparar-banner{
   position: absolute;
-  top: 44px;
+  bottom: 6px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 5000;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 2px;
   max-width: 92%;
-  flex-wrap: wrap;
-  background: var(--teal-600);
-  color: #ffffff;
-  padding: 8px 14px;
-  border-radius: 14px;
+  background: #f0f4f2;
+  border: 1px solid var(--teal-500);
+  color: var(--teal-600);
+  padding: 8px 28px 8px 14px;
+  border-radius: 10px;
   font-size: 0.78rem;
   font-weight: 600;
   font-family: var(--font-body);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  text-align: center;
 }
-.comparar-banner__titulo{ white-space: nowrap; }
+.comparar-banner__titulo{ white-space: nowrap; color: var(--teal-600); }
 .comparar-banner__stats{
   font-weight: 600;
   font-size: 0.74rem;
-  opacity: 0.95;
+  color: var(--teal-600);
   white-space: nowrap;
 }
 .comparar-banner__cerrar{
+  position: absolute;
+  top: 4px;
+  right: 8px;
   background: transparent;
   border: none;
-  color: inherit;
+  color: var(--teal-600);
   font-size: 1.05rem;
   line-height: 1;
   cursor: pointer;

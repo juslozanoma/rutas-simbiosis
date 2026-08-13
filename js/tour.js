@@ -95,6 +95,7 @@
   function _aplicarEtiquetasTour() {
     if (el.btnTabPanelRutaLabel) el.btnTabPanelRutaLabel.textContent = 'TOUR';
     if (el.btnTabRutaLabel) el.btnTabRutaLabel.textContent = 'Tour';
+    if (el.btnDescubreDesvios) el.btnDescubreDesvios.textContent = 'Distancia';
     if (el.icoTabRutaDesktop) {
       el.icoTabRutaDesktop.classList.remove('tab-icon--sign-post');
       el.icoTabRutaDesktop.classList.add('tab-icon--tour');
@@ -107,6 +108,7 @@
 
   function _restaurarEtiquetasTour() {
     if (typeof _restaurarEtiquetaPestanaRuta === 'function') _restaurarEtiquetaPestanaRuta();
+    if (el.btnDescubreDesvios) el.btnDescubreDesvios.textContent = 'Filtrar';
     if (el.icoTabRutaDesktop) {
       el.icoTabRutaDesktop.classList.remove('tab-icon--tour');
       el.icoTabRutaDesktop.classList.add('tab-icon--sign-post');
@@ -304,7 +306,6 @@
     const tourSlider = document.getElementById('filtro-distancia-tour');
     if (descubre && descubre.id !== sliderOrigen) descubre.value = String(val);
     if (tourSlider && tourSlider.id !== sliderOrigen) tourSlider.value = String(val);
-    if (el.filtroDistanciaValor) el.filtroDistanciaValor.textContent = `${val} km`;
     _actualizarThumbKm(descubre, document.getElementById('filtro-distancia-thumb'));
     _actualizarThumbKm(tourSlider, document.getElementById('filtro-distancia-tour-thumb'));
     _mostrarSitiosTour();
@@ -316,7 +317,6 @@
     const tourSlider = document.getElementById('filtro-distancia-tour');
     if (tourSlider) { tourSlider.max = '30'; tourSlider.value = '30'; tourSlider.disabled = false; }
     if (el.filtroDistancia) { el.filtroDistancia.max = '30'; el.filtroDistancia.value = '30'; el.filtroDistancia.disabled = false; }
-    if (el.filtroDistanciaValor) el.filtroDistanciaValor.textContent = '30 km';
     _actualizarThumbKm(el.filtroDistancia, document.getElementById('filtro-distancia-thumb'));
     _actualizarThumbKm(tourSlider, document.getElementById('filtro-distancia-tour-thumb'));
   }

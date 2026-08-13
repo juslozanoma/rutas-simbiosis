@@ -173,7 +173,7 @@
 
         el.checkDistancia.checked = true;
         el.filtroDistancia.value = '5';
-        el.filtroDistanciaValor.textContent = '5 km';
+        _actualizarThumbValor(el.filtroDistancia, 'filtro-distancia-thumb', 'km');
         el.filtroDistancia.disabled = false;
 
         // Ocultar definitivamente el testigo "Mostrar sitios" al calcular desde un pueblo intermedio

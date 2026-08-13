@@ -6,6 +6,18 @@
  * ---------------------------------------------------------------------------
  */
 
+  /** Pone el valor (km o min) en letra pequeña sobre el pulgar del deslizador. */
+  function _actualizarThumbValor(slider, thumbId, unidad) {
+    const span = document.getElementById(thumbId);
+    if (!slider || !span) return;
+    const min = Number(slider.min) || 1;
+    const max = Number(slider.max) || 60;
+    const val = Number(slider.value);
+    const pct = Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
+    span.textContent = `${val} ${unidad}`;
+    span.style.left = `${pct}%`;
+  }
+
   function activarPanelTab(tab) {
     // Con el catálogo de puertos/aeropuertos (A/P) o la ruta desde archivo (K)
     // activos, la pestaña Descubre queda oculta y los cuadros de búsqueda no
@@ -316,11 +328,11 @@
       actualizarEstadoBotonesRetry();
     });
     el.filtroDistancia.addEventListener('input', () => {
-      el.filtroDistanciaValor.textContent = `${el.filtroDistancia.value} km`;
+      _actualizarThumbValor(el.filtroDistancia, 'filtro-distancia-thumb', 'km');
       actualizarEstadoBotonesRetry();
     });
     el.filtroTiempo.addEventListener('input', () => {
-      el.filtroTiempoValor.textContent = `${el.filtroTiempo.value} min`;
+      _actualizarThumbValor(el.filtroTiempo, 'filtro-tiempo-thumb', 'min');
       actualizarEstadoBotonesRetry();
     });
 

@@ -366,9 +366,16 @@ const AltimetriaModule = (() => {
     _bannerComparar.appendChild(stats);
     _bannerComparar.appendChild(btn);
     _bannerComparar.style.display = 'none';
-    // El aviso se centra sobre el área del mapa (no sobre toda la ventana) y va
-    // justo debajo de la barra superior de resumen.
-    const contenedor = document.querySelector('.map-full') || document.body;
+    // El aviso se coloca sobre el perfil visible (chart de altimetría): si el
+    // chart está dentro de su contenedor (que nunca se re-renderiza), se ancla
+    // a ese contenedor para que quede encima de la gráfica, no sobre el mapa.
+    const chartVisible = document.getElementById('altimetria-chart');
+    const chartPanelVisible = document.getElementById('altimetria-chart-panel');
+    const contenedor = (() => {
+      if (chartVisible && chartVisible.offsetParent !== null) return chartVisible.parentNode || document.querySelector('.map-full') || document.body;
+      if (chartPanelVisible && chartPanelVisible.offsetParent !== null) return chartPanelVisible.parentNode || document.querySelector('.map-full') || document.body;
+      return document.querySelector('.map-full') || document.body;
+    })();
     contenedor.appendChild(_bannerComparar);
     return _bannerComparar;
   }
@@ -425,8 +432,8 @@ const AltimetriaModule = (() => {
       _compararB = norm;
       _compararActivo = true;
       _esperandoComparar = false;
-      _activarSeleccionMapa(false);
-      _mostrarBannerComparar('Comparación de puntos activa', _resumenComparacion());
+
+      _mostrarBannerComparar('Comparación de puntos', _resumenComparacion());
       _actualizarMarcadoresComparacion();
       _renderizarTodo();
     }
