@@ -465,6 +465,7 @@
       // su visibilidad la decide activarPanelTab/_habilitarMostrarSitios.
       if (cargando) el.btnMostrarSitiosCercanos.hidden = true;
       if (el.panelParadas) el.panelParadas.hidden = cargando;
+      if (!silencioso && el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = cargando;
     }
   }
 
