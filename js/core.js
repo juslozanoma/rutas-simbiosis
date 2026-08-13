@@ -33,6 +33,7 @@
     orden: [],            // orden combinado de escalas + paradas para visualización
     dias: 1,              // número de días en que se dividen las paradas de la ruta
     diasNombres: {},      // día (1-based) → nombre personalizado del día
+    diasOrden: {},        // 'tipo:id' → día (1-based) en que quedó la parada al arrastrarla
     diaFechaBase: null,   // día (1-based) al que se le fijó una fecha
     diaFechaValor: null,  // fecha base 'YYYY-MM-DD' de ese día
     rutaBase: null,

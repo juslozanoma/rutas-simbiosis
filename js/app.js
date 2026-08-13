@@ -477,12 +477,23 @@
    *  departamento/sitio/frontera). */
   function _menuCatalogo(tipo, item, marker, clientX, clientY) {
     if (!item) return;
-    abrirMenuFila([
+    console.log('[menu] contexto catalogo tipo=', tipo, 'item=', item.nombre);
+    const opciones = [
       { etiqueta: 'Ver más información', accion: () => _verInfoCatalogo(tipo, item) },
       { etiqueta: 'Mover', accion: () => MapModule.iniciarArrastreCatalogo(marker, tipo, item.id) },
       { etiqueta: 'Editar información', accion: () => _editarItemCatalogo(tipo, item) },
       { etiqueta: 'Borrar', accion: () => _borrarItemCatalogo(tipo, item) },
-    ], clientX, clientY);
+    ];
+    // Si el sitio es una parada o el municipio un pueblo intermedio de la ruta
+    // actual, se puede llegar en avión hasta él.
+    const esParada = (state.paradas || []).some((p) => String(p.id) === String(item.id));
+    const esEscala = (state.escalas || []).some((e) => String(e.id) === String(item.id));
+    if (typeof llegarEnAvionAParada === 'function'
+      && ((tipo === 'sitio' && esParada) || (tipo === 'municipio' && esEscala))) {
+      const tipoItem = tipo === 'sitio' ? 'parada' : 'escala';
+      opciones.unshift({ etiqueta: 'Llegar en avión a este lugar', accion: () => llegarEnAvionAParada(item, tipoItem) });
+    }
+    abrirMenuFila(opciones, clientX, clientY);
   }
 
   function _verInfoCatalogo(tipo, item) {
@@ -639,6 +650,7 @@
     state.paradas = [];
     state.dias = 1;
     state.diasNombres = {};
+    state.diasOrden = {};
     state.diaFechaBase = null;
     state.diaFechaValor = null;
     state.rutaBase = null;

@@ -82,7 +82,7 @@ input, select{ font-family: inherit; }
   flex-shrink: 0;
   height: 100vh;
   background: #ffffff;
-  border-left: 1px solid var(--line-200);
+  border-left: 0;
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -109,7 +109,7 @@ input, select{ font-family: inherit; }
   flex-direction: column;
   gap: 6px;
   flex-shrink: 0;
-  padding: 9px;
+  padding: 0;
 }
 .panel-locate[hidden]{ display: none; }
 .panel-locate__row[hidden]{ display: none; }
@@ -455,7 +455,7 @@ input, select{ font-family: inherit; }
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 8px 12px 8px 12px;
+  padding: 0px 10px 8px 10px;
 }
 .panel-paradas[hidden]{ display: none; }
 .panel-paradas__title{
@@ -518,19 +518,23 @@ input, select{ font-family: inherit; }
 /* En modo infraestructura (P/A) el listado de puertos/aeropuertos no lleva la
    fila de título (la palabra Puertos/Aeropuertos, ni Organizar ni Reiniciar). */
 #app[data-infra-activa="true"] .panel-paradas__title{ display: none; }
-/* Botón "+" para añadir pueblo intermedio */
+/* Botón "Añadir parada" (agregar pueblo intermedio) */
 .btn-agregar-intermedio{
-  width: 22px; height: 22px;
   flex-shrink: 0;
-  border-radius: 50%;
+  border-radius: 4px;
   border: 1px solid var(--teal-500);
-  background: var(--teal-50);
+  background: #ffffff;
   color: var(--teal-600);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  padding: 0; margin: 0;
+  padding: 3px 10px;
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1.4;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 .btn-agregar-intermedio:hover{ background: var(--teal-500); color: #ffffff; }
@@ -577,17 +581,18 @@ input, select{ font-family: inherit; }
   gap: 6px;
   padding: 7px 8px;
   border-radius: var(--radius-sm);
-  background: #f9faf8;
+  background: #ffffff;
   border: 1px solid var(--line-200);
   font-size: 0.78rem;
 }
 .parada-item--endpoint{
-  background: #f2f6f4;
+  background: #ffffff;
+  border: 1px solid var(--line-200);
 }
 .parada-item--dia{
   border-left: 3px solid var(--teal-500);
-  background: transparent;
-  padding: 3px 6px;
+  background: #f0f4f2;
+  padding: 7px 8px;
   cursor: pointer;
 }
 .parada-item__dia-flecha{
@@ -597,7 +602,7 @@ input, select{ font-family: inherit; }
   transition: transform 0.15s ease;
 }
 .parada-item--dia-cerrado{
-  background: #f2f6f4;
+  background: #f0f4f2;
 }
 .parada-item--dia-cerrado .parada-item__dia-flecha{
   transform: rotate(-90deg);
@@ -610,7 +615,7 @@ input, select{ font-family: inherit; }
 }
 /* Continuidad de viaje: el día nuevo arranca en la última parada del anterior. */
 .parada-item--continua{
-  background: #f6faf8;
+  background: #ffffff;
 }
 /* Paradas de conexión (aeropuerto/puerto): un poco de sangría para distinguir
    los puntos de enlace de los pueblos/paradas de la ruta. */
@@ -618,10 +623,12 @@ input, select{ font-family: inherit; }
 .parada-item[data-tipo-parada="puerto"]{
   margin-left: 20px;
   padding-left: 10px;
+  background: #ffffff;
+  border: 1px solid var(--line-200);
 }
 .parada-item__dia-nombre{
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 400;
   color: var(--teal-600);
   flex: 1;
   min-width: 0;
@@ -630,9 +637,9 @@ input, select{ font-family: inherit; }
   white-space: nowrap;
 }
 .parada-item__dia-km{
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-strong);
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--teal-600);
 }
 .parada-item--dia .parada-item__dia-add{
   width: 20px;
@@ -782,6 +789,10 @@ input, select{ font-family: inherit; }
 }
 .btn-toggle-pill[aria-pressed="false"]{ background: #ffffff; color: var(--teal-500); }
 .btn-toggle-pill[aria-pressed="false"]:hover{ background: #f5f3ec; }
+.panel-paradas__title .badge-count{
+  background: var(--text-muted);
+  color: #ffffff;
+}
 .badge-count{
   background: var(--ink-900);
   color: #ffffff;
@@ -2089,6 +2100,16 @@ input, select{ font-family: inherit; }
 @keyframes parada-marquee{
   from{ transform: translateX(0); }
   to{ transform: translateX(var(--overflow, -80px)); }
+}
+/* En PC (dispositivos con hover) el letrero solo se desplaza al pasar el
+   cursor: se reproduce una vez por cada hover, sin bucle continuo. */
+@media (hover: hover){
+  .parada-item__nombre--marquee .parada-item__marquee{
+    animation: none;
+  }
+  .parada-item__nombre--marquee:hover .parada-item__marquee{
+    animation: parada-marquee 3s linear 1;
+  }
 }
 
 /* Tab altimetría en móvil */

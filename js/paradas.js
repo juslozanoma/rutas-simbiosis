@@ -243,7 +243,11 @@
    *  puntos de conexión (aeropuerto/puerto) no se mueven; el origen y el
    *  destino sí pueden arrastrarse. */
   function _initDragParadas() {
-    if (typeof Sortable === 'undefined' || !el.paradasLista) return;
+    if (typeof Sortable === 'undefined' || !el.paradasLista) {
+      console.warn('[paradas] Sortable no disponible o sin lista de paradas');
+      return;
+    }
+    console.log('[paradas] Inicializando drag & drop (Sortable)');
     _sortablesParadas.forEach((s) => { try { s.destroy(); } catch (e) {} });
     _sortablesParadas = [];
     const draggable = '.parada-item:not(.parada-item--dia):not(.parada-item--continua)'
@@ -262,38 +266,26 @@
     });
   }
 
-  /** Tras soltar una parada, lee el nuevo orden desde el DOM y lo aplica.
-   *  Si solo se reordenaron paradas/pueblos usa reordenar(); si cambió el
-   *  origen o el destino (o un extremo quedó en medio) se reconstruye la ruta
-   *  y se recalcula con las distancias actualizadas. */
-  function _aplicarDragParadas(evt) {
+  /** Tras soltar una parada/extremo, lee el nuevo orden completo desde el DOM
+   *  y lo aplica (recalcula la ruta si cambiaron los extremos). */
+  async function _aplicarDragParadas(evt) {
     if (!evt || !evt.item) return;
     const tipo = evt.item.dataset.tipoParada;
+    console.log('[paradas] Drag finalizado, item tipo=', tipo, 'id=', evt.item.dataset.paradaId);
     if (!['parada', 'escala', 'origen', 'destino'].includes(tipo)) return;
-
-    sincronizarOrden();
-    const previo = _ordenMovible();
-    const nuevo = _ordenMovibleDOM();
-    const clave = (arr) => arr.map((o) => o.tipo + ':' + o.id).join('|');
-    if (clave(previo) === clave(nuevo)) return;
-
-    const claveItem = (o) => o.tipo + ':' + o.id;
-    const primerCambio = previo[0] && nuevo[0] && claveItem(previo[0]) !== claveItem(nuevo[0]);
-    const ultimoCambio = previo[previo.length - 1] && nuevo[nuevo.length - 1]
-      && claveItem(previo[previo.length - 1]) !== claveItem(nuevo[nuevo.length - 1]);
-
-    if (primerCambio || ultimoCambio || tipo === 'origen' || tipo === 'destino') {
-      _aplicarOrdenNuevo(nuevo);
-      return;
+    try {
+      sincronizarOrden();
+      const previo = _ordenMovible();
+      const nuevo = _ordenMovibleDOM();
+      _capturarDiasDOM();
+      const clave = (arr) => arr.map((o) => o.tipo + ':' + o.id).join('|');
+      if (clave(previo) === clave(nuevo)) return;
+      await _aplicarOrdenNuevo(nuevo);
+    } catch (err) {
+      console.warn('[paradas] Error al reordenar paradas:', err);
+    } finally {
+      renderizarParadas();
     }
-
-    // Reorden normal entre paradas/pueblos (sin extremos).
-    const previoOrden = state.orden.map((o) => ({ tipo: o.tipo, id: o.id }));
-    const desde = previoOrden.findIndex((o) => o.tipo === tipo && String(o.id) === String(evt.item.dataset.paradaId));
-    const nuevoOrden = nuevo.filter((o) => o.tipo === 'parada' || o.tipo === 'escala');
-    const hasta = nuevoOrden.findIndex((o) => o.tipo === tipo && String(o.id) === String(evt.item.dataset.paradaId));
-    if (desde < 0 || hasta < 0) return;
-    reordenar(desde, hasta);
   }
 
   /** Orden completo actual (origen + paradas/escalas + destino). */
@@ -319,16 +311,31 @@
     return lista;
   }
 
+  /** Captura en state.diasOrden el día (grupo) en que quedó cada parada/pueblo
+   *  tras el drag, para respetar la posición manual al volver a renderizar. */
+  function _capturarDiasDOM() {
+    if (!state.diasOrden) state.diasOrden = {};
+    el.paradasLista.querySelectorAll('.parada-dia__grupo').forEach((grupo, gi) => {
+      grupo.querySelectorAll('.parada-item[data-tipo-parada="parada"], .parada-item[data-tipo-parada="escala"]').forEach((li) => {
+        const id = li.dataset.paradaId;
+        if (!id) return;
+        state.diasOrden[li.dataset.tipoParada + ':' + id] = gi + 1;
+      });
+    });
+  }
+
   /** Aplica un nuevo orden completo (origen + medio + destino): actualiza
    *  state.origen/state.destino, rearma paradas/escalas y recalcula la ruta.
-   *  Si un extremo quedó en medio pasa a ser una parada. */
+   *  Si un extremo quedó en medio pasa a ser una parada. Siempre que cambia el
+   *  orden de las paradas se recalcula la ruta completa. */
   async function _aplicarOrdenNuevo(nuevo) {
+    console.log('[paradas] _aplicarOrdenNuevo, nuevo orden =', nuevo.map((o) => o.tipo + ':' + o.id).join(' > '));
     if (!nuevo || nuevo.length < 2) return;
     const resolver = (o) => {
       if (o.tipo === 'origen') return state.origen;
       if (o.tipo === 'destino') return state.destino;
-      if (o.tipo === 'escala') return state.escalas.find((e) => e.id === o.id);
-      if (o.tipo === 'parada') return state.paradas.find((p) => p.id === o.id);
+      if (o.tipo === 'escala') return state.escalas.find((e) => String(e.id) === String(o.id));
+      if (o.tipo === 'parada') return state.paradas.find((p) => String(p.id) === String(o.id));
       return null;
     };
 
@@ -338,7 +345,6 @@
 
     const cambiaOrigen = !state.origen || String(state.origen.id) !== String(origObj.id);
     const cambiaDestino = !state.destino || String(state.destino.id) !== String(destObj.id);
-    if (!cambiaOrigen && !cambiaDestino) return;
 
     const nuevasEscalas = [];
     const nuevasParadas = [];
@@ -349,37 +355,67 @@
       else nuevasParadas.push(obj);
     }
 
+    console.log('[paradas] cambiaOrigen=', cambiaOrigen, 'cambiaDestino=', cambiaDestino);
+
     state.origen = origObj;
     state.destino = destObj;
     state.escalas.splice(0, state.escalas.length, ...nuevasEscalas);
     state.paradas.splice(0, state.paradas.length, ...nuevasParadas);
+    // El orden combinado nuevo (origen + medio + destino) debe quedar en
+    // `state.orden`, o el render volvería a mostrar el orden anterior.
+    state.orden = nuevo.slice(1, -1)
+      .filter((o) => o.tipo === 'escala' || o.tipo === 'parada')
+      .map((o) => ({ tipo: o.tipo, id: o.id }));
     sincronizarOrden();
 
     if (typeof actualizarEstadoBotonCalcular === 'function') actualizarEstadoBotonCalcular();
     if (typeof _actualizarTextoBotonesOrden === 'function') _actualizarTextoBotonesOrden();
+
+    // Siempre que cambian paradas/pueblos (orden, extremos o días) se recalcula
+    // la ruta completa con las distancias actualizadas.
     if (typeof _limpiarTurfYListado === 'function') _limpiarTurfYListado();
     if (typeof calcularRutaPrincipal === 'function') {
       try {
         await calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
       } catch (err) {
-        console.warn('Error al recalcular tras mover extremos:', err);
+        console.warn('[paradas] Error al recalcular tras reordenar:', err);
       }
     }
     renderizarParadas();
   }
 
-  /** Desde el menú contextual de una parada: hace que ese lugar sea el destino
-   *  y calcula la ruta en avión hasta él. */
-  function llegarEnAvionAParada(parada) {
-    if (!parada || typeof calcularRutaAerea !== 'function') return;
-    if (state.destino && state.destino.id != null && String(state.destino.id) === String(parada.id)) return;
-    state.destino = parada;
-    state.paradas = state.paradas.filter((p) => String(p.id) !== String(parada.id));
+  /** Desde el menú contextual de una parada o pueblo: hace que ese lugar sea
+   *  el destino y calcula la ruta en avión hasta él. `tipo` es 'parada' o
+   *  'escala'. */
+  function llegarEnAvionAParada(objeto, tipo) {
+    console.log('[paradas] llegarEnAvionAParada ->', objeto && objeto.nombre, 'tipo=', tipo);
+    if (!objeto || typeof calcularRutaAerea !== 'function') return;
+    if (state.destino && state.destino.id != null && String(state.destino.id) === String(objeto.id)) return;
+    state.destino = objeto;
+    if (tipo === 'escala') {
+      state.escalas = state.escalas.filter((e) => String(e.id) !== String(objeto.id));
+    } else {
+      state.paradas = state.paradas.filter((p) => String(p.id) !== String(objeto.id));
+    }
     sincronizarOrden();
     if (typeof actualizarEstadoBotonCalcular === 'function') actualizarEstadoBotonCalcular();
     if (typeof _actualizarTextoBotonesOrden === 'function') _actualizarTextoBotonesOrden();
     if (typeof _limpiarTurfYListado === 'function') _limpiarTurfYListado();
     calcularRutaAerea();
+    renderizarParadas();
+  }
+
+  /** Desde el menú contextual del destino: calcula la ruta en avión hasta el
+   *  destino actual y actualiza la lista de paradas (aeropuertos, distancias). */
+  async function llegarEnAvionAlDestino() {
+    console.log('[paradas] llegarEnAvionAlDestino');
+    if (typeof calcularRutaAerea !== 'function') return;
+    if (typeof _limpiarTurfYListado === 'function') _limpiarTurfYListado();
+    try {
+      await calcularRutaAerea();
+    } catch (err) {
+      console.warn('[paradas] Error al calcular ruta aérea:', err);
+    }
     renderizarParadas();
   }
 
@@ -1108,7 +1144,26 @@
     renderizarParadas();
   }
 
+  /** Quita un día del reparto (nunca el último si solo queda uno) y reacomoda
+   *  nombres/fechas de los días siguientes. */
+  function quitarDia(d) {
+    const total = state.dias || 1;
+    if (total <= 1 || d < 1 || d > total) return;
+    state.dias = total - 1;
+    const nuevosNombres = {};
+    for (let i = 1; i <= state.dias; i++) {
+      const orig = i >= d ? i + 1 : i;
+      if (state.diasNombres[orig]) nuevosNombres[i] = state.diasNombres[orig];
+    }
+    state.diasNombres = nuevosNombres;
+    if (state.diaFechaBase != null && state.diaFechaBase >= d) {
+      state.diaFechaBase = Math.max(1, state.diaFechaBase - 1);
+    }
+    renderizarParadas();
+  }
+
   function renderizarParadas() {
+    console.log('[paradas] renderizarParadas()');
     sincronizarOrden();
     // Con el catálogo de puertos/aeropuertos (A/P) o la ruta desde archivo (K)
     // activos, la lista de la pestaña Ruta la ocupa otro contenido; no mezclar.
@@ -1144,8 +1199,9 @@
     el.paradasContador.textContent = String(incluirExtremos ? total : total);
     el.paradasContador.hidden = total === 0;
 
-    // Días de viaje: las paradas se reparten en `state.dias` grupos lo más
-    // parejos posible y cada día muestra los km de su tramo.
+    // Días de viaje: cada parada queda en su día. Si se arrastró una parada a
+    // otro día (state.diasOrden) se respeta esa posición manual; si no, se usa
+    // un reparto parejo por cantidad.
     const dias = Math.max(1, state.dias || 1);
     const totalKm = state.rutaActual && state.rutaActual.distanciaMetros ? state.rutaActual.distanciaMetros / 1000 : 0;
     const base = Math.floor(total / dias);
@@ -1154,31 +1210,49 @@
     let acc = 0;
     for (let d = 0; d < dias; d++) { bordes.push(acc); acc += base + (d < resto ? 1 : 0); }
     bordes.push(total);
+    const keyDeItem = (it) => it.tipo + ':' + it.datos.id;
     const diaDeItemIdx = (idx) => {
+      const itx = items[idx];
+      if (itx && state.diasOrden) {
+        const manual = state.diasOrden[keyDeItem(itx)];
+        if (manual != null && manual >= 1 && manual <= dias) return manual;
+      }
       for (let d = 0; d < dias; d++) if (idx < bordes[d + 1]) return d + 1;
       return dias;
     };
+    // Último punto (por km) de cada día, para km por día y "desde <lugar>".
+    const finKmDia = new Array(dias).fill(0);
+    const ultimoDeCadaDia = {};
+    items.forEach((it, idx) => {
+      const d = diaDeItemIdx(idx);
+      ultimoDeCadaDia[d] = it;
+      if (it.datos && it.datos._distKm != null) {
+        finKmDia[d - 1] = Math.max(finKmDia[d - 1], Number(it.datos._distKm));
+      }
+    });
     const kmsDia = (() => {
       const kms = [];
       let prev = 0;
       for (let d = 1; d <= dias; d++) {
-        let end;
-        if (d === dias) {
-          end = totalKm;
-        } else {
-          const ultimo = bordes[d] - 1;
-          const it = ultimo >= bordes[d - 1] ? items[ultimo] : null;
-          end = it && it.datos && it.datos._distKm != null ? it.datos._distKm : prev;
-        }
+        let end = finKmDia[d - 1];
+        if (d === dias) end = totalKm;
         kms.push(Math.max(0, end - prev));
         prev = end;
       }
       return kms;
     })();
-    let diaInsertado = 0;
+    let gruposPorDia = [];     // divs `.parada-dia__grupo`, uno por día
     let diaGrupo = null;       // contenedor (div) de las paradas del día actual
     let ultimoRegular = null;  // {item, etiqueta} de la última parada/pueblo renderizada
     let kmActual = 0;          // km acumulados (desde el origen) al renderizar
+
+    /** Lugar donde comienza el día `d` (1-based): el origen si es el día 1, o
+     *  el último punto del día anterior (donde termina la ruta del día previo). */
+    const ciudadInicioDia = (d) => {
+      if (d <= 1) return state.origen && state.origen.nombre ? state.origen.nombre : '';
+      const it = ultimoDeCadaDia[d - 1];
+      return it && it.datos && it.datos.nombre ? it.datos.nombre : '';
+    };
 
     /** Fila de encabezado de día; al pulsarla se pliegan/despliegan sus paradas. */
     function crearFilaDia(d) {
@@ -1191,6 +1265,8 @@
       const etiqueta = document.createElement('span');
       etiqueta.className = 'parada-item__dia-nombre';
       etiqueta.textContent = _etiquetaDia(d);
+      const desde = ciudadInicioDia(d);
+      if (desde) etiqueta.textContent += ' - desde ' + desde;
       if (etiqueta.textContent.length > 16) etiqueta.title = etiqueta.textContent;
       const km = document.createElement('span');
       km.className = 'parada-item__dia-km';
@@ -1198,10 +1274,17 @@
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'parada-item__btn parada-item__dia-add';
-      btn.title = 'Agregar un día más';
-      btn.setAttribute('aria-label', 'Agregar un día más');
-      btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
-      btn.addEventListener('click', (e) => { e.stopPropagation(); agregarDia(); });
+      const esUltimo = d >= dias;
+      if (esUltimo) {
+        btn.title = 'Agregar un día más';
+        btn.setAttribute('aria-label', 'Agregar un día más');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+      } else {
+        btn.title = 'Quitar este día';
+        btn.setAttribute('aria-label', 'Quitar este día');
+        btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></svg>';
+      }
+      btn.addEventListener('click', (e) => { e.stopPropagation(); if (esUltimo) agregarDia(); else quitarDia(d); });
       li.appendChild(flecha);
       li.appendChild(etiqueta);
       li.appendChild(km);
@@ -1235,23 +1318,18 @@
 
     function asegurarDiaPara(idx) {
       const d = diaDeItemIdx(idx);
-      while (diaInsertado < d) {
-        // Continuidad de viaje: el día nuevo arranca donde terminó el anterior.
-        const continuacion = ultimoRegular;
-        diaInsertado++;
-        const filaDia = crearFilaDia(diaInsertado);
+      while (gruposPorDia.length < dias) {
+        const nd = gruposPorDia.length + 1;
+        const filaDia = crearFilaDia(nd);
         const grupo = document.createElement('div');
         grupo.className = 'parada-dia__grupo';
         filaDia._grupo = grupo;
         el.paradasLista.appendChild(filaDia);
         el.paradasLista.appendChild(grupo);
-        diaGrupo = grupo;
-        if (continuacion) {
-          const duplicado = construirFilaItem(continuacion.item, continuacion.etiqueta);
-          duplicado.classList.add('parada-item--continua');
-          grupo.appendChild(duplicado);
-        }
+        gruposPorDia.push(grupo);
       }
+      diaGrupo = gruposPorDia[d - 1];
+      return d;
     }
 
     /** Agrega una fila al grupo del día actual y recuerda la última parada. */
@@ -1315,6 +1393,9 @@
           opciones.push({ etiqueta: 'Cambiar lugar de origen', accion: () => irCambiarOrigen() });
         } else {
           opciones.push({ etiqueta: 'Cambiar lugar de destino', accion: () => irCambiarDestino() });
+        }
+        if (tipo === 'destino') {
+          opciones.push({ etiqueta: 'Llegar en avión a este lugar', accion: () => llegarEnAvionAlDestino() });
         }
         opciones.push({
           etiqueta: 'Ubicar en el mapa',
@@ -1492,7 +1573,8 @@
       btnDel.title = 'Quitar de la ruta';
       btnDel.setAttribute('aria-label', 'Quitar ' + e.nombre + ' de la ruta');
       btnDel.addEventListener('contextmenu', (evt) => evt.stopPropagation());
-      btnDel.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></svg>';
+      btnDel.style.color = '#d62828';
+      btnDel.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>';
 
       acciones.appendChild(btnDel);
       li.appendChild(num);
@@ -1518,12 +1600,13 @@
       const construirOpcionesContexto = () => {
         if (item.tipo === 'parada') {
           return [
-            { etiqueta: 'Llegar en avión a este lugar', accion: () => llegarEnAvionAParada(e) },
+            { etiqueta: 'Llegar en avión a este lugar', accion: () => llegarEnAvionAParada(e, 'parada') },
             { etiqueta: 'Ubicar en el mapa', accion: () => mostrarCuadroParada(e) },
             { etiqueta: 'Eliminar de la ruta', accion: () => eliminarParada(e.id) },
           ];
         }
         return [
+          { etiqueta: 'Llegar en avión a este lugar', accion: () => llegarEnAvionAParada(e, 'escala') },
           { etiqueta: 'Cambiar pueblo intermedio', accion: () => cambiarPueblo(e) },
           { etiqueta: 'Eliminar pueblo intermedio', accion: () => eliminarEscala(e.id) },
           { etiqueta: 'Ubicar en la ruta', accion: () => mostrarCuadroEscala(e) },
@@ -1628,6 +1711,11 @@
     _iniciarObservadorParadas();
     // Re-medir tras el layout (por si el panel aún no tenía dimensiones).
     requestAnimationFrame(() => _marcarMarqueeParadas());
+    // Quita asignaciones de día de paradas que ya no existen.
+    if (state.diasOrden) {
+      const idsValidos = new Set(state.orden.map((o) => o.tipo + ':' + o.id));
+      Object.keys(state.diasOrden).forEach((k) => { if (!idsValidos.has(k)) delete state.diasOrden[k]; });
+    }
     // Drag & drop entre las paradas (los días no se mueven).
     _initDragParadas();
   }

@@ -370,6 +370,8 @@
   async function organizarAutomaticamente(invalidarSitios = false) {
     if (!state.origen) return;
     sincronizarOrden();
+    // El reparto manual de días pierde sentido al reordenar automáticamente.
+    if (state.diasOrden) state.diasOrden = {};
 
     // Criterio de cercanía mutua (vecino más cercano): se parte del origen A y
     // se elige el punto más cercano a él (B), luego el más cercano a B (C), y
