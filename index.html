@@ -141,6 +141,14 @@
         <span class="panel-tab--reiniciar__icon" aria-hidden="true"></span>
       </button>
     </div>
+ 
+    <section class="panel-paradas" id="panel-paradas" hidden>
+      <select id="filtro-municipios-departamento" class="filtro-municipios-departamento" hidden aria-label="Filtrar municipios por departamento">
+        <option value="">Filtrar por departamento…</option>
+      </select>
+      <ul class="paradas-lista" id="paradas-lista"></ul>
+      <button type="button" id="btn-agregar-intermedio" class="btn-agregar-intermedio" title="Agregar parada" aria-label="Agregar parada">Añadir parada</button>
+    </section>
 
     <!-- Ruta: origen/destino + paradas + monalisa -->
     <section class="panel-locate" id="panel-locate">
@@ -228,13 +236,6 @@
       </svg>
       <span class="loading-ruta__msg">Calculando la mejor ruta…</span>
     </div>
-    <section class="panel-paradas" id="panel-paradas" hidden>
-      <select id="filtro-municipios-departamento" class="filtro-municipios-departamento" hidden aria-label="Filtrar municipios por departamento">
-        <option value="">Filtrar por departamento…</option>
-      </select>
-      <ul class="paradas-lista" id="paradas-lista"></ul>
-    </section>
-    <button type="button" id="btn-agregar-intermedio" class="btn-agregar-intermedio" title="Agregar parada" aria-label="Agregar parada">Añadir parada</button>
 
     <!-- Descubre Colombia -->
     <div class="panel-descubre-actions" id="panel-descubre-actions" hidden>

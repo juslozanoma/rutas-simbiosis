@@ -81,11 +81,8 @@ input, select{ font-family: inherit; }
   width: var(--panel-w);
   flex-shrink: 0;
   height: 100vh;
-  background: #ffffff;
-  border-left: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
   overflow: clip;
 }
 
@@ -123,9 +120,6 @@ input, select{ font-family: inherit; }
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 4px 0 4px 4px;
-  border-left: 2px solid var(--line-200);
-  margin-left: 2px;
 }
 .panel-locate__escalas:empty{ display: none; }
 .panel-locate__escalas[hidden]{ display: none; }
@@ -285,6 +279,7 @@ input, select{ font-family: inherit; }
   align-items: center;
   gap: 8px;
   padding-left: 4px;
+  margin-top: -12px;
 }
 .escala-row .combo{ flex: 1; }
 .escala-row__remove{
@@ -472,7 +467,7 @@ input, select{ font-family: inherit; }
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 0px 10px 8px 10px;
+  padding: 10px 10px 8px 10px;
 }
 .panel-paradas[hidden]{ display: none; }
 /* Botón "Organizar" del título de paradas: activo por defecto (verde, igual
@@ -531,16 +526,15 @@ input, select{ font-family: inherit; }
   border: 1px solid var(--teal-500);
   background: #ffffff;
   color: var(--teal-600);
-  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  padding: 3px 10px;
-  margin: 0 auto;
-  font-size: 0.68rem;
-  font-weight: 600;
+  padding: 7px 11px;
+  margin: 10px auto;
+  font-size: 12px;
+  font-weight: 500;
   font-family: inherit;
-  line-height: 1.4;
+  line-height: 1;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 .btn-agregar-intermedio:hover{ background: var(--teal-500); color: #ffffff; }
