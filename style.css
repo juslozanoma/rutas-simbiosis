@@ -1732,6 +1732,9 @@ input, select{ font-family: inherit; }
 .panel-tab--active{ color: var(--teal-500); border-bottom-color: var(--teal-500); }
 .panel-tab:disabled{ opacity: 0.35; cursor: default; pointer-events: none; }
 .panel-tab[hidden]{ display: none !important; }
+/* Replay (reiniciar): 40px fijos. Se reafirma aquí porque la base `.panel-tab`
+   (flex:auto) está declarada después y ganaría por cascada. */
+.panel-tab--reiniciar{ flex: 0 0 40px; }
 
 /* Íconos de las pestañas: silueta en el mismo gris del texto; verde cuando la
    pestaña está activa (mask con el archivo SVG, color exacto). */
@@ -2143,6 +2146,12 @@ input, select{ font-family: inherit; }
 .mobile-tab-btn--altimetria{ flex: 0 0 44px; padding: 0 4px; }
 .mobile-tab-btn--anadir{ flex: 0 0 44px; color: var(--teal-500); }
 
+/* Pestaña de reiniciar (replay) en móvil: 40px de ancho, al extremo derecho
+   de la barra inferior (el último hijo, con margin-left:auto lo empuja a la
+   derecha). Reutiliza el icono de máscara de escritorio. */
+.mobile-tab-btn--reiniciar{ flex: 0 0 40px; padding: 0 4px; margin-left: auto; }
+.mobile-tab-btn--reiniciar .panel-tab--reiniciar__icon{ display: block; }
+
 /* Pestaña de cerrar rutas subidas (X roja): solo visible con rutas de archivo
    activas (data-ruta-archivo), en el extremo derecho junto a la pestaña Rutas. */
 .panel-tab--cerrar-rutas,
@@ -2171,7 +2180,7 @@ input, select{ font-family: inherit; }
     width: auto;
     gap: 6px;
     padding: 10px 14px;
-    margin: -8px auto 4px;
+    margin: 4px auto 0px;
     font-size: 0.85rem;
     font-weight: 400;
     line-height: inherit;
@@ -2199,9 +2208,11 @@ input, select{ font-family: inherit; }
     gap: 12px;
   }
 
-  /* En Ruta: panel-sites muestra solo el hint, paradas crece para llenar */
+  /* En Ruta: panel-sites muestra solo el hint; paradas toma solo su altura de
+     contenido para que paradas/locate/buttons queden juntos arriba (y si la
+     lista es larga, se encoge y hace scroll interno). */
   #app[data-mobile-tab="ruta"] .panel-sites{ flex: 0 0 auto; }
-  #app[data-mobile-tab="ruta"] .panel-paradas{ flex: 1; min-height: 0; overflow-y: auto; }
+  #app[data-mobile-tab="ruta"] .panel-paradas{ flex: 0 1 auto; min-height: 0; overflow-y: auto; margin: 5px 0px 0px 0px; }
   #app[data-mobile-tab="ruta"] .paradas-lista{ flex: 1; min-height: 0; }
   #app[data-mobile-tab="ruta"] .panel-sites__scroll{ display: none; }
   #app[data-mobile-tab="ruta"] .panel-sites__busqueda{ display: none; }
@@ -2212,6 +2223,7 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="ruta"][data-ruta-lista="true"] .panel-locate{ padding: 0; }
   #app[data-mobile-tab="ruta"][data-ruta-lista="true"] #row-origen,
   #app[data-mobile-tab="ruta"][data-ruta-lista="true"] #row-destino{ display: none; }
+  .panel-locate__escalas{ margin-top: 12px; }
 
   /* "Subir tu propia ruta" y "Tour personalizado" en móvil: quedan en el
      flujo del panel, siempre 50px bajo el cuadro de destino (igual que en

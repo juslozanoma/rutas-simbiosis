@@ -701,6 +701,8 @@
   function initReiniciar() {
     const btn = document.getElementById('btn-reiniciar-pc');
     if (btn) btn.addEventListener('click', reiniciarDesdeCero);
+    const btnMovil = document.getElementById('btn-reiniciar-movil');
+    if (btnMovil) btnMovil.addEventListener('click', reiniciarDesdeCero);
   }
 
   function initTour() {
