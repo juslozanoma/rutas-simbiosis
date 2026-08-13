@@ -2164,7 +2164,24 @@ input, select{ font-family: inherit; }
    ========================================================================== */
 @media (max-width: 860px){
   .app-body{ flex-direction: column; }
-  .btn-agregar-intermedio{ display: inline-flex; }
+  /* En móvil, "Añadir parada" adopta el mismo estilo que "Tour
+     personalizado": blanco con borde gris (--line-300), radio redondeado,
+     letra gris y mismo padding/tamaño. */
+  .btn-agregar-intermedio{
+    width: auto;
+    gap: 6px;
+    padding: 10px 14px;
+    margin: -8px auto 4px;
+    font-size: 0.85rem;
+    font-weight: 400;
+    line-height: inherit;
+    color: #8a867d;
+    background: #ffffff;
+    border: 1.5px solid var(--line-300);
+    border-radius: var(--radius-md);
+  }
+  .btn-agregar-intermedio:hover{ background: var(--bg-subtle); border-color: #b8b2a1; color: #6e6a62; }
+  .btn-agregar-intermedio:active{ transform: translateY(1px); }
   /* En móvil los pueblos intermedios solo se agregan desde las paradas: el
      "+" nunca se muestra (el avión ocupa su lugar en la fila del origen). */
   .map-full{ flex: 0 0 50%; min-height: 0; }
@@ -2199,8 +2216,8 @@ input, select{ font-family: inherit; }
   /* "Subir tu propia ruta" y "Tour personalizado" en móvil: quedan en el
      flujo del panel, siempre 50px bajo el cuadro de destino (igual que en
      PC), sin flotar sobre el mapa ni centrarse en mitad de ningún espacio.
-     El `order` los coloca justo después del panel de origen/destino. */
-  .side-panel > .btn-acciones-ruta{ order: 1; }
+     El `order` los coloca justo debajo del panel de origen/destino. */
+  .side-panel > .btn-acciones-ruta{ order: 4; }
   #app[data-mobile-tab="descubre"] .btn-acciones-ruta,
   #app[data-mobile-tab="altimetria"] .btn-acciones-ruta,
   #app[data-mobile-panel="collapsed"] .btn-acciones-ruta,
@@ -2273,9 +2290,10 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="altimetria"] .loading-ruta{ display: none !important; }
 
   /* Reordenar contenido del panel en móvil */
-  .side-panel > .panel-locate{ order: 1; }
-  .side-panel > .panel-paradas{ order: 2; }
-  .side-panel > .panel-sites{ order: 3; }
+  .side-panel > .panel-paradas{ order: 1; }
+  .side-panel > .btn-agregar-intermedio{ order: 2; }
+  .side-panel > .panel-locate{ order: 3; }
+  .side-panel > .panel-sites{ order: 4; }
   .side-panel > #loading-sitios{ order: 2; }
   .side-panel > #loading-ruta{ order: 2; }
   .side-panel > .altimetria-panel{ order: 5; }
