@@ -75,6 +75,68 @@ const MapModule = (() => {
   const CENTRO_COLOMBIA = [4.6, -74.1];
   const ZOOM_INICIAL = 6;
 
+  // En móvil los gestos táctiles de zoom y giro son excluyentes: al hacer
+  // zoom se bloquea el giro del mapa, y al hacer giro se bloquea el zoom.
+  let _gestosExclusivosConfigurados = false;
+
+  function _configurarGestosExclusivos() {
+    if (_gestosExclusivosConfigurados) return;
+    if (typeof L === 'undefined' || !L.Map || !L.Map.TouchGestures) return;
+    _gestosExclusivosConfigurados = true;
+
+    const proto = L.Map.TouchGestures.prototype;
+    const origTouchStart = proto._onTouchStart;
+    const origTouchMove = proto._onTouchMove;
+    const origTouchEnd = proto._onTouchEnd;
+
+    proto._onTouchStart = function (t) {
+      this._gestoBloqueado = null;
+      return origTouchStart.call(this, t);
+    };
+
+    proto._onTouchMove = function (t) {
+      const movil = typeof esMovil === 'function' && esMovil();
+      if (movil && t.touches && t.touches.length === 2 && this._zooming && this._rotating) {
+        const map = this._map;
+        const p0 = map.mouseEventToContainerPoint(t.touches[0]);
+        const p1 = map.mouseEventToContainerPoint(t.touches[1]);
+        const a = p0.subtract(p1);
+        const s = p0.distanceTo(p1) / this._startDist;
+
+        if (!this._gestoBloqueado) {
+          let r = (Math.atan(a.x / a.y) - this._startTheta) * map.options.rotationSensitivity * L.DomUtil.RAD_TO_DEG;
+          if (a.y < 0) r += 180;
+          let angulo = Math.abs(r) % 360;
+          if (angulo > 180) angulo = 360 - angulo;
+          const escala = Math.abs(s - 1);
+          const anguloFrac = angulo / 60;
+          if (escala > 0.02 && escala > anguloFrac * 1.5) this._gestoBloqueado = 'zoom';
+          else if (angulo > 4 && anguloFrac > escala * 1.5) this._gestoBloqueado = 'rotate';
+        }
+
+        if (this._gestoBloqueado === 'zoom') {
+          const origSetBearing = map.setBearing;
+          map.setBearing = function () {};
+          try { return origTouchMove.call(this, t); }
+          finally { map.setBearing = origSetBearing; }
+        }
+        if (this._gestoBloqueado === 'rotate') {
+          const startZoom = this._startZoom;
+          const origGetScaleZoom = map.getScaleZoom;
+          map.getScaleZoom = () => startZoom;
+          try { return origTouchMove.call(this, t); }
+          finally { map.getScaleZoom = origGetScaleZoom; }
+        }
+      }
+      return origTouchMove.call(this, t);
+    };
+
+    proto._onTouchEnd = function () {
+      this._gestoBloqueado = null;
+      return origTouchEnd.apply(this, arguments);
+    };
+  }
+
   /** Inicializa el mapa y las capas base. Debe llamarse una sola vez. */
   function init(elementId) {
     map = L.map(elementId, {
@@ -88,6 +150,8 @@ const MapModule = (() => {
       touchRotate: true,
       rotationSensitivity: 0.4,
     }).setView(CENTRO_COLOMBIA, ZOOM_INICIAL);
+
+    _configurarGestosExclusivos();
 
     // Desactivar boxZoom (evita rectángulo al hacer clic en la ruta)
     map.boxZoom.disable();
