@@ -137,7 +137,7 @@ const RutaArchivoModule = (() => {
   // Carga y dibujo de rutas
   // -------------------------------------------------------------------
 
-  async function procesarArchivo(file) {
+  async function procesarArchivo(file, opciones = {}) {
     try {
       const texto = await file.text();
       const parseado = _parsearArchivo(texto);
@@ -157,6 +157,14 @@ const RutaArchivoModule = (() => {
       _rutas.push(ruta);
       _coordsOriginales.set(ruta.id, ruta.coords.map((c) => c.slice()));
       _guardar();
+
+      if (opciones.soloAnadir) {
+        // Carga múltiple: la ruta se añade visible a la lista y al mapa sin
+        // reactivar el modo ni cambiar la vista/altimetría de la primera.
+        MapModule.dibujarRutaArchivo(ruta.id, ruta.coords, { nombre: ruta.nombre, color: ruta.color });
+        _renderTarjetas();
+        return true;
+      }
 
       _rutaActualId = ruta.id;
       _ultimaRutaActivadaId = ruta.id;
@@ -1138,11 +1146,24 @@ const RutaArchivoModule = (() => {
   function initEventos() {
     _cargarGuardadas();
     if (el.inputRutaArchivo) {
-      el.inputRutaArchivo.addEventListener('change', () => {
-        const file = el.inputRutaArchivo.files && el.inputRutaArchivo.files[0];
-        if (!file) return;
-        if (el.cargarRutaFileLabel) el.cargarRutaFileLabel.textContent = file.name;
-        procesarArchivo(file);
+      el.inputRutaArchivo.addEventListener('change', async () => {
+        const files = Array.from(el.inputRutaArchivo.files || []);
+        if (!files.length) return;
+        // Con varios archivos seleccionados se cargan todos: la primera actúa
+        // como la ruta nueva normal (activa el modo, centra la vista y muestra
+        // la altimetría); el resto se añaden visibles al listado y al mapa.
+        if (el.cargarRutaFileLabel) {
+          el.cargarRutaFileLabel.textContent = files.length === 1
+            ? files[0].name
+            : files.length + ' rutas seleccionadas';
+        }
+        let procesada = false;
+        for (const file of files) {
+          const ok = await procesarArchivo(file, { soloAnadir: procesada });
+          if (ok && !procesada) procesada = true;
+        }
+        // Se limpia el input para poder volver a elegir los mismos archivos.
+        if (el.inputRutaArchivo) el.inputRutaArchivo.value = '';
       });
     }
     if (el.btnContinuarRuta) el.btnContinuarRuta.addEventListener('click', continuar);

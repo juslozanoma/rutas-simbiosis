@@ -251,7 +251,8 @@ input, select{ font-family: inherit; }
 /* Con "Subir tu propia ruta" activo, el listado es de rutas de archivo: se
    ocultan los botones de organizar y reiniciar, que pertenecen a las paradas. */
 #app[data-ruta-archivo="true"] #btn-auto-organizar,
-#app[data-ruta-archivo="true"] #btn-reiniciar-pc{ display: none; }
+#app[data-ruta-archivo="true"] #btn-reiniciar-pc,
+#app[data-ruta-archivo="true"] #btn-reiniciar-movil{ display: none; }
 
 /* --- Barra de acciones post-cálculo (Cambiar ruta / Añadir parada) --- */
 .panel-route-bar{

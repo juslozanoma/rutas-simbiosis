@@ -184,7 +184,7 @@ const MapModule = (() => {
       rotate: true,
       rotateControl: false,
       touchRotate: true,
-      rotationSensitivity: 0.4,
+      rotationSensitivity: 1.0,
     }).setView(CENTRO_COLOMBIA, ZOOM_INICIAL);
 
     _configurarGestosExclusivos();
