@@ -860,6 +860,7 @@ const RutaArchivoModule = (() => {
         const km = _progresoKm(linea, lat, lon);
         _actualizarAvanceRuta(rutaActual, km, pos);
         _verificarDesvio(linea, lat, lon);
+        _actualizarIndicadorPerfilGps(km);
       },
       () => {
         _desactivarSeguimiento();
@@ -960,6 +961,40 @@ const RutaArchivoModule = (() => {
     return Math.max(0, snap.properties.location);
   }
 
+  /** Devuelve el contenedor del perfil de altimetría visible en pantalla (PC o
+   *  móvil), o null si ningún perfil está abierto. */
+  function _perfilVisibleContenedor() {
+    for (const id of ['altimetria-chart', 'altimetria-chart-panel']) {
+      const cont = document.getElementById(id);
+      if (cont && cont.offsetParent !== null) return cont;
+    }
+    return null;
+  }
+
+  /** Retira el vehículo del perfil de altimetría al desactivar el seguimiento. */
+  function _ocultarIndicadorPerfilGps() {
+    if (typeof AltimetriaModule === 'undefined' || !AltimetriaModule.ocultarHover) return;
+    const visible = _perfilVisibleContenedor();
+    if (visible) AltimetriaModule.ocultarHover(visible.id);
+  }
+
+  /** Con el GPS activo y sobre la ruta, sitúa el vehículo del perfil de
+   *  altimetría (ícono de transporte seleccionado) en el punto del recorrido
+   *  para que el usuario vea dónde va en el perfil; si no se cumplen las
+   *  condiciones (GPS apagado, desvío de la ruta o perfil de otra ruta),
+   *  retira el indicador. */
+  function _actualizarIndicadorPerfilGps(km) {
+    if (typeof AltimetriaModule === 'undefined' || !AltimetriaModule.mostrarHoverEn) return;
+    const visible = _perfilVisibleContenedor();
+    const esRutaSeguida = typeof perfilRutaArchivoVisibleId === 'function'
+      && perfilRutaArchivoVisibleId() === _rutaActualId;
+    if (_watcherId != null && !_avisoDesvioActivo && esRutaSeguida && visible) {
+      AltimetriaModule.mostrarHoverEn(km, false, visible.id);
+    } else {
+      _ocultarIndicadorPerfilGps();
+    }
+  }
+
   /** Actualiza la etiqueta de seguimiento con: km recorridos sobre la ruta,
    *  km faltantes, altura actual y —solo tras 30 min de seguimiento—
    *  velocidad promedio y hora estimada de llegada. */
@@ -1040,6 +1075,7 @@ const RutaArchivoModule = (() => {
     MapModule.limpiarPosicionUsuario();
     if (el.seguirRuta) el.seguirRuta.hidden = true;
     if (el.btnGps) el.btnGps.classList.remove('activo');
+    _ocultarIndicadorPerfilGps();
   }
 
   // -------------------------------------------------------------------

@@ -1452,8 +1452,9 @@ const AltimetriaModule = (() => {
     });
   }
 
-  function mostrarHoverEn(distKm, seguir) {
-    const cont = document.getElementById('altimetria-chart') || document.getElementById('altimetria-chart-panel');
+  function mostrarHoverEn(distKm, seguir, containerId) {
+    const cont = containerId ? document.getElementById(containerId)
+      : (document.getElementById('altimetria-chart') || document.getElementById('altimetria-chart-panel'));
     if (!cont || !cont._svg || !cont._puntos || !cont._plotW) return;
     const zs = cont._zoomStart || 0;
     const ze = cont._zoomEnd != null ? cont._zoomEnd : cont._maxD;
@@ -1499,8 +1500,9 @@ const AltimetriaModule = (() => {
     }
   }
 
-  function ocultarHover() {
-    const cont = document.getElementById('altimetria-chart') || document.getElementById('altimetria-chart-panel');
+  function ocultarHover(containerId) {
+    const cont = containerId ? document.getElementById(containerId)
+      : (document.getElementById('altimetria-chart') || document.getElementById('altimetria-chart-panel'));
     if (!cont || !cont._hoverLine) return;
     cont._hoverLine.style.display = 'none';
     if (cont._hoverCircle) cont._hoverCircle.style.display = 'none';
