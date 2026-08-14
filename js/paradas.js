@@ -7,6 +7,7 @@
  */
 
   async function agregarParada(sitio, boton) {
+    UndoManager.registrar();
     if (boton) ponerEnCarga(boton, true);
     state.paradas.push(sitio);
     const map = MapModule.getMap();
@@ -68,6 +69,7 @@
   }
 
   async function eliminarParada(sitioId) {
+    UndoManager.registrar();
     const idx = state.paradas.findIndex((p) => p.id === sitioId);
     if (idx === -1) return;
     const sitio = state.paradas[idx];
@@ -273,6 +275,7 @@
     const tipo = evt.item.dataset.tipoParada;
     console.log('[paradas] Drag finalizado, item tipo=', tipo, 'id=', evt.item.dataset.paradaId);
     if (!['parada', 'escala', 'origen', 'destino'].includes(tipo)) return;
+    UndoManager.registrar();
     try {
       sincronizarOrden();
       const previo = _ordenMovible();
@@ -391,6 +394,7 @@
     console.log('[paradas] llegarEnAvionAParada ->', objeto && objeto.nombre, 'tipo=', tipo);
     if (!objeto || typeof calcularRutaAerea !== 'function') return;
     if (state.destino && state.destino.id != null && String(state.destino.id) === String(objeto.id)) return;
+    UndoManager.registrar();
     state.destino = objeto;
     if (tipo === 'escala') {
       state.escalas = state.escalas.filter((e) => String(e.id) !== String(objeto.id));
@@ -451,10 +455,10 @@
       { etiqueta: 'Asignar fecha', accion: () => _mostrarCalendarioDia(d) },
     ];
     if (state.diasNombres[d]) {
-      opciones.push({ etiqueta: 'Quitar nombre', accion: () => { delete state.diasNombres[d]; renderizarParadas(); } });
+      opciones.push({ etiqueta: 'Quitar nombre', accion: () => { UndoManager.registrar(); delete state.diasNombres[d]; renderizarParadas(); } });
     }
     if (state.diaFechaBase) {
-      opciones.push({ etiqueta: 'Quitar fecha', accion: () => { state.diaFechaBase = null; state.diaFechaValor = null; renderizarParadas(); } });
+      opciones.push({ etiqueta: 'Quitar fecha', accion: () => { UndoManager.registrar(); state.diaFechaBase = null; state.diaFechaValor = null; renderizarParadas(); } });
     }
     return opciones;
   }
@@ -490,6 +494,7 @@
         return;
       }
       cerrar();
+      UndoManager.registrar();
       state.diasNombres[d] = nombre;
       renderizarParadas();
     }
@@ -635,6 +640,7 @@
     });
     overlay.querySelector('#cal-cancelar').addEventListener('click', cerrar);
     overlay.querySelector('#cal-asignar').addEventListener('click', () => {
+      UndoManager.registrar();
       state.diaFechaBase = d;
       state.diaFechaValor = `${y}-${_pad2(m + 1)}-${_pad2(diaSel)}`;
       cerrar();
@@ -1137,6 +1143,7 @@
   /** Agrega un día más al reparto de paradas y vuelve a dividir la ruta. */
 
   function agregarDia() {
+    UndoManager.registrar();
     state.dias = (state.dias || 1) + 1;
     renderizarParadas();
   }
@@ -1146,6 +1153,7 @@
   function quitarDia(d) {
     const total = state.dias || 1;
     if (total <= 1 || d < 1 || d > total) return;
+    UndoManager.registrar();
     state.dias = total - 1;
     const nuevosNombres = {};
     for (let i = 1; i <= state.dias; i++) {

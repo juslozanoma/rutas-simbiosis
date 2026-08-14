@@ -190,8 +190,27 @@
       restaurarEstadoMapa();
     }
     document.addEventListener('keydown', (evt) => {
-      if (evt.ctrlKey || evt.metaKey || evt.altKey) return;
       const esInput = evt.target && evt.target.tagName && /^(INPUT|TEXTAREA|SELECT)$/.test(evt.target.tagName);
+      // Deshacer/rehacer de las acciones del viaje (Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z).
+      if ((evt.ctrlKey || evt.metaKey) && !evt.altKey && !esInput) {
+        const teclaU = evt.key.toLowerCase();
+        if (teclaU === 'z' && evt.shiftKey) {
+          evt.preventDefault();
+          UndoManager.rehacer();
+          return;
+        }
+        if (teclaU === 'y') {
+          evt.preventDefault();
+          UndoManager.rehacer();
+          return;
+        }
+        if (teclaU === 'z') {
+          evt.preventDefault();
+          UndoManager.deshacer();
+          return;
+        }
+      }
+      if (evt.ctrlKey || evt.metaKey || evt.altKey) return;
       if (esInput) return;
       const tecla = evt.key.toLowerCase();
       if (tecla === 'f') {
@@ -639,6 +658,7 @@
    *  listado y localStorage) y reinicia el viaje (origen, destino, pueblos
    *  intermedios, paradas y ruta calculada). */
   function reiniciarDesdeCero() {
+    UndoManager.reiniciar();
     if (typeof RutaArchivoModule !== 'undefined' && typeof RutaArchivoModule.reiniciar === 'function') {
       RutaArchivoModule.reiniciar();
     }
@@ -769,6 +789,152 @@
   function initGuardarMapa() {
     const btn = document.getElementById('btn-guardar');
     if (btn) btn.addEventListener('click', guardarEstadoMapa);
+  }
+
+  // -------------------------------------------------------------------
+  // Deshacer / rehacer (Ctrl+Z / Ctrl+Y): snapshots del estado del viaje
+  // -------------------------------------------------------------------
+
+  /** Copia serializable del estado del viaje sin referencias DOM ni transitorios
+   *  (las filas de escala se guardan como texto/selección), para restaurarlo con
+   *  _aplicarSnapshot. */
+  function _capturarSnapshot() {
+    const escalas = state.escalas.map((e) => {
+      const copia = {
+        id: e.id,
+        lat: e.lat,
+        lon: e.lon,
+        nombre: e.nombre,
+        departamento: e.departamento,
+        _dragGenerated: !!e._dragGenerated,
+        _fila: !!e._row,
+      };
+      if (e._row) {
+        const input = e._row.querySelector('.combo__trigger');
+        if (input) {
+          copia._valorTexto = input.value || '';
+          if (input.dataset.selectedId) copia._selectedId = input.dataset.selectedId;
+        }
+      }
+      return copia;
+    });
+    return {
+      origen: state.origen,
+      destino: state.destino,
+      escalas,
+      orden: state.orden.map((o) => ({ tipo: o.tipo, id: o.id })),
+      paradas: state.paradas.map((p) => ({ ...p })),
+      dias: state.dias,
+      diasNombres: { ...(state.diasNombres || {}) },
+      diasOrden: { ...(state.diasOrden || {}) },
+      diaFechaBase: state.diaFechaBase,
+      diaFechaValor: state.diaFechaValor,
+      rutaBase: state.rutaBase,
+      rutaActual: state.rutaActual,
+      modoAereo: state.modoAereo,
+      tramosAereo: state.tramosAereo,
+      modoFluvial: state.modoFluvial,
+      tramosFluviales: state.tramosFluviales,
+      elevacion: state.elevacion,
+      altimetriaGeo: state.altimetriaGeo,
+      altimetriaTotalKm: state.altimetriaTotalKm || 0,
+    };
+  }
+
+  /** Restaura el estado del viaje desde un snapshot (deshacer/rehacer). No
+   *  recalcula nada por red: la ruta guardada ya venía calculada. */
+  function _aplicarSnapshot(snap) {
+    if (!snap) return;
+    state.origen = snap.origen;
+    state.destino = snap.destino;
+    state.orden = (snap.orden || []).map((o) => ({ tipo: o.tipo, id: o.id }));
+    state.dias = snap.dias != null ? snap.dias : 1;
+    state.diasNombres = { ...(snap.diasNombres || {}) };
+    state.diasOrden = { ...(snap.diasOrden || {}) };
+    state.diaFechaBase = snap.diaFechaBase || null;
+    state.diaFechaValor = snap.diaFechaValor || null;
+    state.rutaBase = snap.rutaBase || null;
+    state.rutaActual = snap.rutaActual || null;
+    state.modoAereo = !!snap.modoAereo;
+    state.tramosAereo = snap.tramosAereo || null;
+    state.modoFluvial = !!snap.modoFluvial;
+    state.tramosFluviales = snap.tramosFluviales || null;
+    state.elevacion = snap.elevacion || null;
+    state.altimetriaGeo = snap.altimetriaGeo || null;
+    state.altimetriaTotalKm = snap.altimetriaTotalKm || 0;
+    state.previewSitioId = null;
+
+    // El listado de Descubre depende de la ruta: se invalidan las distancias
+    // cacheadas y el listado para que se recalcule con el trazado restaurado.
+    state.sitios.forEach((s) => {
+      delete s.distanciaRutaKm;
+      delete s.tiempoDesvioMin;
+      delete s.distanciaOrigenKm;
+      delete s.distanciaDestinoKm;
+      delete s._offsetLado;
+    });
+    if (typeof _limpiarTurfYListado === 'function') _limpiarTurfYListado();
+
+    // Extremos: se reponen el texto y la selección sin disparar aplicar/onSelect
+    // (que recalcularía la ruta y ensuciaría el historial de deshacer).
+    if (typeof _limpiarCombos === 'function') _limpiarCombos();
+    if (el.origenInput) {
+      el.origenInput.value = snap.origen ? formatMunicipio(snap.origen) : '';
+      if (snap.origen && snap.origen.id != null) el.origenInput.dataset.selectedId = String(snap.origen.id);
+      else delete el.origenInput.dataset.selectedId;
+    }
+    if (el.destinoInput) {
+      el.destinoInput.value = snap.destino ? formatMunicipio(snap.destino) : '';
+      if (snap.destino && snap.destino.id != null) el.destinoInput.dataset.selectedId = String(snap.destino.id);
+      else delete el.destinoInput.dataset.selectedId;
+    }
+    document.querySelectorAll('.combo--seleccionado').forEach((c) => c.classList.remove('combo--seleccionado'));
+
+    // Se activa la pestaña Ruta antes de reconstruir filas y paradas: al hacer
+    // undo/redo el panel vuelve al lugar donde se edita el viaje. (Ojo: activar
+    // la pestaña oculta panelEscalas; por eso se hace aquí, antes del rebuild.)
+    if (typeof activarPanelTab === 'function') activarPanelTab('ruta');
+
+    // Escalas: se vacía el panel y se reconstruyen las filas con cuadro; las
+    // confirmadas (sin _fila, p. ej. generadas por arrastre) se reponen directo.
+    if (el.panelEscalas) el.panelEscalas.innerHTML = '';
+    state.escalas = [];
+    (snap.escalas || []).forEach((e) => {
+      if (e._fila) {
+        agregarEscala({ _valorTexto: e._valorTexto, _selectedId: e._selectedId });
+        const entrada = state.escalas[state.escalas.length - 1];
+        if (entrada) Object.assign(entrada, {
+          id: e.id, lat: e.lat, lon: e.lon, nombre: e.nombre, departamento: e.departamento,
+          _dragGenerated: !!e._dragGenerated,
+        });
+      } else {
+        state.escalas.push({
+          id: e.id, lat: e.lat, lon: e.lon, nombre: e.nombre, departamento: e.departamento,
+          _dragGenerated: !!e._dragGenerated,
+        });
+      }
+    });
+    if (el.panelEscalas) el.panelEscalas.hidden = !(snap.escalas || []).some((e) => e._fila);
+
+    state.paradas = (snap.paradas || []).map((p) => ({ ...p }));
+
+    // Mapa y perfil: se limpian y se vuelven a dibujar con la ruta guardada.
+    if (typeof MapModule.limpiarTodo === 'function') MapModule.limpiarTodo();
+    if (typeof MapModule.limpiarSitios === 'function') MapModule.limpiarSitios();
+    if (typeof AltimetriaModule.limpiar === 'function') AltimetriaModule.limpiar();
+
+    if (state.rutaActual && typeof dibujarRutaDesdeEstado === 'function') {
+      dibujarRutaDesdeEstado({ mantenerMapa: true });
+    } else if (typeof renderizarParadas === 'function') {
+      renderizarParadas();
+    }
+
+    // Sync de la interfaz.
+    if (typeof sincronizarModoRutaMovil === 'function') sincronizarModoRutaMovil();
+    if (typeof actualizarEstadoBotonCalcular === 'function') actualizarEstadoBotonCalcular();
+    if (typeof _actualizarTextoBotonesOrden === 'function') _actualizarTextoBotonesOrden();
+    if (typeof reordenarAereoMovil === 'function') reordenarAereoMovil();
+    if (typeof _syncBotonAltimetria === 'function') _syncBotonAltimetria();
   }
 
   // Recarga automática SOLO cuando el servidor lo anuncia (server.js), y ese

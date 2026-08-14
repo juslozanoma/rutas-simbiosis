@@ -24,6 +24,9 @@
     // deben reaparecer al volver a Ruta. En departamentos (D) y municipios (M)
     // la pestaña Descubre sigue disponible.
     if (tab === 'descubre' && (_puertosVisibles || _aeropuertosVisibles || _fronteraVisibles || _rutaArchivoActiva)) return;
+    el.appRoot.setAttribute('data-panel-tab', tab);
+    if (tab === 'descubre' && el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = true;
+    else if (tab === 'ruta' && el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = false;
     document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('panel-tab--active'));
     if (tab === 'ruta') {
       el.btnTabPanelRuta.classList.add('panel-tab--active');
@@ -139,16 +142,21 @@
 
 
   function initEventos() {
-    el.btnCalcular.addEventListener('click', () => calcularRutaPrincipal());
+    el.btnCalcular.addEventListener('click', () => {
+      UndoManager.registrar();
+      calcularRutaPrincipal();
+    });
     if (el.btnAereo) {
       el.btnAereo.addEventListener('click', () => {
         // El avión siempre calcula la ruta aérea (volver a carretera = botón calcular).
+        UndoManager.registrar();
         calcularRutaAerea();
       });
     }
     if (el.btnFluvial) {
       el.btnFluvial.addEventListener('click', () => {
         // El barco siempre calcula la ruta por río (volver a carretera = botón calcular).
+        UndoManager.registrar();
         calcularRutaFluvial();
       });
     }

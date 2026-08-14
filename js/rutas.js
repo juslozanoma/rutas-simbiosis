@@ -1207,6 +1207,16 @@
       }
     }
 
+    dibujarRutaDesdeEstado(opciones);
+  }
+
+  /**
+   * Dibuja en el mapa la ruta, tramos, marcadores, alertas y perfil a partir del
+   * estado actual, SIN recalcular nada por red. Se usa al aplicar un snapshot de
+   * deshacer/rehacer (restaura lo que ya estaba calculado).
+   */
+  function dibujarRutaDesdeEstado(opciones = {}) {
+    if (!state.rutaActual) return;
     MapModule.dibujarRuta(state.rutaActual.geojson, {
       distanciaMetros: state.rutaActual.distanciaMetros,
       duracionSegundos: state.rutaActual.duracionSegundos,

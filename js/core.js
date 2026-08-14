@@ -211,4 +211,57 @@
 
   let _cambioExtremoEnCurso = null; // 'origen' | 'destino' | null
 
+  /**
+   * Deshacer / rehacer (Ctrl+Z / Ctrl+Y) de las acciones del viaje.
+   *
+   * Funciona por snapshots del estado: cada acción de usuario registra el estado
+   * ANTES de modificar (registrar), y deshacer/rehacer restauran snapshots
+   * completos mediante _aplicarSnapshot (definido en app.js, que se carga al
+   * final; aquí solo se invoca en tiempo de ejecución). Los snapshots se guardan
+   * en pilas con deduplicación: si dos registros consecutivos capturan el mismo
+   * estado (p. ej. recalcular tras un cambio), solo se conserva uno.
+   */
+  const UndoManager = {
+    _undoStack: [],
+    _redoStack: [],
+    _lastSerial: null,
+
+    registrar() {
+      if (typeof _capturarSnapshot !== 'function') return;
+      const snap = _capturarSnapshot();
+      const serial = JSON.stringify(snap);
+      if (serial === this._lastSerial) return;
+      this._undoStack.push(snap);
+      if (this._undoStack.length > 100) this._undoStack.shift();
+      this._redoStack = [];
+      this._lastSerial = serial;
+    },
+
+    deshacer() {
+      if (!this._undoStack.length || typeof _capturarSnapshot !== 'function') return;
+      if (typeof _aplicarSnapshot !== 'function') return;
+      this._redoStack.push(_capturarSnapshot());
+      const snap = this._undoStack.pop();
+      // Al restaurar no se fija _lastSerial: el siguiente registro debe
+      // capturarse siempre (el estado acaba de cambiar por el deshacer).
+      this._lastSerial = null;
+      _aplicarSnapshot(snap);
+    },
+
+    rehacer() {
+      if (!this._redoStack.length || typeof _capturarSnapshot !== 'function') return;
+      if (typeof _aplicarSnapshot !== 'function') return;
+      this._undoStack.push(_capturarSnapshot());
+      const snap = this._redoStack.pop();
+      this._lastSerial = null;
+      _aplicarSnapshot(snap);
+    },
+
+    reiniciar() {
+      this._undoStack = [];
+      this._redoStack = [];
+      this._lastSerial = null;
+    },
+  };
+
   /** La próxima escala creada reemplaza un pueblo intermedio (recalcular al elegir). */

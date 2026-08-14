@@ -8,12 +8,13 @@
 
   function initEscalas() {
     el.btnAgregarEscala.addEventListener('click', () => {
+      UndoManager.registrar();
       agregarEscala();
     });
   }
 
 
-  function agregarEscala() {
+  function agregarEscala(datos = null) {
     const row = document.createElement('div');
     row.className = 'escala-row';
 
@@ -76,12 +77,21 @@
     row.appendChild(aereoBtn);
     el.panelEscalas.appendChild(row);
     el.panelEscalas.hidden = false;
-    // El foco abre la lista, el teclado y el acomodo del bloque (un solo
-    // movimiento instantáneo), igual que el cuadro de origen al iniciar.
-    combo.trigger.focus();
-    combo.trigger.scrollIntoView({ block: 'nearest' });
+    // Al restaurar un snapshot de deshacer/rehacer se repone el texto y la
+    // selección de la fila sin abrir la lista ni mover el foco.
+    if (datos && datos._valorTexto != null) {
+      combo.trigger.value = datos._valorTexto;
+      if (datos._selectedId) combo.trigger.dataset.selectedId = datos._selectedId;
+      else delete combo.trigger.dataset.selectedId;
+    } else {
+      // El foco abre la lista, el teclado y el acomodo del bloque (un solo
+      // movimiento instantáneo), igual que el cuadro de origen al iniciar.
+      combo.trigger.focus();
+      combo.trigger.scrollIntoView({ block: 'nearest' });
+    }
 
     calcBtn.addEventListener('click', () => {
+      UndoManager.registrar();
       actualizarEscalas();
       // Con "Organizar" activo y ruta ya calculada se ordena por distancia y se
       // recalcula conservando paradas; en cualquier otro caso se recalcula igual.
@@ -94,6 +104,7 @@
     });
 
     aereoBtn.addEventListener('click', () => {
+      UndoManager.registrar();
       actualizarEscalas();
       calcularRutaAerea();
     });
@@ -137,6 +148,7 @@
   // -------------------------------------------------------------------
 
   async function onRutaDragEnd(lnglat, segIdx) {
+    UndoManager.registrar();
     const [lng, lat] = lnglat;
     const id = 'drag_' + Date.now();
     const escala = { id, lat, lon: lng, nombre: 'Punto intermedio', _dragGenerated: true };
@@ -169,6 +181,7 @@
   /** Elimina un punto de desvío de la ruta conservando la pestaña Descubre. */
 
   function eliminarPuntoDesvio(escalaId) {
+    UndoManager.registrar();
     const idx = state.escalas.findIndex((e) => e.id === escalaId);
     if (idx === -1) return;
     state.escalas.splice(idx, 1);
@@ -195,6 +208,7 @@
   /** Mueve un punto de desvío arrastrado y recalcula la ruta pasando por su nueva posición. */
 
   async function moverPuntoDesvio(escalaId, lat, lon) {
+    UndoManager.registrar();
     const escala = state.escalas.find((e) => e.id === escalaId);
     if (!escala) return;
     escala.lat = lat;
@@ -253,6 +267,7 @@
 
 
   function eliminarEscala(id, recalcular = true) {
+    UndoManager.registrar();
     const idx = state.escalas.findIndex((e) => e.id === id);
     if (idx !== -1) state.escalas.splice(idx, 1);
     sincronizarOrden();
@@ -348,6 +363,7 @@
   /** Lleva al usuario al panel Ruta con un nuevo campo de pueblo intermedio desplegado. */
 
   function agregarPuebloIntermedioDesdeLista() {
+    UndoManager.registrar();
     activarPanelTab('ruta');
     setMobileTab('ruta');
     agregarEscala();
@@ -444,6 +460,7 @@
 
   async function reordenar(desde, hasta) {
     if (desde === hasta) return;
+    UndoManager.registrar();
     sincronizarOrden();
     if (desde < 0 || desde >= state.orden.length || hasta < 0 || hasta >= state.orden.length) return;
     const movido = state.orden.splice(desde, 1)[0];

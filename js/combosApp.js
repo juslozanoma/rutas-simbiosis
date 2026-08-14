@@ -28,6 +28,7 @@
         return ids;
       },
       onSelect: (m) => {
+        UndoManager.registrar();
         state.origen = m;
         _limpiarTurfYListado();
         actualizarEstadoBotonCalcular();
@@ -79,6 +80,7 @@
         return ids;
       },
       onSelect: (m) => {
+        UndoManager.registrar();
         state.destino = m;
         _limpiarTurfYListado();
         actualizarEstadoBotonCalcular();

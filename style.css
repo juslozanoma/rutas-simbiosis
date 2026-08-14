@@ -530,6 +530,10 @@ input, select{ font-family: inherit; }
 #app[data-ruta-lista="true"] #row-origen,
 #app[data-ruta-lista="true"] #row-destino{ display: none; }
 #app[data-ruta-lista="true"] #btn-agregar-intermedio{ display: inline-flex; }
+/* En la pestaña Descubre el botón "Añadir parada" no tiene sentido: el viaje se
+   edita desde la pestaña Ruta. El atributo hidden no basta en escritorio porque
+   la regla anterior tiene mayor especificidad; se fuerza la ocultación. */
+#app[data-panel-tab="descubre"] #btn-agregar-intermedio{ display: none !important; }
 
 /* Botones de carro (verde) y avión (verde) de cada pueblo intermedio: siempre
    visibles para que el usuario elija el medio de transporte del tramo. */

@@ -137,6 +137,26 @@ const MapModule = (() => {
     };
   }
 
+  // Los cuadros informativos (fichas de sitio, popups Leaflet y tooltips)
+  // capturan el scroll y los gestos táctiles: al hacer scroll sobre ellos el
+  // mapa no debe moverse ni hacer zoom. Se corta la propagación en la fase de
+  // captura antes de que el evento llegue al contenedor del mapa, sin bloquear
+  // el scroll nativo del contenido del cuadro (no se llama a preventDefault).
+  let _scrollCuadrosConfigurado = false;
+
+  function _bloquearScrollSobreCuadros() {
+    if (_scrollCuadrosConfigurado) return;
+    _scrollCuadrosConfigurado = true;
+    const selector = '.sitio-overlay, .leaflet-popup, .leaflet-tooltip';
+    ['wheel', 'touchstart', 'touchmove', 'pointerdown', 'pointermove'].forEach((tipo) => {
+      document.addEventListener(tipo, (evt) => {
+        if (evt.target && typeof evt.target.closest === 'function' && evt.target.closest(selector)) {
+          evt.stopPropagation();
+        }
+      }, true);
+    });
+  }
+
   /** Inicializa el mapa y las capas base. Debe llamarse una sola vez. */
   function init(elementId) {
     map = L.map(elementId, {
@@ -152,6 +172,7 @@ const MapModule = (() => {
     }).setView(CENTRO_COLOMBIA, ZOOM_INICIAL);
 
     _configurarGestosExclusivos();
+    _bloquearScrollSobreCuadros();
 
     // Desactivar boxZoom (evita rectángulo al hacer clic en la ruta)
     map.boxZoom.disable();
