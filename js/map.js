@@ -77,6 +77,12 @@ const MapModule = (() => {
 
   // En móvil los gestos táctiles de zoom y giro son excluyentes: al hacer
   // zoom se bloquea el giro del mapa, y al hacer giro se bloquea el zoom.
+  // Sensibilidad del zoom con los dedos en móvil: el factor se aplica como
+  // exponente a la razón de separación entre dedos (1 = comportamiento nativo).
+  // Con un valor > 1 la misma apertura de pinza produce más zoom, de modo que
+  // acercar/alejar resulta más fácil y se recorre menos movimiento del dedo.
+  const _SENSIBILIDAD_ZOOM_MOVIL = 1.7;
+
   let _gestosExclusivosConfigurados = false;
 
   function _configurarGestosExclusivos() {
@@ -110,15 +116,25 @@ const MapModule = (() => {
           if (angulo > 180) angulo = 360 - angulo;
           const escala = Math.abs(s - 1);
           const anguloFrac = angulo / 60;
-          if (escala > 0.02 && escala > anguloFrac * 1.5) this._gestoBloqueado = 'zoom';
+          if (escala > 0.01 && escala > anguloFrac * 1.5) this._gestoBloqueado = 'zoom';
           else if (angulo > 4 && anguloFrac > escala * 1.5) this._gestoBloqueado = 'rotate';
         }
 
         if (this._gestoBloqueado === 'zoom') {
           const origSetBearing = map.setBearing;
+          const origGetScaleZoom = map.getScaleZoom;
           map.setBearing = function () {};
+          // Zoom más sensible en móvil: se amplifica la razón de separación de
+          // los dedos antes de pasarla a getScaleZoom (log2), con lo que la
+          // misma pinza produce más niveles de zoom por milímetro recorrido.
+          map.getScaleZoom = function (escala, desdeZoom) {
+            return origGetScaleZoom.call(map, Math.pow(escala, _SENSIBILIDAD_ZOOM_MOVIL), desdeZoom);
+          };
           try { return origTouchMove.call(this, t); }
-          finally { map.setBearing = origSetBearing; }
+          finally {
+            map.setBearing = origSetBearing;
+            map.getScaleZoom = origGetScaleZoom;
+          }
         }
         if (this._gestoBloqueado === 'rotate') {
           const startZoom = this._startZoom;
