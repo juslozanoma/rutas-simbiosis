@@ -269,6 +269,7 @@ const MapModule = (() => {
     map.on('contextmenu', _onMapContextMenu);
     document.addEventListener('click', _cerrarCtxMenu);
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cancelarMarcadoTramo(); });
+    _initMenuContextualToque();
 
     // La flecha de dirección se mantiene centrada en el tramo de ruta visible
     map.on('moveend', () => {
@@ -804,7 +805,6 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     _cerrarCtxMenu();
     // "Marcar tramo destapado" solo cuando no están visibles ni los puertos
     // (P), ni los aeropuertos (A), ni la opción de subir tu propia ruta.
-    // "Agregar puerto aquí" solo cuando el catálogo de puertos está activo.
     const raiz = document.getElementById('app');
     const puertosActivos = raiz && raiz.getAttribute('data-puertos-activos') === 'true';
     const aeropuertosActivos = raiz && raiz.getAttribute('data-aeropuertos-activos') === 'true';
@@ -815,15 +815,28 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const subirVisible = btnSubir
       ? !btnSubir.hidden && getComputedStyle(btnSubir).display !== 'none'
       : true;
-    const items = [];
+
+    const lat = e.latlng.lat;
+    const lng = e.latlng.lng;
+    const items = [
+      {
+        texto: 'Crear ruta desde/hasta aquí',
+        submenu: [
+          { texto: 'Crear ruta desde aquí', accion: () => _crearRutaDesde(lat, lng) },
+          { texto: 'Crear ruta hasta aquí', accion: () => _crearRutaHasta(lat, lng) },
+        ],
+      },
+      { texto: 'Buscar sitios turísticos cercanos', accion: () => _buscarSitiosCercanos(lat, lng) },
+      {
+        texto: 'Agregar sitio nuevo',
+        accion: () => {
+          const abrir = typeof abrirDialogoNuevoPuerto === 'function' ? abrirDialogoNuevoPuerto : _onAgregarPuertoEn;
+          if (abrir) abrir(lat, lng);
+        },
+      },
+    ];
     if (!puertosActivos && !aeropuertosActivos && !archivoActivo && !subirVisible) {
       items.push({ texto: 'Marcar tramo destapado', accion: () => iniciarMarcadoTramo() });
-    }
-    if (puertosActivos) {
-      items.push({
-        texto: 'Agregar puerto aquí',
-        accion: () => { if (_onAgregarPuertoEn) _onAgregarPuertoEn(e.latlng.lat, e.latlng.lng); },
-      });
     }
     // "Comparar este sitio" se ofrece siempre que haya una ruta dibujada en el
     // mapa (haya o no altimetría abierta), para elegir puntos de comparación.
@@ -833,33 +846,189 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         texto: 'Comparar este sitio',
         accion: () => {
           if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.puntoCompararDesdeLatLng && AltimetriaModule.seleccionarPuntoComparacion) {
-            const punto = AltimetriaModule.puntoCompararDesdeLatLng(e.latlng.lat, e.latlng.lng);
+            const punto = AltimetriaModule.puntoCompararDesdeLatLng(lat, lng);
             if (punto) AltimetriaModule.seleccionarPuntoComparacion(punto);
           }
         },
       });
     }
-    if (!items.length) return;
-    const div = document.createElement('div');
-    div.className = 'ctx-menu';
-    div.innerHTML = items.map((i) => '<div class="ctx-menu__item">' + i.texto + '</div>').join('');
-    div.querySelectorAll('.ctx-menu__item').forEach((item, idx) => {
-      item.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        _cerrarCtxMenu();
-        items[idx].accion();
-      });
-    });
-    const container = map.getContainer();
-    const point = map.latLngToContainerPoint(e.latlng);
-    div.style.left = Math.min(point.x, container.offsetWidth - 190) + 'px';
-    div.style.top = Math.min(point.y, container.offsetHeight - 70) + 'px';
-    container.appendChild(div);
-    _ctxMenu = div;
+    _abrirMenuContextual(items, e.latlng);
   }
 
   function _cerrarCtxMenu() {
     if (_ctxMenu) { _ctxMenu.remove(); _ctxMenu = null; }
+  }
+
+  /** Abre el menú contextual del mapa sobre el punto indicado. Cada ítem es
+   *  { texto, accion } o { texto, submenu: [...] } para opciones con submenú:
+   *  al tocarlas el menú se reemplaza por el submenú y "← Volver" lo restaura. */
+  function _abrirMenuContextual(items, latlng) {
+    const container = map.getContainer();
+    const div = document.createElement('div');
+    div.className = 'ctx-menu';
+    container.appendChild(div);
+    _ctxMenu = div;
+
+    function render(lista) {
+      div.innerHTML = lista.map((i) =>
+        '<div class="ctx-menu__item' + (i.submenu ? ' ctx-menu__item--parent' : '') + '">' +
+        '<span>' + i.texto + '</span>' +
+        (i.submenu ? '<span class="ctx-menu__chevron">›</span>' : '') +
+        '</div>'
+      ).join('');
+      div.querySelectorAll('.ctx-menu__item').forEach((itemEl, idx) => {
+        itemEl.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          const item = lista[idx];
+          if (item.submenu && item.submenu.length) {
+            render([{ texto: '← Volver', accion: () => render(items) }, ...item.submenu]);
+            return;
+          }
+          _cerrarCtxMenu();
+          item.accion();
+        });
+      });
+      const point = map.latLngToContainerPoint(latlng);
+      div.style.left = Math.max(0, Math.min(point.x, container.offsetWidth - div.offsetWidth - 6)) + 'px';
+      div.style.top = Math.max(0, Math.min(point.y, container.offsetHeight - div.offsetHeight - 6)) + 'px';
+    }
+
+    render(items);
+  }
+
+  /** Respaldo de pulsación larga en celular. En navegadores con Pointer Events
+   *  (Android/iOS modernos) Leaflet no instala su manejador de toque y algunos
+   *  no emiten `contextmenu` al mantener oprimido: aquí se abre el mismo menú
+   *  tras sostener el toque ~650 ms sin arrastrar. En los navegadores donde el
+   *  evento nativo sí se dispara, _onMapContextMenu reconstruye el menú sin
+   *  efecto visible. */
+  function _initMenuContextualToque() {
+    if (!map || !L.Browser.touch || (L.Browser.touch && !L.Browser.pointer)) return;
+    const container = map.getContainer();
+    let timer = null;
+    let inicioLatLng = null;
+    let inicioX = 0;
+    let inicioY = 0;
+
+    function cancelar() {
+      if (timer) { clearTimeout(timer); timer = null; }
+      inicioLatLng = null;
+    }
+
+    container.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) { cancelar(); return; }
+      const t = e.touches[0];
+      const rect = container.getBoundingClientRect();
+      inicioLatLng = map.containerPointToLatLng(L.point(t.clientX - rect.left, t.clientY - rect.top));
+      inicioX = t.clientX;
+      inicioY = t.clientY;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        if (!inicioLatLng) return;
+        _onMapContextMenu({ latlng: inicioLatLng, originalEvent: e });
+      }, 650);
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      if (Math.abs(t.clientX - inicioX) > 12 || Math.abs(t.clientY - inicioY) > 12) cancelar();
+    }, { passive: true });
+
+    container.addEventListener('touchend', cancelar);
+    container.addEventListener('touchcancel', cancelar);
+    // El menú nativo del navegador por pulsación larga no debe aparecer sobre
+    // el mapa (en captura, antes de que Leaflet lo escuche en burbuja).
+    container.addEventListener('contextmenu', (e) => e.preventDefault(), true);
+  }
+
+  /** Fija el origen de la ruta en un punto del mapa y recalcula si ya hay
+   *  destino definido. Reusa el flujo de "Seleccionar en el mapa" del cuadro
+   *  de origen (_cambioExtremoEnCurso dispara el recálculo en onSelect). */
+  function _crearRutaDesde(lat, lng) {
+    if (typeof _comboOrigen === 'undefined' || !_comboOrigen || typeof _comboOrigen.aplicar !== 'function') return;
+    _cambioExtremoEnCurso = 'origen';
+    _comboOrigen.aplicar({ id: 'map_' + Date.now(), lat, lon: lng, nombre: lat.toFixed(4) + ', ' + lng.toFixed(4), departamento: '' });
+  }
+
+  /** Fija el destino de la ruta en un punto del mapa y recalcula si ya hay
+   *  origen definido (mismo flujo que "Seleccionar en el mapa" del destino). */
+  function _crearRutaHasta(lat, lng) {
+    if (typeof _comboDestino === 'undefined' || !_comboDestino || typeof _comboDestino.aplicar !== 'function') return;
+    _cambioExtremoEnCurso = 'destino';
+    _comboDestino.aplicar({ id: 'map_' + Date.now(), lat, lon: lng, nombre: lat.toFixed(4) + ', ' + lng.toFixed(4), departamento: '' });
+  }
+
+  /** Muestra en el mapa y en la pestaña Descubre los sitios turísticos a menos
+   *  de RADIO_KM del punto elegido, y acerca la vista a la zona. */
+  function _buscarSitiosCercanos(lat, lng) {
+    const RADIO_KM = 30;
+    const conDist = [];
+    (state.sitios || []).forEach((s) => {
+      if (s.lat == null || s.lon == null || isNaN(Number(s.lat)) || isNaN(Number(s.lon))) return;
+      const d = turf.distance(
+        turf.point([Number(s.lon), Number(s.lat)]),
+        turf.point([lng, lat]),
+        { units: 'kilometers' }
+      );
+      if (d <= RADIO_KM) conDist.push([s, d]);
+    });
+    conDist.sort((a, b) => a[1] - b[1]);
+    const cercanos = conDist.map((x) => x[0]);
+
+    state.sitiosFiltradosBase = cercanos;
+    state.sitiosFiltrados = cercanos;
+    state.modoVisibilidad = 'completa';
+    state.categoriasSeleccionadas = [];
+    if (el.buscarSitios) el.buscarSitios.value = '';
+    if (typeof _sincronizarBotonVisibles === 'function') _sincronizarBotonVisibles();
+    // Asegurar que la capa de marcadores de sitios esté visible en el mapa.
+    if (map && !map.hasLayer(clusterSitios)) map.addLayer(clusterSitios);
+
+    if (typeof renderizarSitios === 'function') renderizarSitios(cercanos);
+    if (typeof renderizarCategoriasMenu === 'function') {
+      const cats = new Map();
+      cercanos.forEach((s) => {
+        if (!s.categoria) return;
+        const c = s.categoria.trim();
+        cats.set(c, (cats.get(c) || 0) + 1);
+      });
+      renderizarCategoriasMenu([...cats.entries()]);
+    }
+    // Llevar al usuario a la pestaña Descubre para ver el listado (cuando el
+    // modo lo permite); los marcadores ya se pintaron sobre el mapa. La
+    // pestaña queda habilitada aunque aún no se haya calculado una ruta.
+    const infraBloqueaDescubre = (typeof _puertosVisibles !== 'undefined' && _puertosVisibles)
+      || (typeof _aeropuertosVisibles !== 'undefined' && _aeropuertosVisibles)
+      || (typeof _fronteraVisibles !== 'undefined' && _fronteraVisibles)
+      || (typeof _rutaArchivoActiva !== 'undefined' && _rutaArchivoActiva);
+    if (!infraBloqueaDescubre) {
+      if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
+      if (el.btnTabDescubre) el.btnTabDescubre.disabled = false;
+      if (el.icoDescubreTab) el.icoDescubreTab.hidden = true;
+      if (el.icoDescubreTabDesktop) el.icoDescubreTabDesktop.hidden = true;
+      if (el.sitiosContadorTab) el.sitiosContadorTab.hidden = false;
+      if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.hidden = false;
+      if (typeof activarPanelTab === 'function') activarPanelTab('descubre');
+      if (typeof esMovil === 'function' && esMovil() && typeof setMobileTab === 'function') setMobileTab('descubre');
+    }
+
+    const coords = cercanos
+      .filter((s) => s.lat != null && s.lon != null)
+      .map((s) => [Number(s.lat), Number(s.lon)]);
+    if (coords.length && typeof MapModule.encuadrar === 'function') {
+      coords.push([lat, lng]);
+      MapModule.encuadrar(coords, [40, 40]);
+    } else if (typeof MapModule.centrarEn === 'function') {
+      MapModule.centrarEn(lat, lng, 10);
+    }
+
+    if (typeof _mostrarNotificacion === 'function') {
+      _mostrarNotificacion(cercanos.length
+        ? 'Sitios turísticos cercanos: ' + cercanos.length + ' en un radio de ' + RADIO_KM + ' km.'
+        : 'No se encontraron sitios turísticos en un radio de ' + RADIO_KM + ' km alrededor del punto.');
+    }
   }
 
   /** Durante la comparación de puntos, un clic/toque en el mapa selecciona el
@@ -1946,11 +2115,16 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   };
 
   /** Marcador del lugar elegido en el buscador superior: círculo verde de
-   *  34px (igual que el botón de vista satelital) con el símbolo blanco. */
-  function _iconoLugarBuscado(tipo) {
+   *  34px (igual que el botón de vista satelital) con el símbolo blanco. En
+   *  celular (`conCerrar`) se le agrega una "×" para ocultar el elemento del
+   *  mapa sin quitar la búsqueda. */
+  function _iconoLugarBuscado(tipo, conCerrar) {
     const simbolo = SIMBOLO_LUGAR_BUSCADO[tipo] || 'sign-post.svg';
+    const cerrar = conCerrar
+      ? '<button type="button" class="lugar-buscado-pin__cerrar" aria-label="Ocultar este sitio del mapa" title="Ocultar del mapa">&times;</button>'
+      : '';
     return L.divIcon({
-      html: `<div class="lugar-buscado-pin"><img src="public/${simbolo}" alt="" width="20" height="20"/></div>`,
+      html: `<div class="lugar-buscado-pin"><img src="public/${simbolo}" alt="" width="20" height="20"/>${cerrar}</div>`,
       className: '',
       iconSize: [34, 34],
       iconAnchor: [17, 17],
@@ -1961,17 +2135,39 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   /** Dibuja/mueve el único marcador del lugar elegido en el buscador superior
    *  (municipio, departamento, sitio turístico, aeropuerto o puerto). Cada
    *  selección reemplaza el marcador anterior. Al hacer clic en el marcador se
-   *  vuelve a abrir su ficha informativa. */
+   *  vuelve a abrir su ficha informativa. En celular el tooltip queda visible
+   *  de forma permanente y la "×" sobre el icono oculta el elemento del mapa. */
   function mostrarLugarBuscado(tipo, item) {
     if (!capaLugarBuscado || !item) return;
     capaLugarBuscado.clearLayers();
     const lat = Number(item.lat);
     const lon = Number(item.lon);
     if (!isFinite(lat) || !isFinite(lon)) return;
-    const marker = L.marker([lat, lon], { icon: _iconoLugarBuscado(tipo), zIndexOffset: 1200 });
-    marker.bindTooltip(item.nombre || '', { direction: 'top', offset: [0, -16], className: 'site-label' });
+    const movil = typeof esMovil === 'function' && esMovil();
+    const marker = L.marker([lat, lon], { icon: _iconoLugarBuscado(tipo, movil), zIndexOffset: 1200 });
+    marker.bindTooltip(item.nombre || '', {
+      direction: 'top',
+      offset: [0, -16],
+      className: 'site-label',
+      permanent: movil,
+      interactive: false,
+    });
     marker.on('click', () => _abrirFichaMarcadorBuscado(tipo, item, lat, lon));
     marker.addTo(capaLugarBuscado);
+    if (movil) {
+      if (typeof marker.openTooltip === 'function') marker.openTooltip();
+      const pin = marker.getElement();
+      if (pin) {
+        const cerrar = pin.querySelector('.lugar-buscado-pin__cerrar');
+        if (cerrar) {
+          cerrar.addEventListener('click', (e) => {
+            L.DomEvent.stopPropagation(e);
+            L.DomEvent.preventDefault(e);
+            limpiarLugarBuscado();
+          });
+        }
+      }
+    }
   }
 
   /** Abre la ficha informativa del marcador elegido en el buscador superior,

@@ -1339,11 +1339,33 @@ input, select{ font-family: inherit; }
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 6px rgba(20,32,27,0.35);
+  position: relative;
 }
 .lugar-buscado-pin img{
   width: 20px; height: 20px;
   filter: brightness(0) invert(1);
 }
+.lugar-buscado-pin__cerrar{
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 19px; height: 19px;
+  border-radius: 50%;
+  background: #c0392b;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 1px 4px rgba(20,32,27,0.35);
+  z-index: 2;
+}
+.lugar-buscado-pin__cerrar:hover{ background: #a93226; }
 
 .popup-sitio{ font-family: var(--font-body); min-width: 190px; }
 .popup-sitio__cat{
@@ -2331,6 +2353,9 @@ input, select{ font-family: inherit; }
      vaya por detrás del teclado durante su animación). El re-chequeo
      (400 ms) deja el bloque asentado exacto y reposiciona las listas. */
   #app.combo-enfocado .mobile-tab-bar{ display: none; }
+  /* Cobertura para cualquier campo editable: si el teclado queda abierto con
+     la barra visible (focus sin cuadro de búsqueda), se oculta igualmente. */
+  #app.teclado-abierto .mobile-tab-bar{ display: none; }
   #app.teclado-abierto .side-panel{
     transform: translateY(calc(-1 * var(--teclado-alto, 0px)));
   }
@@ -2480,22 +2505,22 @@ input, select{ font-family: inherit; }
   justify-content: center;
   gap: 2px;
   max-width: 92%;
-  background: #f0f4f2;
-  border: 1px solid var(--teal-500);
-  color: var(--teal-600);
-  padding: 8px 28px 8px 14px;
+  background: var(--teal-500);
+  border: none;
+  color: #ffffff;
+  padding: 8px 30px 8px 16px;
   border-radius: 10px;
   font-size: 0.78rem;
-  font-weight: 600;
+  font-weight: 400;
   font-family: var(--font-body);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
   text-align: center;
 }
-.comparar-banner__titulo{ white-space: nowrap; color: var(--teal-600); }
+.comparar-banner__titulo{ white-space: nowrap; color: #ffffff; font-weight: 400; }
 .comparar-banner__stats{
-  font-weight: 600;
+  font-weight: 400;
   font-size: 0.74rem;
-  color: var(--teal-600);
+  color: #ffffff;
   white-space: nowrap;
 }
 .comparar-banner__cerrar{
@@ -2504,12 +2529,12 @@ input, select{ font-family: inherit; }
   right: 8px;
   background: transparent;
   border: none;
-  color: var(--teal-600);
+  color: #ffffff;
   font-size: 1.05rem;
   line-height: 1;
   cursor: pointer;
   padding: 0 2px;
-  opacity: 0.85;
+  opacity: 0.9;
 }
 .comparar-banner__cerrar:hover{ opacity: 1; }
 .altimetria-map-tooltip{
@@ -2766,6 +2791,13 @@ input, select{ font-family: inherit; }
   transition: background 0.08s ease;
 }
 .ctx-menu__item:hover{ background: var(--teal-50); }
+.ctx-menu__item--parent{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.ctx-menu__chevron{ color: var(--text-muted); font-size: 1rem; line-height: 1; }
 
 /* Marcadores durante la marcación de tramo */
 .marcando-pin{

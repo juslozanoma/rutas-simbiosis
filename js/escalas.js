@@ -20,7 +20,7 @@
 
     const combo = MunicipioCombo.crear({
       placeholder: 'Pueblo intermedio',
-      lineas: 5, // 5 opciones visibles (pueblo intermedio)
+      lineas: 6, // 6 opciones visibles (pueblo intermedio)
       clases: ['escala-trigger'],
       scope: row, // clic fuera de la fila cierra el menú
       excluirIds: () => {

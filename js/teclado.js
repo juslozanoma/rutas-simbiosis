@@ -33,6 +33,13 @@
     const altoVisible = window.innerHeight - cubierto;
     let lift = cubierto;
     const act = document.activeElement;
+    // El lift se aplica al .side-panel (CSS teclado-abierto): solo tiene
+    // sentido cuando el campo enfocado vive dentro del panel. Los campos de
+    // diálogos flotantes (nuevo puerto, buscador global) no levantan el bloque.
+    if (!act || !act.closest('.side-panel')) {
+      restaurar();
+      return;
+    }
     if (esCampoTeclado(act)) {
       const r = act.getBoundingClientRect();
       const necesario = Math.max(0, Math.round(r.bottom + 8 - altoVisible));
@@ -80,7 +87,14 @@
 
 
   const esTriggerCombo = (t) => Boolean(t && t.classList && t.classList.contains('combo__trigger'));
-  const esCampoTeclado = (t) => esTriggerCombo(t) || Boolean(t && t.id === 'buscar-sitios');
+  // Cualquier campo editable (combos, buscadores, cuadros de texto, select y
+  // áreas) cuenta como "campo con teclado": al enfocarlo se oculta la barra
+  // inferior y se levanta el bloque si el campo vive dentro del panel. Quedan
+  // fuera los de tipo no textual (checkbox, radio, rango, archivo, botones).
+  const esCampoTeclado = (t) => Boolean(
+    t && t.matches &&
+    t.matches('input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="button"]):not([type="submit"]):not([type="hidden"]), textarea, select, [contenteditable="true"]')
+  );
 
   // VirtualKeyboard API en modo superposición: el layout NO se encoge con el
   // teclado (el panel conserva su altura y las opciones no se cortan) y
@@ -135,7 +149,7 @@
 
   function _ajustarListasAbiertas() {
     document.querySelectorAll('.combo__list:not([hidden])').forEach((l) => {
-      const trig = l.parentElement && l.parentElement.querySelector('.combo__trigger');
+      const trig = l._trigger || (l.parentElement && l.parentElement.querySelector('.combo__trigger'));
       ajustarComboAlTeclado(trig, l);
     });
   }
@@ -149,13 +163,40 @@
    *  transform subiría el cuadro fuera de la pantalla. */
 
   function ajustarComboAlTeclado(trigger, listEl) {
-    if (!esMovil() || !listEl) return;
+    if (!listEl) return;
     if (!trigger) {
       listEl.style.maxHeight = '';
       listEl.style.top = '';
       listEl.style.bottom = '';
+      listEl.style.left = '';
+      listEl.style.width = '';
       return;
     }
+    // Lista portada (trasladada a <body> por municipioCombo para que las
+    // opciones no se corten con el overflow del panel): se posiciona sobre el
+    // viewport en TODOS los dispositivos. Abre hacia abajo cuando el teclado
+    // está cerrado y hay espacio, y hacia arriba cuando el teclado lo taparía.
+    const portada = listEl.parentElement === document.body;
+    if (portada) {
+      const tope = listEl.classList.contains('combo__list--6') ? 200 : 170; // 6 u 5 elementos
+      const r = trigger.getBoundingClientRect();
+      listEl.style.left = r.left + 'px';
+      listEl.style.width = r.width + 'px';
+      const cubierto = esMovil() ? _tecladoCubierto() : 0;
+      const espacioAbajo = Math.max(0, Math.round(window.innerHeight - r.bottom - 6));
+      const espacioArriba = Math.max(0, Math.round(r.top - 6));
+      if (cubierto > 0 || (espacioAbajo < tope && espacioArriba > espacioAbajo)) {
+        listEl.style.maxHeight = Math.min(tope, Math.max(40, espacioArriba)) + 'px';
+        listEl.style.top = 'auto';
+        listEl.style.bottom = Math.round(window.innerHeight - r.top + 6) + 'px';
+      } else {
+        listEl.style.maxHeight = Math.min(tope, Math.max(40, espacioAbajo)) + 'px';
+        listEl.style.top = Math.round(r.bottom + 6) + 'px';
+        listEl.style.bottom = 'auto';
+      }
+      return;
+    }
+    if (!esMovil()) return;
     const cubierto = _tecladoCubierto();
     const tope = listEl.classList.contains('combo__list--6') ? 200 : 170; // 6 u 5 elementos
     const r = trigger.getBoundingClientRect();
@@ -178,6 +219,21 @@
       listEl.style.bottom = 'auto';
     }
   }
+
+  /** Al hacer scroll en cualquier contenedor (o el documento), las listas
+   *  portadas (fijas sobre el viewport) se reubican para seguir al cuadro. El
+   *  scroll interno de la propia lista no la mueve: las opciones se desplazan
+   *  con normalidad. */
+
+  document.addEventListener('scroll', (e) => {
+    const alvo = e.target;
+    document.querySelectorAll('.combo__list:not([hidden])').forEach((l) => {
+      if (l.parentElement !== document.body) return;
+      if (alvo === l || (l.contains && l.contains(alvo))) return;
+      const trig = l._trigger;
+      if (trig) ajustarComboAlTeclado(trig, l);
+    });
+  }, true);
 
   /** Con el teclado abierto y un cuadro enfocado, recalcula el lift del bloque
    *  según el estado actual de su lista: reserva el espacio del menú al

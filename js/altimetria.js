@@ -366,16 +366,10 @@ const AltimetriaModule = (() => {
     _bannerComparar.appendChild(stats);
     _bannerComparar.appendChild(btn);
     _bannerComparar.style.display = 'none';
-    // El aviso se coloca sobre el perfil visible (chart de altimetría): si el
-    // chart está dentro de su contenedor (que nunca se re-renderiza), se ancla
-    // a ese contenedor para que quede encima de la gráfica, no sobre el mapa.
-    const chartVisible = document.getElementById('altimetria-chart');
-    const chartPanelVisible = document.getElementById('altimetria-chart-panel');
-    const contenedor = (() => {
-      if (chartVisible && chartVisible.offsetParent !== null) return chartVisible.parentNode || document.querySelector('.map-full') || document.body;
-      if (chartPanelVisible && chartPanelVisible.offsetParent !== null) return chartPanelVisible.parentNode || document.querySelector('.map-full') || document.body;
-      return document.querySelector('.map-full') || document.body;
-    })();
+    // El aviso flota sobre el mapa (nunca dentro del panel de altimetría): se
+    // ancla al contenedor del mapa. La posición vertical se ajusta en
+    // _mostrarBannerComparar para quedar encima del panel flotante.
+    const contenedor = document.querySelector('.map-full') || document.body;
     contenedor.appendChild(_bannerComparar);
     return _bannerComparar;
   }
@@ -386,6 +380,11 @@ const AltimetriaModule = (() => {
     const statsEl = b.querySelector('.comparar-banner__stats');
     statsEl.textContent = stats || '';
     statsEl.style.display = stats ? '' : 'none';
+    // Sobre el mapa, encima del panel flotante de altimetría (que se apoya en
+    // el borde inferior del mapa); si no hay panel flotante, en el borde inferior.
+    const flotante = document.getElementById('altimetria');
+    const alto = (flotante && flotante.offsetParent !== null) ? flotante.offsetHeight : 0;
+    b.style.bottom = (alto ? alto + 8 : 6) + 'px';
     b.style.display = 'flex';
   }
 

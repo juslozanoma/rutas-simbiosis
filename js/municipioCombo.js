@@ -152,6 +152,7 @@
         locLi.addEventListener('click', (e) => {
           e.stopPropagation();
           listEl.hidden = true;
+          _restaurarLista();
           if (config.esMovil()) trigger.blur();
           if (opciones.onUbicacionActual) opciones.onUbicacionActual();
         });
@@ -163,6 +164,7 @@
       pickLi.addEventListener('click', (e) => {
         e.stopPropagation();
         listEl.hidden = true;
+        _restaurarLista();
         config.teclado.reposicionar(false);
         if (config.esMovil()) trigger.blur();
         if (config.seleccionarMapa) {
@@ -263,11 +265,51 @@
 
     function cerrar() {
       listEl.hidden = true;
+      _restaurarLista();
       config.teclado.reencajar();
+    }
+
+    // ---- Menú fuera del panel -------------------------------------------------
+    // Para que las opciones puedan desplegarse por completo aunque superen la
+    // altura del panel (el .side-panel usa overflow clip/hidden), la lista se
+    // traslada temporalmente a <body> con posición fija al abrirse y vuelve a
+    // su lugar dentro del cuadro al cerrarse. La posición y el alto los calcula
+    // config.teclado.ajustar (teclado.js), que con la lista portada la limita
+    // al espacio visible del viewport en la dirección en que se abre.
+    listEl._trigger = trigger;
+
+    function _portarLista() {
+      if (listEl._portado) { config.teclado.ajustar(trigger, listEl); return; }
+      listEl._portado = true;
+      listEl._padreOriginal = listEl.parentElement;
+      document.body.appendChild(listEl);
+      listEl.style.position = 'fixed';
+      listEl.style.left = '0px';
+      listEl.style.right = 'auto';
+      listEl.style.zIndex = '1200';
+      config.teclado.ajustar(trigger, listEl);
+    }
+
+    function _restaurarLista() {
+      if (!listEl._portado) return;
+      listEl._portado = false;
+      if (listEl._padreOriginal) {
+        listEl._padreOriginal.appendChild(listEl);
+        listEl._padreOriginal = null;
+      }
+      listEl.style.position = '';
+      listEl.style.left = '';
+      listEl.style.right = '';
+      listEl.style.top = '';
+      listEl.style.bottom = '';
+      listEl.style.width = '';
+      listEl.style.maxHeight = '';
+      listEl.style.zIndex = '';
     }
 
     function abrir() {
       const texto = trigger.value.trim();
+      _portarLista();
       if (trigger.dataset.selectedId) {
         trigger.value = '';
         delete trigger.dataset.selectedId;
@@ -277,7 +319,6 @@
       } else {
         renderDepartamentos();
       }
-      config.teclado.ajustar(trigger, listEl);
       config.teclado.reencajar();
     }
 
@@ -293,6 +334,7 @@
      *  menú, fija el valor y ejecuta la acción configurada. */
     function aplicar(m) {
       listEl.hidden = true;
+      _restaurarLista();
       trigger.value = config.formatear(m);
       trigger.dataset.selectedId = m.id;
       config.teclado.reposicionar(false);

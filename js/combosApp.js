@@ -68,7 +68,7 @@
     _comboDestino = MunicipioCombo.crear({
       contenedor: document.querySelector('.combo[data-combo="destino"]'),
       placeholder: 'Destino',
-      lineas: 5,
+      lineas: 6, // el menú de destino muestra 6 opciones visibles (el resto con scroll)
       excluirIds: () => {
         // El destino puede repetir cualquier punto anterior salvo el inmediatamente
         // anterior (último pueblo confirmado, o el origen si no hay pueblos).
