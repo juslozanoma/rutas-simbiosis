@@ -719,6 +719,29 @@ input, select{ font-family: inherit; }
 }
 .filter-row__field input[type="range"]:disabled{ opacity: 0.4; }
 
+/* Filtrar distancia/tiempo (Descubre): el texto "Distancia"/"Tiempo" queda en
+   pequeño sobre el check, con el deslizador y el botón de recalcular debajo.
+   El círculo del botón de recalcular (replay) es más chico (30px) pero el
+   símbolo mantiene su tamaño. */
+#descubre-dropdown-desvios .filter-row{
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    "label label label"
+    "check field btn";
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 2px;
+}
+#descubre-dropdown-desvios .filter-row__label-text{ grid-area: label; }
+#descubre-dropdown-desvios .filter-row__check{ grid-area: check; }
+#descubre-dropdown-desvios .filter-row__field{ grid-area: field; }
+#descubre-dropdown-desvios .filter-row .icon-btn{
+  grid-area: btn;
+  width: 30px; height: 30px;
+}
+
 /* --- Lista de sitios turísticos --- */
 .panel-sites{
   flex: 1;

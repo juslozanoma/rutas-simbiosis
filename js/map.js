@@ -794,7 +794,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
   function _onMapContextMenu(e) {
     if (_marcandoTramo) return;
-    if (_puertoEnArrastre) return;
+    if (_arrastreCatalogo) return;
     // Sobre una ruta cargada por el usuario (KML/GPX) el clic secundario abre
     // su propio menú (cambiar inicio/fin/sentido, revertir, unir): aquí no se
     // muestra el menú del mapa ("Marcar tramo destapado / Agregar puerto").
@@ -2115,16 +2115,12 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   };
 
   /** Marcador del lugar elegido en el buscador superior: círculo verde de
-   *  34px (igual que el botón de vista satelital) con el símbolo blanco. En
-   *  celular (`conCerrar`) se le agrega una "×" para ocultar el elemento del
-   *  mapa sin quitar la búsqueda. */
-  function _iconoLugarBuscado(tipo, conCerrar) {
+   *  34px (igual que el botón de vista satelital) con el símbolo blanco y una
+   *  "×" para ocultar el elemento del mapa sin quitar la búsqueda. */
+  function _iconoLugarBuscado(tipo) {
     const simbolo = SIMBOLO_LUGAR_BUSCADO[tipo] || 'sign-post.svg';
-    const cerrar = conCerrar
-      ? '<button type="button" class="lugar-buscado-pin__cerrar" aria-label="Ocultar este sitio del mapa" title="Ocultar del mapa">&times;</button>'
-      : '';
     return L.divIcon({
-      html: `<div class="lugar-buscado-pin"><img src="public/${simbolo}" alt="" width="20" height="20"/>${cerrar}</div>`,
+      html: `<div class="lugar-buscado-pin"><img src="public/${simbolo}" alt="" width="20" height="20"/><button type="button" class="lugar-buscado-pin__cerrar" aria-label="Ocultar este sitio del mapa" title="Ocultar del mapa">&times;</button></div>`,
       className: '',
       iconSize: [34, 34],
       iconAnchor: [17, 17],
@@ -2134,38 +2130,35 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
   /** Dibuja/mueve el único marcador del lugar elegido en el buscador superior
    *  (municipio, departamento, sitio turístico, aeropuerto o puerto). Cada
-   *  selección reemplaza el marcador anterior. Al hacer clic en el marcador se
-   *  vuelve a abrir su ficha informativa. En celular el tooltip queda visible
-   *  de forma permanente y la "×" sobre el icono oculta el elemento del mapa. */
+   *  selección reemplaza el marcador anterior. El tooltip con el nombre queda
+   *  visible de forma permanente y la "×" sobre el icono oculta el elemento
+   *  del mapa; al hacer clic en el icono se abre su ficha informativa. */
   function mostrarLugarBuscado(tipo, item) {
     if (!capaLugarBuscado || !item) return;
     capaLugarBuscado.clearLayers();
     const lat = Number(item.lat);
     const lon = Number(item.lon);
     if (!isFinite(lat) || !isFinite(lon)) return;
-    const movil = typeof esMovil === 'function' && esMovil();
-    const marker = L.marker([lat, lon], { icon: _iconoLugarBuscado(tipo, movil), zIndexOffset: 1200 });
+    const marker = L.marker([lat, lon], { icon: _iconoLugarBuscado(tipo), zIndexOffset: 1200 });
     marker.bindTooltip(item.nombre || '', {
       direction: 'top',
       offset: [0, -16],
       className: 'site-label',
-      permanent: movil,
+      permanent: true,
       interactive: false,
     });
     marker.on('click', () => _abrirFichaMarcadorBuscado(tipo, item, lat, lon));
     marker.addTo(capaLugarBuscado);
-    if (movil) {
-      if (typeof marker.openTooltip === 'function') marker.openTooltip();
-      const pin = marker.getElement();
-      if (pin) {
-        const cerrar = pin.querySelector('.lugar-buscado-pin__cerrar');
-        if (cerrar) {
-          cerrar.addEventListener('click', (e) => {
-            L.DomEvent.stopPropagation(e);
-            L.DomEvent.preventDefault(e);
-            limpiarLugarBuscado();
-          });
-        }
+    if (typeof marker.openTooltip === 'function') marker.openTooltip();
+    const pin = marker.getElement();
+    if (pin) {
+      const cerrar = pin.querySelector('.lugar-buscado-pin__cerrar');
+      if (cerrar) {
+        cerrar.addEventListener('click', (e) => {
+          L.DomEvent.stopPropagation(e);
+          L.DomEvent.preventDefault(e);
+          limpiarLugarBuscado();
+        });
       }
     }
   }
