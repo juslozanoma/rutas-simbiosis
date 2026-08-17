@@ -472,13 +472,13 @@
   function _textoDistanciaTarjeta(sitio) {
     const partes = [];
     if (sitio.distanciaOrigenDesvioKm != null) {
-      partes.push(`${sitio.distanciaOrigenDesvioKm.toFixed(1)} km <span class="sitio-card__dist-note">(Distancia desde el origen hasta el punto de desvío)</span>`);
+      partes.push(`${sitio.distanciaOrigenDesvioKm.toFixed(1)} km <span class="sitio-card__dist-note"></span>`);
     }
     if (sitio.distanciaRutaKm != null) {
       partes.push(`desvío: ${sitio.distanciaRutaKm.toFixed(1)} km · ${Math.round(sitio.tiempoDesvioMin)} min`);
     }
     if (!partes.length) return '';
-    return `<span class="mono">${partes.join(' · ')}</span>`;
+    return `<span>${partes.join(' · ')}</span>`;
   }
 
   const btnAdd = li.querySelector('.sitio-card__add');

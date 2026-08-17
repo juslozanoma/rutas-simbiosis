@@ -184,7 +184,9 @@ const MapModule = (() => {
       zoomDelta: 0.25,
       rotate: true,
       rotateControl: false,
-      touchRotate: true,
+      // En celular la rotación solo se hace con la rosa de los vientos, no con
+      // los dedos (en escritorio el toque táctil no aplica).
+      touchRotate: !esMovil(),
       rotationSensitivity: 1.0,
     }).setView(CENTRO_COLOMBIA, ZOOM_INICIAL);
 
@@ -2120,6 +2122,23 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     }
   }
 
+  /** Abre (fija) el tooltip con el nombre del sitio: en celular no hay hover y
+   *  así se muestra la etiqueta junto a su ficha informativa. */
+  function abrirTooltipSitio(sitioId) {
+    const marker = _sitioMarkers.get(sitioId);
+    if (marker && marker.getTooltip() && typeof marker.openTooltip === 'function') {
+      marker.openTooltip();
+    }
+  }
+
+  /** Cierra el tooltip fijo de un sitio (al cerrarse su ficha informativa). */
+  function cerrarTooltipSitio(sitioId) {
+    const marker = _sitioMarkers.get(sitioId);
+    if (marker && marker.getTooltip() && typeof marker.closeTooltip === 'function') {
+      marker.closeTooltip();
+    }
+  }
+
   function toggleSitios() {
     if (map.hasLayer(clusterSitios)) {
       map.removeLayer(clusterSitios);
@@ -2660,6 +2679,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     abrirPopupExtremo,
     ocultarTooltipSitio,
     mostrarTooltipSitio,
+    abrirTooltipSitio,
+    cerrarTooltipSitio,
     encuadrar,
     centrarEn,
     mostrarLugarBuscado,

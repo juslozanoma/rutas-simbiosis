@@ -118,8 +118,8 @@ const TourismModule = (() => {
       _popupOverlay = null;
     }
     if (_popupSitioId != null) {
-      if (typeof MapModule !== 'undefined' && MapModule.mostrarTooltipSitio) {
-        MapModule.mostrarTooltipSitio(_popupSitioId);
+      if (typeof MapModule !== 'undefined' && MapModule.cerrarTooltipSitio) {
+        MapModule.cerrarTooltipSitio(_popupSitioId);
       }
       _popupSitioId = null;
     }
@@ -155,8 +155,8 @@ const TourismModule = (() => {
   function mostrarPopupSitio(sitio) {
     ocultarPopupSitio();
 
-    if (typeof MapModule !== 'undefined' && MapModule.ocultarTooltipSitio) {
-      MapModule.ocultarTooltipSitio(sitio.id);
+    if (typeof MapModule !== 'undefined' && MapModule.abrirTooltipSitio) {
+      MapModule.abrirTooltipSitio(sitio.id);
     }
     _popupSitioId = sitio.id;
 
