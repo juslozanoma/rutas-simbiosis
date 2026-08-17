@@ -871,6 +871,7 @@
       delete s.tiempoDesvioMin;
       delete s.distanciaOrigenKm;
       delete s.distanciaDestinoKm;
+      delete s.distanciaOrigenDesvioKm;
       delete s._offsetLado;
     });
     if (typeof _limpiarTurfYListado === 'function') _limpiarTurfYListado();

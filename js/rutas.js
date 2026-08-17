@@ -72,6 +72,7 @@
         delete s.tiempoDesvioMin;
         delete s.distanciaOrigenKm;
         delete s.distanciaDestinoKm;
+        delete s.distanciaOrigenDesvioKm;
         delete s._offsetLado;
       });
       MapModule.limpiarSitios();

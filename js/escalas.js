@@ -169,6 +169,7 @@
       delete s.tiempoDesvioMin;
       delete s.distanciaOrigenKm;
       delete s.distanciaDestinoKm;
+      delete s.distanciaOrigenDesvioKm;
       delete s._offsetLado;
     });
     MapModule.limpiarSitios();
@@ -187,7 +188,7 @@
     state.escalas.splice(idx, 1);
     sincronizarOrden();
     if (state.rutaActual) {
-      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
+      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s.distanciaOrigenDesvioKm; delete s._offsetLado; });
       MapModule.limpiarSitios();
       _borrarListadoDescubre();
       calcularRutaPrincipal(true);
@@ -220,6 +221,7 @@
       delete s.tiempoDesvioMin;
       delete s.distanciaOrigenKm;
       delete s.distanciaDestinoKm;
+      delete s.distanciaOrigenDesvioKm;
       delete s._offsetLado;
     });
     MapModule.limpiarSitios();
@@ -273,7 +275,7 @@
     sincronizarOrden();
     if (state.rutaActual) {
       if (recalcular) {
-        state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
+        state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s.distanciaOrigenDesvioKm; delete s._offsetLado; });
         // Al borrar un pueblo intermedio se invalidan el perfil (turf) y los
         // sitios del mapa junto con el listado de Descubre.
         _limpiarTurfYListado();
@@ -447,6 +449,7 @@
           delete s.tiempoDesvioMin;
           delete s.distanciaOrigenKm;
           delete s.distanciaDestinoKm;
+      delete s.distanciaOrigenDesvioKm;
           delete s._offsetLado;
         });
         MapModule.limpiarSitios();
@@ -478,7 +481,7 @@
     state.paradas.splice(0, state.paradas.length, ...nuevasParadas);
 
     if (movido.tipo === 'escala') {
-      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s._offsetLado; });
+      state.sitios.forEach((s) => { delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm; delete s.distanciaDestinoKm; delete s.distanciaOrigenDesvioKm; delete s._offsetLado; });
       MapModule.limpiarSitios();
       _borrarListadoDescubre();
       await calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });

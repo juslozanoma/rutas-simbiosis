@@ -1014,6 +1014,7 @@ input, select{ font-family: inherit; }
 }
 .sitio-card__cat{ display: none; }
 .sitio-card__meta{ font-size: 0.71rem; color: var(--text-muted); margin-top: 3px; display: flex; justify-content: space-between; gap: 8px; }
+.sitio-card__dist-note{ font-weight: 400; opacity: 0.8; }
 .sitio-card__ciudad{ margin: 5px 0 0; font-size: 0.68rem; color: var(--text-muted); }
 .sitio-card__rio{ font-size: 0.62rem; font-weight: 600; color: var(--teal-600); white-space: nowrap; }
 .sitio-card__preview{

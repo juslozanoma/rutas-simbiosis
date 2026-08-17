@@ -43,6 +43,7 @@
     sitiosFiltradosBase: [],
     ordenSitios: 'origen',
     ordenDir: 'asc',          // dirección del orden de sitios: 'asc' | 'desc'
+    ordenActivo: 'extremo',   // toggle activo del orden: 'extremo' (desde A/Z) | 'dir' (A-Z/Z-A)
     modoVisibilidad: 'completa',
     previewSitioId: null,
     categoriasSeleccionadas: [],

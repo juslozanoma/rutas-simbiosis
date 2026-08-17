@@ -89,6 +89,33 @@ const FiltersModule = (() => {
     return turf.distance(puntoDestino, puntoSitio, { units: 'kilometers' });
   }
 
+  /** Distancia acumulada (km) desde el origen hasta cada vértice de la ruta. */
+  function distanciasAcumuladasRuta(rutaGeoJSON) {
+    const coords = _coordsRuta(rutaGeoJSON);
+    const acum = [0];
+    for (let i = 1; i < coords.length; i++) {
+      acum.push(acum[i - 1] + turf.distance(turf.point(coords[i - 1]), turf.point(coords[i]), { units: 'kilometers' }));
+    }
+    return acum;
+  }
+
+  /** Distancia (km) sobre la ruta desde el origen hasta el punto de desvío del
+   *  sitio (el punto más cercano de la ruta al sitio). `coordsAcumuladas` viene
+   *  de distanciasAcumuladasRuta para no recalcularla por sitio. */
+  function distanciaOrigenPuntoDesvio(sitio, rutaGeoJSON, coordsAcumuladas) {
+    const coords = _coordsRuta(rutaGeoJSON);
+    if (!coords || coords.length < 2 || !coordsAcumuladas || coordsAcumuladas.length < coords.length) return null;
+    try {
+      const nearest = turf.nearestPointOnLine(rutaGeoJSON, turf.point([sitio.lon, sitio.lat]), { units: 'kilometers' });
+      const idx = nearest.properties.index;
+      if (idx < 0 || idx >= coords.length) return null;
+      const p = nearest.geometry.coordinates;
+      return (coordsAcumuladas[idx] ?? 0) + turf.distance(turf.point(coords[idx]), turf.point(p), { units: 'kilometers' });
+    } catch {
+      return null;
+    }
+  }
+
   /**
    * Aproxima el tiempo de desvío (ida y vuelta, en minutos) para visitar un
    * sitio situado a `distanciaKm` de la ruta principal, asumiendo que se
@@ -116,6 +143,7 @@ const FiltersModule = (() => {
    */
   function precomputarSitios(sitios, rutaGeoJSON, origen, destino, velocidadKmH = VELOCIDAD_DESVIO_KMH) {
     const coords = _coordsRuta(rutaGeoJSON);
+    const coordsAcum = distanciasAcumuladasRuta(rutaGeoJSON);
     sitios.forEach((s) => {
       if (s.lat == null || s.lon == null || isNaN(Number(s.lat)) || isNaN(Number(s.lon))) return;
       const punto = turf.point([s.lon, s.lat]);
@@ -134,6 +162,9 @@ const FiltersModule = (() => {
             const sx = s.lon - (nearest.geometry.coordinates[0] || ax);
             const sy = s.lat - (nearest.geometry.coordinates[1] || ay);
             s._offsetLado = Math.sign(dx * sy - dy * sx) || 1;
+            // Distancia sobre la ruta desde el origen hasta el punto de desvío.
+            const p = nearest.geometry.coordinates;
+            s.distanciaOrigenDesvioKm = (coordsAcum[idx] ?? 0) + turf.distance(turf.point(coords[idx]), turf.point(p), { units: 'kilometers' });
           } else {
             s._offsetLado = 1;
           }
@@ -184,6 +215,8 @@ const FiltersModule = (() => {
         ? ((tiempoMaximoMin - MINUTOS_MANIOBRA) * velocidadKmH) / 120
         : 0;
     const bboxLimite = margenBbox > 0 && margenBbox <= 5 ? rutaBboxConMargen(rutaGeoJSON, margenBbox) : null;
+    const coordsRutaFiltro = _coordsRuta(rutaGeoJSON);
+    const coordsAcumFiltro = distanciasAcumuladasRuta(rutaGeoJSON);
 
     return sitios
       .filter((s) => s.lat != null && s.lon != null && !isNaN(Number(s.lat)) && !isNaN(Number(s.lon)))
@@ -199,7 +232,7 @@ const FiltersModule = (() => {
           s.tiempoDesvioMin = aproximarTiempoDesvio(s.distanciaRutaKm, velocidadKmH);
           s.distanciaOrigenKm = distanciaAOrigen(s, origen);
           s.distanciaDestinoKm = distanciaADestino(s, destino);
-          const coords = _coordsRuta(rutaGeoJSON);
+          const coords = coordsRutaFiltro;
           if (coords && coords.length >= 2) {
             try {
               const nearest = turf.nearestPointOnLine(rutaGeoJSON, punto, { units: 'kilometers' });
@@ -211,6 +244,9 @@ const FiltersModule = (() => {
                 const sx = s.lon - (nearest.geometry.coordinates[0] || ax);
                 const sy = s.lat - (nearest.geometry.coordinates[1] || ay);
                 s._offsetLado = Math.sign(dx * sy - dy * sx) || 1;
+                // Distancia sobre la ruta desde el origen hasta el punto de desvío.
+                const p = nearest.geometry.coordinates;
+                s.distanciaOrigenDesvioKm = (coordsAcumFiltro[idx] ?? 0) + turf.distance(turf.point(coords[idx]), turf.point(p), { units: 'kilometers' });
               } else {
                 s._offsetLado = 1;
               }
@@ -237,6 +273,8 @@ const FiltersModule = (() => {
     distanciaAOrigen,
     distanciaADestino,
     aproximarTiempoDesvio,
+    distanciasAcumuladasRuta,
+    distanciaOrigenPuntoDesvio,
     precomputarSitios,
     filtrarSitiosPorRuta,
     rutaBboxConMargen,

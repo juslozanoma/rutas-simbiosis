@@ -8,11 +8,17 @@
 
   function ordenarSitios(sitios) {
     const lista = [...sitios];
-    const dir = state.ordenDir === 'desc' ? -1 : 1;
+    // Toggle activo "A-Z/Z-A": orden alfabético por nombre.
+    if (state.ordenActivo === 'dir') {
+      const dir = state.ordenDir === 'desc' ? -1 : 1;
+      lista.sort((a, b) => dir * String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es'));
+      return lista;
+    }
+    // Toggle activo "Desde A/Z": distancia desde el extremo elegido (más cerca primero).
     if (state.ordenSitios === 'origen') {
-      lista.sort((a, b) => dir * ((a.distanciaOrigenKm ?? a.distanciaRutaKm ?? Infinity) - (b.distanciaOrigenKm ?? b.distanciaRutaKm ?? Infinity)));
+      lista.sort((a, b) => (a.distanciaOrigenKm ?? a.distanciaRutaKm ?? Infinity) - (b.distanciaOrigenKm ?? b.distanciaRutaKm ?? Infinity));
     } else if (state.ordenSitios === 'destino') {
-      lista.sort((a, b) => dir * ((a.distanciaDestinoKm ?? a.distanciaRutaKm ?? Infinity) - (b.distanciaDestinoKm ?? b.distanciaRutaKm ?? Infinity)));
+      lista.sort((a, b) => (a.distanciaDestinoKm ?? a.distanciaRutaKm ?? Infinity) - (b.distanciaDestinoKm ?? b.distanciaRutaKm ?? Infinity));
     }
     return lista;
   }
@@ -27,15 +33,18 @@
   }
 
   /** Toggle 1 del menú Ordenar: alterna el extremo de referencia entre el
-   *  origen y el destino (el texto del botón muestra el estado activo). */
+   *  origen y el destino. Al usarlo queda activo este toggle (el del orden
+   *  alfabético pasa a inactivo). */
   function alternarOrdenSitios() {
+    state.ordenActivo = 'extremo';
     state.ordenSitios = state.ordenSitios === 'origen' ? 'destino' : 'origen';
     aplicarOrdenSitios(state.ordenSitios);
   }
 
-  /** Toggle 2 del menú Ordenar: alterna la dirección del orden entre
-   *  ascendente y descendente (el texto del botón muestra el estado activo). */
+  /** Toggle 2 del menú Ordenar: alterna el orden alfabético entre A-Z y Z-A.
+   *  Al usarlo queda activo este toggle (el de desde A/Z pasa a inactivo). */
   function alternarDireccionOrdenSitios() {
+    state.ordenActivo = 'dir';
     state.ordenDir = state.ordenDir === 'asc' ? 'desc' : 'asc';
     aplicarOrdenSitios(state.ordenSitios);
   }
@@ -273,6 +282,9 @@
     const resultados = [];
     const resultadosBase = [];
     const catsNorm = state.categoriasSeleccionadas.length > 0 ? new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase().trim())) : null;
+    // Distancias acumuladas de la ruta para calcular, por sitio, la distancia
+    // desde el origen hasta su punto de desvío sin repetir el recorrido.
+    const coordsAcumDesvio = FiltersModule.distanciasAcumuladasRuta(rutaFiltro.geojson);
     let idx = 0;
     let indiceMensaje = 0;
     const intervaloMensajes = setInterval(() => {
@@ -293,6 +305,7 @@
           if (s.distanciaRutaKm == null) {
             s.distanciaRutaKm = FiltersModule.distanciaARuta(s, rutaFiltro.geojson);
             s.tiempoDesvioMin = FiltersModule.aproximarTiempoDesvio(s.distanciaRutaKm);
+            s.distanciaOrigenDesvioKm = FiltersModule.distanciaOrigenPuntoDesvio(s, rutaFiltro.geojson, coordsAcumDesvio);
           }
           if (!isFinite(s.distanciaRutaKm)) continue;
           const usarDistanciaProg = el.checkDistancia.checked || (state.categoriasSeleccionadas.length > 0 && !el.checkDistancia.checked && !el.checkTiempo.checked);
@@ -448,13 +461,27 @@
         </div>
         <div class="sitio-card__meta">
           <span>${sitio.municipio}, ${sitio.departamento}</span>
-          ${sitio.distanciaRutaKm != null ? `<span class="mono">${sitio.distanciaRutaKm.toFixed(1)} km · ${Math.round(sitio.tiempoDesvioMin)} min</span>` : ''}
+          ${_textoDistanciaTarjeta(sitio)}
         </div>
         <p class="sitio-card__preview" hidden></p>
       </li>
     `);
 
-    const btnAdd = li.querySelector('.sitio-card__add');
+    /** Texto de distancias de la tarjeta: distancia sobre la ruta desde el origen
+   *  hasta el punto de desvío y, después, los datos del desvío (km y min). */
+  function _textoDistanciaTarjeta(sitio) {
+    const partes = [];
+    if (sitio.distanciaOrigenDesvioKm != null) {
+      partes.push(`${sitio.distanciaOrigenDesvioKm.toFixed(1)} km <span class="sitio-card__dist-note">(Distancia desde el origen hasta el punto de desvío)</span>`);
+    }
+    if (sitio.distanciaRutaKm != null) {
+      partes.push(`desvío: ${sitio.distanciaRutaKm.toFixed(1)} km · ${Math.round(sitio.tiempoDesvioMin)} min`);
+    }
+    if (!partes.length) return '';
+    return `<span class="mono">${partes.join(' · ')}</span>`;
+  }
+
+  const btnAdd = li.querySelector('.sitio-card__add');
     btnAdd.addEventListener('click', (e) => {
       e.stopPropagation();
       if (esParada) {

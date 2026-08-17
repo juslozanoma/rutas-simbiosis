@@ -357,21 +357,36 @@
   }
 
 
+  function _esNombreCoordenadas(nombre) {
+    return typeof nombre === 'string' && /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(nombre.trim());
+  }
+
+
   function _actualizarTextoBotonesOrden() {
-    // Toggle 1: desde origen/destino (el texto siempre muestra el estado activo).
+    // Toggle 1: desde origen/destino. Los extremos puestos en el mapa tienen un
+    // nombre tipo coordenadas: ahí se muestra "Desde A" / "Desde Z" en vez del
+    // par de coordenadas.
     if (el.btnOrdenOrigenDes) {
-      const desde = state.ordenSitios === 'origen'
-        ? (state.origen?.nombre ? `Desde ${state.origen.nombre} ↓` : 'Desde Origen ↓')
-        : (state.destino?.nombre ? `Desde ${state.destino.nombre} ↑` : 'Desde Destino ↑');
+      let desde;
+      if (state.ordenSitios === 'origen') {
+        const n = state.origen?.nombre;
+        desde = _esNombreCoordenadas(n) ? 'Desde A ↓' : (n ? `Desde ${n} ↓` : 'Desde Origen ↓');
+      } else {
+        const n = state.destino?.nombre;
+        desde = _esNombreCoordenadas(n) ? 'Desde Z ↑' : (n ? `Desde ${n} ↑` : 'Desde Destino ↑');
+      }
       el.btnOrdenOrigenDes.textContent = desde;
     }
-    // Toggle 2: orden ascendente/descendente (el texto muestra el estado activo).
+    // Toggle 2: orden alfabético A-Z / Z-A.
     if (el.btnOrdenDir) el.btnOrdenDir.textContent = state.ordenDir === 'desc' ? 'Orden descendente Z-A' : 'Orden ascendente A-Z';
   }
 
 
   function _actualizarEstadoBotonesDescubre() {
-    // Con los toggles el propio texto indica el estado activo; no hay clase activa.
+    // Ambos toggles no pueden estar activos al mismo tiempo: solo el que se
+    // está usando queda con fondo azul y letras blancas.
+    if (el.btnOrdenOrigenDes) el.btnOrdenOrigenDes.classList.toggle('descubre-dropdown__item--active', state.ordenActivo !== 'dir');
+    if (el.btnOrdenDir) el.btnOrdenDir.classList.toggle('descubre-dropdown__item--active', state.ordenActivo === 'dir');
   }
 
 
