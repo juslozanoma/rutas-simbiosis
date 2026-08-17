@@ -698,18 +698,18 @@ input, select{ font-family: inherit; }
   gap: 10px;
 }
 .filter-row__check{
-  width: 17px; height: 17px;
+  width: 27px; height: 17px;
   accent-color: #4a6fa5;
   flex-shrink: 0;
   cursor: pointer;
 }
 .filter-row__field{ flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .filter-row__label-text{
-  font-size: 10px;
+  font-size: 8px;
   color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-weight: 400;
+  text-transform: lowercase;
+  letter-spacing: 0.0em;
 }
 .filter-row__value{ color: var(--text-strong); font-size: 0.72rem; font-weight: 600; }
 .filter-row__field input[type="range"]{
@@ -719,20 +719,20 @@ input, select{ font-family: inherit; }
 }
 .filter-row__field input[type="range"]:disabled{ opacity: 0.4; }
 
-/* Filtrar distancia/tiempo (Descubre): el texto "Distancia"/"Tiempo" queda en
-   pequeño sobre el check, con el deslizador y el botón de recalcular debajo.
-   El círculo del botón de recalcular (replay) es más chico (30px) pero el
-   símbolo mantiene su tamaño. */
+/* Filtrar distancia/tiempo (Descubre): el check queda arriba y el texto
+   "Distancia"/"Tiempo" en pequeño debajo, con el deslizador y el botón de
+   recalcular a la derecha del check. El círculo del botón de recalcular
+   (replay) es más chico (30px) pero el símbolo mantiene su tamaño. */
 #descubre-dropdown-desvios .filter-row{
   display: grid;
   grid-template-columns: auto 1fr auto;
   grid-template-rows: auto auto;
   grid-template-areas:
-    "label label label"
-    "check field btn";
-  align-items: center;
-  column-gap: 8px;
-  row-gap: 2px;
+    "check field btn"
+    "label label label";
+  align-items: baseline;
+  column-gap: 11px;
+  row-gap: 0px;
 }
 #descubre-dropdown-desvios .filter-row__label-text{ grid-area: label; }
 #descubre-dropdown-desvios .filter-row__check{ grid-area: check; }
@@ -1191,6 +1191,30 @@ input, select{ font-family: inherit; }
   border-top-color: rgba(255,255,255,0.92);
   pointer-events: none;
 }
+/* Contenido del tooltip del lugar buscado: nombre + "×" roja al final */
+.site-label__contenido{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.site-label__cerrar{
+  background: #c0392b;
+  color: #ffffff;
+  border: none;
+  border-radius: 50%;
+  width: 15px; height: 15px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  pointer-events: auto;
+}
+.site-label__cerrar:hover{ background: #a93226; }
 /* Etiqueta con el número del listado de Descubre: insignia circular verde */
 .site-label--num{
   background: var(--teal-500);
@@ -1362,33 +1386,11 @@ input, select{ font-family: inherit; }
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 6px rgba(20,32,27,0.35);
-  position: relative;
 }
 .lugar-buscado-pin img{
   width: 20px; height: 20px;
   filter: brightness(0) invert(1);
 }
-.lugar-buscado-pin__cerrar{
-  position: absolute;
-  top: -7px;
-  right: -7px;
-  width: 19px; height: 19px;
-  border-radius: 50%;
-  background: #c0392b;
-  color: #ffffff;
-  border: 2px solid #ffffff;
-  font-size: 0.75rem;
-  font-weight: 700;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  box-shadow: 0 1px 4px rgba(20,32,27,0.35);
-  z-index: 2;
-}
-.lugar-buscado-pin__cerrar:hover{ background: #a93226; }
 
 .popup-sitio{ font-family: var(--font-body); min-width: 190px; }
 .popup-sitio__cat{
@@ -2076,12 +2078,11 @@ input, select{ font-family: inherit; }
 .filter-row__thumb-val{
   position: absolute;
   bottom: calc(100% + 1px);
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.62rem;
-  font-weight: 600;
+  transform: translateX(-70%);
+  font-size: 9px;
+  font-weight: 500;
   color: var(--teal-600);
-  padding: 0;
+  padding: 0 0 0 12 px;
   pointer-events: none;
   white-space: nowrap;
 }

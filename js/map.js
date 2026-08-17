@@ -61,6 +61,7 @@ const MapModule = (() => {
 
   // Marking dangerous road state
   let _ctxMenu = null;
+  let _capaPinCtx = null;   // L.layerGroup con el pin del clic derecho / pulsación larga
   let _marcandoTramo = false;
   let _marcandoPtoA = null;
   let _marcandoSegmento = null;
@@ -260,6 +261,7 @@ const MapModule = (() => {
     capaConexiones = L.layerGroup().addTo(map);
     capaComparacion = L.layerGroup().addTo(map);
     capaLugarBuscado = L.layerGroup().addTo(map);
+    _capaPinCtx = L.layerGroup().addTo(map);
 
     // El contenedor del mapa nace con un tamaño definido por CSS (flex),
     // por lo que conviene forzar un recálculo tras el primer render.
@@ -332,6 +334,30 @@ const MapModule = (() => {
 
   function iconoOrigen(color) { return _pinDivIcon('A', color); }
   function iconoDestino(color) { return _pinDivIcon('Z', color); }
+
+  /** Pin (misma forma que public/pin.svg) en verde teal que marca el punto del
+   *  clic derecho / pulsación larga junto al menú contextual. El "más" interno
+   *  se recorta (fill-rule evenodd) dejando ver el mapa. */
+  function _iconoPinCtx() {
+    const svg = `
+      <svg class="pin-svg" width="26" height="36" viewBox="0 0 14 20" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd">
+        <path d="M9,8 L8,8 L8,9 C8,9.552 7.552,10 7,10 C6.448,10 6,9.552 6,9 L6,8 L5,8 C4.448,8 4,7.552 4,7 C4,6.448 4.448,6 5,6 L6,6 L6,5 C6,4.448 6.448,4 7,4 C7.552,4 8,4.448 8,5 L8,6 L9,6 C9.552,6 10,6.448 10,7 C10,7.552 9.552,8 9,8 M7,0 C3.134,0 0,3.134 0,7 C0,10.866 7,20 7,20 C7,20 14,10.866 14,7 C14,3.134 10.866,0 7,0" fill="#2f7a6b"/>
+      </svg>`;
+    return L.divIcon({
+      html: `<div class="pin-icon">${svg}</div>`,
+      className: '',
+      iconSize: [26, 36],
+      iconAnchor: [13, 36],
+      popupAnchor: [0, -32],
+    });
+  }
+
+  /** Coloca el pin del clic derecho / pulsación larga en el punto indicado. */
+  function _mostrarPinCtx(lat, lng) {
+    if (!_capaPinCtx) return;
+    _capaPinCtx.clearLayers();
+    L.marker([lat, lng], { icon: _iconoPinCtx(), zIndexOffset: 2000, interactive: false }).addTo(_capaPinCtx);
+  }
 
   /** Ícono de sitio turístico: con número (el de su listado) usa el pin
    *  numerado turquesa; sin número usa el pin con el SVG de encrucijada. */
@@ -818,14 +844,17 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
     const lat = e.latlng.lat;
     const lng = e.latlng.lng;
-    const items = [
-      {
-        texto: 'Crear ruta desde/hasta aquí',
-        submenu: [
-          { texto: 'Crear ruta desde aquí', accion: () => _crearRutaDesde(lat, lng) },
-          { texto: 'Crear ruta hasta aquí', accion: () => _crearRutaHasta(lat, lng) },
-        ],
-      },
+    const items = [];
+    // Sin origen fijado solo se ofrece "Crear ruta desde aquí". Con un origen
+    // ya definido (desde aquí o por el cuadro) se ofrece fijar el destino y
+    // corregir el punto de inicio.
+    if (_coordOrigen) {
+      items.push({ texto: 'Crear ruta hasta aquí', accion: () => _crearRutaHasta(lat, lng) });
+      items.push({ texto: 'Corregir punto de inicio de la ruta', accion: () => _crearRutaDesde(lat, lng) });
+    } else {
+      items.push({ texto: 'Crear ruta desde aquí', accion: () => _crearRutaDesde(lat, lng) });
+    }
+    items.push(
       { texto: 'Buscar sitios turísticos cercanos', accion: () => _buscarSitiosCercanos(lat, lng) },
       {
         texto: 'Agregar sitio nuevo',
@@ -833,8 +862,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
           const abrir = typeof abrirDialogoNuevoPuerto === 'function' ? abrirDialogoNuevoPuerto : _onAgregarPuertoEn;
           if (abrir) abrir(lat, lng);
         },
-      },
-    ];
+      }
+    );
     if (!puertosActivos && !aeropuertosActivos && !archivoActivo && !subirVisible) {
       items.push({ texto: 'Marcar tramo destapado', accion: () => iniciarMarcadoTramo() });
     }
@@ -852,11 +881,13 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         },
       });
     }
+    _mostrarPinCtx(lat, lng);
     _abrirMenuContextual(items, e.latlng);
   }
 
   function _cerrarCtxMenu() {
     if (_ctxMenu) { _ctxMenu.remove(); _ctxMenu = null; }
+    if (_capaPinCtx) _capaPinCtx.clearLayers();
   }
 
   /** Abre el menú contextual del mapa sobre el punto indicado. Cada ítem es
@@ -2115,12 +2146,11 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   };
 
   /** Marcador del lugar elegido en el buscador superior: círculo verde de
-   *  34px (igual que el botón de vista satelital) con el símbolo blanco y una
-   *  "×" para ocultar el elemento del mapa sin quitar la búsqueda. */
+   *  34px (igual que el botón de vista satelital) con el símbolo blanco. */
   function _iconoLugarBuscado(tipo) {
     const simbolo = SIMBOLO_LUGAR_BUSCADO[tipo] || 'sign-post.svg';
     return L.divIcon({
-      html: `<div class="lugar-buscado-pin"><img src="public/${simbolo}" alt="" width="20" height="20"/><button type="button" class="lugar-buscado-pin__cerrar" aria-label="Ocultar este sitio del mapa" title="Ocultar del mapa">&times;</button></div>`,
+      html: `<div class="lugar-buscado-pin"><img src="public/${simbolo}" alt="" width="20" height="20"/></div>`,
       className: '',
       iconSize: [34, 34],
       iconAnchor: [17, 17],
@@ -2128,11 +2158,34 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     });
   }
 
+  /** Tooltip permanente del lugar buscado: el nombre y una "×" roja al final
+   *  que oculta el elemento del mapa sin quitar la búsqueda. */
+  function _crearTooltipLugar(nombre) {
+    const contenedor = document.createElement('span');
+    contenedor.className = 'site-label__contenido';
+    const texto = document.createElement('span');
+    texto.textContent = nombre;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'site-label__cerrar';
+    btn.setAttribute('aria-label', 'Ocultar este sitio del mapa');
+    btn.title = 'Ocultar del mapa';
+    btn.innerHTML = '&times;';
+    btn.addEventListener('click', (e) => {
+      L.DomEvent.stopPropagation(e);
+      L.DomEvent.preventDefault(e);
+      limpiarLugarBuscado();
+    });
+    contenedor.appendChild(texto);
+    contenedor.appendChild(btn);
+    return contenedor;
+  }
+
   /** Dibuja/mueve el único marcador del lugar elegido en el buscador superior
    *  (municipio, departamento, sitio turístico, aeropuerto o puerto). Cada
    *  selección reemplaza el marcador anterior. El tooltip con el nombre queda
-   *  visible de forma permanente y la "×" sobre el icono oculta el elemento
-   *  del mapa; al hacer clic en el icono se abre su ficha informativa. */
+   *  visible de forma permanente y su "×" roja oculta el elemento del mapa;
+   *  al hacer clic en el icono se abre su ficha informativa. */
   function mostrarLugarBuscado(tipo, item) {
     if (!capaLugarBuscado || !item) return;
     capaLugarBuscado.clearLayers();
@@ -2140,7 +2193,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const lon = Number(item.lon);
     if (!isFinite(lat) || !isFinite(lon)) return;
     const marker = L.marker([lat, lon], { icon: _iconoLugarBuscado(tipo), zIndexOffset: 1200 });
-    marker.bindTooltip(item.nombre || '', {
+    marker.bindTooltip(_crearTooltipLugar(item.nombre || ''), {
       direction: 'top',
       offset: [0, -16],
       className: 'site-label',
@@ -2150,17 +2203,6 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     marker.on('click', () => _abrirFichaMarcadorBuscado(tipo, item, lat, lon));
     marker.addTo(capaLugarBuscado);
     if (typeof marker.openTooltip === 'function') marker.openTooltip();
-    const pin = marker.getElement();
-    if (pin) {
-      const cerrar = pin.querySelector('.lugar-buscado-pin__cerrar');
-      if (cerrar) {
-        cerrar.addEventListener('click', (e) => {
-          L.DomEvent.stopPropagation(e);
-          L.DomEvent.preventDefault(e);
-          limpiarLugarBuscado();
-        });
-      }
-    }
   }
 
   /** Abre la ficha informativa del marcador elegido en el buscador superior,

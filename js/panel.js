@@ -217,6 +217,10 @@
           el.btnDescubreDesvios.classList.add('descubre-btn--active');
           el.descubreDropdownDesvios.hidden = false;
           desplegandoDescubre = 'desvios';
+          // Posicionar ya el tooltip (x km / x min) sobre el pulgar de cada
+          // deslizador al abrir el menú de filtrar.
+          _actualizarThumbValor(el.filtroDistancia, 'filtro-distancia-thumb', 'km');
+          _actualizarThumbValor(el.filtroTiempo, 'filtro-tiempo-thumb', 'min');
         }
       });
     }
