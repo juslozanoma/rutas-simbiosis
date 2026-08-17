@@ -8,10 +8,11 @@
 
   function ordenarSitios(sitios) {
     const lista = [...sitios];
+    const dir = state.ordenDir === 'desc' ? -1 : 1;
     if (state.ordenSitios === 'origen') {
-      lista.sort((a, b) => (a.distanciaOrigenKm ?? a.distanciaRutaKm ?? Infinity) - (b.distanciaOrigenKm ?? b.distanciaRutaKm ?? Infinity));
+      lista.sort((a, b) => dir * ((a.distanciaOrigenKm ?? a.distanciaRutaKm ?? Infinity) - (b.distanciaOrigenKm ?? b.distanciaRutaKm ?? Infinity)));
     } else if (state.ordenSitios === 'destino') {
-      lista.sort((a, b) => (a.distanciaDestinoKm ?? a.distanciaRutaKm ?? Infinity) - (b.distanciaDestinoKm ?? b.distanciaRutaKm ?? Infinity));
+      lista.sort((a, b) => dir * ((a.distanciaDestinoKm ?? a.distanciaRutaKm ?? Infinity) - (b.distanciaDestinoKm ?? b.distanciaRutaKm ?? Infinity)));
     }
     return lista;
   }
@@ -20,8 +21,23 @@
   function aplicarOrdenSitios(orden) {
     state.ordenSitios = orden;
     actualizarBotonesOrden();
+    _actualizarTextoBotonesOrden();
     _actualizarEstadoBotonesDescubre();
     renderizarSitios(state.modoVisibilidad === 'visibles' ? _filtrarVisibles(state.sitiosFiltrados) : state.sitiosFiltrados);
+  }
+
+  /** Toggle 1 del menú Ordenar: alterna el extremo de referencia entre el
+   *  origen y el destino (el texto del botón muestra el estado activo). */
+  function alternarOrdenSitios() {
+    state.ordenSitios = state.ordenSitios === 'origen' ? 'destino' : 'origen';
+    aplicarOrdenSitios(state.ordenSitios);
+  }
+
+  /** Toggle 2 del menú Ordenar: alterna la dirección del orden entre
+   *  ascendente y descendente (el texto del botón muestra el estado activo). */
+  function alternarDireccionOrdenSitios() {
+    state.ordenDir = state.ordenDir === 'asc' ? 'desc' : 'asc';
+    aplicarOrdenSitios(state.ordenSitios);
   }
 
 

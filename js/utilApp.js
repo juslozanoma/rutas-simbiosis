@@ -358,14 +358,20 @@
 
 
   function _actualizarTextoBotonesOrden() {
-    if (el.btnOrdenOrigenDes) el.btnOrdenOrigenDes.textContent = state.origen?.nombre ? `Desde ${state.origen.nombre}` : 'Desde Origen';
-    if (el.btnOrdenDestinoDes) el.btnOrdenDestinoDes.textContent = state.destino?.nombre ? `Desde ${state.destino.nombre}` : 'Desde Destino';
+    // Toggle 1: desde origen/destino (el texto siempre muestra el estado activo).
+    if (el.btnOrdenOrigenDes) {
+      const desde = state.ordenSitios === 'origen'
+        ? (state.origen?.nombre ? `Desde ${state.origen.nombre} ↓` : 'Desde Origen ↓')
+        : (state.destino?.nombre ? `Desde ${state.destino.nombre} ↑` : 'Desde Destino ↑');
+      el.btnOrdenOrigenDes.textContent = desde;
+    }
+    // Toggle 2: orden ascendente/descendente (el texto muestra el estado activo).
+    if (el.btnOrdenDir) el.btnOrdenDir.textContent = state.ordenDir === 'desc' ? 'Orden descendente Z-A' : 'Orden ascendente A-Z';
   }
 
 
   function _actualizarEstadoBotonesDescubre() {
-    if (el.btnOrdenOrigenDes) el.btnOrdenOrigenDes.classList.toggle('descubre-dropdown__item--active', state.ordenSitios === 'origen');
-    if (el.btnOrdenDestinoDes) el.btnOrdenDestinoDes.classList.toggle('descubre-dropdown__item--active', state.ordenSitios === 'destino');
+    // Con los toggles el propio texto indica el estado activo; no hay clase activa.
   }
 
 

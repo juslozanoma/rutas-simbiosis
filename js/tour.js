@@ -63,6 +63,7 @@
     if (filaDist) filaDist.hidden = true;
     if (el.filtroDistancia) { el.filtroDistancia.disabled = !(el.checkDistancia && el.checkDistancia.checked); el.filtroDistancia.max = '60'; }
     _restaurarEtiquetasTour();
+    if (typeof _actualizarTextoBotonesOrden === 'function') _actualizarTextoBotonesOrden();
     renderizarParadas();
   }
 
@@ -283,7 +284,7 @@
   function _actualizarBotonesOrdenTour() {
     const dirBtn = document.getElementById('btn-orden-dir');
     const distBtn = document.getElementById('btn-orden-dist');
-    if (dirBtn) dirBtn.textContent = _tourOrdenDirNombre === 'desc' ? 'Orden descendente' : 'Orden ascendente';
+    if (dirBtn) dirBtn.textContent = _tourOrdenDirNombre === 'desc' ? 'Orden descendente Z-A' : 'Orden ascendente A-Z';
     if (distBtn) distBtn.textContent = _tourOrdenDirDistancia === 'desc' ? 'Mayor distancia' : 'Menor distancia';
   }
 

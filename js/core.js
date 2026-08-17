@@ -42,6 +42,7 @@
     sitiosFiltrados: [],
     sitiosFiltradosBase: [],
     ordenSitios: 'origen',
+    ordenDir: 'asc',          // dirección del orden de sitios: 'asc' | 'desc'
     modoVisibilidad: 'completa',
     previewSitioId: null,
     categoriasSeleccionadas: [],
@@ -96,7 +97,7 @@
     descubreDropdownDesvios: document.getElementById('descubre-dropdown-desvios'),
     descubreDropdownOrdenar: document.getElementById('descubre-dropdown-ordenar'),
     btnOrdenOrigenDes: document.getElementById('btn-descubre-orden-origen'),
-    btnOrdenDestinoDes: document.getElementById('btn-descubre-orden-destino'),
+    btnOrdenDir: document.getElementById('btn-orden-dir'),
     categoriasGrid: document.getElementById('categorias-grid'),
     panelEscalas: document.getElementById('panel-escalas'),
     btnAgregarEscala: document.getElementById('btn-agregar-escala'),

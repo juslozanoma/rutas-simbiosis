@@ -845,17 +845,25 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const lat = e.latlng.lat;
     const lng = e.latlng.lng;
     const items = [];
+    // Ruta ya dibujada en el mapa: el destino no se "crea" sino que se "cambia".
+    const hayRuta = _rutaGeojson && _rutaGeojson.geometry && _rutaGeojson.geometry.coordinates && _rutaGeojson.geometry.coordinates.length >= 2;
     // Sin origen fijado solo se ofrece "Crear ruta desde aquí". Con un origen
-    // ya definido (desde aquí o por el cuadro) se ofrece fijar el destino y
-    // corregir el punto de inicio.
+    // ya definido se ofrece fijar/cambiar el destino y corregir el punto de inicio.
     if (_coordOrigen) {
-      items.push({ texto: 'Crear ruta hasta aquí', accion: () => _crearRutaHasta(lat, lng) });
-      items.push({ texto: 'Corregir punto de inicio de la ruta', accion: () => _crearRutaDesde(lat, lng) });
+      items.push({ texto: hayRuta ? 'Cambiar aquí el punto de destino' : 'Crear ruta hasta aquí', accion: () => _crearRutaHasta(lat, lng) });
+      items.push({ texto: 'Cambiar aquí el punto de origen', accion: () => _crearRutaDesde(lat, lng) });
     } else {
       items.push({ texto: 'Crear ruta desde aquí', accion: () => _crearRutaDesde(lat, lng) });
     }
     items.push(
-      { texto: 'Buscar sitios turísticos cercanos', accion: () => _buscarSitiosCercanos(lat, lng) },
+      {
+        texto: 'Buscar sitios turísticos cercanos',
+        accion: () => {
+          // El pin del punto elegido se mantiene en el mapa al buscar sitios.
+          _mostrarPinCtx(lat, lng);
+          _buscarSitiosCercanos(lat, lng);
+        },
+      },
       {
         texto: 'Agregar sitio nuevo',
         accion: () => {
@@ -869,7 +877,6 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     }
     // "Comparar este sitio" se ofrece siempre que haya una ruta dibujada en el
     // mapa (haya o no altimetría abierta), para elegir puntos de comparación.
-    const hayRuta = _rutaGeojson && _rutaGeojson.geometry && _rutaGeojson.geometry.coordinates && _rutaGeojson.geometry.coordinates.length >= 2;
     if (hayRuta && typeof AltimetriaModule !== 'undefined') {
       items.push({
         texto: 'Comparar este sitio',
@@ -976,19 +983,25 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
   /** Fija el origen de la ruta en un punto del mapa y recalcula si ya hay
    *  destino definido. Reusa el flujo de "Seleccionar en el mapa" del cuadro
-   *  de origen (_cambioExtremoEnCurso dispara el recálculo en onSelect). */
+   *  de origen (_cambioExtremoEnCurso dispara el recálculo en onSelect). Como
+   *  calcularRutaPrincipal espera ambos extremos, el marcador A del origen se
+   *  coloca aquí mismo para que quede visible aunque aún no haya destino. */
   function _crearRutaDesde(lat, lng) {
     if (typeof _comboOrigen === 'undefined' || !_comboOrigen || typeof _comboOrigen.aplicar !== 'function') return;
     _cambioExtremoEnCurso = 'origen';
     _comboOrigen.aplicar({ id: 'map_' + Date.now(), lat, lon: lng, nombre: lat.toFixed(4) + ', ' + lng.toFixed(4), departamento: '' });
+    setMarcadorOrigen(lat, lng, lat.toFixed(4) + ', ' + lng.toFixed(4));
   }
 
   /** Fija el destino de la ruta en un punto del mapa y recalcula si ya hay
-   *  origen definido (mismo flujo que "Seleccionar en el mapa" del destino). */
+   *  origen definido (mismo flujo que "Seleccionar en el mapa" del destino).
+   *  El marcador Z se coloca aquí mismo para dar retroalimentación inmediata;
+   *  al recalculare la ruta se vuelve a dibujar con el mismo punto. */
   function _crearRutaHasta(lat, lng) {
     if (typeof _comboDestino === 'undefined' || !_comboDestino || typeof _comboDestino.aplicar !== 'function') return;
     _cambioExtremoEnCurso = 'destino';
     _comboDestino.aplicar({ id: 'map_' + Date.now(), lat, lon: lng, nombre: lat.toFixed(4) + ', ' + lng.toFixed(4), departamento: '' });
+    setMarcadorDestino(lat, lng, lat.toFixed(4) + ', ' + lng.toFixed(4));
   }
 
   /** Muestra en el mapa y en la pestaña Descubre los sitios turísticos a menos

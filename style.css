@@ -705,7 +705,7 @@ input, select{ font-family: inherit; }
 }
 .filter-row__field{ flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .filter-row__label-text{
-  font-size: 8px;
+  font-size: 9px;
   color: var(--text-muted);
   font-weight: 400;
   text-transform: lowercase;
@@ -2055,13 +2055,12 @@ input, select{ font-family: inherit; }
 #descubre-dropdown-ordenar .descubre-dropdown__item--active{ background: #4a6fa5; border-color: #4a6fa5; color: #ffffff; }
 #descubre-dropdown-ordenar .descubre-dropdown__item--active:hover{ background: #3b5e8a; border-color: #3b5e8a; }
 
-/* En modo Tour el botón Ordenar muestra dos toggles (orden ascendente/descendente
-   y menor/mayor distancia) en vez de "Desde Origen/Destino". */
-#btn-orden-dir, #btn-orden-dist{ display: none; }
-#app[data-tour-activo="true"] #btn-orden-dir,
+/* El botón Ordenar muestra dos toggles: desde origen/destino y orden
+   ascendente/descendente. En modo Tour se oculta el de origen/destino y se
+   muestra el de menor/mayor distancia (el de dirección queda en ambos modos). */
+#btn-orden-dist{ display: none; }
+#app[data-tour-activo="true"] #btn-descubre-orden-origen{ display: none; }
 #app[data-tour-activo="true"] #btn-orden-dist{ display: block; }
-#app[data-tour-activo="true"] #btn-descubre-orden-origen,
-#app[data-tour-activo="true"] #btn-descubre-orden-destino{ display: none; }
 
 /* En modo Tour el filtro de distancia se simplifica: solo la barra, sin check
    ni texto, y sin la fila de tiempo ni el botón de aplicar. */

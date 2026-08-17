@@ -313,12 +313,17 @@
       el.btnCerrarAltimetria.addEventListener('click', () => cerrarAltimetria());
     }
 
-    // Sort buttons in descubre dropdown
+    // Sort buttons in descubre dropdown: dos toggles (desde origen/destino y
+    // orden ascendente/descendente). En modo Tour el botón de dirección lo
+    // maneja el tour (tour.js), por eso aquí se ignora en ese modo.
     if (el.btnOrdenOrigenDes) {
-      el.btnOrdenOrigenDes.addEventListener('click', () => { aplicarOrdenSitios('origen'); actualizarBotonesOrden(); });
+      el.btnOrdenOrigenDes.addEventListener('click', () => alternarOrdenSitios());
     }
-    if (el.btnOrdenDestinoDes) {
-      el.btnOrdenDestinoDes.addEventListener('click', () => { aplicarOrdenSitios('destino'); actualizarBotonesOrden(); });
+    if (el.btnOrdenDir) {
+      el.btnOrdenDir.addEventListener('click', () => {
+        if (el.appRoot && el.appRoot.getAttribute('data-tour-activo') === 'true') return;
+        alternarDireccionOrdenSitios();
+      });
     }
 
     el.btnMostrarSitiosCercanos.addEventListener('click', () => {
