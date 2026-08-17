@@ -201,6 +201,29 @@
     });
   }
 
+  /** Botón hamburguesa a la izquierda de la letra de una fila: abre el mismo
+   *  menú contextual que el clic derecho en PC. En móvil es la única vía para
+   *  abrir ese menú (ya no se abre con pulsación larga sobre la parada). */
+  function crearBotonMenuFila(construirOpciones, li, numEl, etiquetaAria) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'parada-item__hamburger';
+    btn.title = 'Opciones';
+    btn.setAttribute('aria-label', 'Opciones de ' + (etiquetaAria || 'la parada'));
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
+    btn.addEventListener('click', (evt) => {
+      evt.stopPropagation();
+      const rect = btn.getBoundingClientRect();
+      abrirMenuFila(construirOpciones(), rect.left, rect.bottom + 4);
+    });
+    btn.addEventListener('contextmenu', (evt) => {
+      evt.preventDefault();
+      evt.stopPropagation();
+    });
+    li.insertBefore(btn, numEl);
+    return btn;
+  }
+
   // -------------------------------------------------------------------
   // Días de viaje: nombre y fecha personalizados
   // -------------------------------------------------------------------
@@ -259,6 +282,8 @@
         group: 'paradas',
         animation: 150,
         draggable,
+        // El botón hamburguesa no inicia el arrastre (solo abre el menú).
+        filter: '.parada-item__hamburger',
         ghostClass: 'no-ghost',
         delay: 150,
         delayOnTouchOnly: true,
@@ -1415,9 +1440,8 @@
         evt.preventDefault();
         abrirMenuFila(opcionesExtremo(), evt.clientX, evt.clientY);
       });
-      engancharLongPress(li, (evt) => {
-        abrirMenuFila(opcionesExtremo(), evt.clientX, evt.clientY);
-      });
+      // En móvil el menú se abre solo con el botón hamburguesa (no con pulsación larga).
+      crearBotonMenuFila(opcionesExtremo, li, num, nombre);
 
       return li;
     }
@@ -1530,9 +1554,13 @@
       const distEl = document.createElement('span');
       distEl.className = 'parada-item__dist';
       if (e._distKm != null) {
-        // Guion largo + distancia desde la parada anterior + (desde el origen).
+        // El primer sitio tras el origen (kmActual 0) parte del km 0: su
+        // distancia del tramo coincide con la total, se muestra solo el tramo.
+        const esPrimerItem = kmActual === 0;
         distEl.textContent = e._segKm != null
-          ? ` — ${e._segKm.toFixed(1)} km (${e._distKm.toFixed(1)} km)`
+          ? (esPrimerItem
+              ? ` — ${e._segKm.toFixed(1)} km`
+              : ` — ${e._segKm.toFixed(1)} km (${e._distKm.toFixed(1)} km)`)
           : ` — (${e._distKm.toFixed(1)} km)`;
         kmActual = Number(e._distKm);
       }
@@ -1620,9 +1648,8 @@
         evt.preventDefault();
         abrirMenuFila(construirOpcionesContexto(), evt.clientX, evt.clientY);
       });
-      engancharLongPress(li, (evt) => {
-        abrirMenuFila(construirOpcionesContexto(), evt.clientX, evt.clientY);
-      });
+      // En móvil el menú se abre solo con el botón hamburguesa (no con pulsación larga).
+      crearBotonMenuFila(construirOpcionesContexto, li, num, e.nombre);
 
       return li;
     }

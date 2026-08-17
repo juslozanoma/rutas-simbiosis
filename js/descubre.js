@@ -132,12 +132,25 @@
     if (!state.rutaActual) { _syncBotonSitios(); return; }
     const rutaFiltro = state.rutaBase || state.rutaActual;
     const geojsonListado = rutaFiltro ? rutaFiltro.geojson : null;
-    if (state.sitiosFiltrados.length > 0) {
-      if (silencioso) _syncBotonSitios();
-      // Si el listado corresponde a otra ruta (ruta recalculada), se recalcula.
-      if (_listadoParaGeojson === geojsonListado) return;
+    // Si la ruta cambió desde que se calculó el listado, se invalidan las
+    // distancias cacheadas (turf) y el listado para recalcularlos con el nuevo
+    // trazado al abrir Descubre Colombia.
+    if (_listadoParaGeojson !== geojsonListado) {
+      state.sitios.forEach((s) => {
+        delete s.distanciaRutaKm;
+        delete s.tiempoDesvioMin;
+        delete s.distanciaOrigenKm;
+        delete s.distanciaDestinoKm;
+        delete s.distanciaOrigenDesvioKm;
+        delete s._offsetLado;
+      });
       state.sitiosFiltrados = [];
       state.sitiosFiltradosBase = [];
+      _listadoParaGeojson = null;
+    }
+    if (state.sitiosFiltrados.length > 0) {
+      if (silencioso) _syncBotonSitios();
+      return;
     }
     if (_calculandoListado) {
       // Si quedó atascado (p. ej. cerraron la pestaña a mitad de carga) se reintenta.
