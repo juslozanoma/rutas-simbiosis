@@ -6,6 +6,8 @@
  * ---------------------------------------------------------------------------
  */
 
+  let _tipSitiosFloatMostrado = false; // popup automático del icono flotante de sitios (una sola vez por sesión)
+
   function ordenarSitios(sitios) {
     const lista = [...sitios];
     // Toggle activo "A-Z/Z-A": orden alfabético por nombre.
@@ -405,6 +407,11 @@
     if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = String(sitiosOrdenados.length);
     // El botón flotante del mapa solo aparece cuando hay listado.
     if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.hidden = sitiosOrdenados.length === 0;
+    // Aviso automático: la primera vez que se calcula el listado se muestra un
+    // popup a la derecha del icono flotante indicando su función.
+    if (sitiosOrdenados.length > 0 && !_tipSitiosFloatMostrado) {
+      _mostrarTipSitiosFloat();
+    }
 
     if (sitiosOrdenados.length === 0) {
       el.sitiosVacio.hidden = false;
@@ -430,6 +437,42 @@
       el.sitiosLista.appendChild(crearTarjetaSitio(sitio, i));
     });
     _aplicarBusquedaSitios();
+  }
+
+  /** Aviso automático del icono flotante de mostrar/ocultar sitios: aparece la
+   *  primera vez que se calcula el listado, a la derecha del icono, indicando
+   *  su función, y desaparece solo a los 3 segundos (o antes si se toca). */
+  function _mostrarTipSitiosFloat() {
+    const btn = el.btnToggleSitiosFloat;
+    if (!btn || btn.hidden) return;
+    _tipSitiosFloatMostrado = true;
+    const tip = document.createElement('div');
+    tip.className = 'btn-mostrar-sitios-tip btn-mostrar-sitios-tip--derecha';
+    tip.setAttribute('role', 'status');
+    tip.innerHTML = '<span class="btn-mostrar-sitios-tip__texto">Muestra u oculta los sitios de la ruta</span>';
+    document.body.appendChild(tip);
+    const colocar = () => {
+      const r = btn.getBoundingClientRect();
+      const tr = tip.getBoundingClientRect();
+      let left = r.right + 10;
+      if (left + tr.width > window.innerWidth - 8) {
+        left = r.left - tr.width - 10;
+        tip.classList.remove('btn-mostrar-sitios-tip--derecha');
+        tip.classList.add('btn-mostrar-sitios-tip--izquierda');
+      }
+      left = Math.max(8, Math.min(left, window.innerWidth - tr.width - 8));
+      const top = Math.max(8, Math.min(r.top + r.height / 2 - tr.height / 2, window.innerHeight - tr.height - 8));
+      tip.style.left = left + 'px';
+      tip.style.top = top + 'px';
+    };
+    colocar();
+    const ocultar = () => {
+      tip.classList.add('btn-mostrar-sitios-tip--oculto');
+      setTimeout(() => tip.remove(), 400);
+    };
+    setTimeout(ocultar, 3000);
+    btn.addEventListener('click', ocultar, { once: true });
+    window.addEventListener('resize', ocultar, { once: true });
   }
 
   /** Filtra las tarjetas ya renderizadas según la caja de búsqueda del panel. */

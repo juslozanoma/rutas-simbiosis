@@ -92,10 +92,18 @@ const AltimetriaModule = (() => {
     // acumula de forma continua (kilometraje solo de carretera) y cada punto
     // guarda su tramo para no dibujar líneas entre tramos distintos.
     const tramos = (coords && Array.isArray(coords[0]) && Array.isArray(coords[0][0])) ? coords : [coords];
+    // Índice de inicio de cada tramo en la lista aplanada de elevación, para
+    // que el suavizado no mezcle elevaciones de tramos distintos (p. ej. no
+    // debe arrastrar la altura del aeropuerto de LLEGADA hacia el final del
+    // tramo carretera→aeropuerto de salida, que fingiría una subida justo
+    // antes de llegar al aeropuerto).
+    const limites = [];
+    let acum = 0;
+    for (const t of tramos) { limites.push(acum); acum += t.length; }
     const total = [];
     let acc = 0;
     let ei = 0; // índice aplanado: recorre TODOS los tramos en el mismo orden que `elev`
-    const elevS = _suavizarElevacion(elev, _SUAVIZADO_RADIO);
+    const elevS = _suavizarElevacion(elev, _SUAVIZADO_RADIO, limites);
     for (let si = 0; si < tramos.length; si++) {
       const tramo = tramos[si];
       for (let i = 0; i < tramo.length; i++) {
@@ -117,17 +125,27 @@ const AltimetriaModule = (() => {
   /** Media móvil centrada sobre los valores de elevación. Conserva el mismo
    *  número de puntos y sus posiciones; solo redondea las alturas para que la
    *  curva quede suave. Los extremos (primera/última ventana) usan la media de
-   *  los valores disponibles. Los null se ignoran y no propagan. */
-  function _suavizarElevacion(elev, radio) {
+   *  los valores disponibles. Los null se ignoran y no propagan. `limites` son
+   *  los índices de inicio de cada tramo en la lista aplanada: la ventana se
+   *  acota al tramo actual para no mezclar elevaciones de tramos separados
+   *  (los aeropuertos/puertos que unen tramos de carretera distintos). */
+  function _suavizarElevacion(elev, radio, limites) {
     if (!elev || elev.length < 3) return elev;
     const r = Math.max(1, radio || 8);
     const out = elev.slice();
+    const iniTramo = (i) => {
+      let t = 0;
+      for (let k = 1; k < limites.length; k++) if (i >= limites[k]) t = k;
+      return t;
+    };
+    const finTramo = (t) => (t + 1 < limites.length ? Math.min(limites[t + 1] - 1, elev.length - 1) : elev.length - 1);
     for (let i = 0; i < elev.length; i++) {
       if (elev[i] == null) continue;
       let suma = 0;
       let n = 0;
-      const ini = Math.max(0, i - r);
-      const fin = Math.min(elev.length - 1, i + r);
+      const t = iniTramo(i);
+      const ini = limites && limites.length ? Math.max(limites[t], i - r) : Math.max(0, i - r);
+      const fin = limites && limites.length ? Math.min(finTramo(t), i + r) : Math.min(elev.length - 1, i + r);
       for (let j = ini; j <= fin; j++) {
         if (elev[j] == null) continue;
         suma += elev[j];
@@ -373,11 +391,8 @@ const AltimetriaModule = (() => {
     _bannerComparar.appendChild(stats);
     _bannerComparar.appendChild(btn);
     _bannerComparar.style.display = 'none';
-    // El aviso flota sobre el mapa (nunca dentro del panel de altimetría): se
-    // ancla al contenedor del mapa. La posición vertical se ajusta en
-    // _mostrarBannerComparar para quedar encima del panel flotante.
-    const contenedor = document.querySelector('.map-full') || document.body;
-    contenedor.appendChild(_bannerComparar);
+    // El aviso se inserta en el DOM y se posiciona en _mostrarBannerComparar:
+    // se ancla a la parte superior del perfil visible (panel de altimetría).
     return _bannerComparar;
   }
 
@@ -387,11 +402,21 @@ const AltimetriaModule = (() => {
     const statsEl = b.querySelector('.comparar-banner__stats');
     statsEl.textContent = stats || '';
     statsEl.style.display = stats ? '' : 'none';
-    // Sobre el mapa, encima del panel flotante de altimetría (que se apoya en
-    // el borde inferior del mapa); si no hay panel flotante, en el borde inferior.
+    // El aviso se ancla a la parte superior del perfil visible: en PC al panel
+    // flotante de altimetría y en móvil a la pestaña del panel lateral, de modo
+    // que quede justo encima del borde superior del perfil. Si no hay perfil
+    // visible, se muestra sobre el borde inferior del mapa.
     const flotante = document.getElementById('altimetria');
-    const alto = (flotante && flotante.offsetParent !== null) ? flotante.offsetHeight : 0;
-    b.style.bottom = (alto ? alto + 8 : 6) + 'px';
+    const panel = (flotante && flotante.offsetParent !== null)
+      ? flotante
+      : document.getElementById('altimetria-panel');
+    const sobreMapa = !(panel && panel.offsetParent !== null);
+    const cont = sobreMapa ? (document.querySelector('.map-full') || document.body) : panel;
+    if (b.parentNode !== cont) cont.appendChild(b);
+    b.classList.toggle('comparar-banner--sobre-perfil', !sobreMapa);
+    b.classList.toggle('comparar-banner--sobre-mapa', sobreMapa);
+    b.style.bottom = '';
+    b.style.top = '';
     b.style.display = 'flex';
   }
 
@@ -452,6 +477,9 @@ const AltimetriaModule = (() => {
       _compararB = norm;
       _compararActivo = true;
       _esperandoComparar = false;
+      // La comparación quedó completa: el cursor vuelve a la normalidad (el
+      // círculo naranja deja de estar activo sobre el mapa y los perfiles).
+      _activarSeleccionMapa(false);
 
       _mostrarBannerComparar('Comparación de puntos', _resumenComparacion());
       _actualizarMarcadoresComparacion();
@@ -549,6 +577,38 @@ const AltimetriaModule = (() => {
     const coords = _rutaGeojson.geometry.coordinates;
     if (coords.length < 2) return;
     const puntos = _acumular(coords, _elevacion);
+
+    // Extremo(s) del tramo activo que sean aeropuertos: el punto inicial o final
+    // del tramo puede quedar sin elevación (en rutas mixtas la coordenada del
+    // aeropuerto se añade a la carretera sin datos de elevación, o la de OSRM
+    // no cubre el último vértice). Se le copia la del punto vecino con dato del
+    // MISMO tramo para que la línea llegue hasta el ✈ sin picos falsos.
+    if (_segmentoExtremos && _segmentoExtremos[_segmentoActivo]) {
+      const par = _segmentoExtremos[_segmentoActivo];
+      if (par[1] && par[1].tipo === 'aeropuerto') {
+        for (let i = puntos.length - 1; i >= 0; i--) {
+          if (puntos[i].seg !== _segmentoActivo) continue;
+          if (puntos[i].e == null) {
+            for (let j = i - 1; j >= 0; j--) {
+              if (puntos[j].seg === _segmentoActivo && puntos[j].e != null) { puntos[i].e = puntos[j].e; break; }
+            }
+          }
+          break;
+        }
+      }
+      if (par[0] && par[0].tipo === 'aeropuerto') {
+        for (let i = 0; i < puntos.length; i++) {
+          if (puntos[i].seg !== _segmentoActivo) continue;
+          if (puntos[i].e == null) {
+            for (let j = i + 1; j < puntos.length; j++) {
+              if (puntos[j].seg === _segmentoActivo && puntos[j].e != null) { puntos[i].e = puntos[j].e; break; }
+            }
+          }
+          break;
+        }
+      }
+    }
+
     const maxD = puntos[puntos.length - 1].d || 1;
 
     // Dominio mostrado: desde el punto asignado como inicio hasta el asignado como fin.
@@ -1048,11 +1108,15 @@ const AltimetriaModule = (() => {
     const dist = pt.d;
     if (dist < zoomStart - 0.001 || dist > zoomEnd + 0.001) return;
     const px = x(dist);
-    // En un aeropuerto el indicador se ubica a la elevación real del aeropuerto
-    // (consultada en sus coordenadas), no a la del último punto de la carretera.
+    // En un aeropuerto el indicador se dibuja sobre la elevación del último
+    // punto del tramo (la línea del perfil), no a la altura real consultada
+    // aparte, para que no parezca que la ruta se eleva de golpe justo antes de
+    // llegar. La elevación real del aeropuerto se conserva en data.alt para que
+    // las comparaciones usen la altura del aeropuerto.
     const altReal = (tipo === 'aeropuerto' && extremo.elevacion != null) ? Number(extremo.elevacion) : null;
     const alt = altReal != null ? altReal : (pt.e != null ? pt.e : null);
-    const py = y(alt != null ? alt : (minAlt + rangoAlt * 0.5));
+    const altVisual = pt.e != null ? pt.e : alt;
+    const py = y(altVisual != null ? altVisual : (minAlt + rangoAlt * 0.5));
     const tooltip = alt != null ? `${_nombreSinDepartamento(nombre)} · ${alt.toFixed(0)} msnm` : _nombreSinDepartamento(nombre);
     _crearIndicador(svg, px, py, letra, { tipo: letra, lat: pt.coord[1], lon: pt.coord[0], nombre: letra, distKm: dist, alt }, tooltip, _nombreSinDepartamento(nombre));
   }
