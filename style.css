@@ -2735,6 +2735,67 @@ input, select{ font-family: inherit; }
   opacity: 0.9;
 }
 .comparar-banner__cerrar:hover{ opacity: 1; }
+/* Al arrastrar el aviso de comparación (celular) se desactiva el desplazamiento
+   táctil del fondo y el aviso queda en la posición elegida por el usuario. */
+.comparar-banner--arrastrando{ cursor: grabbing; touch-action: none; user-select: none; }
+.comparar-banner--arrastrado{ transform: none; }
+@media (max-width: 860px){
+  /* Con el panel inferior colapsado, el aviso sobre el mapa se separa de la
+     barra de pestañas fija del borde inferior de la pantalla. */
+  #app[data-mobile-panel="collapsed"] .comparar-banner--sobre-mapa{ bottom: calc(var(--tabbar-h) + 8px); }
+}
+/* Barra de búsqueda de sitios cercanos: deslizador de radio (0–50 km) flotante
+   sobre el borde inferior del mapa (encima del panel inferior en celular) con
+   una X roja a la derecha para cerrar la búsqueda. */
+.buscar-sitios-bar{
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 16px);
+  background: var(--teal-500);
+  border: none;
+  color: #ffffff;
+  padding: 8px 12px 8px 16px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+}
+.buscar-sitios-bar__rango{
+  white-space: nowrap;
+  color: #ffffff;
+}
+.buscar-sitios-bar__slider{
+  width: 140px;
+  accent-color: #ffffff;
+  cursor: pointer;
+  background: transparent;
+}
+.buscar-sitios-bar__cerrar{
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #d32f2f;
+  border: none;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.buscar-sitios-bar__cerrar:hover{ background: #b71c1c; }
+@media (max-width: 860px){
+  .buscar-sitios-bar__slider{ width: 90px; }
+}
 .altimetria-map-tooltip{
   background: #246054;
   border: none;
@@ -3290,5 +3351,25 @@ input, select{ font-family: inherit; }
    solo se ve la parada que sigue al cursor. */
 .no-ghost{
   opacity: 0;
+}
+
+/* Ficha deslizada a la derecha para borrar (móvil): sigue al dedo y se pinta
+   de rojo; al pasar el umbral se confirma el borrado de la parada. */
+.parada-item--deslizando{
+  transition: none;
+  will-change: transform;
+}
+.parada-item--borrar{
+  background: #d62828 !important;
+  border-color: #d62828 !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 6px rgba(214, 40, 40, 0.35);
+}
+.parada-item--borrar .parada-item__nombre{
+  color: #ffffff !important;
+}
+.parada-item--borrar-listo{
+  background: #b71c1c !important;
+  border-color: #b71c1c !important;
 }
 

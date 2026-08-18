@@ -39,6 +39,8 @@ const MapModule = (() => {
   let clusterSitios = null;     // L.markerClusterGroup con los sitios candidatos filtrados
   let _capaFlechas = null;      // L.layerGroup con flechas de dirección sobre la ruta
   let _altimetriaActiva = false; // con la altimetría abierta se oculta la flecha de dirección
+  let _buscarSitiosBarra = null; // barra flotante de búsqueda de sitios cercanos (radio 0–50 km)
+  let _buscarSitiosCtx = null;   // estado previo a la búsqueda: {origen, base, filtrados, modoVisibilidad, categorias}
 
   const ZOOM_MIN_FLECHA = 9;    // Zoom mínimo para mostrar la flecha de dirección
 
@@ -1060,6 +1062,15 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
    *  de RADIO_KM del punto elegido, y acerca la vista a la zona. */
   function _buscarSitiosCercanos(lat, lng) {
     const RADIO_KM = 30;
+    // Se guarda el estado previo a la búsqueda para poder restaurarlo con la X
+    // roja de la barra de radio (0–50 km) al cerrar la búsqueda de sitios.
+    _buscarSitiosCtx = {
+      origen: [lat, lng],
+      base: state.sitiosFiltradosBase,
+      filtrados: state.sitiosFiltrados,
+      modoVisibilidad: state.modoVisibilidad,
+      categorias: state.categoriasSeleccionadas ? [...state.categoriasSeleccionadas] : [],
+    };
     const conDist = [];
     (state.sitios || []).forEach((s) => {
       if (s.lat == null || s.lon == null || isNaN(Number(s.lat)) || isNaN(Number(s.lon))) return;
@@ -1120,11 +1131,141 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       MapModule.centrarEn(lat, lng, 10);
     }
 
-    if (typeof _mostrarNotificacion === 'function') {
-      _mostrarNotificacion(cercanos.length
-        ? 'Sitios turísticos cercanos: ' + cercanos.length + ' en un radio de ' + RADIO_KM + ' km.'
-        : 'No se encontraron sitios turísticos en un radio de ' + RADIO_KM + ' km alrededor del punto.');
+    // En lugar de una notificación, se muestra la barra flotante de radio
+    // (0–50 km) sobre el borde inferior del mapa (encima del panel inferior en
+    // celular); la X roja a su derecha cierra la búsqueda y restaura el listado.
+    _mostrarBarraBuscarSitios(lat, lng);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Barra de búsqueda de sitios cercanos: deslizador de radio (0–50 km) con una
+  // X roja a la derecha para cerrar la búsqueda y restaurar el listado previo.
+  // ---------------------------------------------------------------------------
+
+  /** Crea y muestra la barra flotante de búsqueda sobre el mapa. */
+  function _mostrarBarraBuscarSitios(lat, lng) {
+    _quitarBarraBuscarSitios();
+    const cont = document.querySelector('.map-full') || document.body;
+    const barra = document.createElement('div');
+    barra.className = 'buscar-sitios-bar';
+    const rango = document.createElement('span');
+    rango.className = 'buscar-sitios-bar__rango';
+    rango.textContent = '0–30 km';
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.className = 'buscar-sitios-bar__slider';
+    slider.min = '0';
+    slider.max = '50';
+    slider.step = '1';
+    slider.value = '30';
+    slider.setAttribute('aria-label', 'Radio de búsqueda de sitios en kilómetros');
+    const cerrar = document.createElement('button');
+    cerrar.type = 'button';
+    cerrar.className = 'buscar-sitios-bar__cerrar';
+    cerrar.setAttribute('aria-label', 'Cerrar búsqueda de sitios');
+    cerrar.setAttribute('title', 'Cerrar búsqueda de sitios');
+    cerrar.innerHTML = '&times;';
+    barra.appendChild(rango);
+    barra.appendChild(slider);
+    barra.appendChild(cerrar);
+    cont.appendChild(barra);
+    _buscarSitiosBarra = barra;
+    slider.addEventListener('input', () => {
+      _aplicarRadioBuscarSitios(Number(slider.value));
+    });
+    cerrar.addEventListener('click', _cerrarBuscarSitios);
+    _colocarBarraBuscarSitios();
+  }
+
+  /** Ajusta el anclaje de la barra: sobre el borde inferior del mapa; si el
+   *  perfil de elevación está abierto en escritorio, justo arriba de él. */
+  function _colocarBarraBuscarSitios() {
+    if (!_buscarSitiosBarra) return;
+    const movil = typeof esMovil === 'function' && esMovil();
+    let bottom = 8;
+    if (movil) {
+      // En celular con el panel inferior colapsado hay que dejar libre la barra
+      // de pestañas fija del borde inferior.
+      const app = document.getElementById('app');
+      if (app && app.getAttribute('data-mobile-panel') === 'collapsed') {
+        const tabbar = document.querySelector('.mobile-tab-bar');
+        if (tabbar) bottom += tabbar.offsetHeight;
+      }
+    } else {
+      const perfil = document.getElementById('altimetria');
+      if (perfil && perfil.offsetParent !== null) {
+        bottom = perfil.offsetHeight + 10;
+      }
     }
+    _buscarSitiosBarra.style.bottom = Math.max(8, bottom) + 'px';
+  }
+
+  window.addEventListener('resize', () => {
+    if (_buscarSitiosBarra) _colocarBarraBuscarSitios();
+  });
+
+  /** Re-filtra los sitios a menos de radioKm del punto de búsqueda y actualiza
+   *  el listado de la pestaña Descubre. */
+  function _aplicarRadioBuscarSitios(radioKm) {
+    if (!_buscarSitiosCtx) return;
+    const [lat, lng] = _buscarSitiosCtx.origen;
+    const conDist = [];
+    (state.sitios || []).forEach((s) => {
+      if (s.lat == null || s.lon == null || isNaN(Number(s.lat)) || isNaN(Number(s.lon))) return;
+      const d = turf.distance(
+        turf.point([Number(s.lon), Number(s.lat)]),
+        turf.point([lng, lat]),
+        { units: 'kilometers' }
+      );
+      if (d <= radioKm) conDist.push([s, d]);
+    });
+    conDist.sort((a, b) => a[1] - b[1]);
+    const cercanos = conDist.map((x) => x[0]);
+    state.sitiosFiltradosBase = cercanos;
+    state.sitiosFiltrados = cercanos;
+    state.modoVisibilidad = 'completa';
+    state.categoriasSeleccionadas = [];
+    if (typeof _sincronizarBotonVisibles === 'function') _sincronizarBotonVisibles();
+    if (typeof renderizarSitios === 'function') renderizarSitios(cercanos);
+    if (typeof renderizarCategoriasMenu === 'function') {
+      const cats = new Map();
+      cercanos.forEach((s) => {
+        if (!s.categoria) return;
+        const c = s.categoria.trim();
+        cats.set(c, (cats.get(c) || 0) + 1);
+      });
+      renderizarCategoriasMenu([...cats.entries()]);
+    }
+    _actualizarEtiquetaBarraBuscarSitios(radioKm);
+  }
+
+  /** Actualiza la etiqueta "0–X km" de la barra con el radio seleccionado. */
+  function _actualizarEtiquetaBarraBuscarSitios(radioKm) {
+    if (!_buscarSitiosBarra) return;
+    const rango = _buscarSitiosBarra.querySelector('.buscar-sitios-bar__rango');
+    if (rango) rango.textContent = '0–' + radioKm + ' km';
+  }
+
+  /** Cierra la búsqueda de sitios: quita la barra y restaura el listado previo. */
+  function _cerrarBuscarSitios() {
+    _quitarBarraBuscarSitios();
+    if (_buscarSitiosCtx) {
+      state.sitiosFiltradosBase = _buscarSitiosCtx.base;
+      state.sitiosFiltrados = _buscarSitiosCtx.filtrados;
+      state.modoVisibilidad = _buscarSitiosCtx.modoVisibilidad;
+      state.categoriasSeleccionadas = _buscarSitiosCtx.categorias;
+      _buscarSitiosCtx = null;
+      if (typeof _sincronizarBotonVisibles === 'function') _sincronizarBotonVisibles();
+      if (typeof renderizarSitios === 'function') renderizarSitios(state.sitiosFiltrados);
+      if (typeof renderizarCategoriasMenu === 'function') renderizarCategoriasMenu();
+    }
+  }
+
+  function _quitarBarraBuscarSitios() {
+    if (_buscarSitiosBarra && _buscarSitiosBarra.parentNode) {
+      _buscarSitiosBarra.parentNode.removeChild(_buscarSitiosBarra);
+    }
+    _buscarSitiosBarra = null;
   }
 
   /** Durante la comparación de puntos, un clic/toque en el mapa selecciona el

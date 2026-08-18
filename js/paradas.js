@@ -105,6 +105,173 @@
     btn.onclick = (e) => { e.stopPropagation(); agregarParada(sitio, btn); };
   }
 
+  // -------------------------------------------------------------------
+  // Deslizar una ficha hacia la derecha (móvil) para borrar la parada
+  // -------------------------------------------------------------------
+
+  /** Habilita el gesto de deslizar la ficha a la derecha para borrar la
+   *  parada (origen, destino, pueblo intermedio, sitio turístico, aeropuerto
+   *  o puerto). Un deslizamiento rápido no activa el retardo de 150 ms del
+   *  drag & drop de Sortable, así que ambos gestos conviven sin conflicto. */
+  function _initSwipeBorrarParadas() {
+    if (typeof esMovil !== 'function' || !esMovil()) return;
+    el.paradasLista.querySelectorAll('.parada-item:not(.parada-item--dia):not(.parada-item--continua)').forEach((li) => {
+      if (li._swipeBorrarListo) return;
+      li._swipeBorrarListo = true;
+      const tipo = li.dataset.tipoParada;
+      const id = li.dataset.paradaId != null ? li.dataset.paradaId : null;
+
+      li.addEventListener('pointerdown', (evt) => {
+        if (evt.pointerType === 'mouse') return;
+        if (li.classList.contains('sortable-chosen')) return;
+        _swipeBorrar = {
+          li,
+          tipo,
+          id,
+          startX: evt.clientX,
+          startY: evt.clientY,
+          deslizando: false,
+        };
+        try { li.setPointerCapture(evt.pointerId); } catch (e) {}
+      });
+
+      li.addEventListener('pointermove', (evt) => {
+        const g = _swipeBorrar;
+        if (!g || g.li !== li) return;
+        // Sortable tomó el gesto (arrastre de reordenación): se anula el swipe.
+        if (li.classList.contains('sortable-chosen')) { _restaurarSwipeBorrar(); return; }
+        const dx = evt.clientX - g.startX;
+        const dy = evt.clientY - g.startY;
+        // Desplazamiento vertical: es un scroll, no un borrado.
+        if (!g.deslizando) {
+          if (dy > 12 || dy < -12) { _swipeBorrar = null; return; }
+          if (dx < 8) return;
+          g.deslizando = true;
+        }
+        const dxFinal = Math.max(0, dx);
+        li.classList.add('parada-item--deslizando', 'parada-item--borrar');
+        li.style.transform = 'translateX(' + dxFinal + 'px)';
+        if (dxFinal >= 64) li.classList.add('parada-item--borrar-listo');
+      });
+
+      const finalizar = (evt) => {
+        const g = _swipeBorrar;
+        _swipeBorrar = null;
+        if (!g || g.li !== li) return;
+        const dx = evt && typeof evt.clientX === 'number' ? evt.clientX - g.startX : 0;
+        if (g.deslizando && dx >= 64) {
+          _borrarParadaDeslizada(li, g.tipo, g.id);
+        } else {
+          li.classList.remove('parada-item--deslizando', 'parada-item--borrar', 'parada-item--borrar-listo');
+          li.style.transform = '';
+        }
+      };
+
+      li.addEventListener('pointerup', finalizar);
+      li.addEventListener('pointercancel', finalizar);
+    });
+  }
+
+  /** Restaura la ficha deslizada a su posición original (sin borrar). */
+  function _restaurarSwipeBorrar() {
+    const g = _swipeBorrar;
+    _swipeBorrar = null;
+    if (!g) return;
+    g.li.classList.remove('parada-item--deslizando', 'parada-item--borrar', 'parada-item--borrar-listo');
+    g.li.style.transform = '';
+  }
+
+  /** Borra la parada tras deslizarla a la derecha, según su tipo. */
+  function _borrarParadaDeslizada(li, tipo, id) {
+    // Suprime el clic sintético que sigue al gesto sobre la misma ficha.
+    _suprimirProximoClic = true;
+    setTimeout(() => { _suprimirProximoClic = false; }, 700);
+    if (tipo === 'parada') { eliminarParada(id); return; }
+    if (tipo === 'escala') { eliminarEscala(id); return; }
+    if (tipo === 'origen') { quitarOrigenDeLaRuta(); return; }
+    if (tipo === 'destino') { quitarDestinoDeLaRuta(); return; }
+    if (tipo === 'aeropuerto') { quitarAeropuertoDeLaRuta(); return; }
+    if (tipo === 'puerto') { quitarPuertoDeLaRuta(); return; }
+  }
+
+  /** Borra el origen deslizando su ficha: la segunda parada pasa a ser el origen. */
+  async function quitarOrigenDeLaRuta() {
+    sincronizarOrden();
+    const nuevo = _ordenMovible();
+    if (nuevo.length < 3) {
+      _mostrarNotificacion('No se puede quitar el origen sin paradas intermedias.');
+      return;
+    }
+    UndoManager.registrar();
+    try {
+      await _aplicarOrdenNuevo(nuevo.slice(1));
+    } catch (err) {
+      console.warn('[paradas] Error al quitar el origen:', err);
+    }
+  }
+
+  /** Borra el destino deslizando su ficha: la penúltima parada pasa a ser el destino. */
+  async function quitarDestinoDeLaRuta() {
+    sincronizarOrden();
+    const nuevo = _ordenMovible();
+    if (nuevo.length < 3) {
+      _mostrarNotificacion('No se puede quitar el destino sin paradas intermedias.');
+      return;
+    }
+    UndoManager.registrar();
+    try {
+      nuevo.pop();
+      await _aplicarOrdenNuevo(nuevo);
+    } catch (err) {
+      console.warn('[paradas] Error al quitar el destino:', err);
+    }
+  }
+
+  /** Borra un aeropuerto deslizando su ficha: se calcula la ruta habitual por
+   *  carretera sin preferencia por avión; si no hay alternativa, la ruta en
+   *  avión vuelve a aparecer por sí sola. */
+  async function quitarAeropuertoDeLaRuta() {
+    UndoManager.registrar();
+    state.modoAereo = false;
+    state.tramosAereo = null;
+    state.modoFluvial = false;
+    state.tramosFluviales = null;
+    if (typeof _actualizarBotonAereo === 'function') _actualizarBotonAereo();
+    if (typeof _actualizarBotonFluvial === 'function') _actualizarBotonFluvial();
+    await _recalcularTrasQuitarTransporte();
+  }
+
+  /** Borra un puerto deslizando su ficha: se calcula la ruta habitual por
+   *  carretera sin preferencia por río; si no hay alternativa, la ruta por río
+   *  (o avión) vuelve a aparecer por sí sola. */
+  async function quitarPuertoDeLaRuta() {
+    UndoManager.registrar();
+    state.modoAereo = false;
+    state.tramosAereo = null;
+    state.modoFluvial = false;
+    state.tramosFluviales = null;
+    if (typeof _actualizarBotonAereo === 'function') _actualizarBotonAereo();
+    if (typeof _actualizarBotonFluvial === 'function') _actualizarBotonFluvial();
+    await _recalcularTrasQuitarTransporte();
+  }
+
+  /** Recalcula la ruta por carretera tras quitar el transporte (avión/río). */
+  async function _recalcularTrasQuitarTransporte() {
+    state.sitios.forEach((s) => {
+      delete s.distanciaRutaKm; delete s.tiempoDesvioMin; delete s.distanciaOrigenKm;
+      delete s.distanciaDestinoKm; delete s.distanciaOrigenDesvioKm; delete s._offsetLado;
+    });
+    if (typeof _limpiarTurfYListado === 'function') _limpiarTurfYListado();
+    if (typeof calcularRutaPrincipal === 'function') {
+      try {
+        await calcularRutaPrincipal(true, { silencioso: true, conservarAltimetria: true });
+      } catch (err) {
+        console.warn('[paradas] Error al recalcular la ruta sin transporte:', err);
+      }
+    }
+    renderizarParadas();
+  }
+
 
   function cerrarMenuFila() {
     if (_menuFila) {
@@ -233,6 +400,7 @@
 
   let _observadorParadas = null; // re-mide el marquee al volver visible el panel
   let _sortablesParadas = [];    // instancias de Sortable de la lista de paradas
+  let _swipeBorrar = null;       // gesto activo de deslizar a la derecha para borrar una ficha
 
   /** Marca los nombres largos (incluyendo distancias) para que el texto se
    *  desplace dentro de la ficha y pueda leerse completo. */
@@ -1748,5 +1916,7 @@
     }
     // Drag & drop entre las paradas (los días no se mueven).
     _initDragParadas();
+    // Deslizar a la derecha para borrar (móvil).
+    _initSwipeBorrarParadas();
   }
 

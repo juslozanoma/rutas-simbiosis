@@ -409,22 +409,90 @@ const AltimetriaModule = (() => {
     const statsEl = b.querySelector('.comparar-banner__stats');
     statsEl.textContent = stats || '';
     statsEl.style.display = stats ? '' : 'none';
-    // El aviso se ancla dentro del perfil visible (panel flotante en PC o
-    // pestaña del panel lateral en móvil), en la parte alta del cuadro donde
-    // se muestran la distancia y la altura al hacer hover. Si no hay perfil
-    // visible, se muestra sobre el borde inferior del mapa.
+    // En celular el aviso se ancla sobre el mapa, arriba del perfil (borde
+    // inferior del mapa), y el usuario puede arrastrarlo a donde quiera. En
+    // escritorio se ancla dentro del perfil visible, en la parte alta del
+    // cuadro donde se muestran la distancia y la altura al hacer hover; si no
+    // hay perfil visible, sobre el borde inferior del mapa.
+    const movil = typeof esMovil === 'function' && esMovil();
     const flotante = document.getElementById('altimetria');
     const panel = (flotante && flotante.offsetParent !== null)
       ? flotante
       : document.getElementById('altimetria-panel');
-    const sobreMapa = !(panel && panel.offsetParent !== null);
-    const cont = sobreMapa ? (document.querySelector('.map-full') || document.body) : panel;
-    if (b.parentNode !== cont) cont.appendChild(b);
-    b.classList.toggle('comparar-banner--dentro-perfil', !sobreMapa);
-    b.classList.toggle('comparar-banner--sobre-mapa', sobreMapa);
-    b.style.bottom = '';
-    b.style.top = '';
+    const sobreMapa = movil || !(panel && panel.offsetParent !== null);
+    if (b._dragPos) {
+      // Si el usuario arrastró el aviso, se conserva la posición elegida.
+      b.style.left = b._dragPos.left + 'px';
+      b.style.top = b._dragPos.top + 'px';
+      b.style.bottom = '';
+      b.style.transform = 'none';
+      b.classList.remove('comparar-banner--dentro-perfil', 'comparar-banner--sobre-mapa');
+      b.classList.add('comparar-banner--arrastrado');
+    } else {
+      const cont = sobreMapa ? (document.querySelector('.map-full') || document.body) : panel;
+      if (b.parentNode !== cont) cont.appendChild(b);
+      b.classList.toggle('comparar-banner--dentro-perfil', !sobreMapa);
+      b.classList.toggle('comparar-banner--sobre-mapa', sobreMapa);
+      b.classList.remove('comparar-banner--arrastrado');
+      b.style.left = '';
+      b.style.top = '';
+      b.style.bottom = '';
+      b.style.transform = '';
+    }
     b.style.display = 'flex';
+    _hacerBannerCompararArrastrable();
+  }
+
+  /** Habilita el arrastre del aviso de comparación en celular (una sola vez):
+   *  al tocarlo y moverlo, el aviso queda donde el usuario lo deje. */
+  function _hacerBannerCompararArrastrable() {
+    const b = _bannerComparar;
+    if (!b || b._dragCompararListo) return;
+    b._dragCompararListo = true;
+    let drag = null;
+    b.addEventListener('pointerdown', (e) => {
+      if (e.target.closest && e.target.closest('.comparar-banner__cerrar')) return;
+      if (typeof esMovil !== 'function' || !esMovil()) return;
+      if (e.button !== 0) return;
+      const rect = b.getBoundingClientRect();
+      const padre = b.offsetParent;
+      const padreRect = padre ? padre.getBoundingClientRect() : { left: 0, top: 0 };
+      drag = {
+        startX: e.clientX,
+        startY: e.clientY,
+        relX: rect.left - padreRect.left,
+        relY: rect.top - padreRect.top,
+        moved: false,
+      };
+      try { b.setPointerCapture(e.pointerId); } catch (err) { /* sin captura */ }
+      b.classList.add('comparar-banner--arrastrando');
+      e.preventDefault();
+    });
+    b.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) drag.moved = true;
+      if (!drag.moved) return;
+      b.style.left = Math.max(0, Math.round(drag.relX + dx)) + 'px';
+      b.style.top = Math.max(0, Math.round(drag.relY + dy)) + 'px';
+      b.style.bottom = '';
+      b.style.transform = 'none';
+    });
+    const terminar = () => {
+      if (!drag) return;
+      if (drag.moved) {
+        const left = parseFloat(b.style.left);
+        const top = parseFloat(b.style.top);
+        if (!isNaN(left) && !isNaN(top)) {
+          b._dragPos = { left: Math.max(0, left), top: Math.max(0, top) };
+        }
+      }
+      drag = null;
+      b.classList.remove('comparar-banner--arrastrando');
+    };
+    b.addEventListener('pointerup', terminar);
+    b.addEventListener('pointercancel', terminar);
   }
 
   function _ocultarBannerComparar() {
