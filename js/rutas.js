@@ -348,6 +348,20 @@
     return res;
   }
 
+  /** Consulta y guarda la elevación real (msnm) de los aeropuertos en sus
+   *  objetos, para que el símbolo ✈ del perfil use la altura del aeropuerto y
+   *  no la del punto de la carretera donde termina el tramo en carro. */
+  async function _obtenerElevacionesAeropuertos(aeropuertos) {
+    const unicos = [];
+    const vistos = new Set();
+    (aeropuertos || []).forEach((ap) => {
+      if (ap && !vistos.has(String(ap.id))) { vistos.add(String(ap.id)); unicos.push(ap); }
+    });
+    if (!unicos.length) return;
+    const elevs = await Utils.obtenerElevacionBatch(unicos.map((ap) => [ap.latitud, ap.longitud]));
+    unicos.forEach((ap, i) => { if (elevs[i] != null) ap.elevacionMsnm = elevs[i]; });
+  }
+
   /** Calcula la ruta directamente en avión (carro→aeropuerto→vuelo→aeropuerto→carro).
    *  Con pueblos intermedios el trayecto se encadena: cada pueblo genera su
    *  propio tramo carro→vuelo→carro, y los tramos se enlazan en el aeropuerto
@@ -500,12 +514,15 @@
       state.altimetriaTotalKm = totalKmPerfil;
       AltimetriaModule.setDatos(geojsonPerfil, state.elevacion, state.altimetriaTotalKm);
       AltimetriaModule.setExtremos(formatMunicipio(state.origen), formatMunicipio(state.destino));
+      // Elevación real de los aeropuertos para que el ✈ del perfil se ubique a
+      // la altura del aeropuerto (no a la del punto donde termina la carretera).
+      await _obtenerElevacionesAeropuertos(apSegs.flatMap((seg) => [seg.apOri, seg.hub, seg.apDes]));
       // Extremos de cada tramo en carro (los botones numerados del perfil): los
       // pueblos de cada tramo; en los bordes de aeropuerto se usa su ciudad.
       AltimetriaModule.setSegmentosExtremos(apSegs.flatMap((seg, i, arr) => [
         [{ nombre: formatMunicipio(seg.a), tipo: i === 0 ? 'origen' : 'escala' },
-         { nombre: seg.apOri.ciudad || 'Aeropuerto', tipo: 'aeropuerto' }],
-        [{ nombre: seg.apDes.ciudad || 'Aeropuerto', tipo: 'aeropuerto' },
+         { nombre: seg.apOri.ciudad || 'Aeropuerto', tipo: 'aeropuerto', elevacion: seg.apOri.elevacionMsnm }],
+        [{ nombre: seg.apDes.ciudad || 'Aeropuerto', tipo: 'aeropuerto', elevacion: seg.apDes.elevacionMsnm },
          { nombre: formatMunicipio(seg.b), tipo: i === arr.length - 1 ? 'destino' : 'escala' }],
       ]));
 
@@ -1076,10 +1093,13 @@
       state.altimetriaTotalKm = totalKmPerfil;
       AltimetriaModule.setDatos(geojsonPerfil, state.elevacion, state.altimetriaTotalKm);
       AltimetriaModule.setExtremos(formatMunicipio(state.origen), formatMunicipio(state.destino));
+      // Elevación real de los aeropuertos para que el ✈ del perfil se ubique a
+      // la altura del aeropuerto (no a la del punto donde termina la carretera).
+      await _obtenerElevacionesAeropuertos([ao, paresVuelo.length > 1 ? paresVuelo[0].b : null, ad]);
       AltimetriaModule.setSegmentosExtremos([
         [{ nombre: formatMunicipio(state.origen), tipo: 'origen' },
-         { nombre: ao.ciudad || 'Aeropuerto', tipo: 'aeropuerto' }],
-        [{ nombre: ad.ciudad || 'Aeropuerto', tipo: 'aeropuerto' },
+         { nombre: ao.ciudad || 'Aeropuerto', tipo: 'aeropuerto', elevacion: ao.elevacionMsnm }],
+        [{ nombre: ad.ciudad || 'Aeropuerto', tipo: 'aeropuerto', elevacion: ad.elevacionMsnm },
          { nombre: po.ciudad || 'Puerto', tipo: 'puerto' }],
         [{ nombre: pd.ciudad || 'Puerto', tipo: 'puerto' },
          { nombre: formatMunicipio(state.destino), tipo: 'destino' }],

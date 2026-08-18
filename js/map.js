@@ -1085,14 +1085,14 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     desactivarSeleccionComparar();
     _onSeleccionComparar = cb;
     _seleccionCompararContainer = map.getContainer();
-    _seleccionCompararContainer.style.cursor = 'crosshair';
+    _seleccionCompararContainer.classList.add('seleccion-comparar');
     _seleccionCompararContainer.addEventListener('click', _onSeleccionCompararClick, true);
   }
 
   function desactivarSeleccionComparar() {
     if (_seleccionCompararContainer) {
       _seleccionCompararContainer.removeEventListener('click', _onSeleccionCompararClick, true);
-      _seleccionCompararContainer.style.cursor = '';
+      _seleccionCompararContainer.classList.remove('seleccion-comparar');
       _seleccionCompararContainer = null;
     }
     _onSeleccionComparar = null;
@@ -2531,6 +2531,20 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     btn.setAttribute('aria-label', 'Rotar el mapa: arrastra para girarlo o haz clic para orientar al norte');
     btn.innerHTML = '<span class="rosa-vientos__aguja" aria-hidden="true"><img src="public/direction.svg" alt="" width="20" height="20"></span>';
     contenedor.appendChild(btn);
+
+    // Aviso automático al cargar la página: aparece a la izquierda de la rosa
+    // de los vientos indicando que se usa para girar el mapa, y desaparece solo
+    // al cabo de unos segundos (o antes si el usuario la usa).
+    const tip = document.createElement('div');
+    tip.className = 'rosa-vientos-tip';
+    tip.setAttribute('role', 'status');
+    tip.innerHTML = '<span class="rosa-vientos-tip__texto">Mantén oprimido o arrastra para girar la pantalla</span>';
+    contenedor.appendChild(tip);
+    setTimeout(() => {
+      tip.classList.add('rosa-vientos-tip--oculto');
+      setTimeout(() => tip.remove(), 400);
+    }, 3000);
+    btn.addEventListener('pointerdown', () => tip.remove(), { once: true });
 
     const aguja = btn.querySelector('.rosa-vientos__aguja');
     // El SVG de direction.svg apunta 45° a la derecha; se compensa restando

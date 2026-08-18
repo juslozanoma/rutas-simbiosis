@@ -31,11 +31,10 @@ const AltimetriaModule = (() => {
   let _compararB = null;           // {lat, lon, coord, distKm, alt}
   let _compararActivo = false;     // A y B definidos → el perfil muestra A→B
   let _esperandoComparar = false;  // A elegido, se espera el segundo punto
+  let _seleccionPrimerSitio = false; // botón VS oprimido: se espera elegir el primer sitio
 
-  // Pulsación larga en el perfil (móvil) para abrir el menú "Comparar este sitio".
+  // Pulsación larga en el perfil (móvil): ya no abre ningún menú contextual.
   let _longPressTimer = null;
-  let _longPressX = 0;
-  let _longPressY = 0;
   let _touchTap = null;          // {x, y} de un toque de 1 dedo sin mover
   let _suprimirClicComparar = false;
 
@@ -145,6 +144,7 @@ const AltimetriaModule = (() => {
     _totalKm = totalKm;
     if (limpiarParadas) {
       _paradas = [];
+      _segmentoExtremos = null;
       _inicioOffset = 0;
       _finOffset = null;
       _inicioAsignado = false;
@@ -155,6 +155,7 @@ const AltimetriaModule = (() => {
       _compararB = null;
       _compararActivo = false;
       _esperandoComparar = false;
+      _seleccionPrimerSitio = false;
       _activarSeleccionMapa(false);
       _ocultarBannerComparar();
       _actualizarMarcadoresComparacion();
@@ -346,6 +347,12 @@ const AltimetriaModule = (() => {
     } else if (typeof MapModule.desactivarSeleccionComparar === 'function') {
       MapModule.desactivarSeleccionComparar();
     }
+    // Cursor de círculo naranja también sobre los perfiles (PC): al hacer clic
+    // en un punto del perfil se suelta ahí el círculo de comparación.
+    ['altimetria-chart', 'altimetria-chart-panel'].forEach((id) => {
+      const c = document.getElementById(id);
+      if (c) c.classList.toggle('seleccion-comparar', !!activo);
+    });
   }
 
   function _getBannerComparar() {
@@ -419,6 +426,19 @@ const AltimetriaModule = (() => {
   function seleccionarPuntoComparacion(punto) {
     const norm = _normalizarPunto(punto);
     if (!norm) return;
+    if (_seleccionPrimerSitio) {
+      // Primer sitio elegido desde el botón VS: se espera el segundo.
+      _seleccionPrimerSitio = false;
+      _compararA = norm;
+      _compararB = null;
+      _compararActivo = false;
+      _esperandoComparar = true;
+      _mostrarBannerComparar('Elige otro sitio para comparar');
+      _actualizarMarcadoresComparacion();
+      _activarSeleccionMapa(true);
+      _renderizarTodo();
+      return;
+    }
     if (_compararActivo || !_esperandoComparar) {
       _compararA = norm;
       _compararB = null;
@@ -427,6 +447,7 @@ const AltimetriaModule = (() => {
       _mostrarBannerComparar('Punto 1 seleccionado: elige el punto 2');
       _actualizarMarcadoresComparacion();
       _activarSeleccionMapa(true);
+      _renderizarTodo();
     } else {
       _compararB = norm;
       _compararActivo = true;
@@ -464,6 +485,7 @@ const AltimetriaModule = (() => {
     _compararB = null;
     _compararActivo = false;
     _esperandoComparar = false;
+    _seleccionPrimerSitio = false;
     _activarSeleccionMapa(false);
     _ocultarBannerComparar();
     _actualizarMarcadoresComparacion();
@@ -576,10 +598,28 @@ const AltimetriaModule = (() => {
         ? puntos.filter(p => p.seg === _segmentoActivo)
         : puntos);
     const ptsVisibles = ptsSeg.filter(p => p.e != null && p.d >= zoomStart - 0.001 && p.d <= zoomEnd + 0.001);
+    // Alturas de referencia del eje Y: las del perfil visible más las elevaciones
+    // reales de los aeropuertos (extremos del tramo activo o puntos de una
+    // comparación), para que el ✈ quede dentro de los ejes y la escala abarque
+    // la altura real del aeropuerto, no solo la de la carretera aledaña.
+    const alturasRef = ptsVisibles.map(p => p.e);
+    if (_compararA && _compararA.alt != null) alturasRef.push(Number(_compararA.alt));
+    if (_compararB && _compararB.alt != null) alturasRef.push(Number(_compararB.alt));
+    if (!_compararA && !_compararB && _segmentoActivo != null && _segmentoActivo < _nSegmentos
+        && _segmentoExtremos && _segmentoExtremos[_segmentoActivo]) {
+      const par = _segmentoExtremos[_segmentoActivo];
+      const segPts = puntos.filter(p => p.seg === _segmentoActivo);
+      if (segPts.length) {
+        const distIni = segPts[0].d;
+        const distFin = segPts[segPts.length - 1].d;
+        if (par[0] && par[0].elevacion != null && distIni >= zoomStart - 0.001 && distIni <= zoomEnd + 0.001) alturasRef.push(Number(par[0].elevacion));
+        if (par[1] && par[1].elevacion != null && distFin >= zoomStart - 0.001 && distFin <= zoomEnd + 0.001) alturasRef.push(Number(par[1].elevacion));
+      }
+    }
     let minAlt, maxAlt, rangoAlt;
-    if (ptsVisibles.length) {
-      minAlt = Math.min(...ptsVisibles.map(p => p.e));
-      maxAlt = Math.max(...ptsVisibles.map(p => p.e));
+    if (alturasRef.length) {
+      minAlt = Math.min(...alturasRef);
+      maxAlt = Math.max(...alturasRef);
     } else {
       const alturasSeg = ptsSeg.filter(p => p.e != null).map(p => p.e);
       minAlt = alturasSeg.length ? Math.min(...alturasSeg) : 0;
@@ -795,9 +835,16 @@ const AltimetriaModule = (() => {
     // Marcadores de extremos del tramo visible: cada borde muestra el icono
     // correcto según lo que hay ahí (A en el origen real, Z en el destino real,
     // ✈ en aeropuertos, 🚢 en puertos); los bordes de pueblo (escala) no se
-    // marcan porque su letra ya la pinta la parada en ese mismo punto. Durante
-    // una comparación se omiten y en su lugar se pintan 1 y 2 de comparación.
-    if (!_compararActivo) {
+    // marcan porque su letra ya la pinta la parada en ese mismo punto. Al
+    // comparar se omiten y en su lugar se pintan los círculos 1 y 2 (el 1 ya
+    // aparece apenas se elige el primer sitio, sin esperar al segundo).
+    if (_compararA) {
+      _agregarIndicadorComparar(svg, puntos, Number(_compararA.distKm), '1', zoomStart, zoomEnd, x, y, minAlt, rangoAlt, _compararA.alt);
+    }
+    if (_compararB) {
+      _agregarIndicadorComparar(svg, puntos, Number(_compararB.distKm), '2', zoomStart, zoomEnd, x, y, minAlt, rangoAlt, _compararB.alt);
+    }
+    if (!_compararA && !_compararB) {
       let idxA = 0, idxZ = puntos.length - 1;
       let extremoIni = { nombre: _nombreOrigen, tipo: 'origen' };
       let extremoFin = { nombre: _nombreDestino, tipo: 'destino' };
@@ -813,9 +860,6 @@ const AltimetriaModule = (() => {
       }
       _agregarIndicadorExtremo(svg, puntos, idxA, extremoIni, zoomStart, zoomEnd, x, y, minAlt, rangoAlt);
       _agregarIndicadorExtremo(svg, puntos, idxZ, extremoFin, zoomStart, zoomEnd, x, y, minAlt, rangoAlt);
-    } else if (_compararA && _compararB) {
-      _agregarIndicadorComparar(svg, puntos, Number(_compararA.distKm), '1', zoomStart, zoomEnd, x, y, minAlt, rangoAlt);
-      _agregarIndicadorComparar(svg, puntos, Number(_compararB.distKm), '2', zoomStart, zoomEnd, x, y, minAlt, rangoAlt);
     }
 
     // Las etiquetas del eje X se dibujan al final (z alto) para no quedar ocultas
@@ -849,7 +893,7 @@ const AltimetriaModule = (() => {
     // selecciona ese punto; con el vehículo visible abre el selector de
     // vehículo/color (el carro sigue al cursor, por eso el clic se captura aquí).
     hit.addEventListener('click', (ev) => {
-      if (_esperandoComparar) {
+      if (_esperandoComparar || _seleccionPrimerSitio) {
         ev.stopPropagation();
         const punto = _puntoDeEvento(cont, ev.clientX, ev.clientY);
         if (punto) seleccionarPuntoComparacion(punto);
@@ -939,6 +983,12 @@ const AltimetriaModule = (() => {
     if (interactivo !== false) {
       g.addEventListener('click', (ev) => {
         ev.stopPropagation();
+        // Durante una comparación (botón VS o ya elegido el primer sitio) el
+        // toque sobre un marcador elige directamente ese sitio.
+        if (_seleccionPrimerSitio || _esperandoComparar) {
+          seleccionarPuntoComparacion(data);
+          return;
+        }
         if (_menuFlotante && _menuFlotante._menuTarget === g && _menuFlotante.style.display !== 'none') {
           _cerrarMenuFlotante();
         } else {
@@ -998,17 +1048,22 @@ const AltimetriaModule = (() => {
     const dist = pt.d;
     if (dist < zoomStart - 0.001 || dist > zoomEnd + 0.001) return;
     const px = x(dist);
-    const alt = pt.e != null ? pt.e : (minAlt + rangoAlt * 0.5);
-    const py = y(alt);
-    const tooltip = pt.e != null ? `${_nombreSinDepartamento(nombre)} · ${pt.e.toFixed(0)} msnm` : _nombreSinDepartamento(nombre);
-    _crearIndicador(svg, px, py, letra, { tipo: letra, lat: pt.coord[1], lon: pt.coord[0], nombre: letra, distKm: dist }, tooltip, _nombreSinDepartamento(nombre));
+    // En un aeropuerto el indicador se ubica a la elevación real del aeropuerto
+    // (consultada en sus coordenadas), no a la del último punto de la carretera.
+    const altReal = (tipo === 'aeropuerto' && extremo.elevacion != null) ? Number(extremo.elevacion) : null;
+    const alt = altReal != null ? altReal : (pt.e != null ? pt.e : null);
+    const py = y(alt != null ? alt : (minAlt + rangoAlt * 0.5));
+    const tooltip = alt != null ? `${_nombreSinDepartamento(nombre)} · ${alt.toFixed(0)} msnm` : _nombreSinDepartamento(nombre);
+    _crearIndicador(svg, px, py, letra, { tipo: letra, lat: pt.coord[1], lon: pt.coord[0], nombre: letra, distKm: dist, alt }, tooltip, _nombreSinDepartamento(nombre));
   }
 
-  /** Marcador de un punto de comparación (1 o 2) sobre el perfil. */
-  function _agregarIndicadorComparar(svg, puntos, dist, letra, zoomStart, zoomEnd, x, y, minAlt, rangoAlt) {
+  /** Marcador de un punto de comparación (1 o 2) sobre el perfil. Si el punto
+   *  trae su propia altura (p. ej. la elevación real de un aeropuerto) se usa
+   *  esa en vez de la interpolada del perfil. */
+  function _agregarIndicadorComparar(svg, puntos, dist, letra, zoomStart, zoomEnd, x, y, minAlt, rangoAlt, altPunto) {
     if (dist < zoomStart - 0.001 || dist > zoomEnd + 0.001) return;
     const px = x(dist);
-    const alt = _alturaEn(puntos, dist);
+    const alt = altPunto != null ? Number(altPunto) : _alturaEn(puntos, dist);
     const py = alt != null ? y(alt) : (minAlt + rangoAlt * 0.5);
     const coord = _coordEn(puntos, dist);
     _crearIndicador(
@@ -1154,17 +1209,8 @@ const AltimetriaModule = (() => {
     const x = touch.clientX;
     const y = touch.clientY;
     _touchTap = { x, y };
-    _longPressX = x;
-    _longPressY = y;
-    _longPressTimer = setTimeout(() => {
-      _longPressTimer = null;
-      _touchTap = null;
-      _suprimirClicComparar = true;
-      setTimeout(() => { _suprimirClicComparar = false; }, 700);
-      navigator.vibrate && navigator.vibrate(20);
-      const punto = _puntoDeEvento(cont, _longPressX, _longPressY);
-      if (punto) _mostrarMenuComparar(_longPressX, _longPressY, punto);
-    }, 550);
+    // En móvil no se abre ningún menú contextual al mantener oprimido: la
+    // comparación de sitios se inicia con el botón VS del perfil.
   }
 
   function _onTouchStart(cont, ev) {
@@ -1230,7 +1276,7 @@ const AltimetriaModule = (() => {
       _onLeave(cont);
       return;
     }
-    if (_esperandoComparar && changed && fueTap) {
+    if ((_esperandoComparar || _seleccionPrimerSitio) && changed && fueTap) {
       const punto = _puntoDeEvento(cont, changed.clientX, changed.clientY);
       if (punto) seleccionarPuntoComparacion(punto);
     }
@@ -1521,6 +1567,20 @@ const AltimetriaModule = (() => {
   if (typeof TransportConfigModule !== 'undefined' && TransportConfigModule.setOnCambio) {
     TransportConfigModule.setOnCambio(() => renderizarVisibles());
   }
+
+  // Botón VS del perfil (móvil): inicia la comparación pidiendo el primer sitio.
+  function _iniciarComparacionDesdeBoton() {
+    cancelarComparacion();
+    _seleccionPrimerSitio = true;
+    _esperandoComparar = false;
+    _compararActivo = false;
+    _mostrarBannerComparar('Elige primer sitio para comparar');
+    _activarSeleccionMapa(true);
+    _actualizarMarcadoresComparacion();
+  }
+
+  const _btnComparar = document.getElementById('btn-comparar-altimetria-panel');
+  if (_btnComparar) _btnComparar.addEventListener('click', _iniciarComparacionDesdeBoton);
 
   return { setDatos, setSegmentosExtremos, setSegmentoActivo, agregarParada, renderizar, renderizarVisibles, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa, setOnHover, setOnLeave, setOnCentrarMapa, setOnEliminarParada, setExtremos, setRangoInicio, setRangoFin, quitarRangoInicio, quitarRangoFin, toggleFollow, setFollowActivo, isFollowActivo, mostrarHoverEn, ocultarHover, getInfoAt, seleccionarPuntoComparacion, cancelarComparacion, puntoCompararDesdeLatLng, tieneDatos };
 })();

@@ -685,19 +685,19 @@ input, select{ font-family: inherit; }
 /* Botón hamburguesa de cada fila: abre el menú contextual (antes clic derecho /
    pulsación larga). Va a la izquierda de la letra de la parada. */
 .parada-item__hamburger{
-  width: 20px;
-  height: 20px;
-  border: 1px solid var(--line-200);
+  width: 22px;
+  height: 22px;
+  border: 0px solid #c8cdd2;
   background: #ffffff;
   color: #4a6fa5;
-  border-radius: 4px;
+  border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   flex-shrink: 0;
-  transition: background 0.1s ease, color 0.1s ease;
+  transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
 }
 .parada-item__hamburger:hover{ background: #eef2f7; }
 .parada-item__hamburger:active{ background: #dce3ef; }
@@ -1945,6 +1945,36 @@ input, select{ font-family: inherit; }
   display: block;
   filter: brightness(0) invert(1);
 }
+/* Aviso automático de la rosa de los vientos: aparece a la izquierda del
+   botón al cargar la página y desaparece a los pocos segundos. */
+.rosa-vientos-tip{
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ffffff;
+  color: var(--teal-500);
+  border: 1px solid var(--line-200);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  z-index: 1001;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.rosa-vientos-tip::after{
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-left-color: #ffffff;
+}
+.rosa-vientos-tip--oculto{ opacity: 0; }
 /* Botón "+" para añadir una nueva ruta desde la barra de pestañas móvil */
 .mobile-tab-btn--anadir{ flex: 0 0 44px; color: var(--teal-500); }
 /* Botón "+" de la barra de pestañas de escritorio */
@@ -2309,6 +2339,9 @@ input, select{ font-family: inherit; }
   .btns-map--gps{ display: flex !important; top: 50px; bottom: auto; left: 12px; right: auto; }
   .btns-map--gps-solo{ display: flex !important; top: 90px; bottom: auto; left: 12px; right: auto; }
   #btns-map-compass{ display: flex !important; top: 50px; bottom: auto; left: auto; right: 12px; }
+  /* En móvil el aviso de la rosa de los vientos envuelve el texto para no
+     salirse de la pantalla. */
+  .rosa-vientos-tip{ white-space: normal; text-align: right; max-width: min(240px, calc(100vw - 100px)); }
   /* El botón flotante de mostrar/ocultar sitios va debajo del satélite. */
   .btn-toggle-sitios--float{ top: 90px; left: 12px; }
   .mobile-tab-bar{
@@ -2458,6 +2491,37 @@ input, select{ font-family: inherit; }
   padding-bottom: 0px;
 }
 .altimetria__title{ font-size: 0.7rem; font-weight: 600; color: var(--text-muted); margin-right: auto; text-transform: uppercase; letter-spacing: 0.04em; }
+/* Grupo título + botón VS (móvil): el botón queda a la derecha de "Perfil" y el
+   margen automático del grupo empuja el resto de la cabecera hacia la derecha. */
+.altimetria__titulo-grupo{
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: auto;
+}
+.altimetria__titulo-grupo .altimetria__title{ margin-right: 0; }
+/* Botón VS (móvil): inicia la comparación de dos sitios del perfil. Bordes
+   suaves (píldora) con contorno gris claro, a la derecha del título. */
+.altimetria__vs{
+  height: 22px;
+  margin-right: 6px;
+  padding: 0 9px;
+  border: 1px solid #c8cdd2;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--teal-600);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.altimetria__vs:hover{ background: var(--teal-100); }
 /* Botones numerados de segmentos en carro (altimetría de rutas aéreas/fluviales) */
 .altimetria__segmentos{ display: flex; gap: 4px; align-items: center; margin-right: 6px; }
 .altimetria__segmentos[hidden]{ display: none; }
@@ -2869,7 +2933,12 @@ input, select{ font-family: inherit; }
   font-size: 0.8rem;
   font-weight: 700;
   box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-  border: 2px solid #ffffff;
+}
+/* Cursor de selección de comparación (PC): círculo naranja sin bordes que se
+   suelta sobre el punto del perfil (o del mapa) al hacer clic. */
+.seleccion-comparar,
+.seleccion-comparar *{
+  cursor: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8' fill='%23d96c2f'/%3E%3C/svg%3E") 10 10, crosshair;
 }
 
 /* Diálogo modal de confirmación */
