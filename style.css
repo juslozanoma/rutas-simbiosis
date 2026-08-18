@@ -2379,9 +2379,9 @@ input, select{ font-family: inherit; }
   .btns-map--gps{ display: flex !important; top: 50px; bottom: auto; left: 12px; right: auto; }
   .btns-map--gps-solo{ display: flex !important; top: 90px; bottom: auto; left: 12px; right: auto; }
   #btns-map-compass{ display: flex !important; top: 50px; bottom: auto; left: auto; right: 12px; }
-  /* En móvil el aviso de la rosa de los vientos envuelve el texto para no
-     salirse de la pantalla. */
-  .rosa-vientos-tip{ white-space: normal; text-align: right; max-width: min(240px, calc(100vw - 100px)); }
+  /* En móvil el aviso de la rosa de los vientos queda compacto y en una sola
+     línea (como el de los sitios): no se envuelve ni se sale de la pantalla. */
+  .rosa-vientos-tip{ font-size: 0.7rem; padding: 6px 10px; white-space: nowrap; text-align: right; max-width: min(240px, calc(100vw - 100px)); overflow: hidden; text-overflow: ellipsis; }
   /* En móvil el aviso de los sitios queda compacto y en una sola línea para no
      salirse de la pantalla ni cortarse. */
   .btn-mostrar-sitios-tip{ font-size: 0.7rem; padding: 6px 10px; white-space: nowrap; }
@@ -2958,29 +2958,30 @@ input, select{ font-family: inherit; }
   flex-shrink: 0;
 }
 .ctx-menu__pin-svg{ width: 14px; height: 19px; display: block; }
-/* Íconos por máscara (misma técnica que las pestañas): silueta en gris del texto */
+/* Íconos por máscara (misma técnica que las pestañas): silueta en verde */
 .ctx-menu__ico{
   width: 16px; height: 16px;
-  background-color: var(--text-muted);
+  background-color: var(--teal-500);
   -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
   -webkit-mask-position: center; mask-position: center;
   -webkit-mask-size: contain; mask-size: contain;
 }
 .ctx-menu__ico--sign-post{ -webkit-mask-image: url('public/sign-post.svg'); mask-image: url('public/sign-post.svg'); }
-.ctx-menu__ico--warning{ -webkit-mask-image: url('public/warning.svg'); mask-image: url('public/warning.svg'); }
 .ctx-menu__ico-plus{ display: inline-flex; }
-.ctx-menu__ico-plus svg{ width: 16px; height: 16px; display: block; color: var(--text-muted); }
-/* Píldora VS (misma forma que el botón VS del perfil) */
+.ctx-menu__ico-plus svg{ width: 16px; height: 16px; display: block; color: var(--teal-500); }
+.ctx-menu__ico-warning{ display: inline-flex; }
+.ctx-menu__ico-warning img{ width: 16px; height: 16px; display: block; }
+/* Píldora VS: fondo verde sólido sin borde y letras blancas */
 .ctx-menu__vs{
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 24px;
   height: 14px;
-  border: 1px solid #c8cdd2;
+  border: none;
   border-radius: 999px;
-  background: #ffffff;
-  color: var(--teal-600);
+  background: var(--teal-500);
+  color: #ffffff;
   font-size: 0.52rem;
   font-weight: 700;
   letter-spacing: 0.06em;

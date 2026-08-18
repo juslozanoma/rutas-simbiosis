@@ -856,7 +856,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       destino: '<svg class="ctx-menu__pin-svg" width="14" height="19" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg"><path d="M15 0C6.7 0 0 6.7 0 15c0 10.5 15 25 15 25s15-14.5 15-25c0-8.3-6.7-15-15-15z" fill="#2f7a6b"/><text x="15" y="19.5" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="16" font-weight="700">Z</text></svg>',
       buscar: '<span class="ctx-menu__ico ctx-menu__ico--sign-post"></span>',
       comparar: '<span class="ctx-menu__vs">VS</span>',
-      tramo: '<span class="ctx-menu__ico ctx-menu__ico--warning"></span>',
+      tramo: '<span class="ctx-menu__ico-warning"><img src="public/warning.svg" alt="" width="16" height="16"/></span>',
       agregar: '<span class="ctx-menu__ico-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>',
     };
     // 1. Origen: corregir el punto de inicio (o crear la ruta desde aquí si aún
