@@ -392,7 +392,7 @@ const AltimetriaModule = (() => {
     _bannerComparar.appendChild(btn);
     _bannerComparar.style.display = 'none';
     // El aviso se inserta en el DOM y se posiciona en _mostrarBannerComparar:
-    // se ancla a la parte superior del perfil visible (panel de altimetría).
+    // se ancla dentro del perfil visible, en la parte alta del cuadro.
     return _bannerComparar;
   }
 
@@ -402,9 +402,9 @@ const AltimetriaModule = (() => {
     const statsEl = b.querySelector('.comparar-banner__stats');
     statsEl.textContent = stats || '';
     statsEl.style.display = stats ? '' : 'none';
-    // El aviso se ancla a la parte superior del perfil visible: en PC al panel
-    // flotante de altimetría y en móvil a la pestaña del panel lateral, de modo
-    // que quede justo encima del borde superior del perfil. Si no hay perfil
+    // El aviso se ancla dentro del perfil visible (panel flotante en PC o
+    // pestaña del panel lateral en móvil), en la parte alta del cuadro donde
+    // se muestran la distancia y la altura al hacer hover. Si no hay perfil
     // visible, se muestra sobre el borde inferior del mapa.
     const flotante = document.getElementById('altimetria');
     const panel = (flotante && flotante.offsetParent !== null)
@@ -413,7 +413,7 @@ const AltimetriaModule = (() => {
     const sobreMapa = !(panel && panel.offsetParent !== null);
     const cont = sobreMapa ? (document.querySelector('.map-full') || document.body) : panel;
     if (b.parentNode !== cont) cont.appendChild(b);
-    b.classList.toggle('comparar-banner--sobre-perfil', !sobreMapa);
+    b.classList.toggle('comparar-banner--dentro-perfil', !sobreMapa);
     b.classList.toggle('comparar-banner--sobre-mapa', sobreMapa);
     b.style.bottom = '';
     b.style.top = '';
@@ -1230,15 +1230,15 @@ const AltimetriaModule = (() => {
     _puntoHover = { lat: pt.coord[1], lon: pt.coord[0], dist: dist.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A', bearing };
     if (_onHoverMapa) _onHoverMapa(_puntoHover);
     if (_followActivo && _onCentrarMapa) { _onCentrarMapa(_puntoHover); }
-    // En una comparación el perfil va de A a B: la distancia mostrada es la
-    // recorrida desde el inicio del perfil y entre paréntesis el total A→B.
+    // En una comparación la distancia mostrada es la recorrida desde el inicio
+    // del perfil (el primer punto elegido) y entre paréntesis la distancia
+    // total desde el origen A de la ruta hasta el punto señalado.
     const suffix = cont.id.includes('-panel') ? '-panel' : '';
     const distEl = document.getElementById('altimetria-dist' + suffix);
     const altEl = document.getElementById('altimetria-alt' + suffix);
     if (distEl) {
       if (_compararActivo) {
-        const total = cont._zoomEnd - cont._zoomStart;
-        distEl.textContent = `${(dist - cont._zoomStart).toFixed(1)} km (de ${total.toFixed(1)} km)`;
+        distEl.textContent = `${(dist - cont._zoomStart).toFixed(1)} km (${dist.toFixed(1)} km desde A)`;
       } else {
         distEl.textContent = `${dist.toFixed(1)} km`;
       }
@@ -1386,15 +1386,15 @@ const AltimetriaModule = (() => {
     _puntoHover = { lat: pt.coord[1], lon: pt.coord[0], dist: dist.toFixed(1), alt: alt != null ? alt.toFixed(0) : 'N/A', bearing };
     if (_onHoverMapa) _onHoverMapa(_puntoHover);
     if (_followActivo && _onCentrarMapa) { _onCentrarMapa(_puntoHover); }
-    // En una comparación el perfil va de A a B: la distancia mostrada es la
-    // recorrida desde el inicio del perfil y entre paréntesis el total A→B.
+    // En una comparación la distancia mostrada es la recorrida desde el inicio
+    // del perfil (el primer punto elegido) y entre paréntesis la distancia
+    // total desde el origen A de la ruta hasta el punto señalado.
     const suffix = cont.id.includes('-panel') ? '-panel' : '';
     const distEl = document.getElementById('altimetria-dist' + suffix);
     const altEl = document.getElementById('altimetria-alt' + suffix);
     if (distEl) {
       if (_compararActivo) {
-        const total = cont._zoomEnd - cont._zoomStart;
-        distEl.textContent = `${(dist - cont._zoomStart).toFixed(1)} km (de ${total.toFixed(1)} km)`;
+        distEl.textContent = `${(dist - cont._zoomStart).toFixed(1)} km (${dist.toFixed(1)} km desde A)`;
       } else {
         distEl.textContent = `${dist.toFixed(1)} km`;
       }

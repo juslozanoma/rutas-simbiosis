@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------------
  */
 
-const VERSION = 'simbiosis-v73';
+const VERSION = 'simbiosis-v76';
 const CACHE_PRIMARIO = VERSION;
 const CACHE_OPACO = 'simbiosis-cdn-v2';
 

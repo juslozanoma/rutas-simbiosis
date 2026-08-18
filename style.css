@@ -1253,6 +1253,9 @@ input, select{ font-family: inherit; }
   line-height: 1;
 }
 .site-label--num::before{ border-top-color: var(--teal-500); }
+/* El tooltip del sitio (número + nombre) queda sobre los iconos de los sitios
+   turísticos del mapa. */
+.leaflet-tooltip.site-label{ z-index: 903; }
 
 /* Tooltip que sigue al cursor sobre la ruta (distancia y tiempo desde el origen) */
 .route-tooltip{
@@ -2363,7 +2366,7 @@ input, select{ font-family: inherit; }
   #app[data-mobile-tab="descubre"] .panel-sites__busqueda{
     height: auto;
     padding: 7px 7px;
-    margin: 0 0 -1px;
+    margin: 0 -8px 4px;
     border: 1px solid var(--line-300);
     border-radius: 5px;
     background: #ffffff;
@@ -2638,9 +2641,9 @@ input, select{ font-family: inherit; }
   font-weight: 500;
 }
 .altimetria__hover-info span:empty{ display: none; }
-/* Aviso flotante de comparación: se ancla a la parte superior del perfil
-   (queda justo encima del borde superior del panel de altimetría) o, si no hay
-   perfil visible, sobre el borde inferior del mapa. */
+/* Aviso de comparación: se ancla dentro del perfil visible, en la parte alta
+   del cuadro blanco (donde se muestran la distancia y la altura al hacer hover)
+   o, si no hay perfil visible, sobre el borde inferior del mapa. */
 .comparar-banner{
   position: absolute;
   left: 50%;
@@ -2662,7 +2665,7 @@ input, select{ font-family: inherit; }
   box-shadow: 0 4px 16px rgba(0,0,0,0.25);
   text-align: center;
 }
-.comparar-banner--sobre-perfil{ top: 0; transform: translate(-50%, -100%); }
+.comparar-banner--dentro-perfil{ top: 6px; transform: translateX(-50%); }
 .comparar-banner--sobre-mapa{ bottom: 6px; transform: translateX(-50%); }
 .comparar-banner__titulo{ white-space: nowrap; color: #ffffff; font-weight: 400; }
 .comparar-banner__stats{
@@ -2931,6 +2934,9 @@ input, select{ font-family: inherit; }
   overflow: hidden;
 }
 .ctx-menu__item{
+  display: flex;
+  align-items: center;
+  gap: 9px;
   padding: 8px 14px;
   font-size: 0.78rem;
   color: var(--text-body);
@@ -2940,12 +2946,46 @@ input, select{ font-family: inherit; }
 }
 .ctx-menu__item:hover{ background: var(--teal-50); }
 .ctx-menu__item--parent{
-  display: flex;
-  align-items: center;
   justify-content: space-between;
   gap: 14px;
 }
 .ctx-menu__chevron{ color: var(--text-muted); font-size: 1rem; line-height: 1; }
+/* Ícono de cada ítem del menú contextual */
+.ctx-menu__icon{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ctx-menu__pin-svg{ width: 14px; height: 19px; display: block; }
+/* Íconos por máscara (misma técnica que las pestañas): silueta en gris del texto */
+.ctx-menu__ico{
+  width: 16px; height: 16px;
+  background-color: var(--text-muted);
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center; mask-position: center;
+  -webkit-mask-size: contain; mask-size: contain;
+}
+.ctx-menu__ico--sign-post{ -webkit-mask-image: url('public/sign-post.svg'); mask-image: url('public/sign-post.svg'); }
+.ctx-menu__ico--warning{ -webkit-mask-image: url('public/warning.svg'); mask-image: url('public/warning.svg'); }
+.ctx-menu__ico-plus{ display: inline-flex; }
+.ctx-menu__ico-plus svg{ width: 16px; height: 16px; display: block; color: var(--text-muted); }
+/* Píldora VS (misma forma que el botón VS del perfil) */
+.ctx-menu__vs{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 14px;
+  border: 1px solid #c8cdd2;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--teal-600);
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
 
 /* Marcadores durante la marcación de tramo */
 .marcando-pin{

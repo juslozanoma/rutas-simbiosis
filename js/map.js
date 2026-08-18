@@ -849,39 +849,45 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const items = [];
     // Ruta ya dibujada en el mapa: el destino no se "crea" sino que se "cambia".
     const hayRuta = _rutaGeojson && _rutaGeojson.geometry && _rutaGeojson.geometry.coordinates && _rutaGeojson.geometry.coordinates.length >= 2;
-    // Sin origen fijado solo se ofrece "Crear ruta desde aquí". Con un origen
-    // ya definido se ofrece fijar/cambiar el destino y corregir el punto de inicio.
+    // Iconos de cada opción: pin de origen (A), pin de destino (Z), sign-post
+    // (buscar sitios), VS (comparar), warning (tramo destapado) y "+" (nuevo).
+    const ICONO_CTX = {
+      origen: '<svg class="ctx-menu__pin-svg" width="14" height="19" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg"><path d="M15 0C6.7 0 0 6.7 0 15c0 10.5 15 25 15 25s15-14.5 15-25c0-8.3-6.7-15-15-15z" fill="#2f7a6b"/><text x="15" y="19.5" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="16" font-weight="700">A</text></svg>',
+      destino: '<svg class="ctx-menu__pin-svg" width="14" height="19" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg"><path d="M15 0C6.7 0 0 6.7 0 15c0 10.5 15 25 15 25s15-14.5 15-25c0-8.3-6.7-15-15-15z" fill="#2f7a6b"/><text x="15" y="19.5" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="16" font-weight="700">Z</text></svg>',
+      buscar: '<span class="ctx-menu__ico ctx-menu__ico--sign-post"></span>',
+      comparar: '<span class="ctx-menu__vs">VS</span>',
+      tramo: '<span class="ctx-menu__ico ctx-menu__ico--warning"></span>',
+      agregar: '<span class="ctx-menu__ico-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>',
+    };
+    // 1. Origen: corregir el punto de inicio (o crear la ruta desde aquí si aún
+    // no hay origen fijado).
     if (_coordOrigen) {
-      items.push({ texto: hayRuta ? 'Cambiar aquí el punto de destino' : 'Crear ruta hasta aquí', accion: () => _crearRutaHasta(lat, lng) });
-      items.push({ texto: 'Cambiar aquí el punto de origen', accion: () => _crearRutaDesde(lat, lng) });
+      items.push({ texto: 'Cambiar aquí el punto de origen', icono: ICONO_CTX.origen, accion: () => _crearRutaDesde(lat, lng) });
     } else {
-      items.push({ texto: 'Crear ruta desde aquí', accion: () => _crearRutaDesde(lat, lng) });
+      items.push({ texto: 'Crear ruta desde aquí', icono: ICONO_CTX.origen, accion: () => _crearRutaDesde(lat, lng) });
     }
+    // 2. Destino: solo se ofrece con un origen ya fijado.
+    if (_coordOrigen) {
+      items.push({ texto: hayRuta ? 'Cambiar aquí el punto de destino' : 'Crear ruta hasta aquí', icono: ICONO_CTX.destino, accion: () => _crearRutaHasta(lat, lng) });
+    }
+    // 3. Buscar sitios turísticos cercanos.
     items.push(
       {
         texto: 'Buscar sitios turísticos cercanos',
+        icono: ICONO_CTX.buscar,
         accion: () => {
           // El pin del punto elegido se mantiene en el mapa al buscar sitios.
           _mostrarPinCtx(lat, lng);
           _buscarSitiosCercanos(lat, lng);
         },
-      },
-      {
-        texto: 'Agregar sitio nuevo',
-        accion: () => {
-          const abrir = typeof abrirDialogoNuevoPuerto === 'function' ? abrirDialogoNuevoPuerto : _onAgregarPuertoEn;
-          if (abrir) abrir(lat, lng);
-        },
       }
     );
-    if (!puertosActivos && !aeropuertosActivos && !archivoActivo && !subirVisible) {
-      items.push({ texto: 'Marcar tramo destapado', accion: () => iniciarMarcadoTramo() });
-    }
-    // "Comparar este sitio" se ofrece siempre que haya una ruta dibujada en el
-    // mapa (haya o no altimetría abierta), para elegir puntos de comparación.
+    // 4. "Comparar este sitio" se ofrece siempre que haya una ruta dibujada en
+    // el mapa (haya o no altimetría abierta), para elegir puntos de comparación.
     if (hayRuta && typeof AltimetriaModule !== 'undefined') {
       items.push({
         texto: 'Comparar este sitio',
+        icono: ICONO_CTX.comparar,
         accion: () => {
           if (typeof AltimetriaModule !== 'undefined' && AltimetriaModule.puntoCompararDesdeLatLng && AltimetriaModule.seleccionarPuntoComparacion) {
             const punto = AltimetriaModule.puntoCompararDesdeLatLng(lat, lng);
@@ -890,6 +896,22 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         },
       });
     }
+    // 5. "Marcar tramo destapado" solo cuando no están visibles ni los puertos
+    // (P), ni los aeropuertos (A), ni la opción de subir tu propia ruta.
+    if (!puertosActivos && !aeropuertosActivos && !archivoActivo && !subirVisible) {
+      items.push({ texto: 'Marcar tramo destapado', icono: ICONO_CTX.tramo, accion: () => iniciarMarcadoTramo() });
+    }
+    // 6. Agregar sitio nuevo.
+    items.push(
+      {
+        texto: 'Agregar sitio nuevo',
+        icono: ICONO_CTX.agregar,
+        accion: () => {
+          const abrir = typeof abrirDialogoNuevoPuerto === 'function' ? abrirDialogoNuevoPuerto : _onAgregarPuertoEn;
+          if (abrir) abrir(lat, lng);
+        },
+      }
+    );
     _mostrarPinCtx(lat, lng);
     _abrirMenuContextual(items, e.latlng);
   }
@@ -900,8 +922,9 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   }
 
   /** Abre el menú contextual del mapa sobre el punto indicado. Cada ítem es
-   *  { texto, accion } o { texto, submenu: [...] } para opciones con submenú:
-   *  al tocarlas el menú se reemplaza por el submenú y "← Volver" lo restaura. */
+   *  { texto, accion, icono } o { texto, icono, submenu: [...] } para opciones
+   *  con submenú: al tocarlas el menú se reemplaza por el submenú y "← Volver"
+   *  lo restaura. `icono` (HTML opcional) se muestra a la izquierda del texto. */
   function _abrirMenuContextual(items, latlng) {
     const container = map.getContainer();
     const div = document.createElement('div');
@@ -912,7 +935,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     function render(lista) {
       div.innerHTML = lista.map((i) =>
         '<div class="ctx-menu__item' + (i.submenu ? ' ctx-menu__item--parent' : '') + '">' +
-        '<span>' + i.texto + '</span>' +
+        (i.icono ? '<span class="ctx-menu__icon">' + i.icono + '</span>' : '') +
+        '<span class="ctx-menu__texto">' + i.texto + '</span>' +
         (i.submenu ? '<span class="ctx-menu__chevron">›</span>' : '') +
         '</div>'
       ).join('');
@@ -2055,7 +2079,11 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const marker = _sitioMarkers.get(sitioId);
     if (!marker) return;
     if (!map.hasLayer(clusterSitios)) map.addLayer(clusterSitios);
+    const latlng = marker.getLatLng();
     clusterSitios.zoomToShowLayer(marker, () => {
+      // El sitio se centra en el mapa con zoom (al menos el de enfoque de
+      // paradas/municipios) y luego se abre su ficha y su tooltip.
+      enfocarLugar(latlng.lat, latlng.lng);
       if (typeof TourismModule !== 'undefined' && TourismModule.mostrarPopupSitio) {
         const sitio = TourismModule.getSitios().find(s => s.id === sitioId);
         if (sitio) TourismModule.mostrarPopupSitio(sitio);
