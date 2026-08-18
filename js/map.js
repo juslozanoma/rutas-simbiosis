@@ -337,20 +337,20 @@ const MapModule = (() => {
   function iconoOrigen(color) { return _pinDivIcon('A', color); }
   function iconoDestino(color) { return _pinDivIcon('Z', color); }
 
-  /** Pin (misma forma que public/pin.svg) en verde teal que marca el punto del
+  /** Pin (misma forma que public/pin.svg) en naranja que marca el punto del
    *  clic derecho / pulsación larga junto al menú contextual. El "más" interno
    *  se recorta (fill-rule evenodd) dejando ver el mapa. */
   function _iconoPinCtx() {
     const svg = `
-      <svg class="pin-svg" width="26" height="36" viewBox="0 0 14 20" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd">
-        <path d="M9,8 L8,8 L8,9 C8,9.552 7.552,10 7,10 C6.448,10 6,9.552 6,9 L6,8 L5,8 C4.448,8 4,7.552 4,7 C4,6.448 4.448,6 5,6 L6,6 L6,5 C6,4.448 6.448,4 7,4 C7.552,4 8,4.448 8,5 L8,6 L9,6 C9.552,6 10,6.448 10,7 C10,7.552 9.552,8 9,8 M7,0 C3.134,0 0,3.134 0,7 C0,10.866 7,20 7,20 C7,20 14,10.866 14,7 C14,3.134 10.866,0 7,0" fill="#2f7a6b"/>
+      <svg class="pin-svg" width="22" height="31" viewBox="0 0 14 20" xmlns="http://www.w3.org/2000/svg" fill-rule="evenodd">
+        <path d="M9,8 L8,8 L8,9 C8,9.552 7.552,10 7,10 C6.448,10 6,9.552 6,9 L6,8 L5,8 C4.448,8 4,7.552 4,7 C4,6.448 4.448,6 5,6 L6,6 L6,5 C6,4.448 6.448,4 7,4 C7.552,4 8,4.448 8,5 L8,6 L9,6 C9.552,6 10,6.448 10,7 C10,7.552 9.552,8 9,8 M7,0 C3.134,0 0,3.134 0,7 C0,10.866 7,20 7,20 C7,20 14,10.866 14,7 C14,3.134 10.866,0 7,0" fill="#d96c2f"/>
       </svg>`;
     return L.divIcon({
       html: `<div class="pin-icon">${svg}</div>`,
       className: '',
-      iconSize: [26, 36],
-      iconAnchor: [13, 36],
-      popupAnchor: [0, -32],
+      iconSize: [22, 31],
+      iconAnchor: [11, 31],
+      popupAnchor: [0, -27],
     });
   }
 
@@ -572,6 +572,18 @@ const MapModule = (() => {
       const marker = L.marker([sitio.lat, sitio.lon], { icon: _iconoParada(num), zIndexOffset: 900 });
       _marcadorParadas.set(sitio.id, marker);
 
+      // Tooltip con el nombre del sitio sobre su ícono.
+      marker.bindTooltip(sitio.nombre, { direction: 'top', offset: [0, -16], className: 'site-label' });
+      // En celular el clic sobre el sitio agregado abre su ficha en el panel
+      // inferior y deja el nombre como tooltip; en escritorio sigue el popup.
+      marker.on('click', () => {
+        if (typeof esMovil === 'function' && esMovil()) {
+          if (marker.getPopup && marker.getPopup()) marker.closePopup();
+          marker.openTooltip();
+          if (typeof mostrarCuadroParada === 'function') mostrarCuadroParada(sitio);
+        }
+      });
+
       const distTxt = sitio.distanciaRutaKm != null
         ? `A ${sitio.distanciaRutaKm.toFixed(1)} km del corredor · ~${Math.round(sitio.tiempoDesvioMin)} min de desvío`
         : '';
@@ -643,6 +655,17 @@ const MapModule = (() => {
           : (e.departamento && e.departamento !== e.nombre ? `${e.nombre}, ${e.departamento}` : e.nombre);
         if (muni && muni.ano_fundacion) nombrePop += ` (${muni.ano_fundacion})`;
       }
+      // Tooltip con el nombre del pueblo intermedio sobre su ícono.
+      marker.bindTooltip(e.nombre || 'Pueblo intermedio', { direction: 'top', offset: [0, -16], className: 'site-label' });
+      // En celular el clic sobre el pueblo intermedio abre su ficha en el panel
+      // inferior y deja el nombre como tooltip; en escritorio sigue el popup.
+      marker.on('click', () => {
+        if (typeof esMovil === 'function' && esMovil()) {
+          if (marker.getPopup && marker.getPopup()) marker.closePopup();
+          marker.openTooltip();
+          if (typeof mostrarCuadroEscala === 'function') mostrarCuadroEscala(e);
+        }
+      });
       marker.bindPopup(`
         <div class="popup-sitio">
           <div class="popup-sitio__head">
@@ -870,18 +893,21 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     if (_coordOrigen) {
       items.push({ texto: hayRuta ? 'Cambiar aquí el punto de destino' : 'Crear ruta hasta aquí', icono: ICONO_CTX.destino, accion: () => _crearRutaHasta(lat, lng) });
     }
-    // 3. Buscar sitios turísticos cercanos.
-    items.push(
-      {
-        texto: 'Buscar sitios turísticos cercanos',
-        icono: ICONO_CTX.buscar,
-        accion: () => {
-          // El pin del punto elegido se mantiene en el mapa al buscar sitios.
-          _mostrarPinCtx(lat, lng);
-          _buscarSitiosCercanos(lat, lng);
-        },
-      }
-    );
+    // 3. Buscar sitios turísticos cercanos (solo sin una ruta calculada: con la
+    // ruta dibujada el menú se centra en comparar puntos del propio recorrido).
+    if (!hayRuta) {
+      items.push(
+        {
+          texto: 'Buscar sitios turísticos cercanos',
+          icono: ICONO_CTX.buscar,
+          accion: () => {
+            // El pin del punto elegido se mantiene en el mapa al buscar sitios.
+            _mostrarPinCtx(lat, lng);
+            _buscarSitiosCercanos(lat, lng);
+          },
+        }
+      );
+    }
     // 4. "Comparar este sitio" se ofrece siempre que haya una ruta dibujada en
     // el mapa (haya o no altimetría abierta), para elegir puntos de comparación.
     if (hayRuta && typeof AltimetriaModule !== 'undefined') {

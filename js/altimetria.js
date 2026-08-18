@@ -320,8 +320,11 @@ const AltimetriaModule = (() => {
     } catch (e) { return null; }
   }
 
-  /** Distancia (km) del punto de la ruta del perfil más cercano a un lat/lon. */
-  function _distKmCercaDe(lat, lon) {
+  /** Punto de la ruta del perfil más cercano a un lat/lon: devuelve la
+   *  coordenada sobre la ruta (para que la comparación quede siempre sobre el
+   *  trazo aunque el clic se dé fuera) y la distancia recorrida desde el inicio
+   *  del perfil. */
+  function _puntoRutaMasCercano(lat, lon) {
     if (!_rutaGeojson || !_rutaGeojson.geometry) return null;
     const gc = _rutaGeojson.geometry.coordinates;
     if (!gc || gc.length < 2) return null;
@@ -332,15 +335,18 @@ const AltimetriaModule = (() => {
     try {
       const nearest = turf.nearestPointOnLine(turf.lineString(coords), turf.point([lon, lat]), { units: 'kilometers' });
       const loc = nearest.properties.location;
-      return loc != null ? Number(loc) : 0;
+      if (loc == null) return null;
+      const snapped = nearest.geometry.coordinates; // [lon, lat]
+      return { lat: snapped[1], lon: snapped[0], distKm: Number(loc) };
     } catch (e) { return null; }
   }
 
-  /** Convierte un lat/lon del mapa en el punto equivalente del perfil. */
+  /** Convierte un lat/lon del mapa en el punto equivalente del perfil: el punto
+   *  queda en el punto de la ruta más cercano al clic. */
   function puntoCompararDesdeLatLng(lat, lon) {
-    const distKm = _distKmCercaDe(lat, lon);
-    if (distKm == null) return null;
-    return { lat, lon, coord: [lon, lat], distKm, alt: _alturaEnDist(distKm) };
+    const res = _puntoRutaMasCercano(lat, lon);
+    if (!res) return null;
+    return { lat: res.lat, lon: res.lon, coord: [res.lon, res.lat], distKm: res.distKm, alt: _alturaEnDist(res.distKm) };
   }
 
   /** Normaliza un punto de comparación (dist/alt numéricos). */
@@ -488,6 +494,22 @@ const AltimetriaModule = (() => {
       _actualizarMarcadoresComparacion();
       _syncBotonVS();
       _renderizarTodo();
+      // Al completarse la comparación se abre el perfil (si estaba cerrado)
+      // para mostrar la comparación recién definida.
+      _abrirPerfilSiCerrado();
+    }
+  }
+
+  /** Si el perfil de elevación está cerrado, lo abre (pestaña móvil o panel
+   *  flotante de escritorio) para mostrar la comparación recién completada. */
+  function _abrirPerfilSiCerrado() {
+    const panelPC = document.getElementById('altimetria');
+    const panelMovil = document.getElementById('altimetria-panel');
+    if ((panelPC && panelPC.offsetParent !== null) || (panelMovil && panelMovil.offsetParent !== null)) return;
+    if (typeof esMovil === 'function' && esMovil()) {
+      if (typeof setMobileTab === 'function') setMobileTab('altimetria');
+    } else if (typeof toggleAltimetria === 'function') {
+      toggleAltimetria();
     }
   }
 
