@@ -176,6 +176,7 @@ const AltimetriaModule = (() => {
       _seleccionPrimerSitio = false;
       _activarSeleccionMapa(false);
       _ocultarBannerComparar();
+      _syncBotonVS();
       _actualizarMarcadoresComparacion();
     }
     const geo = rutaGeojson && rutaGeojson.geometry;
@@ -461,6 +462,7 @@ const AltimetriaModule = (() => {
       _mostrarBannerComparar('Elige otro sitio para comparar');
       _actualizarMarcadoresComparacion();
       _activarSeleccionMapa(true);
+      _syncBotonVS();
       _renderizarTodo();
       return;
     }
@@ -472,6 +474,7 @@ const AltimetriaModule = (() => {
       _mostrarBannerComparar('Punto 1 seleccionado: elige el punto 2');
       _actualizarMarcadoresComparacion();
       _activarSeleccionMapa(true);
+      _syncBotonVS();
       _renderizarTodo();
     } else {
       _compararB = norm;
@@ -483,6 +486,7 @@ const AltimetriaModule = (() => {
 
       _mostrarBannerComparar('Comparación de puntos', _resumenComparacion());
       _actualizarMarcadoresComparacion();
+      _syncBotonVS();
       _renderizarTodo();
     }
   }
@@ -516,6 +520,7 @@ const AltimetriaModule = (() => {
     _seleccionPrimerSitio = false;
     _activarSeleccionMapa(false);
     _ocultarBannerComparar();
+    _syncBotonVS();
     _actualizarMarcadoresComparacion();
     if (habia) _renderizarTodo();
   }
@@ -1548,6 +1553,7 @@ const AltimetriaModule = (() => {
     _esperandoComparar = false;
     _activarSeleccionMapa(false);
     _ocultarBannerComparar();
+    _syncBotonVS();
     _actualizarMarcadoresComparacion();
     ['altimetria-segmentos', 'altimetria-segmentos-panel'].forEach((id) => {
       const c = document.getElementById(id);
@@ -1632,19 +1638,35 @@ const AltimetriaModule = (() => {
     TransportConfigModule.setOnCambio(() => renderizarVisibles());
   }
 
-  // Botón VS del perfil (móvil): inicia la comparación pidiendo el primer sitio.
+  // Botón VS del perfil (escritorio y móvil): inicia la comparación pidiendo el
+  // primer sitio; si ya hay una comparación en curso la cierra (conmutador).
   function _iniciarComparacionDesdeBoton() {
-    cancelarComparacion();
+    if (_compararActivo || _esperandoComparar || _seleccionPrimerSitio) {
+      cancelarComparacion();
+      return;
+    }
     _seleccionPrimerSitio = true;
     _esperandoComparar = false;
     _compararActivo = false;
     _mostrarBannerComparar('Elige primer sitio para comparar');
     _activarSeleccionMapa(true);
     _actualizarMarcadoresComparacion();
+    _syncBotonVS();
+  }
+
+  /** Marca el botón VS del perfil como activado (fondo verde sólido, sin borde
+   *  y letras blancas) mientras la comparación esté en curso. */
+  function _syncBotonVS() {
+    const activo = _compararActivo || _esperandoComparar || _seleccionPrimerSitio;
+    document.querySelectorAll('.altimetria__vs').forEach((b) => {
+      b.classList.toggle('altimetria__vs--activo', activo);
+    });
   }
 
   const _btnComparar = document.getElementById('btn-comparar-altimetria-panel');
   if (_btnComparar) _btnComparar.addEventListener('click', _iniciarComparacionDesdeBoton);
+  const _btnCompararDesk = document.getElementById('btn-comparar-altimetria');
+  if (_btnCompararDesk) _btnCompararDesk.addEventListener('click', _iniciarComparacionDesdeBoton);
 
   return { setDatos, setSegmentosExtremos, setSegmentoActivo, agregarParada, renderizar, renderizarVisibles, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa, setOnHover, setOnLeave, setOnCentrarMapa, setOnEliminarParada, setExtremos, setRangoInicio, setRangoFin, quitarRangoInicio, quitarRangoFin, toggleFollow, setFollowActivo, isFollowActivo, mostrarHoverEn, ocultarHover, getInfoAt, seleccionarPuntoComparacion, cancelarComparacion, puntoCompararDesdeLatLng, tieneDatos };
 })();

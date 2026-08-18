@@ -2555,8 +2555,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'rosa-vientos';
-    btn.title = 'Arrastrar para rotar el mapa · clic para orientar al norte';
-    btn.setAttribute('aria-label', 'Rotar el mapa: arrastra para girarlo o haz clic para orientar al norte');
+    btn.title = 'Mover para rotar el mapa · clic para orientar al norte';
+    btn.setAttribute('aria-label', 'Mueve este botón para rotar el mapa o haz clic para orientar al norte');
     btn.innerHTML = '<span class="rosa-vientos__aguja" aria-hidden="true"><img src="public/direction.svg" alt="" width="20" height="20"></span>';
     contenedor.appendChild(btn);
 
@@ -2566,7 +2566,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const tip = document.createElement('div');
     tip.className = 'rosa-vientos-tip';
     tip.setAttribute('role', 'status');
-    tip.innerHTML = '<span class="rosa-vientos-tip__texto">Mantén oprimido o arrastra para girar la pantalla</span>';
+    tip.innerHTML = '<span class="rosa-vientos-tip__texto">Mueve este botón para rotar el mapa</span>';
     contenedor.appendChild(tip);
     setTimeout(() => {
       tip.classList.add('rosa-vientos-tip--oculto');

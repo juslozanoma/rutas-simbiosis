@@ -726,6 +726,7 @@ input, select{ font-family: inherit; }
 .filter-row__label-text{
   font-size: 9px;
   color: var(--text-muted);
+  margin-top: -3px;
   font-weight: 400;
   text-transform: lowercase;
   letter-spacing: 0.0em;
@@ -2015,6 +2016,43 @@ input, select{ font-family: inherit; }
   border-left: 7px solid #ffffff;
 }
 .btn-mostrar-sitios-tip--oculto{ opacity: 0; }
+/* Aviso automático del botón VS del perfil: aparece a la derecha del botón
+   cuando se abre el perfil indicando su función, y desaparece solo a los 3s. */
+.vs-tip{
+  position: fixed;
+  z-index: 1500;
+  background: #ffffff;
+  color: var(--teal-600);
+  border: 1px solid var(--line-200);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.vs-tip::after{
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -7px;
+  width: 0;
+  height: 0;
+  transform: translateY(-50%);
+  border: 7px solid transparent;
+  border-right-color: #ffffff;
+  border-left: 0;
+}
+.vs-tip--izquierda::after{
+  left: auto;
+  right: -7px;
+  border-right: 0;
+  border-right-color: transparent;
+  border-left: 7px solid #ffffff;
+}
+.vs-tip--oculto{ opacity: 0; }
 /* Botón "+" para añadir una nueva ruta desde la barra de pestañas móvil */
 .mobile-tab-btn--anadir{ flex: 0 0 44px; color: var(--teal-500); }
 /* Botón "+" de la barra de pestañas de escritorio */
@@ -2543,8 +2581,9 @@ input, select{ font-family: inherit; }
   margin-right: auto;
 }
 .altimetria__titulo-grupo .altimetria__title{ margin-right: 0; }
-/* Botón VS (móvil): inicia la comparación de dos sitios del perfil. Bordes
-   suaves (píldora) con contorno gris claro, a la derecha del título. */
+/* Botón VS (perfil de escritorio y móvil): inicia la comparación de dos sitios
+   del perfil. Bordes suaves (píldora) con contorno gris claro, a la derecha del
+   título. */
 .altimetria__vs{
   height: 22px;
   margin-right: 6px;
@@ -2565,6 +2604,14 @@ input, select{ font-family: inherit; }
   transition: background 0.12s ease, border-color 0.12s ease;
 }
 .altimetria__vs:hover{ background: var(--teal-100); }
+/* Estado activado del botón VS: mientras la comparación está en curso queda con
+   fondo verde sólido, sin borde y letras blancas. */
+.altimetria__vs--activo,
+.altimetria__vs--activo:hover{
+  background: var(--teal-500);
+  border-color: var(--teal-500);
+  color: #ffffff;
+}
 /* Botones numerados de segmentos en carro (altimetría de rutas aéreas/fluviales) */
 .altimetria__segmentos{ display: flex; gap: 4px; align-items: center; margin-right: 6px; }
 .altimetria__segmentos[hidden]{ display: none; }

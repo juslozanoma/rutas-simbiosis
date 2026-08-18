@@ -162,6 +162,7 @@
     el.altimetriaPanel.hidden = false;
     if (el.btnAltimetria) el.btnAltimetria.hidden = true;
     _activarSeguimientoConVuelos();
+    _mostrarTipBotonVS();
     _syncAltimetriaMapa();
     await _cargarElevacionAltimetria('altimetria-chart');
   }
@@ -200,6 +201,44 @@
     if (typeof MapModule !== 'undefined' && MapModule.setAltimetriaActiva) {
       MapModule.setAltimetriaActiva(visible);
     }
+  }
+
+  /** Aviso automático del botón VS: al abrirse el perfil aparece a la derecha
+   *  del botón por 3 segundos indicando su función (comparar dos puntos), y
+   *  desaparece antes si se usa el botón o se redimensiona la ventana. */
+  function _mostrarTipBotonVS() {
+    const flotante = el.altimetriaPanel && !el.altimetriaPanel.hidden;
+    const panel = flotante ? document.getElementById('btn-comparar-altimetria')
+      : document.getElementById('btn-comparar-altimetria-panel');
+    if (!panel || panel.offsetParent === null) return;
+    document.querySelectorAll('.vs-tip').forEach((t) => t.remove());
+    const tip = document.createElement('div');
+    tip.className = 'vs-tip vs-tip--derecha';
+    tip.setAttribute('role', 'status');
+    tip.innerHTML = '<span class="vs-tip__texto">Compara dos puntos del perfil</span>';
+    document.body.appendChild(tip);
+    const colocar = () => {
+      const r = panel.getBoundingClientRect();
+      const tr = tip.getBoundingClientRect();
+      let left = r.right + 10;
+      if (left + tr.width > window.innerWidth - 8) {
+        left = r.left - tr.width - 10;
+        tip.classList.remove('vs-tip--derecha');
+        tip.classList.add('vs-tip--izquierda');
+      }
+      left = Math.max(8, Math.min(left, window.innerWidth - tr.width - 8));
+      const top = Math.max(8, Math.min(r.top + r.height / 2 - tr.height / 2, window.innerHeight - tr.height - 8));
+      tip.style.left = left + 'px';
+      tip.style.top = top + 'px';
+    };
+    colocar();
+    const ocultar = () => {
+      tip.classList.add('vs-tip--oculto');
+      setTimeout(() => tip.remove(), 400);
+    };
+    setTimeout(ocultar, 3000);
+    panel.addEventListener('click', ocultar, { once: true });
+    window.addEventListener('resize', ocultar, { once: true });
   }
 
 
@@ -278,6 +317,7 @@
       _cargarElevacionRutaArchivo('altimetria-chart');
     }
     _syncAltimetriaMapa();
+    _mostrarTipBotonVS();
   }
 
   /** ¿La altimetría visible corresponde a una ruta de archivo (K)? Sirve para

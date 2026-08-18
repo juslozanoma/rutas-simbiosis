@@ -95,6 +95,7 @@
       if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = false;
       if (typeof _activarSeguimientoConVuelos === 'function') _activarSeguimientoConVuelos();
       _cargarElevacionAltimetria('altimetria-chart-panel');
+      if (typeof _mostrarTipBotonVS === 'function') _mostrarTipBotonVS();
     } else {
       if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = true;
     }
