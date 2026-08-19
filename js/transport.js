@@ -19,21 +19,21 @@ const TransportConfigModule = (() => {
 
   /** Vehículos disponibles. `path` es la ubicación del SVG (negro, monocromo). */
   const ICONOS = [
-    { file: 'car.svg', path: 'public/car.svg', nombre: 'Carro' },
-    { file: 'car2.svg', path: 'public/car2.svg', nombre: 'Carro deportivo' },
-    { file: 'car3.svg', path: 'public/car3.svg', nombre: 'Auto' },
-    { file: 'car4.svg', path: 'public/car4.svg', nombre: 'Carro familiar' },
-    { file: 'suv.svg', path: 'public/suv.svg', nombre: 'SUV' },
-    { file: 'pickup.svg', path: 'public/pickup.svg', nombre: 'Camioneta' },
-    { file: 'motorcycle.svg', path: 'public/motorcycle.svg', nombre: 'Moto' },
-    { file: 'motorcycle2.svg', path: 'public/motorcycle2.svg', nombre: 'Motocicleta' },
-    { file: 'motorcycle3.svg', path: 'public/motorcycle3.svg', nombre: 'Moto clásica' },
-    { file: 'scooter.svg', path: 'public/scooter.svg', nombre: 'Scooter' },
-    { file: 'bike.svg', path: 'public/bike.svg', nombre: 'Bicicleta' },
-    { file: 'boat.svg', path: 'public/boat.svg', nombre: 'Barco' },
-    { file: 'airplane.svg', path: 'public/airplane.svg', nombre: 'Avión' },
-    { file: 'hiking.svg', path: 'public/hiking.svg', nombre: 'Senderista' },
-    { file: 'helicopter.svg', path: 'public/helicopter.svg', nombre: 'Helicóptero' },
+    { file: 'car.svg', path: '/car.svg', nombre: 'Carro' },
+    { file: 'car2.svg', path: '/car2.svg', nombre: 'Carro deportivo' },
+    { file: 'car3.svg', path: '/car3.svg', nombre: 'Auto' },
+    { file: 'car4.svg', path: '/car4.svg', nombre: 'Carro familiar' },
+    { file: 'suv.svg', path: '/suv.svg', nombre: 'SUV' },
+    { file: 'pickup.svg', path: '/pickup.svg', nombre: 'Camioneta' },
+    { file: 'motorcycle.svg', path: '/motorcycle.svg', nombre: 'Moto' },
+    { file: 'motorcycle2.svg', path: '/motorcycle2.svg', nombre: 'Motocicleta' },
+    { file: 'motorcycle3.svg', path: '/motorcycle3.svg', nombre: 'Moto clásica' },
+    { file: 'scooter.svg', path: '/scooter.svg', nombre: 'Scooter' },
+    { file: 'bike.svg', path: '/bike.svg', nombre: 'Bicicleta' },
+    { file: 'boat.svg', path: '/boat.svg', nombre: 'Barco' },
+    { file: 'airplane.svg', path: '/airplane.svg', nombre: 'Avión' },
+    { file: 'hiking.svg', path: '/hiking.svg', nombre: 'Senderista' },
+    { file: 'helicopter.svg', path: '/helicopter.svg', nombre: 'Helicóptero' },
   ];
 
   /** Paleta de colores ofrecida al usuario. */
@@ -69,7 +69,6 @@ const TransportConfigModule = (() => {
 
   function _notificar() {
     _onCambio.forEach((fn) => { try { fn(); } catch (e) {} });
-    if (_selector && !_selector.hidden) _refrescarSelector();
   }
 
   /** En modo "Subir tu propia ruta" el indicador es siempre un senderista. */
@@ -80,7 +79,7 @@ const TransportConfigModule = (() => {
   /** Ruta del SVG de un ícono dado (por defecto senderista si no existe). */
   function _pathDeIcono(file) {
     const def = ICONOS.find((i) => i.file === file);
-    return def ? def.path : 'public/hiking.svg';
+    return def ? def.path : '/hiking.svg';
   }
 
   /** Ruta del SVG (monocromo) que se muestra como vehículo. */
@@ -143,106 +142,20 @@ const TransportConfigModule = (() => {
   // -------------------------------------------------------------------
   // Selector flotante (ícono + color)
   // -------------------------------------------------------------------
-
-  let _selector = null;
-
-  function _buildSelector() {
-    const sel = document.createElement('div');
-    sel.className = 'transport-selector';
-    sel.hidden = true;
-
-    const encabezado = document.createElement('div');
-    encabezado.className = 'transport-selector__encabezado';
-    const t1 = document.createElement('div');
-    t1.className = 'transport-selector__titulo';
-    t1.textContent = 'Vehículo';
-    const btnCerrar = document.createElement('button');
-    btnCerrar.type = 'button';
-    btnCerrar.className = 'transport-selector__cerrar';
-    btnCerrar.title = 'Cerrar';
-    btnCerrar.setAttribute('aria-label', 'Cerrar selector de vehículo');
-    btnCerrar.textContent = '×';
-    btnCerrar.addEventListener('click', () => { sel.hidden = true; });
-    encabezado.appendChild(t1);
-    encabezado.appendChild(btnCerrar);
-    sel.appendChild(encabezado);
-
-    const grid = document.createElement('div');
-    grid.className = 'transport-selector__iconos';
-    ICONOS.forEach((icono) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'transport-selector__icono';
-      btn.title = icono.nombre;
-      btn.dataset.file = icono.file;
-      btn.innerHTML = `<div style="width:26px;height:26px;background-color:${_color};-webkit-mask-image:url('${icono.path}');-webkit-mask-repeat:no-repeat;-webkit-mask-position:center;-webkit-mask-size:contain;mask-image:url('${icono.path}');mask-repeat:no-repeat;mask-position:center;mask-size:contain;"></div>`;
-      btn.addEventListener('click', () => {
-        if (esHiking()) setIconoHiking(icono.file);
-        else setIcono(icono.file);
-      });
-      grid.appendChild(btn);
-    });
-    sel.appendChild(grid);
-
-    const t2 = document.createElement('div');
-    t2.className = 'transport-selector__titulo';
-    t2.textContent = 'Color';
-    sel.appendChild(t2);
-
-    const colores = document.createElement('div');
-    colores.className = 'transport-selector__colores';
-    COLORES.forEach((c) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'transport-selector__color';
-      btn.title = c.nombre;
-      btn.dataset.hex = c.hex;
-      btn.style.backgroundColor = c.hex;
-      btn.addEventListener('click', () => setColor(c.hex));
-      colores.appendChild(btn);
-    });
-    sel.appendChild(colores);
-
-    document.body.appendChild(sel);
-
-    document.addEventListener('click', (e) => {
-      if (sel && !sel.hidden && !sel.contains(e.target)) sel.hidden = true;
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') sel.hidden = true;
-    });
-
-    return sel;
-  }
-
-  function _refrescarSelector() {
-    if (!_selector) return;
-    const activo = esHiking() ? _iconoHiking : _icono;
-    _selector.querySelectorAll('.transport-selector__icono').forEach((btn) => {
-      btn.classList.toggle('transport-selector__icono--activo', btn.dataset.file === activo);
-      const preview = btn.querySelector('div');
-      if (preview) preview.style.backgroundColor = _color;
-    });
-    _selector.querySelectorAll('.transport-selector__color').forEach((btn) => {
-      btn.classList.toggle('transport-selector__color--activo', btn.dataset.hex === _color);
-    });
-  }
+  // El selector lo renderiza React (src/components/TransportSelector.jsx);
+  // aquí solo se avisa al puente `window.SimbiosisUI` para abrirlo/cerrarlo.
 
   /** Abre el selector flotante cerca de la posición del clic. */
   function abrirSelector(clientX, clientY) {
-    if (!_selector) _selector = _buildSelector();
-    _refrescarSelector();
-    _selector.hidden = false;
-    const sw = _selector.offsetWidth || 240;
-    const sh = _selector.offsetHeight || 320;
-    const left = Math.max(6, Math.min(clientX || 0, window.innerWidth - sw - 6));
-    const top = Math.max(6, Math.min(clientY || 0, window.innerHeight - sh - 6));
-    _selector.style.left = left + 'px';
-    _selector.style.top = top + 'px';
+    if (typeof window !== 'undefined' && window.SimbiosisUI) {
+      window.SimbiosisUI.emit('transport-selector:abrir', { clientX: clientX || 0, clientY: clientY || 0 });
+    }
   }
 
   function cerrarSelector() {
-    if (_selector) _selector.hidden = true;
+    if (typeof window !== 'undefined' && window.SimbiosisUI) {
+      window.SimbiosisUI.emit('transport-selector:cerrar');
+    }
   }
 
   return { ICONOS, COLORES, getIcono, getColor, setIcono, setColor, setOnCambio, esHiking, iconoPath, color, divIconoHTML, getIconoHiking, setIconoHiking, abrirSelector, cerrarSelector };

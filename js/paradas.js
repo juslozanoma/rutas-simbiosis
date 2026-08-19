@@ -1260,6 +1260,14 @@
     // Filtro: el de departamento solo aplica a municipios (M).
     if (el.filtroMunicipiosDepto) el.filtroMunicipiosDepto.hidden = !_municipiosVisibles;
 
+    // Si React está renderizando la lista de paradas, desmontarlo primero:
+    // el modo de lista ya es 'infra' y el puente re-renderiza a null. Si se
+    // limpiara el innerHTML con React montado, la reconciliación fallaría
+    // (NotFoundError) al intentar remover los nodos que Sortable movió.
+    if (window.SimbiosisUI && typeof window.SimbiosisUI.notificarListaRuta === 'function') {
+      window.SimbiosisUI.notificarListaRuta();
+    }
+
     el.paradasLista.innerHTML = '';
     let n = 0;
     tipos.forEach((tipo) => {
@@ -1369,6 +1377,54 @@
     renderizarParadas();
   }
 
+  // -------------------------------------------------------------------
+  // Puente con React (lista de paradas). El contenedor #paradas-lista es
+  // COMPARTIDO: en modo 'paradas' lo renderiza el componente React
+  // (ParadasLista, portal), y en modo 'infra' (catálogo A/P/D/M/C) o 'archivo'
+  // (ruta desde archivo, tecla K) lo rellena el código vanilla. Estos getters
+  // se exponen en window.SimbiosisUI para que React decida cuándo montar.
+  // -------------------------------------------------------------------
+
+  function _modoListaRuta() {
+    if (_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles) return 'infra';
+    if (_rutaArchivoActiva) return 'archivo';
+    return 'paradas';
+  }
+
+  /** Snapshot del estado que React necesita para renderizar la lista. */
+  function _datosParadas() {
+    return {
+      orden: state.orden,
+      escalas: state.escalas,
+      paradas: state.paradas,
+      origen: state.origen,
+      destino: state.destino,
+      rutaActual: state.rutaActual,
+      dias: state.dias,
+      diasOrden: state.diasOrden,
+      diasNombres: state.diasNombres,
+      diaFechaBase: state.diaFechaBase,
+      diaFechaValor: state.diaFechaValor,
+      modoAereo: state.modoAereo,
+      tramosAereo: state.tramosAereo,
+      modoFluvial: state.modoFluvial,
+      tramosFluviales: state.tramosFluviales,
+    };
+  }
+
+  /** Consume la bandera que suprime el clic sintético posterior a una pulsación
+   *  larga o a un deslizamiento para borrar (React lo llama en sus clics). */
+  function _consumirClicSintetico() {
+    if (_suprimirProximoClic) { _suprimirProximoClic = false; return true; }
+    return false;
+  }
+
+  if (typeof window !== 'undefined' && window.SimbiosisUI) {
+    window.SimbiosisUI.modoListaRuta = _modoListaRuta;
+    window.SimbiosisUI.datosParadas = _datosParadas;
+    window.SimbiosisUI.consumirClicSintetico = _consumirClicSintetico;
+  }
+
   function renderizarParadas() {
     console.log('[paradas] renderizarParadas()');
     sincronizarOrden();
@@ -1376,550 +1432,33 @@
     // activos, la lista de la pestaña Ruta la ocupa otro contenido; no mezclar.
     if (_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles || _rutaArchivoActiva) return;
 
-    const items = state.orden.map((o) => {
-      if (o.tipo === 'escala') {
-        const e = state.escalas.find((e) => e.id === o.id);
-        if (!e || e.lat == null) return null;
-        return { tipo: 'escala', datos: e };
-      }
-      const p = state.paradas.find((p) => p.id === o.id);
-      if (!p) return null;
-      return { tipo: 'parada', datos: p };
-    }).filter(Boolean).filter((item) => !item.datos._dragGenerated);
-
-    // Distancia desde la parada anterior: diferencia del km acumulado entre
-    // paradas consecutivas (la primera mide desde el origen, km 0).
-    let prevKm = 0;
-    items.forEach((it) => {
-      const e = it.datos;
-      if (e && e._distKm != null) {
-        e._segKm = Math.max(0, Number(e._distKm) - prevKm);
-        prevKm = Number(e._distKm);
-      } else if (e) {
-        e._segKm = null;
-      }
-    });
-
-    const total = items.length;
-    el.paradasLista.innerHTML = '';
-    const incluirExtremos = Boolean(state.rutaActual && state.origen && state.destino);
-
-    // Días de viaje: cada parada queda en su día. Si se arrastró una parada a
-    // otro día (state.diasOrden) se respeta esa posición manual; si no, se usa
-    // un reparto parejo por cantidad.
-    const dias = Math.max(1, state.dias || 1);
-    const totalKm = state.rutaActual && state.rutaActual.distanciaMetros ? state.rutaActual.distanciaMetros / 1000 : 0;
-    const base = Math.floor(total / dias);
-    const resto = total % dias;
-    const bordes = [];
-    let acc = 0;
-    for (let d = 0; d < dias; d++) { bordes.push(acc); acc += base + (d < resto ? 1 : 0); }
-    bordes.push(total);
-    const keyDeItem = (it) => it.tipo + ':' + it.datos.id;
-    const diaDeItemIdx = (idx) => {
-      const itx = items[idx];
-      if (itx && state.diasOrden) {
-        const manual = state.diasOrden[keyDeItem(itx)];
-        if (manual != null && manual >= 1 && manual <= dias) return manual;
-      }
-      for (let d = 0; d < dias; d++) if (idx < bordes[d + 1]) return d + 1;
-      return dias;
-    };
-    // Último punto (por km) de cada día, para km por día y "desde <lugar>".
-    const finKmDia = new Array(dias).fill(0);
-    const ultimoDeCadaDia = {};
-    items.forEach((it, idx) => {
-      const d = diaDeItemIdx(idx);
-      ultimoDeCadaDia[d] = it;
-      if (it.datos && it.datos._distKm != null) {
-        finKmDia[d - 1] = Math.max(finKmDia[d - 1], Number(it.datos._distKm));
-      }
-    });
-    const kmsDia = (() => {
-      const kms = [];
-      let prev = 0;
-      for (let d = 1; d <= dias; d++) {
-        let end = finKmDia[d - 1];
-        if (d === dias) end = totalKm;
-        kms.push(Math.max(0, end - prev));
-        prev = end;
-      }
-      return kms;
-    })();
-    let gruposPorDia = [];     // divs `.parada-dia__grupo`, uno por día
-    let diaGrupo = null;       // contenedor (div) de las paradas del día actual
-    let ultimoRegular = null;  // {item, etiqueta} de la última parada/pueblo renderizada
-    let kmActual = 0;          // km acumulados (desde el origen) al renderizar
-
-    /** Lugar donde comienza el día `d` (1-based): el origen si es el día 1, o
-     *  el último punto del día anterior (donde termina la ruta del día previo). */
-    const ciudadInicioDia = (d) => {
-      if (d <= 1) return state.origen && state.origen.nombre ? state.origen.nombre : '';
-      const it = ultimoDeCadaDia[d - 1];
-      return it && it.datos && it.datos.nombre ? it.datos.nombre : '';
-    };
-
-    /** Fila de encabezado de día; al pulsarla se pliegan/despliegan sus paradas. */
-    function crearFilaDia(d) {
-      const li = document.createElement('li');
-      li.className = 'parada-item parada-item--dia';
-      li.dataset.tipoParada = 'dia';
-      const flecha = document.createElement('span');
-      flecha.className = 'parada-item__dia-flecha';
-      flecha.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
-      const etiqueta = document.createElement('span');
-      etiqueta.className = 'parada-item__dia-nombre';
-      etiqueta.textContent = _etiquetaDia(d);
-      const desde = ciudadInicioDia(d);
-      if (desde) etiqueta.textContent += ' - desde ' + desde;
-      if (etiqueta.textContent.length > 16) etiqueta.title = etiqueta.textContent;
-      const km = document.createElement('span');
-      km.className = 'parada-item__dia-km';
-      km.textContent = kmsDia[d - 1].toFixed(1) + ' km';
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'parada-item__btn parada-item__dia-add';
-      const esUltimo = d >= dias;
-      if (esUltimo) {
-        btn.title = 'Agregar un día más';
-        btn.setAttribute('aria-label', 'Agregar un día más');
-        btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
-      } else {
-        btn.title = 'Quitar este día';
-        btn.setAttribute('aria-label', 'Quitar este día');
-        btn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></svg>';
-      }
-      btn.addEventListener('click', (e) => { e.stopPropagation(); if (esUltimo) agregarDia(); else quitarDia(d); });
-      li.appendChild(flecha);
-      li.appendChild(etiqueta);
-      li.appendChild(km);
-      li.appendChild(btn);
-      li.role = 'button';
-      li.tabIndex = 0;
-      li.setAttribute('aria-expanded', 'true');
-      li.addEventListener('click', (e) => { e.stopPropagation(); alternarDia(li); });
-      li.addEventListener('keydown', (evt) => {
-        if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); alternarDia(li); }
-      });
-      // Clic derecho / pulsación larga: cambiar nombre o asignar fecha.
-      li.addEventListener('contextmenu', (evt) => {
-        evt.preventDefault();
-        abrirMenuFila(_opcionesDia(d), evt.clientX, evt.clientY);
-      });
-      engancharLongPress(li, (evt) => {
-        abrirMenuFila(_opcionesDia(d), evt.clientX, evt.clientY);
-      });
-      return li;
-    }
-
-    function alternarDia(li) {
-      const grupo = li._grupo;
-      if (!grupo) return;
-      const oculto = grupo.style.display === 'none';
-      grupo.style.display = oculto ? '' : 'none';
-      li.classList.toggle('parada-item--dia-cerrado', !oculto);
-      li.setAttribute('aria-expanded', String(oculto));
-    }
-
-    function asegurarDiaPara(idx) {
-      const d = diaDeItemIdx(idx);
-      while (gruposPorDia.length < dias) {
-        const nd = gruposPorDia.length + 1;
-        const filaDia = crearFilaDia(nd);
-        const grupo = document.createElement('div');
-        grupo.className = 'parada-dia__grupo';
-        filaDia._grupo = grupo;
-        el.paradasLista.appendChild(filaDia);
-        el.paradasLista.appendChild(grupo);
-        gruposPorDia.push(grupo);
-      }
-      diaGrupo = gruposPorDia[d - 1];
-      return d;
-    }
-
-    /** Agrega una fila al grupo del día actual y recuerda la última parada. */
-    function agregarItem(li, info) {
-      (diaGrupo || el.paradasLista).appendChild(li);
-      if (info && (info.item.tipo === 'escala' || info.item.tipo === 'parada')) ultimoRegular = info;
-    }
-
     // En la pestaña Descubre las paradas no deben aparecer aunque haya paradas;
     // tampoco antes de calcular la ruta inicial (seleccionando pueblos
     // intermedios): las paradas se muestran solo tras el primer cálculo.
+    const total = state.orden.filter((o) => {
+      if (o.tipo === 'escala') {
+        const e = state.escalas.find((x) => x.id === o.id);
+        return e && e.lat != null && !e._dragGenerated;
+      }
+      const p = state.paradas.find((x) => x.id === o.id);
+      return p && !p._dragGenerated;
+    }).length;
+    const incluirExtremos = Boolean(state.rutaActual && state.origen && state.destino);
     el.panelParadas.hidden = estaEnPestanaDescubre() || !state.rutaActual || (!incluirExtremos && total === 0);
 
-    function crearFilaExtremo(letra, nombre, tipo) {
-      const li = document.createElement('li');
-      li.className = 'parada-item parada-item--endpoint';
-      li.dataset.tipoParada = tipo;
-      const extremo = tipo === 'origen' ? state.origen : state.destino;
-      if (extremo && extremo.id != null) li.dataset.paradaId = extremo.id;
-
-      const num = document.createElement('span');
-      num.className = 'parada-item__num';
-      num.textContent = letra;
-
-      const nombreEl = document.createElement('span');
-      nombreEl.className = 'parada-item__nombre';
-      nombreEl.textContent = nombre;
-
-      if (tipo === 'destino' && state.rutaActual?.distanciaMetros) {
-        const distEl = document.createElement('span');
-        distEl.className = 'parada-item__dist';
-        // Distancia del tramo final + (distancia total desde el origen).
-        const totalKm = state.rutaActual.distanciaMetros / 1000;
-        const prevKm = (ultimoRegular && ultimoRegular.item && ultimoRegular.item.datos && ultimoRegular.item.datos._distKm != null)
-          ? Number(ultimoRegular.item.datos._distKm)
-          : 0;
-        const segKm = Math.max(0, totalKm - prevKm);
-        distEl.textContent = ` — ${segKm.toFixed(1)} km (${totalKm.toFixed(1)} km)`;
-        nombreEl.appendChild(distEl);
-      }
-
-      li.appendChild(num);
-      li.appendChild(nombreEl);
-      li.role = 'button';
-      li.tabIndex = 0;
-
-      const accionExtremo = () => {
-        if (_suprimirProximoClic) { _suprimirProximoClic = false; return; }
-        const extremo = tipo === 'origen' ? state.origen : state.destino;
-        if (extremo && extremo.lat != null) {
-          mostrarCuadroExtremo(tipo, extremo.nombre || '', (extremo.departamento || ''));
-        }
-      };
-      li.addEventListener('click', accionExtremo);
-      li.addEventListener('keydown', (evt) => {
-        if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); accionExtremo(); }
-      });
-      const opcionesExtremo = () => {
-        const opciones = [];
-        if (tipo === 'origen') {
-          opciones.push({ etiqueta: 'Cambiar lugar de origen', accion: () => irCambiarOrigen() });
-        } else {
-          opciones.push({ etiqueta: 'Cambiar lugar de destino', accion: () => irCambiarDestino() });
-        }
-        if (tipo === 'destino') {
-          opciones.push({ etiqueta: 'Llegar en avión a este lugar', accion: () => llegarEnAvionAlDestino() });
-        }
-        opciones.push({
-          etiqueta: 'Ubicar en el mapa',
-          accion: () => {
-            const extremo = tipo === 'origen' ? state.origen : state.destino;
-            if (extremo && extremo.lat != null) {
-              mostrarCuadroExtremo(tipo, extremo.nombre || '', (extremo.departamento || ''));
-            }
-          },
-        });
-        return opciones;
-      };
-      li.addEventListener('contextmenu', (evt) => _abrirContextoParada(evt, opcionesExtremo));
-      // En móvil el menú se abre solo con el botón hamburguesa (no con pulsación larga).
-      crearBotonMenuFila(opcionesExtremo, li, num, nombre);
-
-      return li;
-    }
-
-    function crearFilaAeropuerto(aeropuerto, prefijo, distKm) {
-      const li = document.createElement('li');
-      li.className = 'parada-item parada-item--endpoint';
-      li.dataset.tipoParada = 'aeropuerto';
-      const num = document.createElement('span');
-      num.className = 'parada-item__num';
-      num.textContent = '✈';
-      const nombreEl = document.createElement('span');
-      nombreEl.className = 'parada-item__nombre';
-      const marquee = document.createElement('span');
-      marquee.className = 'parada-item__marquee';
-      marquee.appendChild(document.createTextNode((prefijo ? prefijo + ': ' : '') + (aeropuerto || '')));
-      if (distKm != null) {
-        const distEl = document.createElement('span');
-        distEl.className = 'parada-item__dist';
-        const totalKm = kmActual + distKm;
-        distEl.textContent = ` — ${distKm.toFixed(1)} km (${totalKm.toFixed(1)} km)`;
-        marquee.appendChild(distEl);
-        kmActual = totalKm;
-      }
-      nombreEl.appendChild(marquee);
-      li.appendChild(num);
-      li.appendChild(nombreEl);
-      li.role = 'button';
-      li.tabIndex = 0;
-      return li;
-    }
-
-    function accionAeropuerto(ap, prefijo) {
-      return () => {
-        if (_suprimirProximoClic) { _suprimirProximoClic = false; return; }
-        cerrarMenuFila();
-        mostrarCuadroAeropuerto(ap, prefijo);
-      };
-    }
-
-    function construirFilaAeropuerto(tramos, ap, prefijo, distMetros) {
-      const li = crearFilaAeropuerto(ap.nombre, prefijo, distMetros != null ? distMetros / 1000 : null);
-      li.addEventListener('click', accionAeropuerto(ap, prefijo));
-      li.addEventListener('keydown', (evt) => {
-        if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); accionAeropuerto(ap, prefijo)(); }
-      });
-      return li;
-    }
-
-    function crearFilaPuerto(puerto, prefijo, distKm) {
-      const li = document.createElement('li');
-      li.className = 'parada-item parada-item--endpoint';
-      li.dataset.tipoParada = 'puerto';
-      const num = document.createElement('span');
-      num.className = 'parada-item__num parada-item__num--ico';
-      num.innerHTML = '<img src="public/boat.svg" alt="Puerto" style="width:12px;height:12px;filter:brightness(0) invert(1);">';
-      const nombreEl = document.createElement('span');
-      nombreEl.className = 'parada-item__nombre';
-      const marquee = document.createElement('span');
-      marquee.className = 'parada-item__marquee';
-      marquee.appendChild(document.createTextNode((prefijo ? prefijo + ': ' : '') + (puerto || '')));
-      if (distKm != null) {
-        const distEl = document.createElement('span');
-        distEl.className = 'parada-item__dist';
-        const totalKm = kmActual + distKm;
-        distEl.textContent = ` — ${distKm.toFixed(1)} km (${totalKm.toFixed(1)} km)`;
-        marquee.appendChild(distEl);
-        kmActual = totalKm;
-      }
-      nombreEl.appendChild(marquee);
-      li.appendChild(num);
-      li.appendChild(nombreEl);
-      li.role = 'button';
-      li.tabIndex = 0;
-      return li;
-    }
-
-    function accionPuerto(p, prefijo) {
-      return () => {
-        if (_suprimirProximoClic) { _suprimirProximoClic = false; return; }
-        cerrarMenuFila();
-        mostrarCuadroPuerto(p, prefijo);
-      };
-    }
-
-    function construirFilaPuerto(tramos, p, prefijo, distMetros) {
-      const li = crearFilaPuerto(p.nombre, prefijo, distMetros != null ? distMetros / 1000 : null);
-      li.addEventListener('click', accionPuerto(p, prefijo));
-      li.addEventListener('keydown', (evt) => {
-        if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); accionPuerto(p, prefijo)(); }
-      });
-      return li;
-    }
-
-    function construirFilaItem(item, etiqueta) {
-      const e = item.datos;
-      const li = document.createElement('li');
-      li.className = 'parada-item';
-      li.dataset.paradaId = e.id;
-      li.dataset.tipoParada = item.tipo;
-
-      const num = document.createElement('span');
-      num.className = 'parada-item__num';
-      num.textContent = etiqueta;
-
-      const nombre = document.createElement('span');
-      nombre.className = 'parada-item__nombre';
-      const marquee = document.createElement('span');
-      marquee.className = 'parada-item__marquee';
-      const distEl = document.createElement('span');
-      distEl.className = 'parada-item__dist';
-      if (e._distKm != null) {
-        // El primer sitio tras el origen (kmActual 0) parte del km 0: su
-        // distancia del tramo coincide con la total, se muestra solo el tramo.
-        const esPrimerItem = kmActual === 0;
-        distEl.textContent = e._segKm != null
-          ? (esPrimerItem
-              ? ` — ${e._segKm.toFixed(1)} km`
-              : ` — ${e._segKm.toFixed(1)} km (${e._distKm.toFixed(1)} km)`)
-          : ` — (${e._distKm.toFixed(1)} km)`;
-        kmActual = Number(e._distKm);
-      }
-      marquee.appendChild(document.createTextNode(item.tipo === 'escala' ? formatMunicipio(e) : e.nombre));
-      marquee.appendChild(distEl);
-      nombre.appendChild(marquee);
-
-      const acciones = document.createElement('div');
-      acciones.className = 'parada-item__acciones';
-
-      // Flechas arriba/abajo para mover la parada/pueblo manualmente cuando la
-      // ordenación automática está desactivada.
-      const autoOrganizar = !el.btnAutoOrganizar || el.btnAutoOrganizar.getAttribute('aria-pressed') === 'true';
-      if (!autoOrganizar) {
-        const idxOrden = state.orden.findIndex((o) => o.tipo === item.tipo && o.id === e.id);
-        const crearFlecha = (titulo, aria, svg, delta) => {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.className = 'parada-item__btn';
-          b.title = titulo;
-          b.setAttribute('aria-label', aria);
-          b.innerHTML = svg;
-          b.addEventListener('click', (evt) => { evt.stopPropagation(); reordenar(idxOrden, idxOrden + delta); });
-          b.addEventListener('contextmenu', (evt) => evt.stopPropagation());
-          return b;
-        };
-        acciones.appendChild(crearFlecha('Subir en la ruta', 'Subir ' + e.nombre + ' en la ruta',
-          '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>', -1));
-        acciones.appendChild(crearFlecha('Bajar en la ruta', 'Bajar ' + e.nombre + ' en la ruta',
-          '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>', 1));
-      }
-
-      const btnDel = document.createElement('button');
-      btnDel.type = 'button';
-      btnDel.className = 'parada-item__btn';
-      if (item.tipo === 'escala') {
-        btnDel.addEventListener('click', (evt) => { evt.stopPropagation(); eliminarEscala(e.id); });
-      } else {
-        btnDel.addEventListener('click', (evt) => { evt.stopPropagation(); eliminarParada(e.id); });
-      }
-      btnDel.title = 'Quitar de la ruta';
-      btnDel.setAttribute('aria-label', 'Quitar ' + e.nombre + ' de la ruta');
-      btnDel.addEventListener('contextmenu', (evt) => evt.stopPropagation());
-      btnDel.style.color = '#d62828';
-      btnDel.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>';
-
-      acciones.appendChild(btnDel);
-      li.appendChild(num);
-      li.appendChild(nombre);
-      li.appendChild(acciones);
-      li.role = 'button';
-      li.tabIndex = 0;
-
-      const accionPrincipal = () => {
-        if (_suprimirProximoClic) { _suprimirProximoClic = false; return; }
-        cerrarMenuFila();
-        if (item.tipo === 'parada') {
-          mostrarCuadroParada(e);
-        } else if (item.tipo === 'escala') {
-          mostrarCuadroEscala(e);
-        }
-      };
-      li.addEventListener('click', accionPrincipal);
-      li.addEventListener('keydown', (evt) => {
-        if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); accionPrincipal(); }
-      });
-
-      const construirOpcionesContexto = () => {
-        if (item.tipo === 'parada') {
-          return [
-            { etiqueta: 'Llegar en avión a este lugar', accion: () => llegarEnAvionAParada(e, 'parada') },
-            { etiqueta: 'Ubicar en el mapa', accion: () => mostrarCuadroParada(e) },
-            { etiqueta: 'Eliminar de la ruta', accion: () => eliminarParada(e.id) },
-          ];
-        }
-        return [
-          { etiqueta: 'Llegar en avión a este lugar', accion: () => llegarEnAvionAParada(e, 'escala') },
-          { etiqueta: 'Cambiar pueblo intermedio', accion: () => cambiarPueblo(e) },
-          { etiqueta: 'Eliminar pueblo intermedio', accion: () => eliminarEscala(e.id) },
-          { etiqueta: 'Ubicar en la ruta', accion: () => mostrarCuadroEscala(e) },
-        ];
-      };
-
-      li.addEventListener('contextmenu', (evt) => _abrirContextoParada(evt, construirOpcionesContexto));
-      // En móvil el menú se abre solo con el botón hamburguesa (no con pulsación larga).
-      crearBotonMenuFila(construirOpcionesContexto, li, num, e.nombre);
-
-      return li;
-    }
-
-    if (incluirExtremos || total > 0) {
-      asegurarDiaPara(0);
-    }
-
-    if (incluirExtremos) {
-      agregarItem(crearFilaExtremo('A', formatMunicipio(state.origen), 'origen'));
-    }
-
-    // Ruta aérea: la lista sigue el orden físico de la ruta
-    // (origen → salida → llegada → pueblo → salida → llegada → … → destino),
-    // intercalando los aeropuertos de cada tramo con los puntos intermedios.
-    const segsAereos = state.modoAereo && state.tramosAereo ? state.tramosAereo.apSegs : null;
-    if (segsAereos && segsAereos.length) {
-      const itemsRestantes = items.slice();
-      let idxItem = 0;
-      for (let i = 0; i < segsAereos.length; i++) {
-        const seg = segsAereos[i];
-        const dSalida = i === 0
-          ? state.tramosAereo.distCarro1
-          : (seg.vuelos && seg.vuelos[0] ? seg.vuelos[0].distanciaMetros : null);
-        const dLlegada = i === segsAereos.length - 1
-          ? state.tramosAereo.distCarro2
-          : (seg.vuelos && seg.vuelos.length > 1 ? seg.vuelos[1].distanciaMetros
-              : (seg.vuelos && seg.vuelos[0] ? seg.vuelos[0].distanciaMetros : null));
-        if (seg.apOri) agregarItem(construirFilaAeropuerto(state.tramosAereo, seg.apOri, 'Salida', dSalida));
-        if (seg.apDes) agregarItem(construirFilaAeropuerto(state.tramosAereo, seg.apDes, 'Llegada', dLlegada));
-        if (i < segsAereos.length - 1) {
-          const pueblo = itemsRestantes.find((it) => it.tipo === 'escala');
-          if (pueblo) {
-            itemsRestantes.splice(itemsRestantes.indexOf(pueblo), 1);
-            asegurarDiaPara(idxItem);
-            const etiqueta = etiquetaIntermedia(idxItem++);
-            agregarItem(construirFilaItem(pueblo, etiqueta), { item: pueblo, etiqueta });
-          }
-          while (itemsRestantes.length && itemsRestantes[0].tipo !== 'escala') {
-            asegurarDiaPara(idxItem);
-            const it = itemsRestantes.shift();
-            const etiqueta = etiquetaIntermedia(idxItem++);
-            agregarItem(construirFilaItem(it, etiqueta), { item: it, etiqueta });
-          }
-        }
-      }
-      while (itemsRestantes.length) {
-        asegurarDiaPara(idxItem);
-        const it = itemsRestantes.shift();
-        const etiqueta = etiquetaIntermedia(idxItem++);
-        agregarItem(construirFilaItem(it, etiqueta), { item: it, etiqueta });
-      }
-      // Ruta multimodal (avión + barco): tras el tramo aéreo se intercalan los
-      // puertos fluviales (salida del barco, conexión y llegada).
-      if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.po) {
-        agregarItem(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.po, 'Salida 🚢', state.tramosFluviales.distCarro1));
-      }
-      if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.hub && state.tramosFluviales.tramos && state.tramosFluviales.tramos[0]) {
-        agregarItem(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.hub, 'Conexión 🚢', state.tramosFluviales.tramos[0].distanciaMetros));
-      }
-      if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.pd) {
-        agregarItem(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.pd, 'Llegada 🚢', state.tramosFluviales.distCarro2));
-      }
-    } else {
-      if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.po) {
-        agregarItem(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.po, 'Salida', state.tramosFluviales.distCarro1));
-      }
-      if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.hub && state.tramosFluviales.tramos && state.tramosFluviales.tramos[0]) {
-        agregarItem(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.hub, 'Conexión', state.tramosFluviales.tramos[0].distanciaMetros));
-      }
-      items.forEach((item, idx) => {
-        asegurarDiaPara(idx);
-        const etiqueta = etiquetaIntermedia(idx);
-        agregarItem(construirFilaItem(item, etiqueta), { item, etiqueta });
-      });
-      if (state.modoFluvial && state.tramosFluviales && state.tramosFluviales.pd) {
-        agregarItem(construirFilaPuerto(state.tramosFluviales, state.tramosFluviales.pd, 'Llegada', state.tramosFluviales.distCarro2));
-      }
-    }
-    asegurarDiaPara(total);
-    if (incluirExtremos) {
-      agregarItem(crearFilaExtremo('Z', formatMunicipio(state.destino), 'destino'));
-    }
-
-    // Nombres largos (incluyendo distancias): se marcan para que el texto se
-    // desplace y pueda leerse completo. En PC la animación solo corre al pasar
-    // el cursor; en móvil siempre.
-    _marcarMarqueeParadas();
-    _iniciarObservadorParadas();
-    // Re-medir tras el layout (por si el panel aún no tenía dimensiones).
-    requestAnimationFrame(() => _marcarMarqueeParadas());
     // Quita asignaciones de día de paradas que ya no existen.
     if (state.diasOrden) {
       const idsValidos = new Set(state.orden.map((o) => o.tipo + ':' + o.id));
       Object.keys(state.diasOrden).forEach((k) => { if (!idsValidos.has(k)) delete state.diasOrden[k]; });
     }
-    // Drag & drop entre las paradas (los días no se mueven).
-    _initDragParadas();
-    // Deslizar a la derecha para borrar (móvil).
-    _initSwipeBorrarParadas();
+
+    // La lista de paradas la renderiza React (componente ParadasLista, portal a
+    // #paradas-lista); se notifica al puente y el componente re-renderiza
+    // leyendo el estado vivo (window.SimbiosisUI.datosParadas). El marquee, el
+    // drag & drop (Sortable) y el swipe para borrar se re-enganchan en el
+    // propio componente tras cada montaje.
+    if (window.SimbiosisUI && typeof window.SimbiosisUI.notificarListaRuta === 'function') {
+      window.SimbiosisUI.notificarListaRuta();
+    }
   }
 

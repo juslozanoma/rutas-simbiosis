@@ -339,7 +339,7 @@ const MapModule = (() => {
   function iconoOrigen(color) { return _pinDivIcon('A', color); }
   function iconoDestino(color) { return _pinDivIcon('Z', color); }
 
-  /** Pin (misma forma que public/pin.svg) en naranja que marca el punto del
+  /** Pin (misma forma que /pin.svg) en naranja que marca el punto del
    *  clic derecho / pulsación larga junto al menú contextual. El "más" interno
    *  se recorta (fill-rule evenodd) dejando ver el mapa. */
   function _iconoPinCtx() {
@@ -399,11 +399,11 @@ const MapModule = (() => {
   }
 
   function iconoPuertoGlobal() {
-    return _iconoInfraGlobal('<img src="public/boat.svg" alt="Puerto"/>');
+    return _iconoInfraGlobal('<img src="/boat.svg" alt="Puerto"/>');
   }
 
   function iconoAeropuertoGlobal() {
-    return _iconoInfraGlobal('<img src="public/airplane.svg" alt="Aeropuerto"/>');
+    return _iconoInfraGlobal('<img src="/airplane.svg" alt="Aeropuerto"/>');
   }
 
   /** Ícono numerado verde de departamento (D) y municipio (M): el número indica
@@ -818,7 +818,7 @@ const MapModule = (() => {
 
 function mostrarAlertaRuta(lnglat, mensaje, color) {
     const icon = L.icon({
-      iconUrl: 'public/warning.svg',
+      iconUrl: '/warning.svg',
       iconSize: [32, 32],
       iconAnchor: [16, 16],
       popupAnchor: [0, -16],
@@ -881,7 +881,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       destino: '<svg class="ctx-menu__pin-svg" width="14" height="19" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg"><path d="M15 0C6.7 0 0 6.7 0 15c0 10.5 15 25 15 25s15-14.5 15-25c0-8.3-6.7-15-15-15z" fill="#2f7a6b"/><text x="15" y="19.5" text-anchor="middle" fill="#ffffff" font-family="Arial, sans-serif" font-size="16" font-weight="700">Z</text></svg>',
       buscar: '<span class="ctx-menu__ico ctx-menu__ico--sign-post"></span>',
       comparar: '<span class="ctx-menu__vs">VS</span>',
-      tramo: '<span class="ctx-menu__ico-warning"><img src="public/warning.svg" alt="" width="16" height="16"/></span>',
+      tramo: '<span class="ctx-menu__ico-warning"><img src="/warning.svg" alt="" width="16" height="16"/></span>',
       agregar: '<span class="ctx-menu__ico-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>',
     };
     // 1. Origen: corregir el punto de inicio (o crear la ruta desde aquí si aún
@@ -1814,7 +1814,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     lista.forEach(({ p, titulo }) => {
       if (!p) return;
       const icono = L.divIcon({
-        html: '<div class="puerto-pin"><img src="public/boat.svg" alt="" style="width:16px;height:16px;filter:brightness(0) invert(1);"></div>',
+        html: '<div class="puerto-pin"><img src="/boat.svg" alt="" style="width:16px;height:16px;filter:brightness(0) invert(1);"></div>',
         className: '',
         iconSize: [30, 30],
         iconAnchor: [15, 15],
@@ -2377,7 +2377,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   function _iconoLugarBuscado(tipo) {
     const simbolo = SIMBOLO_LUGAR_BUSCADO[tipo] || 'sign-post.svg';
     return L.divIcon({
-      html: `<div class="lugar-buscado-pin"><img src="public/${simbolo}" alt="" width="20" height="20"/></div>`,
+      html: `<div class="lugar-buscado-pin"><img src="/${simbolo}" alt="" width="20" height="20"/></div>`,
       className: '',
       iconSize: [34, 34],
       iconAnchor: [17, 17],
@@ -2724,7 +2724,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     btn.className = 'rosa-vientos';
     btn.title = 'Mover para rotar el mapa · clic para orientar al norte';
     btn.setAttribute('aria-label', 'Mueve este botón para rotar el mapa o haz clic para orientar al norte');
-    btn.innerHTML = '<span class="rosa-vientos__aguja" aria-hidden="true"><img src="public/direction.svg" alt="" width="20" height="20"></span>';
+    btn.innerHTML = '<span class="rosa-vientos__aguja" aria-hidden="true"><img src="/direction.svg" alt="" width="20" height="20"></span>';
     contenedor.appendChild(btn);
 
     // Aviso automático al cargar la página: aparece a la izquierda de la rosa

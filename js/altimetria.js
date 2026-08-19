@@ -668,7 +668,7 @@ const AltimetriaModule = (() => {
   }
 
   function _construir(cont) {
-    if (!_rutaGeojson || !_rutaGeojson.geometry) { cont.innerHTML = '<div class="empty-state"><img src="public/simbiosis.png" alt="" class="empty-state__icono"><span class="empty-state__texto">Calcula una ruta primero</span></div>'; return; }
+    if (!_rutaGeojson || !_rutaGeojson.geometry) { cont.innerHTML = '<div class="empty-state"><img src="/simbiosis.png" alt="" class="empty-state__icono"><span class="empty-state__texto">Calcula una ruta primero</span></div>'; return; }
     const coords = _rutaGeojson.geometry.coordinates;
     if (coords.length < 2) return;
     const puntos = _acumular(coords, _elevacion);

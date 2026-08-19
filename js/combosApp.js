@@ -17,6 +17,7 @@
 
   function initCombos() {
     _comboOrigen = MunicipioCombo.crear({
+      id: 'origen',
       contenedor: document.querySelector('.combo[data-combo="origen"]'),
       placeholder: 'Origen',
       lineas: 6, // el menú de origen muestra 6 opciones visibles (el resto con scroll)
@@ -66,6 +67,7 @@
     });
 
     _comboDestino = MunicipioCombo.crear({
+      id: 'destino',
       contenedor: document.querySelector('.combo[data-combo="destino"]'),
       placeholder: 'Destino',
       lineas: 6, // el menú de destino muestra 6 opciones visibles (el resto con scroll)

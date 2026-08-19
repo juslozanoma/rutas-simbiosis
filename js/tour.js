@@ -123,6 +123,7 @@
   function _crearComboTour() {
     if (_comboTour || typeof MunicipioCombo === 'undefined') return;
     _comboTour = MunicipioCombo.crear({
+      id: 'tour',
       contenedor: document.querySelector('.combo[data-combo="tour"]'),
       placeholder: 'Seleccionar un destino',
       lineas: 5,

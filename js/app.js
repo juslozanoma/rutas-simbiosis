@@ -702,9 +702,25 @@
     if (el.sitiosContador) el.sitiosContador.textContent = '0';
     if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = '0';
     if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = '0';
-    if (el.paradasLista) el.paradasLista.innerHTML = '';
+    // La lista de paradas puede pertenecer a React (modo 'paradas'), al
+    // catálogo infra (A/P/D/M/C) o al listado de rutas desde archivo (K). Con
+    // React montado no se limpia con innerHTML: se notifica al puente para que
+    // desmonte (su re-render lee el estado ya vaciado y oculta el panel).
+    if (el.paradasLista) {
+      const m = window.SimbiosisUI && typeof window.SimbiosisUI.modoListaRuta === 'function'
+        ? window.SimbiosisUI.modoListaRuta()
+        : 'paradas';
+      if (m === 'paradas') {
+        if (window.SimbiosisUI && typeof window.SimbiosisUI.notificarListaRuta === 'function') {
+          window.SimbiosisUI.notificarListaRuta();
+        }
+      } else {
+        el.paradasLista.innerHTML = '';
+      }
+    }
     if (el.paradasContador) el.paradasContador.textContent = '0';
     if (el.paradasTitulo) el.paradasTitulo.textContent = 'Paradas';
+    if (typeof _deregistrarCombosEscala === 'function') _deregistrarCombosEscala();
     if (el.panelEscalas) el.panelEscalas.innerHTML = '';
     if (el.btnAgregarEscala) el.btnAgregarEscala.hidden = false;
 
@@ -898,6 +914,7 @@
 
     // Escalas: se vacía el panel y se reconstruyen las filas con cuadro; las
     // confirmadas (sin _fila, p. ej. generadas por arrastre) se reponen directo.
+    if (typeof _deregistrarCombosEscala === 'function') _deregistrarCombosEscala();
     if (el.panelEscalas) el.panelEscalas.innerHTML = '';
     state.escalas = [];
     (snap.escalas || []).forEach((e) => {

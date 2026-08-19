@@ -55,6 +55,7 @@
     });
 
     row.appendChild(combo.combo);
+    row._comboId = combo.id;
 
     const calcBtn = document.createElement('button');
     calcBtn.type = 'button';
@@ -62,7 +63,7 @@
     calcBtn.title = 'Calcular ruta con este pueblo intermedio';
     calcBtn.setAttribute('aria-label', 'Calcular ruta con este pueblo intermedio');
     calcBtn.innerHTML = `
-      <img class="icon-btn__icon" src="public/car.svg" alt="" width="18" height="18" style="filter:brightness(0) invert(1);">`;
+      <img class="icon-btn__icon" src="/car.svg" alt="" width="18" height="18" style="filter:brightness(0) invert(1);">`;
 
     row.appendChild(calcBtn);
 
@@ -86,8 +87,9 @@
       if (datos._selectedId) combo.trigger.dataset.selectedId = datos._selectedId;
       else delete combo.trigger.dataset.selectedId;
     } else {
-      // El foco abre la lista, el teclado y el acomodo del bloque (un solo
-      // movimiento instantáneo), igual que el cuadro de origen al iniciar.
+      // La fila nueva abre su lista al insertarla en el documento (abrir con el
+      // rect ya calculado); el focus despliega el teclado en móvil.
+      combo.abrir();
       combo.trigger.focus();
       combo.trigger.scrollIntoView({ block: 'nearest' });
     }
@@ -138,10 +140,26 @@
   }
 
 
+  /** Desregistra en React los cuadros de las filas de escala que vayan a
+   *  eliminarse (innerHTML='' de panelEscalas o limpiarCuadrosEscala), para que
+   *  la lista de cada cuadro se desmonte antes de borrar el DOM. */
+  function _deregistrarCombosEscala() {
+    const ui = window.SimbiosisUI;
+    if (!ui || typeof ui.deregistrarCombo !== 'function') return;
+    document.querySelectorAll('.escala-row').forEach((row) => {
+      const id = row._comboId;
+      if (id) {
+        ui.deregistrarCombo(id);
+        delete row._comboId;
+      }
+    });
+  }
+
   /** Elimina los cuadros de entrada de los pueblos intermedios pendientes
    *  (ya quedaron registrados en state.escalas y dentro de la ruta/perfil): se
    *  quitan sus filas del panel y se libera la referencia `_row`. */
   function limpiarCuadrosEscala() {
+    _deregistrarCombosEscala();
     state.escalas.forEach((e) => { if (e._row && e._row.parentNode) e._row.remove(); });
     state.escalas.forEach((e) => { delete e._row; });
   }

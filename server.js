@@ -2,11 +2,12 @@
  * server.js
  * ---------------------------------------------------------------------------
  * Servidor local mínimo para la app (Node, sin dependencias).
- *  - Sirve los archivos estáticos del proyecto.
- *  - Expone POST /api/puertos para escribir SIEMPRE en
- *    data/puertos_colombia.json (el archivo real), sin ventanas ni descargas.
+ *  - En producción (tras `npm run build`) sirve dist/; la API siempre escribe
+ *    en data/ (el archivo real), sin ventanas ni descargas.
+ *  - En desarrollo Vite levanta su propio servidor; server.js queda solo para
+ *    la API (POST /api/...) y el SSE de recarga, y Vite le hace proxy.
  *
- * Uso:  node server.js          (por defecto en http://127.0.0.1:5500)
+ * Uso:  node server.js          (sirve dist/ en http://127.0.0.1:5500)
  *       PORT=3000 node server.js
  * ---------------------------------------------------------------------------
  */
@@ -16,7 +17,11 @@ const path = require('path');
 
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT) || 5500;
-const ARCHIVO_PUERTOS = path.join(ROOT, 'data', 'puertos_colombia.json');
+const ARCHIVO_PUERTOS = path.join(ROOT, 'public', 'data', 'puertos_colombia.json');
+
+// En producción la app compilada vive en dist/ (generada por `npm run build`).
+const DIR_DIST = path.join(ROOT, 'dist');
+const DIR_STATICO = fs.existsSync(DIR_DIST) ? DIR_DIST : null;
 
 // Claves de catálogo → archivo real en data/. Solo estas se pueden escribir.
 const ARCHIVOS_PERMITIDOS = new Map([
@@ -126,7 +131,7 @@ const server = http.createServer((req, res) => {
           res.end(JSON.stringify({ ok: false }));
           return;
         }
-        const ruta = path.join(ROOT, 'data', archivo);
+        const ruta = path.join(ROOT, 'public', 'data', archivo);
         fs.writeFile(ruta, JSON.stringify(datos.datos, null, 2), 'utf8', (err) => {
           if (err) {
             console.error('[server] No se pudo escribir el JSON:', err);
@@ -153,11 +158,26 @@ const server = http.createServer((req, res) => {
 
   let pathname = decodeURIComponent(url.pathname);
   if (pathname.endsWith('/')) pathname += 'index.html';
-  const filePath = path.normalize(path.join(ROOT, pathname));
 
-  if (!filePath.startsWith(ROOT)) {
+  // Sin dist/ no hay app que servir (index.html ya es fuente de Vite).
+  if (!DIR_STATICO) {
+    res.writeHead(503, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end('<h3>Simbiosis</h3><p>Aún no hay build. Ejecuta <code>npm run build</code> y reinicia el servidor.</p>');
+    return;
+  }
+
+  const filePath = path.normalize(path.join(DIR_STATICO, pathname));
+
+  if (!filePath.startsWith(DIR_STATICO)) {
     res.writeHead(403);
     res.end('Forbidden');
+    return;
+  }
+
+  // Las rutas de la SPA sirven index.html (navegación sin 404).
+  if (path.extname(filePath) === '' && !fs.existsSync(filePath)) {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(fs.readFileSync(path.join(DIR_STATICO, 'index.html')));
     return;
   }
 
@@ -201,4 +221,15 @@ try {
   fs.watch(path.join(ROOT, 'index.html'), () => broadcastRecarga());
 } catch (err) {
   console.warn('[server] No se pudo vigilar index.html', err.message);
+}
+// En producción los cambios reales viven en dist/ (build de Vite): recargar
+// los navegadores cuando se regenera.
+if (DIR_STATICO) {
+  try {
+    fs.watch(DIR_STATICO, { recursive: true }, (evt, filename) => {
+      if (filename && /\.(js|html)$/i.test(filename)) broadcastRecarga();
+    });
+  } catch (err) {
+    console.warn('[server] No se pudo vigilar dist/', err.message);
+  }
 }

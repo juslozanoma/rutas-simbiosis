@@ -1119,6 +1119,13 @@ const RutaArchivoModule = (() => {
 
   function _renderTarjetas() {
     if (!el.paradasLista) return;
+    // Si React está renderizando la lista de paradas, desmontarlo primero: el
+    // modo de lista ya es 'archivo' y el puente re-renderiza a null. Sin este
+    // paso, limpiar el innerHTML con React montado rompería la reconciliación
+    // (NotFoundError) al remover nodos movidos por Sortable.
+    if (window.SimbiosisUI && typeof window.SimbiosisUI.notificarListaRuta === 'function') {
+      window.SimbiosisUI.notificarListaRuta();
+    }
     el.paradasLista.innerHTML = '';
     _rutas.forEach((r, i) => {
       const oculta = _rutasOcultas.has(r.id);
