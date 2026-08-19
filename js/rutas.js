@@ -1155,7 +1155,25 @@
   async function construirRutaConDesvios(rutaBase, paradas) {
     if (!rutaBase || paradas.length === 0) return rutaBase;
 
-    const baseLine = turf.lineString(rutaBase.geojson.geometry.coordinates);
+    const geom = rutaBase.geojson.geometry;
+    const esMultilinea = geom.type === 'MultiLineString';
+
+    // En modo aéreo/fluvial/mixto la base es un MultiLineString (tramos en
+    // carro separados por vuelos o ríos): se aplanan sus coordenadas para
+    // buscar el punto más cercano de cada parada y luego se rearman los tramos.
+    let coords;
+    const cortes = []; // índice de inicio de cada tramo en el arreglo aplanado
+    if (esMultilinea) {
+      coords = [];
+      geom.coordinates.forEach((seg) => {
+        cortes.push(coords.length);
+        coords.push(...seg);
+      });
+    } else {
+      coords = geom.coordinates.slice();
+    }
+
+    const baseLine = turf.lineString(coords);
 
     const results = await Promise.all(paradas.map(async (p) => {
       const nearest = turf.nearestPointOnLine(baseLine, turf.point([p.lon, p.lat]));
@@ -1177,17 +1195,17 @@
       }
     }));
 
-    let coords = rutaBase.geojson.geometry.coordinates.slice();
     let distanciaExtra = 0;
     let tiempoExtra = 0;
     const idsFallidos = [];
+    results.forEach((r) => { if (r.error) idsFallidos.push(r.id); });
+    // Se insertan por índice ascendente: así el desplazamiento acumulado de los
+    // cortes es correcto al rearmar cada tramo de la geometría original.
+    const desvios = results.filter((r) => !r.error).sort((a, b) => a.index - b.index);
+    const insertados = []; // { index, len } de cada desvío insertado
     let offsetAccum = 0;
 
-    for (const r of results) {
-      if (r.error) {
-        idsFallidos.push(r.id);
-        continue;
-      }
+    for (const r of desvios) {
       const adjustedIndex = r.index + offsetAccum;
       const before = coords.slice(0, adjustedIndex + 1);
       const after = coords.slice(adjustedIndex + 1);
@@ -1196,12 +1214,27 @@
       offsetAccum += r.detourCoords.length * 2;
       distanciaExtra += r.detourDist * 2;
       tiempoExtra += r.detourDur * 2;
+      insertados.push({ index: r.index, len: r.detourCoords.length * 2 });
+    }
+
+    // Rearmar la geometría original (MultiLineString o LineString).
+    let geometry;
+    if (esMultilinea) {
+      const antesDe = (c) =>
+        insertados.reduce((suma, ins) => suma + (ins.index < c ? ins.len : 0), 0);
+      const nuevosTramos = cortes.map((c, i) => {
+        const fin = i + 1 < cortes.length ? cortes[i + 1] : coords.length;
+        return coords.slice(c + antesDe(c), fin + antesDe(fin));
+      });
+      geometry = { type: 'MultiLineString', coordinates: nuevosTramos };
+    } else {
+      geometry = { type: 'LineString', coordinates: coords };
     }
 
     return {
       geojson: {
         type: 'Feature',
-        geometry: { type: 'LineString', coordinates: coords },
+        geometry,
       },
       distanciaMetros: rutaBase.distanciaMetros + Math.round(distanciaExtra),
       duracionSegundos: rutaBase.duracionSegundos + Math.round(tiempoExtra),
@@ -1212,20 +1245,20 @@
 
   async function aplicarRutaConDesvios(opciones = {}) {
     if (!state.rutaBase) return;
-    // En modo aéreo/fluvial no hay desvíos por carretera: la ruta es la base (MultiLineString).
-    state.rutaActual = (state.modoAereo || state.modoFluvial)
-      ? state.rutaBase
-      : await construirRutaConDesvios(state.rutaBase, state.paradas);
+    // Las paradas terrestres (sitios turísticos) se enganchan como desvíos por
+    // carretera desde el punto más cercano de la base, incluso cuando la base es
+    // un MultiLineString (modo aéreo/fluvial/mixto): construirRutaConDesvios
+    // aplana y rearma los tramos conservando vuelos y tramos fluviales.
+    state.rutaActual = await construirRutaConDesvios(state.rutaBase, state.paradas);
 
+    // Las paradas cuyo desvío no se pudo calcular se quitan de la ruta.
     let iteraciones = 0;
-    if (!state.modoAereo && !state.modoFluvial) {
-      while (state.rutaActual.idsFallidos && state.rutaActual.idsFallidos.length > 0 && iteraciones < 3) {
-        const idsSet = new Set(state.rutaActual.idsFallidos);
-        state.paradas = state.paradas.filter((p) => !idsSet.has(p.id));
-        renderizarParadas();
-        state.rutaActual = await construirRutaConDesvios(state.rutaBase, state.paradas);
-        iteraciones++;
-      }
+    while (state.rutaActual.idsFallidos && state.rutaActual.idsFallidos.length > 0 && iteraciones < 3) {
+      const idsSet = new Set(state.rutaActual.idsFallidos);
+      state.paradas = state.paradas.filter((p) => !idsSet.has(p.id));
+      renderizarParadas();
+      state.rutaActual = await construirRutaConDesvios(state.rutaBase, state.paradas);
+      iteraciones++;
     }
 
     dibujarRutaDesdeEstado(opciones);

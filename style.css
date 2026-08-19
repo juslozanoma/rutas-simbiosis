@@ -2760,7 +2760,7 @@ input, select{ font-family: inherit; }
   border: none;
   color: #ffffff;
   padding: 8px 12px 8px 16px;
-  border-radius: 999px;
+  border-radius: 10px;
   font-size: 0.76rem;
   font-weight: 600;
   font-family: var(--font-body);
@@ -2783,7 +2783,7 @@ input, select{ font-family: inherit; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #d32f2f;
+  background: var(--teal-500);
   border: none;
   border-radius: 50%;
   color: #ffffff;
@@ -2792,7 +2792,7 @@ input, select{ font-family: inherit; }
   cursor: pointer;
   padding: 0;
 }
-.buscar-sitios-bar__cerrar:hover{ background: #b71c1c; }
+.buscar-sitios-bar__cerrar:hover{ background: var(--teal-500); }
 @media (max-width: 860px){
   .buscar-sitios-bar__slider{ width: 90px; }
 }

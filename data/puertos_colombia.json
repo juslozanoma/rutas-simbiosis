@@ -244,19 +244,6 @@
     ]
   },
   {
-    "id": "GAMM",
-    "nombre": "Puerto Gamarra",
-    "ciudad": "Gamarra (Cesar)",
-    "rio": "Río Magdalena",
-    "latitud": 8.188966,
-    "longitud": -73.754661,
-    "ubicacion": "Situado en el departamento del Cesar en la margen oriental del río Magdalena.\nActúa como la principal puerta de salida fluvial para el sur del departamento.",
-    "descripcion": "Especializado en el embarque de carbón, minerales y productos agrícolas.\nCuenta con instalaciones de muelle flotante para operaciones de almacenamiento.\nConecta la hidrovía con la red de transporte terrestre hacia Ocaña y Cúcuta.\nFacilita el tránsito de planchones hacia los puertos del norte y centro.",
-    "destinos_id": [
-      "BARR"
-    ]
-  },
-  {
     "id": "PUER",
     "nombre": "Puerto Carreño",
     "ciudad": "Puerto Carreño (Vichada)",
@@ -328,20 +315,6 @@
     "destinos_id": [
       "PBE",
       "BAR"
-    ]
-  },
-  {
-    "id": "GLO",
-    "nombre": "Puerto La Gloria",
-    "ciudad": "La Gloria (Cesar)",
-    "rio": "Río Magdalena",
-    "latitud": 8.5683,
-    "longitud": -73.8058,
-    "ubicacion": "Ubicado en la ribera oriental del río Magdalena en el departamento del Cesar.\nRepresenta un nodo logístico esencial para la subregión sur del departamento.",
-    "descripcion": "Operado principalmente para el despacho de ganado, maíz y productos agrícolas.\nDispone de infraestructura básica para el atraque de planchones y remolcadores.\nConecta al Cesar con los departamentos de Bolívar y Magdalena por agua.\nJuega un papel crítico en la cadena de suministro fluvial del norte colombiano.",
-    "destinos_id": [
-      "GAM",
-      "BAN"
     ]
   },
   {
@@ -748,20 +721,6 @@
     "descripcion": "Permite el tránsito fluvial de chalupas y botes hacia Quibdó y las comunidades rurales ubicadas aguas arriba.\nEs un puerto tradicional enfocado en el comercio menor, la minería artesanal y la extracción forestal sostenible.\nLas embarcaciones atracan en riberas de piedra y lodo habilitadas precariamente para el descargue de mercancías.\nSu dinámica fluvial es fundamental para la cohesión social y económica de los habitantes del municipio.",
     "destinos_id": [
       "QUI"
-    ]
-  },
-  {
-    "id": "PNAR",
-    "nombre": "Puerto Nariño",
-    "ciudad": "Puerto Nariño (Amazonas)",
-    "rio": "Río Amazonas",
-    "latitud": -3.780996,
-    "longitud": -70.361144,
-    "ubicacion": "Ubicado a orillas del río Amazonas y sobre la desembocadura del río Loretoyacu,\nen el municipio de Puerto Nariño dentro del departamento del Amazonas.",
-    "descripcion": "Muelle artesanal y turístico fundamental para el segundo municipio del departamento.\nPermite el atraque de embarcaciones menores y botes de pasajeros que navegan el Amazonas.\nPromueve un modelo de transporte sostenible libre de vehículos de motor de combustión tradicional.\nConecta a las comunidades locales y áreas protegidas con la cabecera municipal de Leticia.",
-    "destinos_id": [
-      "PLRI",
-      "PTAR"
     ]
   },
   {
@@ -1195,37 +1154,6 @@
     ]
   },
   {
-    "id": "GAM",
-    "nombre": "Puerto de Gamarra",
-    "ciudad": "Gamarra (Cesar)",
-    "rio": "Río Magdalena",
-    "latitud": 8.3,
-    "longitud": -73.7,
-    "ubicacion": "Localizado en la ribera oriental del río Magdalena en el departamento del Cesar.\nActúa como la puerta de entrada fluvial para la subregión sur del departamento.",
-    "descripcion": "Concentra operaciones de carga pesada, carbón y productos agrícolas.\nDispone de muelles acondicionados para transferencia intermodal.\nConecta el transporte por carretera con la hidrovía del Magdalena.\nSuministra combustible y víveres logísticos a los convoyes.",
-    "destinos_id": [
-      "BCB",
-      "CAP",
-      "EBN",
-      "PBQ"
-    ]
-  },
-  {
-    "id": "CAP",
-    "nombre": "Puerto de Capulco",
-    "ciudad": "Gamarra (Cesar)",
-    "rio": "Río Magdalena",
-    "latitud": 8.3,
-    "longitud": -73.7,
-    "ubicacion": "Situado en el corregimiento de Capulco, jurisdicción del municipio de Gamarra.\nEmplazado estratégicamente en la margen derecha del río Magdalena.",
-    "descripcion": "Funciona como un terminal alterno de carga y almacenamiento.\nManeja hidrocarburos, minerales y materias primas a granel.\nOptimiza los tiempos de despacho para las empresas mineras y agrícolas.\nDescongestiona las operaciones de los muelles principales de la zona.",
-    "destinos_id": [
-      "BCB",
-      "GAM",
-      "PBQ"
-    ]
-  },
-  {
     "id": "MPB",
     "nombre": "Muelle de Pasajeros de Puerto Berrío",
     "ciudad": "Puerto Berrío (Antioquia)",
@@ -1524,8 +1452,8 @@
     "nombre": "Puerto de Puerto Nariño",
     "ciudad": "Puerto Nariño (Amazonas)",
     "rio": "Río Loretoyacu",
-    "latitud": -3.779449,
-    "longitud": -70.365544,
+    "latitud": -3.783023,
+    "longitud": -70.366116,
     "ubicacion": "Ubicado sobre la margen del río Loretoyacu cerca de su desembocadura al Amazonas.\nSirve como el único puerto de acceso a este municipio de turismo sostenible.",
     "descripcion": "Recibe únicamente embarcaciones fluviales turísticas y de carga menor.\nProhíbe el uso de vehículos motorizados tradicionales en el municipio.\nFacilita el transporte de artesanías y productos de sustento indígena.\nGarantiza la conectividad fluvial con Leticia y comunidades nativas.",
     "destinos_id": [
@@ -2820,6 +2748,17 @@
     "longitud": -74.731343,
     "ubicacion": "Ubicado en la ribera del río Magdalena en el municipio histórico de Honda.\nSe localiza en el norte del departamento del Tolima sobre el corredor fluvial.",
     "descripcion": "Funciona como un embarcadero tradicional de apoyo para la navegación menor.\nFacilita la movilidad de pasajeros y pescadores locales en el sector norte del Tolima.\nConecta a las comunidades ribereñas con las rutas tradicionales del río.\nMantiene viva la tradición de comercio y transporte fluvial en la zona.",
+    "destinos_id": []
+  },
+  {
+    "id": "PDC",
+    "nombre": "Puerto de Cantagallo",
+    "ciudad": "Cantagallo (Bolívar)",
+    "rio": "Rio Magdalena",
+    "latitud": 7.376198,
+    "longitud": -73.913902,
+    "ubicacion": "",
+    "descripcion": "",
     "destinos_id": []
   }
 ]
