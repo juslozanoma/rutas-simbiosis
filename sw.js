@@ -15,7 +15,7 @@
  * ---------------------------------------------------------------------------
  */
 
-const VERSION = 'simbiosis-v84';
+const VERSION = 'simbiosis-v86';
 const CACHE_PRIMARIO = VERSION;
 const CACHE_OPACO = 'simbiosis-cdn-v2';
 
@@ -75,10 +75,10 @@ const PRECACHE = [
   './public/motorcycle.svg',
   './public/motorcycle2.svg',
   './public/motorcycle3.svg',
-  './public/scooter-transport-svgrepo-com.svg',
-  './public/people-in-car-side-view-svgrepo-com.svg',
-  './public/suv-transportation-car-suv-svgrepo-com.svg',
-  './public/pickup-svgrepo-com.svg',
+  './public/scooter.svg',
+  './public/car4.svg',
+  './public/suv.svg',
+  './public/pickup.svg',
   './public/icons/icon-192.png',
   './public/icons/icon-512.png',
   './public/icons/icon-maskable-512.png',

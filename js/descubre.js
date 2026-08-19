@@ -35,18 +35,27 @@
   }
 
   /** Toggle 1 del menú Ordenar: alterna el extremo de referencia entre el
-   *  origen y el destino. Al usarlo queda activo este toggle (el del orden
-   *  alfabético pasa a inactivo). */
+   *  origen y el destino. El primer clic desde el otro toggle solo activa este
+   *  (mantiene el extremo actual); los clics siguientes alternan origen/destino. */
   function alternarOrdenSitios() {
-    state.ordenActivo = 'extremo';
+    if (state.ordenActivo !== 'extremo') {
+      state.ordenActivo = 'extremo';
+      aplicarOrdenSitios(state.ordenSitios);
+      return;
+    }
     state.ordenSitios = state.ordenSitios === 'origen' ? 'destino' : 'origen';
     aplicarOrdenSitios(state.ordenSitios);
   }
 
   /** Toggle 2 del menú Ordenar: alterna el orden alfabético entre A-Z y Z-A.
-   *  Al usarlo queda activo este toggle (el de desde A/Z pasa a inactivo). */
+   *  El primer clic desde el otro toggle solo activa este (mantiene la
+   *  dirección actual); los clics siguientes alternan ascendente/descendente. */
   function alternarDireccionOrdenSitios() {
-    state.ordenActivo = 'dir';
+    if (state.ordenActivo !== 'dir') {
+      state.ordenActivo = 'dir';
+      aplicarOrdenSitios(state.ordenSitios);
+      return;
+    }
     state.ordenDir = state.ordenDir === 'asc' ? 'desc' : 'asc';
     aplicarOrdenSitios(state.ordenSitios);
   }

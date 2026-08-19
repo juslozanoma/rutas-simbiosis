@@ -391,6 +391,15 @@
     return btn;
   }
 
+  /** Clic derecho en PC abre el menú contextual de una fila; en táctil la
+   *  pulsación larga del navegador (contextmenu) solo se suprime: el menú se
+   *  abre únicamente con el botón hamburguesa de la fila. */
+  function _abrirContextoParada(evt, construirOpciones) {
+    evt.preventDefault();
+    if (evt.pointerType === 'touch' || evt.pointerType === 'pen') return;
+    abrirMenuFila(construirOpciones(), evt.clientX, evt.clientY);
+  }
+
   // -------------------------------------------------------------------
   // Días de viaje: nombre y fecha personalizados
   // -------------------------------------------------------------------
@@ -1604,10 +1613,7 @@
         });
         return opciones;
       };
-      li.addEventListener('contextmenu', (evt) => {
-        evt.preventDefault();
-        abrirMenuFila(opcionesExtremo(), evt.clientX, evt.clientY);
-      });
+      li.addEventListener('contextmenu', (evt) => _abrirContextoParada(evt, opcionesExtremo));
       // En móvil el menú se abre solo con el botón hamburguesa (no con pulsación larga).
       crearBotonMenuFila(opcionesExtremo, li, num, nombre);
 
@@ -1812,10 +1818,7 @@
         ];
       };
 
-      li.addEventListener('contextmenu', (evt) => {
-        evt.preventDefault();
-        abrirMenuFila(construirOpcionesContexto(), evt.clientX, evt.clientY);
-      });
+      li.addEventListener('contextmenu', (evt) => _abrirContextoParada(evt, construirOpcionesContexto));
       // En móvil el menú se abre solo con el botón hamburguesa (no con pulsación larga).
       crearBotonMenuFila(construirOpcionesContexto, li, num, e.nombre);
 

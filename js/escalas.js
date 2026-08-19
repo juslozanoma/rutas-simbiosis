@@ -45,10 +45,12 @@
         // Registra el pueblo en state.escalas sin calcular OSRM: el usuario
         // elige después si el tramo es por carro (botón verde) o avión.
         actualizarEscalas();
+        _mostrarAvisoTransporte(row);
       },
       onEnter: () => {
         // Igual que onSelect: no se recalcula hasta elegir carro o avión.
         actualizarEscalas();
+        _mostrarAvisoTransporte(row);
       },
     });
 
@@ -111,6 +113,28 @@
 
     state.escalas.push({ _row: row });
     return row;
+  }
+
+
+  /** Muestra bajo los botones de transporte (carro/avión) de un pueblo
+   *  intermedio un aviso para que el usuario elija el medio de transporte.
+   *  La flecha superior del aviso apunta a esos botones. */
+  function _mostrarAvisoTransporte(row) {
+    const previo = row.querySelector('.escala-row__aviso');
+    if (previo) previo.remove();
+    const aviso = document.createElement('div');
+    aviso.className = 'escala-row__aviso';
+    aviso.setAttribute('role', 'tooltip');
+    aviso.textContent = 'Selecciona tu transporte';
+    row.appendChild(aviso);
+    // Se cierra al interactuar con la fila o pasados unos segundos.
+    const cerrar = () => {
+      const existente = row.querySelector('.escala-row__aviso');
+      if (existente) existente.remove();
+    };
+    row.addEventListener('click', cerrar, { once: true });
+    aviso.addEventListener('click', (e) => { e.stopPropagation(); cerrar(); });
+    setTimeout(cerrar, 7000);
   }
 
 

@@ -279,6 +279,7 @@ input, select{ font-family: inherit; }
 .route-bar__btn--active{ background: var(--teal-50); border-color: var(--teal-500); color: var(--teal-600); }
 
 .escala-row{
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -544,6 +545,34 @@ input, select{ font-family: inherit; }
   color: #ffffff;
 }
 .escala-row__aereo:hover{ background: var(--teal-500); border-color: var(--teal-500); }
+
+/* Aviso de selección de transporte (carro o avión) bajo los botones de un
+   pueblo intermedio; la flecha superior apunta a esos botones. */
+.escala-row__aviso{
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 950;
+  background: var(--ink-900);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 7px 11px;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(20,32,27,0.25);
+  max-width: 240px;
+}
+.escala-row__aviso::before{
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 16px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 7px solid var(--ink-900);
+}
 .paradas-lista{
   list-style: none;
   margin: 0;
@@ -3331,7 +3360,10 @@ input, select{ font-family: inherit; }
 .parada-item{
   cursor: pointer;
   -webkit-touch-callout: none;
-  touch-action: manipulation;
+  /* pan-y: el scroll vertical de la lista sigue siendo nativo, pero el
+     deslizamiento horizontal (borrar con swipe) lo gestiona el JS y el
+     navegador no lo secuestra como gesto de pan. */
+  touch-action: pan-y;
   transition: background 0.1s ease, border-color 0.1s ease, box-shadow 0.1s ease;
 }
 .parada-item:hover{ background: #f0f4f2; border-color: var(--teal-500); }
