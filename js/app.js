@@ -697,7 +697,11 @@
     if (typeof cerrarAltimetria === 'function') cerrarAltimetria();
 
     if (typeof _limpiarTurfYListado === 'function') _limpiarTurfYListado();
-    if (el.sitiosLista) { el.sitiosLista.innerHTML = ''; el.sitiosLista.hidden = true; }
+    if (el.sitiosLista) {
+      _sitiosRenderizados = [];
+      _notificarListaSitios();
+      el.sitiosLista.hidden = true;
+    }
     if (el.sitiosVacio) { el.sitiosVacio.hidden = true; el.sitiosVacio.textContent = ''; }
     if (el.sitiosContador) el.sitiosContador.textContent = '0';
     if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = '0';

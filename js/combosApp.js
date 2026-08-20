@@ -120,7 +120,8 @@
     _listadoParaGeojson = null;
     MapModule.limpiarSitios();
     TourismModule.ocultarPopupSitio();
-    if (el.sitiosLista) el.sitiosLista.innerHTML = '';
+    _sitiosRenderizados = [];
+    _notificarListaSitios();
     if (el.sitiosLista) el.sitiosLista.hidden = true;
     if (el.sitiosVacio) el.sitiosVacio.hidden = true;
     if (el.sitiosContador) el.sitiosContador.textContent = '0';

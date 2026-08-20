@@ -12,6 +12,7 @@
   let _comboTour = null;
   let _sitiosTour = [];      // sitios acumulados de los destinos elegidos
   let _sitiosTourActivos = []; // sitios que pasan los filtros (en el mapa)
+  let _tourDestinosSnapshot = []; // destinos para la lista React (TourDestinosLista)
 
   function _toggleTour() {
     if (_tourActivo) _desactivarTour();
@@ -58,7 +59,7 @@
     if (el.panelTour) el.panelTour.hidden = true;
     if (el.panelLocate) el.panelLocate.hidden = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles || _rutaArchivoActiva;
     if (el.btnIniciarTour) el.btnIniciarTour.setAttribute('aria-pressed', 'false');
-    if (el.tourDestinosLista) el.tourDestinosLista.innerHTML = '';
+    _renderTourDestinos();
     const filaDist = document.getElementById('filtro-distancia-tour-row');
     if (filaDist) filaDist.hidden = true;
     if (el.filtroDistancia) { el.filtroDistancia.disabled = !(el.checkDistancia && el.checkDistancia.checked); el.filtroDistancia.max = '60'; }
@@ -329,41 +330,19 @@
   }
 
   function _renderTourDestinos() {
-    const lista = el.tourDestinosLista;
-    if (!lista) return;
-    // Sitios activos en el mapa en este momento (según el filtro de distancia
-    // y las categorías elegidas).
+    // La lista la renderiza React (TourDestinosLista, portal a
+    // #tour-destinos-lista); aquí solo se guarda el snapshot con los destinos
+    // y sus conteos de sitios activos y se notifica.
     const activos = new Set(
       (_sitiosTourActivos && _sitiosTourActivos.length ? _sitiosTourActivos : _sitiosTourFiltrados())
         .map((s) => String(s.id))
     );
-    lista.innerHTML = '';
-    state.tourDestinos.forEach((d) => {
+    _tourDestinosSnapshot = state.tourDestinos.map((d) => {
       const sitios = d.sitios || _sitiosDePueblo(d);
-      const n = sitios.filter((s) => activos.has(String(s.id))).length;
-      const li = Utils.crearElemento(`
-        <li class="tour-destino-item">
-          <span class="tour-destino-item__info">
-            <span class="tour-destino-item__nombre">${d.nombre}</span>
-            <span class="tour-destino-item__meta">${d.departamento || ''}</span>
-          </span>
-          <span class="tour-destino-item__count">(${n})</span>
-          <button type="button" class="tour-destino-item__btn" title="Quitar destino" aria-label="Quitar ${d.nombre}">&times;</button>
-        </li>
-      `);
-      // Clic en el destino: centra el mapa en su sector con sus sitios.
-      li.addEventListener('click', (evt) => {
-        if (evt.target.closest('.tour-destino-item__btn')) return;
-        lista.querySelectorAll('.tour-destino-item--activo').forEach((el) => el.classList.remove('tour-destino-item--activo'));
-        li.classList.add('tour-destino-item--activo');
-        _centrarDestinoTour(d);
-      });
-      li.querySelector('.tour-destino-item__btn').addEventListener('click', (evt) => {
-        evt.stopPropagation();
-        _quitarDestinoTour(d.id);
-      });
-      lista.appendChild(li);
+      const conteo = sitios.filter((s) => activos.has(String(s.id))).length;
+      return { id: String(d.id), nombre: d.nombre, departamento: d.departamento || '', conteo };
     });
+    _notificarTourDestinos();
   }
 
   /** Centra el mapa en el sector de un destino del tour (sus sitios a 30 km). */
@@ -417,3 +396,28 @@
       });
     }
   });
+
+  // -------------------------------------------------------------------
+  // Puente con React (lista de destinos del tour). Los <li> los renderiza
+  // el componente TourDestinosLista (portal a #tour-destinos-lista); el resto
+  // del modo tour sigue siendo vanilla.
+  // -------------------------------------------------------------------
+
+  /** Pide a React que vuelva a renderizar la lista de destinos del tour. */
+  function _notificarTourDestinos() {
+    if (typeof window !== 'undefined' && window.SimbiosisUI && typeof window.SimbiosisUI.notificarTourDestinos === 'function') {
+      window.SimbiosisUI.notificarTourDestinos();
+    }
+  }
+
+  if (typeof window !== 'undefined' && window.SimbiosisUI) {
+    /** Snapshot que React necesita para pintar la lista de destinos. */
+    window.SimbiosisUI.datosTourDestinos = () => ({ destinos: _tourDestinosSnapshot });
+    /** Centra el mapa en el destino (lo invoca el clic de una fila). */
+    window.SimbiosisUI.centrarDestinoTour = (id) => {
+      const d = state.tourDestinos.find((x) => String(x.id) === String(id));
+      if (d) _centrarDestinoTour(d);
+    };
+    /** Quita un destino (lo invoca el botón × de una fila). */
+    window.SimbiosisUI.quitarDestinoTour = (id) => _quitarDestinoTour(id);
+  }

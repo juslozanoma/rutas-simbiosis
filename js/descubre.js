@@ -7,6 +7,8 @@
  */
 
   let _tipSitiosFloatMostrado = false; // popup automático del icono flotante de sitios (una sola vez por sesión)
+  let _sitiosRenderizados = [];        // última lista mostrada (ordenada), la lee React para renderizar las tarjetas
+  let _categoriasChips = [];           // chips de categorías (ordenados), los lee React para el grid
 
   function ordenarSitios(sitios) {
     const lista = [...sitios];
@@ -95,7 +97,8 @@
 
   function renderizarCategoriasMenu(lista) {
     const cats = lista || categoriasDeRuta();
-    el.categoriasGrid.innerHTML = '';
+    // Los chips los renderiza React (CategoriasGrid, portal a #categorias-grid);
+    // aquí solo se guarda el snapshot ordenado y se notifica al puente.
     const seleccionadas = new Set(state.categoriasSeleccionadas.map((c) => c.toLowerCase()));
     cats.sort((a, b) => {
       const an = (Array.isArray(a) ? a[0] : a).toLowerCase();
@@ -105,16 +108,12 @@
       if (aSel !== bSel) return aSel - bSel;
       return an.localeCompare(bn, 'es');
     });
-    cats.forEach((ent) => {
+    _categoriasChips = cats.map((ent) => {
       const cat = Array.isArray(ent) ? ent[0] : ent;
       const n = Array.isArray(ent) ? ent[1] : 0;
-      const chip = document.createElement('span');
-      chip.className = 'categoria-chip';
-      if (seleccionadas.has(cat.toLowerCase())) chip.classList.add('categoria-chip--selected');
-      chip.textContent = n > 0 ? `${cat} (${n})` : cat;
-      chip.addEventListener('click', () => toggleCategoria(cat));
-      el.categoriasGrid.appendChild(chip);
+      return { cat, n, selected: seleccionadas.has(cat.toLowerCase()) };
     });
+    _notificarCategorias();
   }
 
 
@@ -212,10 +211,12 @@
     state.sitiosFiltradosBase = [];
     state.modoVisibilidad = 'completa';
     conteoCategoriasBase = new Map();
+    _sitiosRenderizados = [];
     if (el.buscarSitios) el.buscarSitios.value = '';
     _sincronizarBotonVisibles();
     _actualizarEstadoBotonesDescubre();
     _syncBotonSitios();
+    _notificarListaSitios();
     if (el.panelSitios) el.panelSitios.hidden = true;
     if (el.sitiosVacio) el.sitiosVacio.textContent = '';
     if (el.sitiosContador) el.sitiosContador.textContent = '0';
@@ -409,8 +410,10 @@
   function renderizarSitios(sitios) {
     limpiarPreview();
     MapModule.limpiarSitios();
-    el.sitiosLista.innerHTML = '';
-    const sitiosOrdenados = ordenarSitios(sitios);
+    // La lista de tarjetas la renderiza React (componente SitiosLista, portal a
+    // #sitios-lista); aquí se guarda la lista ordenada y se notifica al puente.
+    _sitiosRenderizados = ordenarSitios(sitios);
+    const sitiosOrdenados = _sitiosRenderizados;
     el.sitiosContador.textContent = String(sitiosOrdenados.length);
     if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = String(sitiosOrdenados.length);
     if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = String(sitiosOrdenados.length);
@@ -427,6 +430,7 @@
       el.sitiosVacio.textContent = 'Ningún sitio turístico cumple los filtros activos.';
       el.sitiosLista.hidden = true;
       _syncBotonSitios();
+      _notificarListaSitios();
       return;
     }
 
@@ -443,8 +447,8 @@
         marker.on('mouseout', () => { AltimetriaModule.ocultarHover(); });
       }
       MapModule.agregarMarcadorSitio(marker);
-      el.sitiosLista.appendChild(crearTarjetaSitio(sitio, i));
     });
+    _notificarListaSitios();
     _aplicarBusquedaSitios();
   }
 
@@ -509,58 +513,6 @@
     }
   }
 
-  /** Construye la tarjeta de un sitio en la lista, con acciones de previsualizar y agregar. */
-
-  function crearTarjetaSitio(sitio, idx) {
-    const esParada = state.paradas.some((p) => p.id === sitio.id);
-    const li = Utils.crearElemento(`
-      <li class="sitio-card${esParada ? ' sitio-card--active' : ''}" data-sitio-id="${sitio.id}">
-        <div class="sitio-card__top">
-          <span class="sitio-card__nombre"><span class="sitio-card__num">${idx != null ? (idx + 1) + '.' : ''}</span>&nbsp;${sitio.nombre}</span>
-          <div class="sitio-card__top-right">
-            <button type="button" class="icon-btn sitio-card__add${esParada ? ' sitio-card__add--quitar' : ''}" title="${esParada ? 'Quitar de la ruta' : 'Agregar a la ruta'}" aria-label="${esParada ? 'Quitar ' + sitio.nombre + ' de la ruta' : 'Agregar ' + sitio.nombre + ' a la ruta'}">
-              <svg class="icon-btn__icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">${esParada ? '<path d="M6 12h12"/>' : '<path d="M12 5v14M5 12h14"/>'}</svg>
-              <span class="icon-btn__spinner" aria-hidden="true"></span>
-            </button>
-          </div>
-        </div>
-        <div class="sitio-card__meta">
-          <span>${sitio.municipio}, ${sitio.departamento}</span>
-          ${_textoDistanciaTarjeta(sitio)}
-        </div>
-        <p class="sitio-card__preview" hidden></p>
-      </li>
-    `);
-
-    /** Texto de distancias de la tarjeta: distancia sobre la ruta desde el origen
-   *  hasta el punto de desvío y, después, los datos del desvío (km y min). */
-  function _textoDistanciaTarjeta(sitio) {
-    const partes = [];
-    if (sitio.distanciaOrigenDesvioKm != null) {
-      partes.push(`${sitio.distanciaOrigenDesvioKm.toFixed(1)} km <span class="sitio-card__dist-note"></span>`);
-    }
-    if (sitio.distanciaRutaKm != null) {
-      partes.push(`desvío: ${sitio.distanciaRutaKm.toFixed(1)} km · ${Math.round(sitio.tiempoDesvioMin)} min`);
-    }
-    if (!partes.length) return '';
-    return `<span>${partes.join(' · ')}</span>`;
-  }
-
-  const btnAdd = li.querySelector('.sitio-card__add');
-    btnAdd.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (esParada) {
-        quitarSitioDeLaRuta(sitio, li, btnAdd);
-      } else {
-        agregarParada(sitio, btnAdd);
-      }
-    });
-
-    li.addEventListener('click', () => previsualizarRutaHaciaSitio(sitio, li));
-
-    return li;
-  }
-
   // -------------------------------------------------------------------
   // Previsualización: ruta directa de origen a un sitio seleccionado
   // -------------------------------------------------------------------
@@ -599,3 +551,41 @@
   // -------------------------------------------------------------------
   // Construcción de ruta con desvíos por carretera (OSRM para cada desvío)
   // -------------------------------------------------------------------
+
+  // -------------------------------------------------------------------
+  // Puente con React (lista de sitios de Descubre). Las tarjetas las
+  // renderiza el componente SitiosLista (portal a #sitios-lista) leyendo
+  // _sitiosRenderizados (la última lista mostrada, ya ordenada, para que la
+  // numeración coincida con los marcadores del mapa). El resto del módulo
+  // sigue siendo vanilla.
+  // -------------------------------------------------------------------
+
+  /** Pide a React que vuelva a renderizar las tarjetas de la lista. */
+  function _notificarListaSitios() {
+    if (typeof window !== 'undefined' && window.SimbiosisUI && typeof window.SimbiosisUI.notificarListaSitios === 'function') {
+      window.SimbiosisUI.notificarListaSitios();
+    }
+  }
+
+  /** Snapshot que React necesita para renderizar las tarjetas. */
+  function _datosSitios() {
+    return {
+      sitios: _sitiosRenderizados,
+      paradas: state.paradas,
+    };
+  }
+
+  /** Pide a React que vuelva a renderizar los chips del grid de categorías. */
+  function _notificarCategorias() {
+    if (typeof window !== 'undefined' && window.SimbiosisUI && typeof window.SimbiosisUI.notificarCategorias === 'function') {
+      window.SimbiosisUI.notificarCategorias();
+    }
+  }
+
+  if (typeof window !== 'undefined' && window.SimbiosisUI) {
+    window.SimbiosisUI.datosSitios = _datosSitios;
+    /** Snapshot de los chips de categorías (ya ordenados) que React pinta. */
+    window.SimbiosisUI.datosCategorias = () => _categoriasChips;
+    /** Alterna una categoría desde el clic de un chip. */
+    window.SimbiosisUI.toggleCategoriaDescubre = (cat) => toggleCategoria(cat);
+  }

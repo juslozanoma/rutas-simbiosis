@@ -6,6 +6,17 @@
  * ---------------------------------------------------------------------------
  */
 
+// Menú contextual de filas (paradas, escalas, catálogo, marcadores): las
+// opciones con sus acciones quedan en vanilla y React (MenuFila) solo las
+// pinta y delega al hacer clic.
+let _menuFilaOpciones = null; // [{ etiqueta, accion }] o null si está cerrado
+let _menuFilaX = 0;
+let _menuFilaY = 0;
+// Catálogo de puertos/aeropuertos/departamentos/municipios/categorías/frontera:
+// el listado lo renderiza React (InfraListado, portal a #paradas-lista); aquí
+// solo se guarda el snapshot con los descriptores de cada tarjeta.
+let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx }] o [{ hint, texto }]
+
   async function agregarParada(sitio, boton) {
     UndoManager.registrar();
     if (boton) ponerEnCarga(boton, true);
@@ -30,19 +41,12 @@
     }
   }
 
-  /** Cambia en el lugar la tarjeta de un sitio a "ya agregado" (resaltado y botón −). */
+  /** Cambia en el lugar la tarjeta de un sitio a "ya agregado" (resaltado y
+   *  botón −). Las tarjetas las renderiza React (SitiosLista): se notifica al
+   *  puente y el componente re-renderiza leyendo state.paradas. */
 
   function _marcarSitioAgregadoEnLista(sitio) {
-    const card = el.sitiosLista.querySelector(`[data-sitio-id="${String(sitio.id)}"]`);
-    if (!card) return;
-    card.classList.add('sitio-card--active');
-    const btn = card.querySelector('.sitio-card__add');
-    if (!btn) return;
-    btn.classList.add('sitio-card__add--quitar');
-    btn.title = 'Quitar de la ruta';
-    btn.setAttribute('aria-label', 'Quitar ' + sitio.nombre + ' de la ruta');
-    btn.innerHTML = '<svg class="icon-btn__icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 12h12"/></svg><span class="icon-btn__spinner" aria-hidden="true"></span>';
-    btn.onclick = (e) => { e.stopPropagation(); quitarSitioDeLaRuta(sitio, card, btn); };
+    _notificarListaSitios();
   }
 
   /** Quita de la ruta un sitio agregado y restaura su tarjeta a "+" en su lugar. */
@@ -90,19 +94,11 @@
     }
   }
 
-  /** Restaura la tarjeta de un sitio a "agregar" (+) sin recargar el listado. */
+  /** Restaura la tarjeta de un sitio a "agregar" (+) sin recargar el listado:
+   *  se notifica a React (SitiosLista) y el componente re-renderiza. */
 
   function _restaurarSitioEnLista(sitio) {
-    const card = el.sitiosLista.querySelector(`[data-sitio-id="${String(sitio.id)}"]`);
-    if (!card) return;
-    card.classList.remove('sitio-card--active');
-    const btn = card.querySelector('.sitio-card__add');
-    if (!btn) return;
-    btn.classList.remove('sitio-card__add--quitar');
-    btn.title = 'Agregar a la ruta';
-    btn.setAttribute('aria-label', 'Agregar ' + sitio.nombre + ' a la ruta');
-    btn.innerHTML = '<svg class="icon-btn__icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="icon-btn__spinner" aria-hidden="true"></span>';
-    btn.onclick = (e) => { e.stopPropagation(); agregarParada(sitio, btn); };
+    _notificarListaSitios();
   }
 
   // -------------------------------------------------------------------
@@ -274,42 +270,19 @@
 
 
   function cerrarMenuFila() {
-    if (_menuFila) {
-      _menuFila.remove();
-      _menuFila = null;
-    }
+    _menuFilaOpciones = null;
+    _notificarMenuFila();
   }
 
 
   function abrirMenuFila(opciones, clientX, clientY) {
     cerrarMenuFila();
-    const menu = document.createElement('div');
-    menu.className = 'fila-menu';
-
-    opciones.forEach((op) => {
-      const item = document.createElement('div');
-      item.className = 'fila-menu__item';
-      item.textContent = op.etiqueta;
-      item.addEventListener('click', (evt) => {
-        evt.stopPropagation();
-        cerrarMenuFila();
-        op.accion();
-      });
-      menu.appendChild(item);
-    });
-
-    document.body.appendChild(menu);
-    _menuFila = menu;
-
-    const rect = menu.getBoundingClientRect();
-    let left = clientX;
-    let top = clientY;
-    if (left + rect.width > window.innerWidth - 8) left = window.innerWidth - rect.width - 8;
-    if (top + rect.height > window.innerHeight - 8) top = window.innerHeight - rect.height - 8;
-    left = Math.max(8, left);
-    top = Math.max(8, top);
-    menu.style.left = left + 'px';
-    menu.style.top = top + 'px';
+    // El menú lo renderiza React (MenuFila, portal a document.body); aquí solo
+    // se guardan las opciones (con sus acciones) y la posición y se notifica.
+    _menuFilaOpciones = (opciones || []).map((op) => ({ etiqueta: op.etiqueta, accion: op.accion }));
+    _menuFilaX = clientX;
+    _menuFilaY = clientY;
+    _notificarMenuFila();
   }
 
 
@@ -318,7 +291,8 @@
     // que no cierre el menú contextual recién abierto. La bandera se limpia
     // sola a los 700 ms (ver engancharLongPress y map.js).
     if (_suprimirProximoClic) return;
-    if (_menuFila && !_menuFila.contains(evt.target)) cerrarMenuFila();
+    const menuEl = document.querySelector('.fila-menu');
+    if (menuEl && !menuEl.contains(evt.target)) cerrarMenuFila();
   });
 
   document.addEventListener('keydown', (evt) => {
@@ -873,14 +847,14 @@
     const distTxt = sitio.distanciaRutaKm != null
       ? `A ${sitio.distanciaRutaKm.toFixed(1)} km del corredor · ~${Math.round(sitio.tiempoDesvioMin)} min de desvío`
       : '';
-    const btnQuitar = document.createElement('button');
-    btnQuitar.type = 'button';
-    btnQuitar.className = 'popup-sitio__add popup-sitio__quitar';
-    btnQuitar.textContent = 'Quitar de la ruta';
-    btnQuitar.addEventListener('click', () => {
-      TourismModule.ocultarPopupSitio();
-      eliminarParada(sitio.id);
-    });
+    const btnQuitar = {
+      etiqueta: 'Quitar de la ruta',
+      clase: 'popup-sitio__add popup-sitio__quitar',
+      accion: () => {
+        TourismModule.ocultarPopupSitio();
+        eliminarParada(sitio.id);
+      },
+    };
 
     TourismModule.mostrarCuadroInfo({
       categoria: sitio.categoria || '',
@@ -928,23 +902,23 @@
     if (map) map.closePopup();
     MapModule.centrarEn(escala.lat, escala.lon);
 
-    const btnCambiar = document.createElement('button');
-    btnCambiar.type = 'button';
-    btnCambiar.className = 'popup-sitio__add';
-    btnCambiar.textContent = 'Cambiar pueblo intermedio';
-    btnCambiar.addEventListener('click', () => {
-      TourismModule.ocultarPopupSitio();
-      cambiarPueblo(escala);
-    });
+    const btnCambiar = {
+      etiqueta: 'Cambiar pueblo intermedio',
+      clase: 'popup-sitio__add',
+      accion: () => {
+        TourismModule.ocultarPopupSitio();
+        cambiarPueblo(escala);
+      },
+    };
 
-    const btnEliminar = document.createElement('button');
-    btnEliminar.type = 'button';
-    btnEliminar.className = 'popup-sitio__add popup-sitio__quitar';
-    btnEliminar.textContent = 'Eliminar pueblo intermedio';
-    btnEliminar.addEventListener('click', () => {
-      TourismModule.ocultarPopupSitio();
-      eliminarEscala(escala.id);
-    });
+    const btnEliminar = {
+      etiqueta: 'Eliminar pueblo intermedio',
+      clase: 'popup-sitio__add popup-sitio__quitar',
+      accion: () => {
+        TourismModule.ocultarPopupSitio();
+        eliminarEscala(escala.id);
+      },
+    };
 
     const muni = _datosMunicipio(escala);
     TourismModule.mostrarCuadroInfo({
@@ -971,15 +945,15 @@
     if (map) map.closePopup();
     MapModule.centrarEn(extremo.lat, extremo.lon);
 
-    const btnCambiar = document.createElement('button');
-    btnCambiar.type = 'button';
-    btnCambiar.className = 'popup-sitio__add';
-    btnCambiar.textContent = tipo === 'origen' ? 'Cambiar lugar de origen' : 'Cambiar lugar de destino';
-    btnCambiar.addEventListener('click', () => {
-      TourismModule.ocultarPopupSitio();
-      if (tipo === 'origen') irCambiarOrigen();
-      else irCambiarDestino();
-    });
+    const btnCambiar = {
+      etiqueta: tipo === 'origen' ? 'Cambiar lugar de origen' : 'Cambiar lugar de destino',
+      clase: 'popup-sitio__add',
+      accion: () => {
+        TourismModule.ocultarPopupSitio();
+        if (tipo === 'origen') irCambiarOrigen();
+        else irCambiarDestino();
+      },
+    };
 
     const muni = _datosMunicipio(extremo);
     TourismModule.mostrarCuadroInfo({
@@ -1268,27 +1242,31 @@
       window.SimbiosisUI.notificarListaRuta();
     }
 
-    el.paradasLista.innerHTML = '';
+    const items = [];
     let n = 0;
     tipos.forEach((tipo) => {
-      const items = _itemsInfra(tipo);
-      (items || []).forEach((it) => {
+      const list = _itemsInfra(tipo);
+      (list || []).forEach((it) => {
         if (!_coordsInfra(it) && tipo !== 'categoria') return;
-        el.paradasLista.appendChild(_crearTarjetaInfra(it, tipo, n));
+        items.push(_descriptorTarjetaInfra(it, tipo, n));
         n++;
       });
     });
     // Sin elección: pista en vez de una lista vacía (municipios).
     if (_municipiosVisibles && !_municipiosFiltroDepto && n === 0) {
-      const hint = Utils.crearElemento('<li class="paradas-vacio">Elige un departamento para ver sus municipios en el mapa y en la lista.</li>');
-      el.paradasLista.appendChild(hint);
+      items.push({ hint: true, texto: 'Elige un departamento para ver sus municipios en el mapa y en la lista.' });
     }
+    _infraSnapshot = items;
     if (el.paradasTitulo) el.paradasTitulo.textContent = _tituloInfra(tipos);
     if (el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = true;
     el.panelParadas.hidden = false;
+    _notificarInfraListado();
   }
 
-  function _crearTarjetaInfra(item, tipo, idx) {
+  /** Descriptor serializable de una tarjeta del catálogo (los <li> los
+   *  renderiza React, InfraListado); las acciones siguen siendo closures de
+   *  los llamadores vía el puente. */
+  function _descriptorTarjetaInfra(item, tipo, idx) {
     const esPuerto = tipo === 'puerto';
     let sub = '';
     let sufijo = '';
@@ -1305,41 +1283,24 @@
     } else if (tipo === 'frontera') {
       sub = [item.municipio, item.ubicacion].filter(Boolean).join(' · ');
     }
-    const rio = esPuerto && item.rio ? `<span class="sitio-card__rio">${item.rio}</span>` : '';
     const activa = tipo === 'categoria' && item.nombre === _categoriasFiltro;
-    const li = Utils.crearElemento(`
-      <li class="sitio-card${activa ? ' sitio-card--active' : ''}" data-infra-id="${item.id}">
-        <div class="sitio-card__top">
-          <span class="sitio-card__nombre"><span class="sitio-card__num">${idx + 1}.</span>&nbsp;${item.nombre}${sufijo}</span>
-          ${rio}
-        </div>
-        <p class="sitio-card__ciudad">${sub || ''}</p>
-      </li>
-    `);
-    li.addEventListener('click', () => {
-      if (tipo === 'categoria') {
-        _aplicarFiltroCategorias(item.nombre);
-        return;
-      }
-      if (tipo === 'frontera') {
-        if (typeof _verInfoCatalogo === 'function') _verInfoCatalogo('frontera', item);
-        return;
-      }
-      if (tipo === 'departamento' || tipo === 'municipio') {
-        mostrarCuadroInfra(tipo, item);
-        return;
-      }
-      const conexiones = esPuerto ? _conexionesDePuerto(item) : _conexionesDeAeropuerto(item);
-      const coords = _coordsInfra(item);
-      MapModule.dibujarConexiones(tipo, String(item.id), coords[0], coords[1], conexiones, esPuerto ? '#2f7a6b' : '#4a6fa5');
-      mostrarCuadroInfra(tipo, item);
-    });
-    return li;
+    return {
+      id: String(item.id),
+      tipo,
+      nombre: item.nombre,
+      sub,
+      sufijo,
+      rio: esPuerto && item.rio ? item.rio : '',
+      activa,
+      idx,
+    };
   }
 
   /** Restaura la pestaña Ruta al apagar el catálogo de puertos/aeropuertos
    *  (y departamentos/municipios/categorías). */
   function _restaurarPanelRutaInfra() {
+    _infraSnapshot = null;
+    _notificarInfraListado();
     if (el.paradasTitulo) el.paradasTitulo.textContent = 'Paradas';
     if (el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = false;
     if (el.filtroMunicipiosDepto) {
@@ -1423,6 +1384,63 @@
     window.SimbiosisUI.modoListaRuta = _modoListaRuta;
     window.SimbiosisUI.datosParadas = _datosParadas;
     window.SimbiosisUI.consumirClicSintetico = _consumirClicSintetico;
+  }
+
+  /** Pide a React que vuelva a renderizar el menú contextual de filas. */
+  function _notificarMenuFila() {
+    if (typeof window !== 'undefined' && window.SimbiosisUI && typeof window.SimbiosisUI.notificarMenuFila === 'function') {
+      window.SimbiosisUI.notificarMenuFila();
+    }
+  }
+
+  if (typeof window !== 'undefined' && window.SimbiosisUI) {
+    /** Snapshot del menú contextual (null si está cerrado). */
+    window.SimbiosisUI.datosMenuFila = () => _menuFilaOpciones
+      ? { opciones: _menuFilaOpciones, x: _menuFilaX, y: _menuFilaY }
+      : null;
+    /** Ejecuta la acción de la opción i-ésima y cierra el menú (lo llama React). */
+    window.SimbiosisUI.ejecutarMenuFila = (i) => {
+      const op = _menuFilaOpciones && _menuFilaOpciones[i];
+      if (!op) return;
+      cerrarMenuFila();
+      op.accion();
+    };
+    /** Snapshot del catálogo de puertos/aeropuertos/… (solo en modo 'infra'). */
+    window.SimbiosisUI.datosInfraListado = () => _modoListaRuta() === 'infra'
+      ? { items: _infraSnapshot || [] }
+      : null;
+    /** Ejecuta el clic de la tarjeta i-ésima del catálogo (lo invoca React). */
+    window.SimbiosisUI.clicTarjetaInfra = (i) => {
+      const d = _infraSnapshot && _infraSnapshot[i];
+      if (!d || d.hint) return;
+      const tipo = d.tipo;
+      const item = (_itemsInfra(tipo) || []).find((x) => String(x.id) === String(d.id));
+      if (!item) return;
+      if (tipo === 'categoria') {
+        _aplicarFiltroCategorias(item.nombre);
+        return;
+      }
+      if (tipo === 'frontera') {
+        if (typeof _verInfoCatalogo === 'function') _verInfoCatalogo('frontera', item);
+        return;
+      }
+      if (tipo === 'departamento' || tipo === 'municipio') {
+        mostrarCuadroInfra(tipo, item);
+        return;
+      }
+      const esPuerto = tipo === 'puerto';
+      const conexiones = esPuerto ? _conexionesDePuerto(item) : _conexionesDeAeropuerto(item);
+      const coords = _coordsInfra(item);
+      MapModule.dibujarConexiones(tipo, String(item.id), coords[0], coords[1], conexiones, esPuerto ? '#2f7a6b' : '#4a6fa5');
+      mostrarCuadroInfra(tipo, item);
+    };
+  }
+
+  /** Pide a React que vuelva a renderizar el catálogo de puertos/aeropuertos. */
+  function _notificarInfraListado() {
+    if (typeof window !== 'undefined' && window.SimbiosisUI && typeof window.SimbiosisUI.notificarInfraListado === 'function') {
+      window.SimbiosisUI.notificarInfraListado();
+    }
   }
 
   function renderizarParadas() {

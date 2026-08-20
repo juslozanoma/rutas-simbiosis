@@ -54,24 +54,6 @@
 
 </div>
 
-<!-- Plantilla de popup de sitio turístico. Se conserva en el HTML porque React
-     no puede renderizar hijos de <template>: tourism.js usa su .content. -->
-<template id="tpl-popup-sitio">
-  <div class="popup-sitio">
-    <button type="button" class="popup-sitio__close" title="Cerrar">&times;</button>
-    <span class="popup-sitio__cat"></span>
-    <h3 class="popup-sitio__nombre"></h3>
-    <p class="popup-sitio__ciudad"></p>
-    <p class="popup-sitio__ubicacion"></p>
-    <p class="popup-sitio__desc"></p>
-    <p class="popup-sitio__dist mono"></p>
-    <button type="button" class="popup-sitio__add" title="Agregar a la ruta">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-      Agregar a la ruta
-    </button>
-  </div>
-</template>
-
 <!-- React: módulo que monta la cáscara de la app. Va ANTES que los scripts
      clásicos (con defer) para que el DOM esté presente de forma síncrona
      (flushSync) cuando app.js ejecute su init() en DOMContentLoaded. Vite lo

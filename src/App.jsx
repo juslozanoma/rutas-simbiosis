@@ -14,6 +14,17 @@ import Dialogos from './components/shell/Dialogos';
 import TransportSelector from './components/TransportSelector';
 import MunicipioCombos from './components/MunicipioCombo';
 import ParadasLista from './components/ParadasLista';
+import SitiosLista from './components/SitiosLista';
+import BuscarLugarLista from './components/BuscarLugarLista';
+import AltimetriaSegmentos from './components/AltimetriaSegmentos';
+import CategoriasGrid from './components/CategoriasGrid';
+import PopupSitio from './components/PopupSitio';
+import MenuFila from './components/MenuFila';
+import CuadroInfo from './components/CuadroInfo';
+import MenuAltimetria from './components/MenuAltimetria';
+import BannerComparar from './components/BannerComparar';
+import TourDestinosLista from './components/TourDestinosLista';
+import InfraListado from './components/InfraListado';
 
 export default function App() {
   return (
@@ -27,6 +38,17 @@ export default function App() {
       <TransportSelector />
       <MunicipioCombos />
       <ParadasLista />
+      <SitiosLista />
+      <BuscarLugarLista />
+      <AltimetriaSegmentos />
+      <CategoriasGrid />
+      <PopupSitio />
+      <MenuFila />
+      <CuadroInfo />
+      <MenuAltimetria />
+      <BannerComparar />
+      <TourDestinosLista />
+      <InfraListado />
     </>
   );
 }

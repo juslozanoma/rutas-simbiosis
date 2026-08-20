@@ -15,6 +15,8 @@ const BuscarLugarModule = (() => {
   let _btn = null;
   let _input = null;
   let _lista = null;
+  let _resultadosActuales = []; // resultados visibles (los lee React)
+  let _activoIndex = -1;        // resultado resaltado con el teclado
 
   /** Normaliza texto para comparar sin tildes ni mayúsculas. */
   function _normalizar(s) {
@@ -104,11 +106,12 @@ const BuscarLugarModule = (() => {
     _cerrar(true);
   }
 
-  /** Resalta un elemento de la lista (navegación con teclado). */
+  /** Resalta un elemento de la lista (navegación con teclado). La clase la
+   *  pinta React (BuscarLugarLista): solo se actualiza el índice y se notifica. */
   function _resaltar(indice) {
-    const items = Array.from(_lista.children);
-    items.forEach((li, i) => li.classList.toggle('buscar-lugar__item--activo', i === indice));
-    const el = items[indice];
+    _activoIndex = indice;
+    _notificarBuscarLugar();
+    const el = _lista.children[indice];
     if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
   }
 
@@ -116,7 +119,10 @@ const BuscarLugarModule = (() => {
     _abierto = false;
     _box.hidden = true;
     _btn.setAttribute('aria-pressed', 'false');
+    _resultadosActuales = [];
+    _activoIndex = -1;
     _lista.hidden = true;
+    _notificarBuscarLugar();
     if (!conservarTexto) _input.value = '';
   }
 
@@ -134,23 +140,18 @@ const BuscarLugarModule = (() => {
 
     function renderLista(query) {
       const resultados = _buscar(query);
-      if (!query || !resultados.length) { lista.hidden = true; return; }
-      lista.innerHTML = '';
-      resultados.forEach((r, i) => {
-        const li = document.createElement('li');
-        li.className = 'buscar-lugar__item' + (i === 0 ? ' buscar-lugar__item--first' : '');
-        const nom = document.createElement('span');
-        nom.className = 'buscar-lugar__item-nombre';
-        nom.textContent = r.nombre;
-        const sub = document.createElement('span');
-        sub.className = 'buscar-lugar__item-tipo';
-        sub.textContent = r.tipo + (r.subtitulo ? ' · ' + r.subtitulo : '');
-        li.appendChild(nom);
-        li.appendChild(sub);
-        li.addEventListener('mousedown', (e) => e.preventDefault());
-        li.addEventListener('click', () => _seleccionar(r));
-        lista.appendChild(li);
-      });
+      if (!query || !resultados.length) {
+        _resultadosActuales = [];
+        _activoIndex = -1;
+        _notificarBuscarLugar();
+        lista.hidden = true;
+        return;
+      }
+      // Los <li> los renderiza React (BuscarLugarLista, portal a la lista);
+      // aquí solo se guarda el snapshot y se notifica al puente.
+      _resultadosActuales = resultados;
+      _activoIndex = -1;
+      _notificarBuscarLugar();
       lista.hidden = false;
     }
 
@@ -213,5 +214,33 @@ const BuscarLugarModule = (() => {
   }
 
   document.addEventListener('DOMContentLoaded', init);
+
+  // -------------------------------------------------------------------
+  // Puente con React (lista de resultados). Los <li> los renderiza el
+  // componente BuscarLugarLista (portal a #buscar-lugar-lista) leyendo el
+  // snapshot de _resultadosActuales; el resto del buscador sigue siendo
+  // vanilla.
+  // -------------------------------------------------------------------
+
+  /** Pide a React que vuelva a renderizar los resultados. */
+  function _notificarBuscarLugar() {
+    if (typeof window !== 'undefined' && window.SimbiosisUI && typeof window.SimbiosisUI.notificarBuscarLugar === 'function') {
+      window.SimbiosisUI.notificarBuscarLugar();
+    }
+  }
+
+  if (typeof window !== 'undefined' && window.SimbiosisUI) {
+    /** Snapshot que React necesita para pintar los <li> de resultados. */
+    window.SimbiosisUI.datosBuscarLugar = () => ({
+      resultados: _resultadosActuales,
+      activoIndex: _activoIndex,
+    });
+    /** Selecciona un resultado por su índice en la lista actual. */
+    window.SimbiosisUI.seleccionarBuscarLugar = (i) => {
+      const r = _resultadosActuales[i];
+      if (r) _seleccionar(r);
+    };
+  }
+
   return { init };
 })();

@@ -39,6 +39,7 @@ const AltimetriaModule = (() => {
   let _suprimirClicComparar = false;
 
   let _bannerComparar = null;
+  let _bannerCompararSnapshot = null; // { titulo, stats } o null si está oculto
 
   function _onPerfilDragMove(ev) {
     const arr = _arrastrePerfil;
@@ -201,25 +202,17 @@ const AltimetriaModule = (() => {
     _renderizarTodo();
   }
 
-  /** Pinta los botones numerados (1..N) a la derecha del título del perfil. */
+  /** Pinta los botones numerados (1..N) a la derecha del título del perfil.
+   *  Los botones los renderiza React (AltimetriaSegmentos, portal a los dos
+   *  contenedores); aquí solo se decide la visibilidad y se notifica al
+   *  puente. */
   function _renderSegmentosHeader() {
     ['altimetria-segmentos', 'altimetria-segmentos-panel'].forEach((id) => {
       const cont = document.getElementById(id);
       if (!cont) return;
-      cont.innerHTML = '';
-      if (_nSegmentos <= 1) { cont.hidden = true; return; }
-      cont.hidden = false;
-      for (let i = 0; i < _nSegmentos; i++) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'altimetria__segmento' + (i === _segmentoActivo ? ' altimetria__segmento--activo' : '');
-        btn.textContent = String(i + 1);
-        btn.title = 'Segmento en carro ' + (i + 1);
-        btn.setAttribute('aria-label', 'Segmento en carro ' + (i + 1));
-        btn.addEventListener('click', () => setSegmentoActivo(i));
-        cont.appendChild(btn);
-      }
+      cont.hidden = _nSegmentos <= 1;
     });
+    _notificarAltimetriaSegmentos();
   }
 
   function agregarParada(lat, lon, nombre, distKm, label, id, tipo) {
@@ -384,31 +377,18 @@ const AltimetriaModule = (() => {
     if (_bannerComparar) return _bannerComparar;
     _bannerComparar = document.createElement('div');
     _bannerComparar.className = 'comparar-banner';
-    const titulo = document.createElement('span');
-    titulo.className = 'comparar-banner__titulo';
-    const stats = document.createElement('span');
-    stats.className = 'comparar-banner__stats';
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'comparar-banner__cerrar';
-    btn.setAttribute('aria-label', 'Terminar comparación');
-    btn.innerHTML = '&times;';
-    btn.addEventListener('click', () => cancelarComparacion());
-    _bannerComparar.appendChild(titulo);
-    _bannerComparar.appendChild(stats);
-    _bannerComparar.appendChild(btn);
+    // Los hijos (título, estadísticas y botón de cerrar) los renderiza React
+    // (BannerComparar, portal al propio contenedor); aquí solo se gestiona el
+    // contenedor: anclaje, posicionamiento y arrastre.
     _bannerComparar.style.display = 'none';
-    // El aviso se inserta en el DOM y se posiciona en _mostrarBannerComparar:
-    // se ancla dentro del perfil visible, en la parte alta del cuadro.
     return _bannerComparar;
   }
 
   function _mostrarBannerComparar(titulo, stats) {
     const b = _getBannerComparar();
-    b.querySelector('.comparar-banner__titulo').textContent = titulo;
-    const statsEl = b.querySelector('.comparar-banner__stats');
-    statsEl.textContent = stats || '';
-    statsEl.style.display = stats ? '' : 'none';
+    // El contenido (título, estadísticas y botón de cerrar) lo renderiza React;
+    // aquí solo se guarda el snapshot y se notifica.
+    _bannerCompararSnapshot = { titulo: titulo || '', stats: stats || '' };
     // En celular el aviso se ancla sobre el mapa, arriba del perfil (borde
     // inferior del mapa), y el usuario puede arrastrarlo a donde quiera. En
     // escritorio se ancla dentro del perfil visible, en la parte alta del
@@ -441,6 +421,7 @@ const AltimetriaModule = (() => {
     }
     b.style.display = 'flex';
     _hacerBannerCompararArrastrable();
+    _notificarBannerComparar();
   }
 
   /** Habilita el arrastre del aviso de comparación en celular (una sola vez):
@@ -496,6 +477,8 @@ const AltimetriaModule = (() => {
   }
 
   function _ocultarBannerComparar() {
+    _bannerCompararSnapshot = null;
+    _notificarBannerComparar();
     if (_bannerComparar) _bannerComparar.style.display = 'none';
   }
 
@@ -1144,7 +1127,7 @@ const AltimetriaModule = (() => {
           seleccionarPuntoComparacion(data);
           return;
         }
-        if (_menuFlotante && _menuFlotante._menuTarget === g && _menuFlotante.style.display !== 'none') {
+        if (_menuAltimetriaSnapshot && _menuAltimetriaTarget === g) {
           _cerrarMenuFlotante();
         } else {
           _mostrarMenu(ev, data, g);
@@ -1515,39 +1498,43 @@ const AltimetriaModule = (() => {
     // placeholder for marker click
   }
 
-  let _menuFlotante = null;
+  let _menuAltimetriaSnapshot = null; // { x, y, items: [{ texto, accion }] } o null si cerrado
+  let _menuAltimetriaTarget = null;   // marcador SVG desde el que se abrió (para cerrar con un segundo clic)
 
-  function _crearMenuFlotante() {
-    if (_menuFlotante) return _menuFlotante;
-    _menuFlotante = document.createElement('div');
-    _menuFlotante.className = 'altimetria-floating-menu';
-    const definiciones = [
-      ['comparar', 'Comparar este sitio'],
-      ['inicio', 'Asignar como punto inicial'],
-      ['fin', 'Asignar como punto final'],
-      ['ver', 'Ver en el mapa'],
-      ['quitar-inicio', 'Quitar como punto inicial'],
-      ['quitar-fin', 'Quitar como punto final'],
-      ['perfil-completo', 'Mostrar perfil completo'],
-      ['eliminar', 'Eliminar esta parada'],
-    ];
-    definiciones.forEach(([acc, texto]) => {
-      const btn = document.createElement('button');
-      btn.className = 'altimetria-menu-btn';
-      btn.dataset.action = acc;
-      btn.textContent = texto;
-      _menuFlotante.appendChild(btn);
-    });
-    document.body.appendChild(_menuFlotante);
-    document.addEventListener('click', (e) => {
-      if (_menuFlotante && !_menuFlotante.contains(e.target)) _cerrarMenuFlotante();
-    });
-    return _menuFlotante;
+  function _notificarMenuAltimetria() {
+    if (typeof window !== 'undefined' && window.SimbiosisUI && typeof window.SimbiosisUI.notificarMenuAltimetria === 'function') {
+      window.SimbiosisUI.notificarMenuAltimetria();
+    }
   }
 
   function _cerrarMenuFlotante() {
-    if (_menuFlotante) _menuFlotante.style.display = 'none';
+    _menuAltimetriaSnapshot = null;
+    _menuAltimetriaTarget = null;
+    _notificarMenuAltimetria();
   }
+
+  /** Abre el menú flotante del perfil: React lo renderiza (portal a
+   *  document.body) y aquí solo se guarda el snapshot con las opciones (y sus
+   *  acciones) y la posición; React recorta la posición al viewport. */
+  function _abrirMenuFlotante(items, clientX, clientY, target) {
+    _menuAltimetriaSnapshot = {
+      x: Math.max(0, clientX + 8),
+      y: Math.max(0, clientY - 10),
+      items,
+    };
+    _menuAltimetriaTarget = target || null;
+    _notificarMenuAltimetria();
+  }
+
+  // Cierre por clic fuera del menú y con Escape (el menú es un portal de React
+  // a document.body; aquí solo se consulta el elemento en el DOM).
+  document.addEventListener('click', (e) => {
+    const menuEl = document.querySelector('.altimetria-floating-menu');
+    if (menuEl && !menuEl.contains(e.target)) _cerrarMenuFlotante();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') _cerrarMenuFlotante();
+  });
 
   /** Muestra el perfil completo de A a Z: quita las restricciones de punto
    *  inicial/final asignado para que el perfil vuelva a abarcar toda la ruta. */
@@ -1559,18 +1546,8 @@ const AltimetriaModule = (() => {
     _renderizarTodo();
   }
 
+  /** Muestra el menú contextual de un marcador de parada (clic / clic derecho). */
   function _mostrarMenu(ev, data, target) {
-    const menu = _crearMenuFlotante();
-    menu._menuData = data;
-    menu._menuTarget = target || null;
-    const btnComparar = menu.querySelector('[data-action="comparar"]');
-    const btnInicio = menu.querySelector('[data-action="inicio"]');
-    const btnFin = menu.querySelector('[data-action="fin"]');
-    const btnVer = menu.querySelector('[data-action="ver"]');
-    const btnEliminar = menu.querySelector('[data-action="eliminar"]');
-    const btnQuitarIni = menu.querySelector('[data-action="quitar-inicio"]');
-    const btnQuitarFin = menu.querySelector('[data-action="quitar-fin"]');
-    const btnPerfilCompleto = menu.querySelector('[data-action="perfil-completo"]');
     const esExtremo = data.tipo === 'A' || data.tipo === 'Z';
     const distKm = data.distKm != null ? Number(data.distKm) : null;
     const esInicioActual = _inicioAsignado && distKm != null && Math.abs(_inicioOffset - distKm) < 0.001;
@@ -1579,52 +1556,25 @@ const AltimetriaModule = (() => {
     // (muestra "Quitar..."), no debe ofrecer la opción contraria de "Asignar...".
     const asignableInicio = !esExtremo && data.tipo !== 'Z' && !esInicioActual && !esFinActual;
     const asignableFin = !esExtremo && data.tipo !== 'A' && !esInicioActual && !esFinActual;
-    if (btnComparar) btnComparar.style.display = '';
-    btnInicio.style.display = asignableInicio ? '' : 'none';
-    btnFin.style.display = asignableFin ? '' : 'none';
-    if (btnEliminar) btnEliminar.style.display = esExtremo ? 'none' : '';
-    if (btnQuitarIni) btnQuitarIni.style.display = esInicioActual ? '' : 'none';
-    if (btnQuitarFin) btnQuitarFin.style.display = esFinActual ? '' : 'none';
-    if (btnPerfilCompleto) btnPerfilCompleto.style.display = (_inicioAsignado || _finAsignado) ? '' : 'none';
-    if (btnComparar) btnComparar.onclick = () => { _cerrarMenuFlotante(); seleccionarPuntoComparacion(data); };
-    btnInicio.onclick = () => { _cerrarMenuFlotante(); if (_onSetInicio) _onSetInicio(data); };
-    btnFin.onclick = () => { _cerrarMenuFlotante(); if (_onSetFin) _onSetFin(data); };
-    btnVer.onclick = () => { _cerrarMenuFlotante(); if (_onVerMapa) _onVerMapa(data); };
-    if (btnEliminar) {
-      btnEliminar.onclick = () => { _cerrarMenuFlotante(); if (_onEliminarParada) _onEliminarParada(data); };
-    }
-    if (btnQuitarIni) btnQuitarIni.onclick = () => { _cerrarMenuFlotante(); quitarRangoInicio(); };
-    if (btnQuitarFin) btnQuitarFin.onclick = () => { _cerrarMenuFlotante(); quitarRangoFin(); };
-    if (btnPerfilCompleto) {
-      btnPerfilCompleto.onclick = () => { _cerrarMenuFlotante(); _mostrarPerfilCompleto(); };
-    }
-    menu.style.display = 'flex';
-    const mw = menu.offsetWidth || 180;
-    const mh = menu.offsetHeight || 200;
-    menu.style.left = Math.max(4, Math.min(ev.clientX + 8, window.innerWidth - mw - 4)) + 'px';
-    menu.style.top = Math.max(4, Math.min(ev.clientY - 10, window.innerHeight - mh - 4)) + 'px';
+    const items = [
+      { texto: 'Comparar este sitio', accion: () => { _cerrarMenuFlotante(); seleccionarPuntoComparacion(data); } },
+    ];
+    if (asignableInicio) items.push({ texto: 'Asignar como punto inicial', accion: () => { _cerrarMenuFlotante(); if (_onSetInicio) _onSetInicio(data); } });
+    if (asignableFin) items.push({ texto: 'Asignar como punto final', accion: () => { _cerrarMenuFlotante(); if (_onSetFin) _onSetFin(data); } });
+    items.push({ texto: 'Ver en el mapa', accion: () => { _cerrarMenuFlotante(); if (_onVerMapa) _onVerMapa(data); } });
+    if (esInicioActual) items.push({ texto: 'Quitar como punto inicial', accion: () => { _cerrarMenuFlotante(); quitarRangoInicio(); } });
+    if (esFinActual) items.push({ texto: 'Quitar como punto final', accion: () => { _cerrarMenuFlotante(); quitarRangoFin(); } });
+    if (_inicioAsignado || _finAsignado) items.push({ texto: 'Mostrar perfil completo', accion: () => { _cerrarMenuFlotante(); _mostrarPerfilCompleto(); } });
+    if (!esExtremo) items.push({ texto: 'Eliminar esta parada', accion: () => { _cerrarMenuFlotante(); if (_onEliminarParada) _onEliminarParada(data); } });
+    _abrirMenuFlotante(items, ev.clientX, ev.clientY, target);
   }
 
   /** Menú contextual del perfil (clic derecho / pulsación larga): solo
    *  "Comparar este sitio" en el punto bajo el cursor. */
   function _mostrarMenuComparar(clientX, clientY, punto) {
-    const menu = _crearMenuFlotante();
-    menu._menuData = punto;
-    menu._menuTarget = null;
-    ['inicio', 'fin', 'ver', 'eliminar', 'quitar-inicio', 'quitar-fin', 'perfil-completo'].forEach((acc) => {
-      const b = menu.querySelector('[data-action="' + acc + '"]');
-      if (b) b.style.display = 'none';
-    });
-    const btnComparar = menu.querySelector('[data-action="comparar"]');
-    if (btnComparar) {
-      btnComparar.style.display = '';
-      btnComparar.onclick = () => { _cerrarMenuFlotante(); seleccionarPuntoComparacion(punto); };
-    }
-    menu.style.display = 'flex';
-    const mw = menu.offsetWidth || 180;
-    const mh = menu.offsetHeight || 200;
-    menu.style.left = Math.max(4, Math.min(clientX + 8, window.innerWidth - mw - 4)) + 'px';
-    menu.style.top = Math.max(4, Math.min(clientY - 10, window.innerHeight - mh - 4)) + 'px';
+    _abrirMenuFlotante([
+      { texto: 'Comparar este sitio', accion: () => { _cerrarMenuFlotante(); seleccionarPuntoComparacion(punto); } },
+    ], clientX, clientY, null);
   }
 
   function limpiar() {
@@ -1647,8 +1597,9 @@ const AltimetriaModule = (() => {
     _actualizarMarcadoresComparacion();
     ['altimetria-segmentos', 'altimetria-segmentos-panel'].forEach((id) => {
       const c = document.getElementById(id);
-      if (c) { c.innerHTML = ''; c.hidden = true; }
+      if (c) c.hidden = true;
     });
+    _notificarAltimetriaSegmentos();
     ['', '-panel'].forEach((suffix) => {
       const d = document.getElementById('altimetria-dist' + suffix);
       const a = document.getElementById('altimetria-alt' + suffix);
@@ -1757,6 +1708,51 @@ const AltimetriaModule = (() => {
   if (_btnComparar) _btnComparar.addEventListener('click', _iniciarComparacionDesdeBoton);
   const _btnCompararDesk = document.getElementById('btn-comparar-altimetria');
   if (_btnCompararDesk) _btnCompararDesk.addEventListener('click', _iniciarComparacionDesdeBoton);
+
+  // -------------------------------------------------------------------
+  // Puente con React (botones de segmentos). Los botones numerados los
+  // renderiza el componente AltimetriaSegmentos (portal a los contenedores
+  // de escritorio y móvil); el resto del motor del perfil sigue siendo
+  // vanilla.
+  // -------------------------------------------------------------------
+
+  /** Pide a React que vuelva a renderizar los botones de segmentos. */
+  function _notificarAltimetriaSegmentos() {
+    if (typeof window !== 'undefined' && window.SimbiosisUI && typeof window.SimbiosisUI.notificarAltimetriaSegmentos === 'function') {
+      window.SimbiosisUI.notificarAltimetriaSegmentos();
+    }
+  }
+
+  /** Pide a React que vuelva a renderizar el aviso de comparación. */
+  function _notificarBannerComparar() {
+    if (typeof window !== 'undefined' && window.SimbiosisUI && typeof window.SimbiosisUI.notificarBannerComparar === 'function') {
+      window.SimbiosisUI.notificarBannerComparar();
+    }
+  }
+
+  if (typeof window !== 'undefined' && window.SimbiosisUI) {
+    /** Snapshot que React necesita para pintar los botones numerados. */
+    window.SimbiosisUI.datosAltimetriaSegmentos = () => ({
+      nSegmentos: _nSegmentos,
+      segmentoActivo: _segmentoActivo,
+    });
+    /** Cambia el tramo en carro activo (lo invoca el clic de un botón). */
+    window.SimbiosisUI.setSegmentoAltimetria = (i) => setSegmentoActivo(i);
+    /** Snapshot del menú flotante del perfil (null si cerrado). */
+    window.SimbiosisUI.datosMenuAltimetria = () => _menuAltimetriaSnapshot;
+    /** Ejecuta la opción i-ésima del menú flotante (lo invoca React). */
+    window.SimbiosisUI.ejecutarMenuAltimetria = (i) => {
+      const item = _menuAltimetriaSnapshot && _menuAltimetriaSnapshot.items && _menuAltimetriaSnapshot.items[i];
+      if (item && item.accion) item.accion();
+    };
+    /** Snapshot del aviso de comparación (null si está oculto). */
+    window.SimbiosisUI.datosBannerComparar = () => {
+      if (!_bannerCompararSnapshot || !_bannerComparar) return null;
+      return { cont: _bannerComparar, banner: _bannerCompararSnapshot };
+    };
+    /** Termina la comparación (lo invoca el botón × del aviso). */
+    window.SimbiosisUI.cerrarBannerComparar = () => cancelarComparacion();
+  }
 
   return { setDatos, setSegmentosExtremos, setSegmentoActivo, agregarParada, renderizar, renderizarVisibles, limpiar, setOnSetInicio, setOnSetFin, setOnVerMapa, setOnHover, setOnLeave, setOnCentrarMapa, setOnEliminarParada, setExtremos, setRangoInicio, setRangoFin, quitarRangoInicio, quitarRangoFin, toggleFollow, setFollowActivo, isFollowActivo, mostrarHoverEn, ocultarHover, getInfoAt, seleccionarPuntoComparacion, cancelarComparacion, puntoCompararDesdeLatLng, tieneDatos };
 })();

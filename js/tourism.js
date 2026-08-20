@@ -111,8 +111,15 @@ const TourismModule = (() => {
 
   let _popupOverlay = null;
   let _popupSitioId = null;
+  let _popupSitio = null; // sitio activo de la ficha (lo renderiza React)
+  let _cuadroInfoSnapshot = null; // ficha genérica activa (la renderiza React)
 
   function ocultarPopupSitio() {
+    // React desmonta su contenido ANTES de quitar el contenedor.
+    _popupSitio = null;
+    _cuadroInfoSnapshot = null;
+    _notificarPopupSitio();
+    _notificarCuadroInfo();
     if (_popupOverlay) {
       _popupOverlay.remove();
       _popupOverlay = null;
@@ -146,7 +153,10 @@ const TourismModule = (() => {
       }
     }
 
-    overlay.appendChild(nodo);
+    // El contenido de la ficha de un sitio lo renderiza React (PopupSitio,
+    // portal al contenedor); mostrarCuadroInfo construye su propio nodo y lo
+    // ancla aquí pasándolo como argumento.
+    if (nodo) overlay.appendChild(nodo);
     mapContainer.appendChild(overlay);
     _popupOverlay = overlay;
     return true;
@@ -160,37 +170,11 @@ const TourismModule = (() => {
     }
     _popupSitioId = sitio.id;
 
-    const tpl = document.getElementById('tpl-popup-sitio');
-    const nodo = tpl.content.cloneNode(true);
-    nodo.querySelector('.popup-sitio__cat').textContent = sitio.categoria;
-    nodo.querySelector('.popup-sitio__cat').style.background = `${colorCategoria(sitio.categoria)}22`;
-    nodo.querySelector('.popup-sitio__cat').style.color = colorCategoria(sitio.categoria);
-    nodo.querySelector('.popup-sitio__nombre').textContent = sitio.nombre;
-    nodo.querySelector('.popup-sitio__ubicacion').textContent = `${sitio.municipio}, ${sitio.departamento}`;
-    nodo.querySelector('.popup-sitio__desc').textContent = sitio.descripcion || '';
-    const distTxt = sitio.distanciaCorredorKm != null
-      ? `A ${sitio.distanciaCorredorKm.toFixed(1)} km del corredor · ~${Math.round(sitio.tiempoDesvioMin)} min de desvío`
-      : '';
-    nodo.querySelector('.popup-sitio__dist').textContent = distTxt;
-
-    const btn = nodo.querySelector('.popup-sitio__add');
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      ocultarPopupSitio();
-      if (onAgregarParadaCallback) onAgregarParadaCallback(sitio, btn);
-    });
-
-    const btnClose = nodo.querySelector('.popup-sitio__close');
-    if (btnClose) {
-      btnClose.addEventListener('click', (e) => {
-        e.stopPropagation();
-        ocultarPopupSitio();
-      });
-    }
-
-    // En celular la ficha se muestra como hoja inferior (como con aeropuertos,
-    // municipios y puertos); en escritorio se mantiene centrada sobre el mapa.
-    _montarCuadroCentrado(nodo, true);
+    // La ficha la renderiza React (PopupSitio, portal al contenedor
+    // .sitio-overlay); aquí solo se monta el contenedor vacío y se notifica.
+    _popupSitio = sitio;
+    _montarCuadroCentrado(null, true);
+    _notificarPopupSitio();
   }
 
   /**
@@ -203,113 +187,96 @@ const TourismModule = (() => {
   function mostrarCuadroInfo(opciones) {
     ocultarPopupSitio();
 
-    const tpl = document.getElementById('tpl-popup-sitio');
-    const nodo = tpl.content.cloneNode(true);
-    const popup = nodo.querySelector('.popup-sitio');
+    // La ficha la renderiza React (CuadroInfo, portal al contenedor
+    // .sitio-overlay); aquí solo se guarda el snapshot normalizado y se monta
+    // el contenedor vacío.
+    _cuadroInfoSnapshot = _normalizarCuadroInfo(opciones || {});
+    _montarCuadroCentrado(null, true);
+    _notificarCuadroInfo();
+  }
 
-    const catEl = nodo.querySelector('.popup-sitio__cat');
-    const color = opciones.color || colorCategoria(opciones.categoria);
-    if (opciones.categoria || opciones.rio) {
-      // Fila superior: categoría + altura + temperatura, a la izquierda del cerrar.
-      const head = document.createElement('div');
-      head.className = 'popup-sitio__head';
-      popup.insertBefore(head, catEl);
-      if (opciones.categoria) {
-        catEl.textContent = opciones.categoria;
-        catEl.style.background = `${color}22`;
-        catEl.style.color = color;
-        head.appendChild(catEl);
-      } else {
-        catEl.remove();
-      }
-      if (opciones.altura) {
-        const a = document.createElement('span');
-        a.className = 'popup-sitio__stat';
-        a.textContent = opciones.altura;
-        head.appendChild(a);
-      }
-      if (opciones.temperatura) {
-        const t = document.createElement('span');
-        t.className = 'popup-sitio__stat';
-        t.textContent = opciones.temperatura;
-        head.appendChild(t);
-      }
-      if (opciones.rio) {
-        const r = document.createElement('span');
-        r.className = 'popup-sitio__rio';
-        r.textContent = opciones.rio;
-        head.appendChild(r);
-      }
-    } else {
-      catEl.remove();
+  /** Normaliza las opciones de la ficha genérica a un snapshot serializable.
+   *  Los botones llegan como descriptores { etiqueta, clase, accion } (los
+   *  construían los llamadores con createElement; ahora React los renderiza). */
+  function _normalizarCuadroInfo(opciones) {
+    const botones = Array.isArray(opciones.botones)
+      ? opciones.botones.map((b) => ({
+        etiqueta: b && b.etiqueta != null ? b.etiqueta : '',
+        clase: b && b.clase ? b.clase : 'popup-sitio__add',
+        accion: b && b.accion ? b.accion : null,
+      }))
+      : [];
+    return {
+      categoria: opciones.categoria || '',
+      color: opciones.color || colorCategoria(opciones.categoria),
+      nombre: opciones.nombre || '',
+      ciudad: opciones.ciudad || '',
+      rio: opciones.rio || '',
+      ubicacion: opciones.ubicacion || '',
+      descripcion: opciones.descripcion || '',
+      dist: opciones.dist || '',
+      altura: opciones.altura || '',
+      temperatura: opciones.temperatura || '',
+      poblacion: opciones.poblacion || '',
+      superficie_total: opciones.superficie_total || '',
+      botones,
+      botonCabecera: opciones.botonCabecera || null,
+    };
+  }
+
+  // -------------------------------------------------------------------
+  // Puente con React (ficha de sitio turístico). El contenido de la ficha lo
+  // renderiza el componente PopupSitio (portal al contenedor .sitio-overlay
+  // que monta _montarCuadroCentrado); el cuadro de información genérico
+  // (mostrarCuadroInfo), tooltips y menús siguen siendo vanilla.
+  // -------------------------------------------------------------------
+
+  function _notificarPopupSitio() {
+    if (typeof window !== 'undefined' && window.SimbiosisUI && typeof window.SimbiosisUI.notificarPopupSitio === 'function') {
+      window.SimbiosisUI.notificarPopupSitio();
     }
+  }
 
-    nodo.querySelector('.popup-sitio__nombre').textContent = opciones.nombre || '';
+  /** Pide a React que vuelva a renderizar el contenido de la ficha genérica. */
+  function _notificarCuadroInfo() {
+    if (typeof window !== 'undefined' && window.SimbiosisUI && typeof window.SimbiosisUI.notificarCuadroInfo === 'function') {
+      window.SimbiosisUI.notificarCuadroInfo();
+    }
+  }
 
-    const ciudadEl = nodo.querySelector('.popup-sitio__ciudad');
-    if (opciones.ciudad) ciudadEl.textContent = opciones.ciudad;
-    else ciudadEl.remove();
-
-    const ubiEl = nodo.querySelector('.popup-sitio__ubicacion');
-    if (opciones.ubicacion) ubiEl.textContent = opciones.ubicacion;
-    else ubiEl.remove();
-
-    const descEl = nodo.querySelector('.popup-sitio__desc');
-    if (opciones.descripcion) descEl.textContent = opciones.descripcion;
-    else descEl.remove();
-
-    const distEl = nodo.querySelector('.popup-sitio__dist');
-    if (opciones.dist) distEl.textContent = opciones.dist;
-    else distEl.remove();
-
-    // Línea de datos: habitantes + superficie, debajo del nombre.
-    const partes = [];
-    if (opciones.poblacion) partes.push(`${opciones.poblacion} habitantes`);
-    if (opciones.superficie_total) partes.push(opciones.superficie_total);
-    if (partes.length) {
-      const datos = document.createElement('div');
-      datos.className = 'popup-sitio__datos';
-      datos.textContent = partes.join(' · ');
-      const nombreEl = nodo.querySelector('.popup-sitio__nombre');
-      if (nombreEl && nombreEl.nextSibling) {
-        nombreEl.parentNode.insertBefore(datos, nombreEl.nextSibling);
-      } else if (nombreEl) {
-        nombreEl.parentNode.appendChild(datos);
-      } else {
-        popup.appendChild(datos);
+  if (typeof window !== 'undefined' && window.SimbiosisUI) {
+    /** Snapshot que React necesita para pintar la ficha (null si no hay ficha). */
+    window.SimbiosisUI.datosPopupSitio = () => {
+      if (!_popupSitio || !_popupOverlay) return null;
+      return {
+        cont: _popupOverlay,
+        sitio: _popupSitio,
+        color: colorCategoria(_popupSitio.categoria),
+      };
+    };
+    /** Snapshot de la ficha genérica (null si no hay ficha). */
+    window.SimbiosisUI.datosCuadroInfo = () => {
+      if (!_cuadroInfoSnapshot || !_popupOverlay) return null;
+      return { cont: _popupOverlay, info: _cuadroInfoSnapshot };
+    };
+    /** Ejecuta la acción del botón i-ésimo de la ficha genérica (lo llama React). */
+    window.SimbiosisUI.ejecutarBotonCuadro = (i) => {
+      const b = _cuadroInfoSnapshot && _cuadroInfoSnapshot.botones && _cuadroInfoSnapshot.botones[i];
+      if (b && b.accion) b.accion();
+    };
+    /** Ejecuta la acción del botón de cabecera de la ficha genérica. */
+    window.SimbiosisUI.ejecutarCabeceraCuadro = () => {
+      if (_cuadroInfoSnapshot && _cuadroInfoSnapshot.botonCabecera && _cuadroInfoSnapshot.botonCabecera.accion) {
+        _cuadroInfoSnapshot.botonCabecera.accion();
       }
-    }
-
-    nodo.querySelector('.popup-sitio__add').remove();
-
-    if (opciones.botones && opciones.botones.length) {
-      const contenedor = document.createElement('div');
-      contenedor.className = 'popup-sitio__acciones';
-      opciones.botones.forEach((b) => contenedor.appendChild(b));
-      popup.appendChild(contenedor);
-    }
-
-    const btnClose = nodo.querySelector('.popup-sitio__close');
-    if (btnClose) {
-      btnClose.addEventListener('click', (e) => {
-        e.stopPropagation();
-        ocultarPopupSitio();
-      });
-    }
-
-    // Botón pequeño junto al botón de cerrar (p. ej. "Mostrar sitios turísticos").
-    if (opciones.botonCabecera && opciones.botonCabecera.accion) {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'popup-sitio__header-btn';
-      b.textContent = opciones.botonCabecera.etiqueta || '';
-      b.addEventListener('click', (e) => { e.stopPropagation(); opciones.botonCabecera.accion(); });
-      const head = popup.querySelector('.popup-sitio__head');
-      if (head) head.appendChild(b);
-      else popup.insertBefore(b, btnClose);
-    }
-
-    _montarCuadroCentrado(nodo, true);
+    };
+    /** Agrega el sitio del popup a la ruta (lo invoca el botón de la ficha). */
+    window.SimbiosisUI.agregarParadaDesdePopup = (sitio, btn) => {
+      ocultarPopupSitio();
+      if (onAgregarParadaCallback) onAgregarParadaCallback(sitio, btn);
+    };
+    /** Cierra la ficha (lo invoca el botón × de la ficha). */
+    window.SimbiosisUI.cerrarPopupSitio = () => ocultarPopupSitio();
   }
 
   return {
