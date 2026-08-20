@@ -77,7 +77,7 @@ const TourismModule = (() => {
    */
   function crearMarcador(sitio, etiqueta) {
     const numero = etiqueta != null && String(etiqueta) !== '' ? String(etiqueta) : null;
-    const icono = MapModule./iconoSitio(numero);
+    const icono = MapModule.iconoSitio(numero);
     const marker = L.marker([sitio.lat, sitio.lon], { icon: icono });
     marker.bindTooltip(numero ? `${numero} · ${sitio.nombre}` : sitio.nombre, {
       permanent: false,
