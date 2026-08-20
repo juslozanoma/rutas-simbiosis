@@ -29,7 +29,7 @@ const TransportConfigModule = (() => {
     { file: 'motorcycle2.svg', path: '/icons/motorcycle2.svg', nombre: 'Motocicleta' },
     { file: 'motorcycle3.svg', path: '/icons/motorcycle3.svg', nombre: 'Moto clásica' },
     { file: 'scooter.svg', path: '/icons/scooter.svg', nombre: 'Scooter' },
-    { file: 'bike.svg', path: '/icons/bike.svg', nombre: 'Bicicleta' },
+    { file: 'bike.svg', path: './icons/bike.svg', nombre: 'Bicicleta' },
     { file: 'boat.svg', path: '/icons/boat.svg', nombre: 'Barco' },
     { file: 'airplane.svg', path: '/icons/airplane.svg', nombre: 'Avión' },
     { file: 'hiking.svg', path: '/icons/hiking.svg', nombre: 'Senderista' },
