@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Simbiosis Colombia</title>
+<meta name="description" content="Calcula la ruta en automóvil entre dos municipios de Colombia y descubre los sitios turísticos cercanos al recorrido.">
+
+<!-- PWA: instalable en Android/iOS y modo standalone -->
+<link rel="manifest" href="/ruta-simbiosis/assets/manifest-B5KqtVUn.json">
+<meta name="theme-color" content="#2f7a6b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Simbiosis">
+<link rel="icon" href="/ruta-simbiosis/favicon.ico">
+<link rel="icon" type="image/png" sizes="192x192" href="/ruta-simbiosis/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/ruta-simbiosis/icons/icon-512.png">
+<link rel="apple-touch-icon" href="/ruta-simbiosis/icons/apple-touch-icon.png">
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="/ruta-simbiosis/leaflet-rotate.js"></script>
+
+<!-- Leaflet MarkerCluster (rendimiento con miles de marcadores) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<!-- Turf.js (análisis espacial) -->
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
+<!-- Sortable.js (drag & drop de las paradas de la ruta) -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+<!-- Tipografías -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script type="module" crossorigin src="/ruta-simbiosis/assets/index-Cr4yqysG.js"></script>
+  <link rel="stylesheet" crossorigin href="/ruta-simbiosis/assets/index-DEawXo09.css">
+</head>
+<body>
+
+<div id="app" class="app-shell" data-mobile-tab="ruta" data-mobile-panel="expanded">
+
+  <!-- Raíz de React: aquí se monta la cáscara completa de la app (mapa, panel
+       lateral, barra móvil, diálogos y selector de transporte). #app se
+       conserva estático porque la lógica vanilla togglea sus atributos de
+       datos (data-mobile-tab, data-mobile-panel) y clases (#app.combo-enfocado,
+       #app.teclado-abierto). -->
+  <div id="simbiosis-root"></div>
+
+</div>
+
+<!-- React: módulo que monta la cáscara de la app. Va ANTES que los scripts
+     clásicos (con defer) para que el DOM esté presente de forma síncrona
+     (flushSync) cuando app.js ejecute su init() en DOMContentLoaded. Vite lo
+     sustituye por el bundle de producción en el build. -->
+
+<!-- Lógica de la app: scripts clásicos (ámbito global compartido). Vite los
+     copia tal cual (publicDir incluye js/) y conserva el orden. Van con defer
+     para correr tras el montaje síncrono de React (el módulo va antes). -->
+<script src="/js/utils.js" defer></script>
+<script src="/js/transport.js" defer></script>
+<script src="/js/map.js" defer></script>
+<script src="/js/routing.js" defer></script>
+<script src="/js/tourism.js" defer></script>
+<script src="/js/filters.js" defer></script>
+<script src="/js/routeWarnings.js" defer></script>
+<script src="/js/altimetria.js" defer></script>
+<script src="/js/core.js" defer></script>
+<script src="/js/utilApp.js" defer></script>
+<script src="/js/teclado.js" defer></script>
+<script src="/js/municipioCombo.js" defer></script>
+<script src="/js/panel.js" defer></script>
+<script src="/js/combosApp.js" defer></script>
+<script src="/js/escalas.js" defer></script>
+<script src="/js/rutas.js" defer></script>
+<script src="/js/descubre.js" defer></script>
+<script src="/js/paradas.js" defer></script>
+<script src="/js/altimetriaApp.js" defer></script>
+<script src="/js/rutaArchivo.js" defer></script>
+<script src="/js/tour.js" defer></script>
+<script src="/js/fluvial.js" defer></script>
+<script src="/js/buscarLugar.js" defer></script>
+<script src="/js/persistenciaJson.js" defer></script>
+<script src="/js/app.js" defer></script>
+</body>
+</html>

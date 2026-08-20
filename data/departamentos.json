@@ -1,0 +1,266 @@
+[
+  {
+    "nombre": "Amazonas",
+    "capital": "Leticia",
+    "latitud": -4.208247,
+    "longitud": -69.939293,
+    "descripcion": "El departamento del Amazonas, erigido oficialmente en 1991 tras haber sido comisaría y intendencia, abarca la vasta selva tropical del extremo sur colombiano y es hogar de numerosas comunidades indígenas cuyas tradiciones ancestrales y cosmovisiones enriquecen profundamente la identidad cultural del territorio. Su economía regional se sustienta principalmente en la pesca artesanal, la agricultura de pancoger practicada por los pueblos originarios, la extracción forestal sostenible y un turismo ecológico y científico en auge que atrae a viajeros fascinados por su megadiversidad biológica. Geográficamente delimitado por el río Amazonas y sus afluentes, este inmenso pulmón verde carece de grandes vías terrestres, por lo que la navegación fluvial y aérea constituye el eje fundamental de la conectividad y el desarrollo de sus pobladores.",
+    "año_fundacion": 1991
+  },
+  {
+    "nombre": "Antioquia",
+    "capital": "Medellín",
+    "latitud": 6.269732,
+    "longitud": -75.60256,
+    "descripcion": "Antioquia, con una sólida tradición histórica ligada a la colonización antioqueña y la minería aurífera desde la época colonial, se consolidó como departamento en 1826 estructurado en subregiones geográficas diversas que van desde las cordilleras hasta las costas del golfo de Urabá. Su identidad cultural es mundialmente reconocida a través del orgullo paisa, la caficultura, las ferias y fiestas tradicionales como la Feria de Flores y una arquitectura colonial preservada en pueblos patrimoniales. Económicamente, representa uno de los motores más potentes de Colombia gracias a su fuerte diversificación que incluye la industria manufacturera, el comercio, la agricultura tecnificada de banano y café, y un sector turístico dinámico en todas sus provincias.",
+    "año_fundacion": 1826
+  },
+  {
+    "nombre": "Arauca",
+    "capital": "Arauca",
+    "latitud": 6.666676,
+    "longitud": -71.000009,
+    "descripcion": "Arauca, elevado a la categoría de departamento en 1991, posee una rica historia de colonización llanera impulsada por la ganadería extensiva y la posterior bonanza petrolera que transformó su dinámica territorial en la frontera con Venezuela. Su identidad cultural está profundamente arraigada en el folclor llanero, expresado a través del joropo, el arpa, los cantos de trabajo de Llano y las festividades que celebran la sabana abierta y el río Arauca. La economía departamental gira en torno a la explotación de hidrocarburos, la ganadería bovina de doble propósito, la agricultura de plátano y cacao, y el comercio fronterizo, consolidándose como una tierra de vastas planicies y gran resiliencia.",
+    "año_fundacion": 1991
+  },
+  {
+    "nombre": "Atlántico",
+    "capital": "Barranquilla",
+    "latitud": 11.010192,
+    "longitud": -74.823179,
+    "descripcion": "El departamento del Atlántico, creado inicialmente en 1905 y ratificado en su conformación actual en 1910, ha sido históricamente la puerta de entrada de la modernidad e inmigración a Colombia a través de su posición estratégica en el delta del río Magdalena y el mar Caribe. Su identidad cultural resplandece con fuerza internacional gracias al Carnaval de Barranquilla, Patrimonio Oral e Intangible de la Humanidad, que sintetiza la herencia indígena, africana y española de sus municipios ribereños y costeros como Puerto Colombia y Sabanalarga. Su economía se dinamiza fuertemente mediante la actividad portuaria e industrial, la manufactura, el comercio y un sector agroindustrial enfocado en la producción de alimentos y la acuicultura.",
+    "año_fundacion": 1905
+  },
+  {
+    "nombre": "Bogotá D.C.",
+    "capital": "Bogotá D.C.",
+    "latitud": 4.653382,
+    "longitud": -74.083633,
+    "descripcion": "Bogotá D.C., concebida históricamente como el corazón político y administrativo del país desde la época virreinal y estructurada bajo su régimen especial actual, se extiende sobre la sabana cundiboyacense integrando páramos, humedales y zonas rurales productivas. Su identidad cultural es un crisol dinámico que fusiona tradiciones andinas con expresiones cosmopolitas, albergando una vasta red de museos, teatros, universidades y festivales masivos que la posicionan como epicentro cultural de la nación. La economía de este territorio es la más grande del país, impulsada por los servicios financieros, el comercio, la industria tecnológica, la administración pública y una agricultura periférica que abastece de hortalizas, flores y lácteos a toda la región.",
+    "año_fundacion": 1538
+  },
+  {
+    "nombre": "Bolívar",
+    "capital": "Cartagena",
+    "latitud": 10.426557,
+    "longitud": -75.544167,
+    "descripcion": "El departamento de Bolívar, configurado inicialmente como Estado Soberano en 1857 durante la época federal, posee una profunda relevancia histórica como escenario de la independencia, el comercio colonial y el legado afrodescendiente en los Montes de María y las riberas del río Magdalena. Su identidad cultural vibra intensamente en sus expresiones musicales como la cumbia y el fandango, así como en la arquitectura colonial de municipios como Mompox y las tradiciones de sus comunidades palenqueras. La economía bolivarense es altamente diversa, destacando la industria petroquímica y portuaria, el turismo histórico y costero, la ganadería extensiva y una agricultura tropical centrada en la yuca, el ñame y el maíz.",
+    "año_fundacion": 1857
+  },
+  {
+    "nombre": "Boyacá",
+    "capital": "Tunja",
+    "latitud": 5.532431,
+    "longitud": -73.361601,
+    "descripcion": "Boyacá, cuna de la libertad nacional y escenario de batallas decisivas para la independencia de Colombia, fue creado oficialmente como departamento en 1824, abarcando un territorio montañoso de altas mesetas, páramos y valles interandinos. Su identidad cultural se manifiesta en la arquitectura colonial de sus pueblos, las artesanías en lana y cestería, la gastronomía tradicional de amasijos y el fervor religioso de sus comunidades campesinas. Su economía regional descansa sobre la agricultura de clima frío como papa y hortalizas, la explotación de minería de carbón, esmeraldas y materiales de construcción, así como el turismo cultural e histórico que recorre toda su geografía provincial.",
+    "año_fundacion": 1824
+  },
+  {
+    "nombre": "Caldas",
+    "capital": "Manizales",
+    "latitud": 5.066891,
+    "longitud": -75.506666,
+    "descripcion": "Caldas fue fundado en 1905 como parte del proceso de consolidación de la región centro-occidental colombiana y del desarrollo socioeconómico impulsado por la colonización antioqueña en las laderas de la cordillera Central. Su identidad cultural está íntimamente ligada al Paisaje Cultural Cafetero, declarado Patrimonio de la Humanidad, destacándose por sus tradiciones agrarias, la arquitectura de bahareque y eventos emblemáticos como el Festival de la Cosecha y ferias taurinas y de café. La economía caldense se basa en la caficultura de alta calidad, la industria metalmecánica y de alimentos, el cultivo de plátano y aguacate Hass, y un turismo ecológico y termal que atrae visitantes a sus diferentes municipios.",
+    "año_fundacion": 1905
+  },
+  {
+    "nombre": "Caquetá",
+    "capital": "Florencia",
+    "latitud": 1.615867,
+    "longitud": -75.614305,
+    "descripcion": "Caquetá, elevado a la categoría de departamento en 1982 tras décadas de evolución desde territorio nacional y comisaría, representa la transición geográfica entre el piedemonte andino y la inmensidad de la selva amazónica. Su identidad cultural se nutre de la confluencia de colonos provenientes de diversas regiones del país que han adaptado sus tradiciones a la vida rural amazónica, conviviendo con comunidades indígenas protectoras de la selva. La economía caqueteña se sustenta principalmente en la ganadería bovina extensiva, la producción lechera y quesera que le ha valido el reconocimiento como despensa lechera del sur, complementada por la silvicultura, el ecoturismo y la agricultura sostenible.",
+    "año_fundacion": 1982
+  },
+  {
+    "nombre": "Casanare",
+    "capital": "Yopal",
+    "latitud": 5.335666,
+    "longitud": -72.393693,
+    "descripcion": "Casanare, constituido oficialmente como departamento en 1973 tras haber sido intendencia y territorio de misiones, posee una rica historia de lucha independentista y una tradición ganadera arraigada en las sabanas orientales colombianas. Su identidad cultural es profundamente llanera, destacándose por la música de arpa, cuatro y maracas, el coleo, la poesía de contrapunteo y las faenas de vaquería que caracterizan la vida cotidiana de sus sabaneros y hateros. Su economía experimentó una transformación radical con la explotación petrolera y gasífera, consolidándose además como un gran productor ganadero, arrocero, palmicultor y un destino emergente para el turismo de naturaleza y avistamiento de fauna llanera.",
+    "año_fundacion": 1973
+  },
+  {
+    "nombre": "Cauca",
+    "capital": "Popayán",
+    "latitud": 2.442229,
+    "longitud": -76.607237,
+    "descripcion": "El departamento del Cauca, creado como Estado Soberano en 1857 y con una vasta extensión territorial histórica que abarcaba gran parte del occidente colombiano, destaca por su compleja geografía que va desde el océano Pacífico hasta el macizo colombiano. Su identidad cultural es una de las más ricas y diversas de la nación, caracterizada por la presencia milenaria de pueblos indígenas misak y nasa, comunidades afrodescendientes en la costa pacífica y el norte, y tradiciones religiosas coloniales. La economía caucana es predominantemente agropecuaria, destacando la producción de café especial, caña de azúcar, fique, minería artesanal y una pesca artesanal en el litoral pacífico.",
+    "año_fundacion": 1857
+  },
+  {
+    "nombre": "Cesar",
+    "capital": "Valledupar",
+    "latitud": 10.465173,
+    "longitud": -73.252951,
+    "descripcion": "El departamento del Cesar, segregado del Magdalena y fundado en 1967, posee una historia ligada al desarrollo agrícola del valle del río Cesar, la ganadería y la estratégica comunicación vial entre la región andina y la costa Caribe. Su identidad cultural es universalmente célebre por ser la cuna de la música vallenata, con festivales tradicionales que exaltan el acordeón, la caja y la guacharaca en plazas de pueblos ganaderos y valles fértiles. La economía del departamento se sustenta en la minería de carbón a gran escala en el centro del territorio, la ganadería bovina, la agroindustria de la palma de aceite y la agricultura de algodón y sorgo.",
+    "año_fundacion": 1967
+  },
+  {
+    "nombre": "Chocó",
+    "capital": "Quibdó",
+    "latitud": 5.691284,
+    "longitud": -76.653134,
+    "descripcion": "El Chocó, convertido en departamento en 1947 tras una larga historia como intendencia y provincia colonial, es la única región de Colombia con costas sobre los océanos Pacífico y Atlántico, caracterizada por su exuberante selva pluvial y su biodiversidad extrema. Su identidad cultural es mayoritariamente afrodescendiente e indígena (pueblos emberá y wounaan), expresada vibrantemente en las fiestas de San Pacho en el Baudó y Atrato, la música de chirimía y saberes ancestrales vinculados al río y al mar. La economía chocoana se basa en la minería de oro y platino, la extracción forestal, la pesca artesanal, la agricultura de subsistencia y un ecoturismo enfocado en el avistamiento de ballenas jorobadas y parques nacionales naturales.",
+    "año_fundacion": 1947
+  },
+  {
+    "nombre": "Córdoba",
+    "capital": "Montería",
+    "latitud": 8.750936,
+    "longitud": -75.878681,
+    "descripcion": "Córdoba, creado como departamento en 1952 tras separarse de Bolívar, se extiende por las fértiles llanuras aluviales de los ríos Sinú y San Jorge y las estribaciones de la serranía de Abibe, con una fuerte tradición ganadera y sabanera. Su identidad cultural resalta por el ritmo del porro, los fandangos interpretados por bandas de viento, las corralejas y la rica tradición gastronómica mestiza e indígena zenú. Su economía departamental sobresale por la ganadería bovina de alta genética, la agricultura tecnificada de maíz, algodón y arroz, la explotación de ferroníquel en su zona sur y una creciente agroindustria alimentaria.",
+    "año_fundacion": 1952
+  },
+  {
+    "nombre": "Cundinamarca",
+    "capital": "Bogotá D.C.",
+    "latitud": 4.653382,
+    "longitud": -74.083633,
+    "descripcion": "Cundinamarca, constituido como Estado Soberano en 1857 y heredero de la tradición muisca y virreinal en el centro andino del país, rodea geográficamente a la capital nacional con un relieve que desciende desde los páramos hacia el río Magdalena. Su identidad cultural combina el legado campesino de sus provincias —como Tequendama, Gualivá y Ubaté—, la gastronomía tradicional de piqueteaderos y amasijos, y una rica arquitectura colonial en municipios como Guaduas y Zipaquirá. Su economía es altamente diversificada, destacando la floricultura de exportación, la avicultura, la minería de carbón y sal, la manufactura industrial y un turismo de proximidad y balnearios muy activo.",
+    "año_fundacion": 1857
+  },
+  {
+    "nombre": "Guainía",
+    "capital": "Ínirida",
+    "latitud": 3.865037,
+    "longitud": -67.925985,
+    "descripcion": "Guainía, elevado a departamento en 1991 tras haber funcionado como comisaría especial en las selvas del oriente colombiano, es un territorio surcado por caudalosos ríos negros y dominado por imponentes formaciones tepuyanas conocidas como los Cerros de Mavicure. Su identidad cultural está fuertemente arraigada en las comunidades indígenas de familias lingüísticas como arawak y puinave, cuyos mitos y saberes ancestrales conviven en armonía con la selva amazónica y la Orinoquía. La economía departamental es de subsistencia y comercio básico, apoyada por la pesca ornamental, la agricultura tradicional de yuca brava, la extracción artesanal de minerales y un ecoturismo comunitario que valora su prístina naturaleza.",
+    "año_fundacion": 1991
+  },
+  {
+    "nombre": "Guaviare",
+    "capital": "San José del Guaviare",
+    "latitud": 2.571614,
+    "longitud": -72.642651,
+    "descripcion": "El Guaviare, constituido como departamento en 1991 en la transición entre la Orinoquía y la Amazonia, posee una historia reciente de colonización agrícola, extractiva y de integración vial que transformó sus antiguas sabanas y selvas. Su identidad cultural es un mosaico pluriétnico donde confluyen colonos de distintas regiones colombianas y pueblos indígenas como los nukak, tucano y jiw, guardianes de saberes ancestrales y de un incalculable patrimonio rupestre como Serranía La Lindosa. La economía guaviarense se sustenta en la ganadería bovina, la agricultura de pancoger y caucho, la pesca y un turismo de aventura y arqueológico en rápida expansión.",
+    "año_fundacion": 1991
+  },
+  {
+    "nombre": "Huila",
+    "capital": "Neiva",
+    "latitud": 2.925704,
+    "longitud": -75.289394,
+    "descripcion": "Huila, creado como departamento en 1905 y enmarcado geográficamente por el valle del alto río Magdalena y las cordilleras Central y Oriental, destaca por su rica historia arqueológica vinculada a la cultura de San Agustín. Su identidad cultural se manifiesta en el sanjuanero huilense, las festividades del Festival Folclórico y Reinado Nacional del Bambuco, y la tradición alfarera y artesanal de sus municipios. Su economía regional brilla por ser el primer productor de café de alta calidad en Colombia, complementado por la piscicultura en la represa de El Quimbo y Betania, la producción de cacao, frutales y un turismo arqueológico y natural de gran renombre.",
+    "año_fundacion": 1905
+  },
+  {
+    "nombre": "La Guajira",
+    "capital": "Riohacha",
+    "latitud": 11.544939,
+    "longitud": -72.915052,
+    "descripcion": "La Guajira, erigida como intendencia en 1954 y posteriormente como departamento en 1965, abarca la península más septentrional de Suramérica con un paisaje desértico que contrasta con la imponente Sierra Nevada de Santa Marta. Su identidad cultural está profundamente marcada por el pueblo indígena Wayuu, cuya estructura matrilineal, tejido de mochilas y tradiciones se mantienen vivas frente a las inclemencias del clima árido. La economía departamental descansa sobre la minería de carbón a cielo abierto en Cerrejón, la extracción de sal marina, la pesca artesanal, el comercio fronterizo con Venezuela y un turismo étnico y paisajístico en Cabo de la Vela y Punta Gallinas.",
+    "año_fundacion": 1954
+  },
+  {
+    "nombre": "Magdalena",
+    "capital": "Santa Marta",
+    "latitud": 11.232094,
+    "longitud": -74.195092,
+    "descripcion": "El departamento del Magdalena, configurado como Estado Soberano en 1857 y con una profunda relevancia histórica por albergar los primeros asentamientos coloniales españoles en el Caribe continental, se extiende desde las nieves perpetuas de la Sierra Nevada hasta las costas del mar. Su identidad cultural es un crisol caribeño y folclórico, cuna de juglares vallenatos, danzas tradicionales y una literatura arraigada en el realismo mágico de pueblos como Aracataca. La economía magdalenense combina la agroindustria del banano y la palma de aceite, la ganadería, la pesca y un turismo internacional volcado hacia el Parque Nacional Natural Tayrona y la Ciénaga Grande.",
+    "año_fundacion": 1857
+  },
+  {
+    "nombre": "Meta",
+    "capital": "Villavicencio",
+    "latitud": 4.134764,
+    "longitud": -73.620152,
+    "descripcion": "El Meta, elevado a la categoría de departamento en 1959 tras haber sido territorio nacional y comisaría, se ubica estratégicamente en el piedemonte llanero conectando la región Andina con las vastas sabanas de la Orinoquía. Su identidad cultural es el epicentro del folclor llanero, célebre por el Torneo Internacional del Joropo, los cantos de vaquería y una gastronomía basada en la carne a la llaveras. La economía metense es dinámica y diversificada, destacando como un importante productor de petróleo y gas, ganadería bovina, agricultura de palma africana, arroz, plátano y un turismo ecológico y de aventura en sus cañones y ríos.",
+    "año_fundacion": 1959
+  },
+  {
+    "nombre": "Nariño",
+    "capital": "Pasto",
+    "latitud": 1.214028,
+    "longitud": -77.27851,
+    "descripcion": "Nariño, creado como departamento en 1904 y ubicado en el extremo suroccidental andino y costero del país, posee una accidentada geografía que incluye nudos cordilleranos, altiplanos volcánicos y manglares en el océano Pacífico. Su identidad cultural es sumamente rica, destacando las festividades de los Negros y Blancos en Pasto —Patrimonio de la Humanidad—, las artesanías en barniz de Pasto (mopa-mopa) y la herencia de pueblos quillacingas y pastos. La economía nariñense se basa en la agricultura de papa, trigo, café, cacao, la pesca industrial y artesanal en el litoral, y un comercio fronterizo activo con Ecuador.",
+    "año_fundacion": 1904
+  },
+  {
+    "nombre": "Norte de Santander",
+    "capital": "Cúcuta",
+    "latitud": 7.897146,
+    "longitud": -72.508039,
+    "descripcion": "Norte de Santander, establecido formalmente como departamento en 1910 y con un papel protagónico en la historia independentista y grancolombiana en Villa del Rosario, se extiende por la cordillera Oriental en la frontera con Venezuela. Su identidad cultural fusiona la tradición andina con matices nortesantandereanos, resaltando la gastronomía de pasteles de garbanzo, la alfarería tradicional de los chitareros y el comercio binacional. Su economía departamental se apoya en la industria manufacturera del calzado y la confección, la minería de carbón y arcilla, la producción agrícola de café y cacao, y el intercambio comercial fronterizo.",
+    "año_fundacion": 1910
+  },
+  {
+    "nombre": "Putumayo",
+    "capital": "Mocoa",
+    "latitud": 1.146629,
+    "longitud": -76.648233,
+    "descripcion": "Putumayo, constituido como departamento en 1991 tras un proceso histórico de colonización cauchera, petrolera y de misiones en el piedemonte amazónico, es un territorio de transición entre la cordillera de los Andes y la selva. Su identidad cultural destaca por el profundo arraigo de la medicina tradicional indígena y el uso ritual del yagé por parte de pueblos como los ingas y kamëntsá, junto a la tradición de colonos andinos. La economía putumayense gira en torno a la explotación de hidrocarburos, la ganadería, la agricultura de plátano, yuca y chontaduro, así como iniciativas incipientes de ecoturismo y aprovechamiento forestal sostenible.",
+    "año_fundacion": 1991
+  },
+  {
+    "nombre": "Quindío",
+    "capital": "Armenia",
+    "latitud": 6.156178,
+    "longitud": -75.787047,
+    "descripcion": "El Quindío, fundado como departamento en 1966 tras segregarse de Caldas, es el departamento más pequeño de la región andina continental, caracterizado por sus colinas onduladas cubiertas de cafetales y su historia ligada a la colonización antioqueña. Su identidad cultural es emblema del Paisaje Cultural Cafetero, reconocido por su arquitectura colorida de bahareque, la producción de artesanías de guadua y un profundo orgullo por las tradiciones agrarias. La economía quindiana ha evolucionado hacia el turismo rural y de descanso, la caficultura tecnificada, el cultivo de plátano y cítricos, y la floricultura de exportación.",
+    "año_fundacion": 1966
+  },
+  {
+    "nombre": "Risaralda",
+    "capital": "Pereira",
+    "latitud": 4.785461,
+    "longitud": -75.788322,
+    "descripcion": "Risaralda, creado como departamento en 1966 en el corazón del Eje Cafetero sobre la cordillera Central y el valle del río Cauca, posee una rica historia de confluencia comercial, arriería y desarrollo agroindustrial. Su identidad cultural combina el legado antioqueño con la tradición de los pueblos emberá chamí asentados en sus municipios cordilleranos, destacando por el civismo, la música andina y la arquitectura de sus pueblos. Su economía se dinamiza a través de la caficultura, la industria textil y metalmecánica, la producción avícola, el cultivo de plátano y un turismo enfocado en el ecoturismo, aguas termales y fincas agroturísticas.",
+    "año_fundacion": 1966
+  },
+  {
+    "nombre": "San Andrés y Providencia",
+    "capital": "San Andrés",
+    "latitud": 13.353117,
+    "longitud": -81.374989,
+    "descripcion": "El departamento archipiélago de San Andrés, Providencia y Santa Catalina, elevado a la categoría departamental en 1991, posee una singular historia de poblamiento anglo-caribeño, presencia puritana y soberanía disputada que forjó una identidad insular única. Su cultura raizal se expresa a través del idioma creole (criollo sanandresano), la música calypso y reggae, la gastronomía basada en frutos del mar y tradiciones arquitectónicas de madera. La economía departamental depende casi exclusivamente del turismo masivo y ecológico, el comercio libre de impuestos, la pesca artesanal y la agricultura de subsistencia limitada en los cayos e islas.",
+    "año_fundacion": 1991
+  },
+  {
+    "nombre": "Santander",
+    "capital": "Bucaramanga",
+    "latitud": 7.127459,
+    "longitud": -73.11913,
+    "descripcion": "Santander, configurado como Estado Soberano en 1857 y cuna de la insurrección de los Comuneros, se extiende por un relieve montañoso quebrado cortado por el imponente cañón del Chicamocha y valles hacia el Magdalena Medio. Su identidad cultural es famosa por el carácter recio y emprendedor de sus gentes, la gastronomía tradicional con platos como la hormiga culona y el pepitoria, y la arquitectura colonial de pueblos como Barichara y San Gil. Su economía es sólida y diversificada, abarcando la industria avícola y calzado, la producción de petróleo, tabaco y cacao, y un consolidado sector de turismo de aventura y patrimonial.",
+    "año_fundacion": 1857
+  },
+  {
+    "nombre": "Sucre",
+    "capital": "Sincelejo",
+    "latitud": 9.297339,
+    "longitud": -75.39266,
+    "descripcion": "Sucre, fundado como departamento en 1966 tras su separación de Bolívar, comprende un territorio de sabanas onduladas, manglares costeros en el golfo de Morrosquillo y ciénagas ricas en biodiversidad. Su identidad cultural vibra con el folclor sabanero, el bullerengue, las corralejas, la gaita y las artesanías tejidas en caña flecha, de donde proviene el emblemático sombrero vueltiao. La economía sucreña se sustenta en la ganadería bovina extensiva, la agricultura de yuca, ñame y maíz, la pesca artesanal en su franja costera y un turismo de sol y playa en rápida expansión en sus municipios litorales.",
+    "año_fundacion": 1966
+  },
+  {
+    "nombre": "Tolima",
+    "capital": "Ibagué",
+    "latitud": 4.438603,
+    "longitud": -75.210886,
+    "descripcion": "El departamento del Tolima, creado en su configuración moderna en 1886 tras antecedentes federales y coloniales, se extiende a lo largo del valle del río Magdalena y las estribaciones volcánicas de la cordillera Central, destacando por su historia de resistencia pijao. Su identidad cultural es ampliamente reconocida por el folclor musical del bambuco y el sanjuanero tolimense, el Festival Folclórico Colombiano en Ibagué y una rica tradición literaria y cafetera. Su economía combina la agricultura tecnificada de arroz, algodón, café y frutales, la ganadería, la generación hidroeléctrica y un turismo termal y recreativo en sus diversos municipios.",
+    "año_fundacion": 1886
+  },
+  {
+    "nombre": "Valle del Cauca",
+    "capital": "Cali",
+    "latitud": 3.451999,
+    "longitud": -76.532526,
+    "descripcion": "El Valle del Cauca, creado oficialmente como departamento en 1910 y surcado por el fértil río que le da nombre entre las cordilleras Central y Occidental, posee una historia agrícola, industrial y portuaria crucial para la nación. Su identidad cultural es un vibrante sincretismo afro-andino, mundialmente famoso por ser la capital mundial de la salsa, la cultura del Pacífico, la gastronomía deliche y festividades como el Petronio Álvarez. Su economía es una de las más potentes y diversificadas de Colombia, destacando por la agroindustria azucarera, la manufactura industrial, el comercio portuario a través del Pacífico en Buenaventura y el turismo.",
+    "año_fundacion": 1910
+  },
+  {
+    "nombre": "Vaupés",
+    "capital": "Mitú",
+    "latitud": 1.258018,
+    "longitud": -70.123733,
+    "descripcion": "Vaupés, elevado a departamento en 1991 tras haber sido comisaría en la selva amazónica nororiental, es un territorio surcado por ríos de aguas negras como el Vaupés y el Apaporis, salpicado de raudales y selvas profundas. Su identidad cultural está profundamente ligada a los pueblos indígenas de la Amazonia, cuyas tradiciones chamánicas, rituales del Yurupari y organización comunitaria son Patrimonio Cultural Inmaterial de la Humanidad. La economía departamental es de carácter tradicional y subsistencia, basada en la pesca, la recolección, la agricultura de yuca brava y un incipiente ecoturismo guiado por las comunidades originarias.",
+    "año_fundacion": 1991
+  },
+  {
+    "nombre": "Vichada",
+    "capital": "Puerto Carreño",
+    "latitud": 6.190923,
+    "longitud": -67.484189,
+    "descripcion": "El Vichada, constituido como departamento en 1991 tras una larga historia como comisaría e intendencia en las inmensas sabanas de la Orinoquía oriental, es el segundo departamento más extenso de Colombia, delimitado por grandes ríos como el Orinoco y el Meta. Su identidad cultural es llanera y multiétnica, integrando las tradiciones de los pueblos indígenas Sikuani, Piapoco y Cuiba con la cultura de los sabaneros y hateros que habitan sus planicies. Su economía se fundamenta en la ganadería extensiva de sabana, la pesca comercial fluvial, la agricultura de pancoger en vegas y un turismo de naturaleza enfocado en la pesca deportiva y la observación de su vasta biodiversidad.",
+    "año_fundacion": 1991
+  }
+]

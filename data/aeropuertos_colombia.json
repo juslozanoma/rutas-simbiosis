@@ -1,0 +1,1123 @@
+[
+  {
+    "id": "LET",
+    "nombre": "Internacional General Alfredo Vásquez Cobo",
+    "latitud": -4.195951,
+    "longitud": -69.941034,
+    "ubicacion": "Se encuentra ubicado en las afueras de la ciudad de Leticia.\nEl tiempo de trayecto oscila entre 5 y 10 minutos por 2.1 km.",
+    "descripcion": "Este aeródromo sirve como la principal puerta de entrada a la Amazonía colombiana.\nConecta a la selva profunda con el centro del país mediante vuelos regulares.\nFacilita el transporte de residentes, mercancías y turistas hacia comunidades aisladas.\nSu infraestructura soporta la operación de aeronaves medianas en la región fronteriza.",
+    "destinos_id": [
+      "BOG",
+      "LHC",
+      "LPD",
+      "TFC"
+    ],
+    "ciudad": "Leticia (Amazonas)"
+  },
+  {
+    "id": "EOH",
+    "nombre": "Olaya Herrera",
+    "latitud": 6.218852,
+    "longitud": -75.586521,
+    "ubicacion": "Está situado en el sur del área urbana de la ciudad de Medellín.\nSe accede principalmente a través de la autopista sur en 15 minutos.",
+    "descripcion": "Representa un hito arquitectónico y de aviación regional en Antioquia.\nOpera principalmente vuelos nacionales de corta y mediana distancia.\nSu ubicación céntrica permite una rápida conexión con el valle de Aburrá.\nEs considerado un monumento nacional por su valor histórico y cultural.",
+    "destinos_id": [
+      "BOG",
+      "APO",
+      "AXM",
+      "BSC",
+      "EJA",
+      "BGA",
+      "CLO",
+      "CTG",
+      "CZU",
+      "CUC",
+      "IBE",
+      "VVC",
+      "MZL",
+      "MTR",
+      "NQU",
+      "PSO",
+      "PEI",
+      "PPN",
+      "NVA",
+      "UIB",
+      "TLU",
+      "VVC"
+    ],
+    "ciudad": "Medellín (Antioquia)"
+  },
+  {
+    "id": "MDE",
+    "nombre": "Internacional José María Córdoba",
+    "latitud": 6.170713,
+    "longitud": -75.427637,
+    "ubicacion": "Se localiza en el municipio de Rionegro, al oriente del departamento.\nDistante a unos 25 kilómetros y 35 minutos de la ciudad de Medellín.",
+    "descripcion": "Es el segundo aeropuerto más importante y transitado de todo el país.\nConecta al occidente colombiano con múltiples destinos en América y Europa.\nCuenta con una moderna infraestructura capaz de recibir aviones de gran tamaño.\nFunciona como un nodo estratégico para el comercio internacional y turismo.",
+    "destinos_id": [
+      "BOG",
+      "BAQ",
+      "BGA",
+      "CLO",
+      "CTG",
+      "CUC",
+      "MTR",
+      "PEI",
+      "ADZ",
+      "SMR",
+      "AXM",
+      "EZE",
+      "CUN",
+      "MEX",
+      "FLL",
+      "MAD",
+      "MIA",
+      "JFK",
+      "PUJ",
+      "SJU",
+      "SCL"
+    ],
+    "ciudad": "Rionegro (Antioquia)"
+  },
+  {
+    "id": "TME",
+    "nombre": "Gabriel Vargas Santos",
+    "latitud": 6.450026,
+    "longitud": -71.759988,
+    "ubicacion": "Se emplaza a una distancia cercana del casco urbano municipal.\nToma aproximadamente 10 minutos recorrer los 3.5 km hasta el sitio.",
+    "descripcion": "Este terminal aéreo es vital para la conectividad del departamento de Arauca.\nPermite el tránsito de pasajeros hacia zonas apartadas de la Orinoquía.\nJuega un papel crucial en la integración social y económica local.\nFacilita la llegada de suministros esenciales y servicios de emergencia.",
+    "destinos_id": [
+      "BOG",
+      "RVE"
+    ],
+    "ciudad": "Tame (Arauca)"
+  },
+  {
+    "id": "BAQ",
+    "nombre": "Ernesto Cortissoz",
+    "latitud": 10.886583,
+    "longitud": -74.776594,
+    "ubicacion": "Se ubica en el municipio vecino de Soledad, sirviendo a la capital.\nEl trayecto desde el centro de la ciudad toma unos 30 minutos.",
+    "descripcion": "Histórica terminal aérea que conecta la costa caribeña con el interior.\nHa sido modernizada para ofrecer mejores estándares de seguridad y servicio.\nManeja importantes rutas hacia el Caribe, Norteamérica y Suramérica.\nEs un pilar fundamental para la economía y el comercio del departamento.",
+    "destinos_id": [
+      "BOG",
+      "BGA",
+      "CLO",
+      "ADZ",
+      "MDE",
+      "MTR",
+      "VUP",
+      "AGH",
+      "CUC",
+      "RCH",
+      "MIA",
+      "FLL",
+      "PTY",
+      "BON",
+      "CUR",
+      "AUA"
+    ],
+    "ciudad": "Soledad (Atlántico)"
+  },
+  {
+    "id": "CTG",
+    "nombre": "Internacional Rafael Núñez",
+    "latitud": 10.446326,
+    "longitud": -75.516411,
+    "ubicacion": "Se sitúa en el tradicional barrio de Crespo, junto al mar Caribe.\nSe accede en un tiempo estimado entre 33 y 40 minutos según la vía.",
+    "descripcion": "Principal puerta de entrada turística hacia la ciudad amurallada.\nRecibe miles de visitantes extranjeros y nacionales durante todo el año.\nCombina una rica historia caribeña con instalaciones aeroportuarias modernas.\nConecta de forma directa con los principales hubs del continente.",
+    "destinos_id": [
+      "BOG",
+      "BGA",
+      "CLO",
+      "MDE",
+      "PEI",
+      "ADZ",
+      "SJO",
+      "MIA",
+      "JFK",
+      "FLL",
+      "MCO",
+      "ATL",
+      "PTY",
+      "LIM",
+      "MAD",
+      "AMS",
+      "ZRH",
+      "MXP",
+      "YUL",
+      "YYZ",
+      "GUA",
+      "MEX"
+    ],
+    "ciudad": "Cartagena (Bolívar)"
+  },
+  {
+    "id": "VUP",
+    "nombre": "Alfonso López Pumarejo",
+    "latitud": 10.43382,
+    "longitud": -73.247584,
+    "ubicacion": "Queda localizado a pocos minutos del perímetro urbano establecido.\nSe llega en un tiempo promedio de 16 minutos recorriendo 6.2 km.",
+    "descripcion": "Es el aeropuerto que conecta la tierra del vallenato con el resto del país.\nSu pista y terminal facilitan el flujo constante de pasajeros y comercio.\nPromueve el turismo cultural hacia la región norte de Colombia.\nJuega un papel estratégico en el desarrollo del departamento del Cesar.",
+    "destinos_id": [
+      "BOG"
+    ],
+    "ciudad": "Valledupar (Cesar)"
+  },
+  {
+    "id": "UIB",
+    "nombre": "El Caraño",
+    "latitud": 5.690894,
+    "longitud": -76.644334,
+    "ubicacion": "Se encuentra integrado prácticamente al tejido urbano de la ciudad.\nLos tiempos de viaje rondan entre 13 y 16 minutos mediante dos rutas.",
+    "descripcion": "Es la arteria principal de transporte para el departamento del Chocó.\nDebido a la geografía selvática, es vital para la movilidad poblacional.\nConecta comunidades aisladas del Pacífico con los grandes centros urbanos.\nPermite el abastecimiento y la comunicación rápida en la región.",
+    "destinos_id": [
+      "BOG",
+      "MDE",
+      "CLO",
+      "APO",
+      "NQU",
+      "BSC",
+      "PEI",
+      "COG",
+      "BJD",
+      "FLT"
+    ],
+    "ciudad": "Quibdó (Chocó)"
+  },
+  {
+    "id": "BOG",
+    "nombre": "El Dorado",
+    "latitud": 4.701049,
+    "longitud": -74.145606,
+    "ubicacion": "Está situado dentro del occidente de la capital de la república.\nSe accede fácilmente desde diferentes puntos del área metropolitana.",
+    "descripcion": "Es el aeropuerto más grande e importante de todo el territorio nacional.\nFunciona como el principal centro de conexiones para América Latina.\nCuenta con tecnología de punta y una enorme capacidad operativa.\nManeja millones de pasajeros y toneladas de carga anualmente.",
+    "destinos_id": [
+      "AGH",
+      "APO",
+      "AUC",
+      "AXM",
+      "EJA",
+      "BAQ",
+      "BGA",
+      "NUN",
+      "CLO",
+      "CTG",
+      "CZU",
+      "CUC",
+      "FLA",
+      "GIR",
+      "IBE",
+      "SKR",
+      "IPI",
+      "VVC",
+      "LET",
+      "MZL",
+      "MDE",
+      "MVP",
+      "MTR",
+      "NVA",
+      "PSO",
+      "PEI",
+      "PTX",
+      "PPN",
+      "PUU",
+      "PZA",
+      "GYA",
+      "SKR",
+      "LQM",
+      "UIB",
+      "RCH",
+      "SJE",
+      "SVI",
+      "ADZ",
+      "SMR",
+      "RVE",
+      "TME",
+      "TLU",
+      "TCO",
+      "VLN",
+      "VUP",
+      "VGZ",
+      "VVC",
+      "EYP"
+    ],
+    "ciudad": "Bogotá (Cundinamarca)"
+  },
+  {
+    "id": "SMR",
+    "nombre": "Internacional Simón Bolívar",
+    "latitud": 11.117343,
+    "longitud": -74.232718,
+    "ubicacion": "Se ubica en el sector sur de la vía que conduce hacia la ciudad.\nEl recorrido más cercano toma cerca de 28 minutos por 16.0 km.",
+    "descripcion": "Terminal clave para el turismo en la costa norte colombiana.\nPermite el acceso rápido a las paradisíacas playas y la Sierra Nevada.\nRecibe vuelos nacionales conectando con los centros urbanos principales.\nSu posición geográfica es privilegiada frente al mar Caribe.",
+    "destinos_id": [
+      "BOG",
+      "BGA",
+      "MDE",
+      "PEI",
+      "CLO"
+    ],
+    "ciudad": "Santa Marta (Magdalena)"
+  },
+  {
+    "id": "VVC",
+    "nombre": "Aeropuerto Vanguardia",
+    "latitud": 4.16861536527645,
+    "longitud": -73.6124220778131,
+    "ubicacion": "Se encuentra ubicado al nororiente de Villavicencio.\nSu distancia aproximada es de 3 kilómetros del centro urbano.",
+    "descripcion": "Este terminal aéreo sirve como la principal puerta de entrada.\nConecta los Llanos Orientales con la capital colombiana y regiones.\nFacilita el transporte de pasajeros y de carga comercial.\nPosee una infraestructura clave para la conectividad regional.",
+    "destinos_id": [
+      "BOG",
+      "BGA",
+      "CLO",
+      "MDE",
+      "MVP",
+      "RBR",
+      "PCO",
+      "AUC",
+      "SJE",
+      "LA M"
+    ],
+    "ciudad": "Villavicencio (Meta)"
+  },
+  {
+    "id": "ADZ",
+    "nombre": "Aeropuerto Internacional Gustavo Rojas Pinilla",
+    "latitud": 12.5863013627128,
+    "longitud": -81.7024855416606,
+    "ubicacion": "Situado en la isla de San Andrés sobre la avenida Juan XXIII.\nSe encuentra a una corta distancia de 1.4 kilómetros del centro.",
+    "descripcion": "Es el aeropuerto que conecta el archipiélago con el territorio.\nRecibe miles de turistas nacionales e internacionales cada año.\nSu pista ofrece una aproximación rodeada de aguas cristalinas.\nDesempeña un rol vital para la economía insular y turística.",
+    "destinos_id": [
+      "BOG",
+      "BAQ",
+      "BGA",
+      "CLO",
+      "CTG",
+      "MDE",
+      "PEI",
+      "PVA"
+    ],
+    "ciudad": "San Andrés (San Andrés y Providencia)"
+  },
+  {
+    "id": "BGA",
+    "nombre": "Aeropuerto Internacional Palonegro",
+    "latitud": 7.12845120805262,
+    "longitud": -73.1813212383447,
+    "ubicacion": "Se sitúa en la meseta occidental sobre la vía a Barrancabermeja.\nDistante a unos 20.6 kilómetros del centro de Bucaramanga.",
+    "descripcion": "Destaca por ofrecer una panorámica impresionante del área metropolitana.\nConecta los Santanderes con importantes destinos del país.\nCuenta con instalaciones modernas para vuelos nacionales e internacionales.\nEs un nodo estratégico para la aviación en el oriente.",
+    "destinos_id": [
+      "BOG",
+      "AUC",
+      "BAQ",
+      "CLO",
+      "CTG",
+      "CUC",
+      "MDE",
+      "ADZ",
+      "SMR",
+      "EYP",
+      "PTY",
+      "AUA"
+    ],
+    "ciudad": "Lebrija (Santander)"
+  },
+  {
+    "id": "IBE",
+    "nombre": "Aeropuerto Perales",
+    "latitud": 4.42464042504764,
+    "longitud": -75.1393088912575,
+    "ubicacion": "Localizado en el sector oriental de la ciudad de Ibagué.\nSe accede mediante vías principales a unos 13 kilómetros del centro.",
+    "descripcion": "El terminal aéreo ha modernizado su infraestructura recientemente.\nPermite conectar al departamento del Tolima con los hubs.\nAtiende una demanda creciente de viajeros de negocios y turismo.\nSu clima cálido y operación eficiente dinamizan la región.",
+    "destinos_id": [
+      "BOG",
+      "MDE",
+      "CTG"
+    ],
+    "ciudad": "Ibagué (Tolima)"
+  },
+  {
+    "id": "AUC",
+    "nombre": "Aeropuerto Santiago Pérez Quiroz",
+    "latitud": 7.06883469082735,
+    "longitud": -70.7353656248444,
+    "ubicacion": "Emplazado hacia el sector de la salida sur de Arauca.\nSe ubica a una distancia cercana de 4.2 kilómetros del casco urbano.",
+    "descripcion": "Es una terminal aérea esencial para la frontera nororiental.\nConecta a los habitantes locales con centros urbanos principales.\nSoporta operaciones clave en una zona de gran riqueza petrolera.\nFacilita la movilidad en una geografía de llanuras y ríos.",
+    "destinos_id": [
+      "BOG",
+      "BGA",
+      "CUC"
+    ],
+    "ciudad": "Arauca (Arauca)"
+  },
+  {
+    "id": "TUN",
+    "nombre": "Aeropuerto General Gustavo Rojas Pinilla",
+    "latitud": 5.53959412816759,
+    "longitud": -73.3457039140936,
+    "ubicacion": "Se encuentra localizado dentro del perímetro urbano de Tunja.\nSu distancia es de aproximadamente 3.5 kilómetros del centro histórico.",
+    "descripcion": "Actualmente no registra operaciones de aerolíneas comerciales regulares.\nSu infraestructura es utilizada principalmente para aviación general.\nRepresenta un potencial de conectividad para el altiplano cundiboyacense.\nLa altitud de la zona exige condiciones especiales de operación.",
+    "destinos_id": [],
+    "ciudad": "Tunja (Boyacá)"
+  },
+  {
+    "id": "MZL",
+    "nombre": "Aeropuerto La Nubia",
+    "latitud": 5.02927170932341,
+    "longitud": -75.4692080317319,
+    "ubicacion": "Emplazado sobre el corredor de la vía Panamericana al sureste.\nDista aproximadamente a 8.7 kilómetros del centro de Manizales.",
+    "descripcion": "Caracterizado por su pista corta y desafíos meteorológicos constantes.\nBrinda una vista privilegiada de las montañas del Eje Cafetero.\nEs fundamental para la movilidad rápida de ejecutivos y turistas.\nForma parte de la historia aeronáutica de la región caldense.",
+    "destinos_id": [
+      "BOG",
+      "MDE",
+      "CTG"
+    ],
+    "ciudad": "Manizales (Caldas)"
+  },
+  {
+    "id": "FLA",
+    "nombre": "Aeropuerto Gustavo Artunduaga",
+    "latitud": 1.58975495279072,
+    "longitud": -75.5606626492405,
+    "ubicacion": "Situado sobre la carretera que conduce al municipio de Montañita.\nSe localiza a unos 7.3 kilómetros hacia el suroriente del centro.",
+    "descripcion": "Actúa como la puerta de entrada a la región amazónica.\nConecta las selvas del Caquetá con el centro del país.\nFacilita el transporte institucional, comercial y de pasajeros.\nSu entorno selvático ofrece una experiencia visual única al aterrizar.",
+    "destinos_id": [
+      "BOG",
+      "CLO",
+      "PFI"
+    ],
+    "ciudad": "Florencia (Caquetá)"
+  },
+  {
+    "id": "EYP",
+    "nombre": "Aeropuerto El Alcaraván",
+    "latitud": 5.32452494390523,
+    "longitud": -72.3830768872727,
+    "ubicacion": "Se emplaza dentro del tejido urbano de la ciudad de Yopal.\nSu distancia es de apenas 2.8 kilómetros del centro principal.",
+    "descripcion": "Es un motor clave para la industria petrolera y ganadera.\nConecta eficientemente los Llanos Orientales con Bogotá y regiones.\nPresenta un flujo constante de pasajeros corporativos y de carga.\nCuenta con instalaciones adaptadas al crecimiento de la ciudad.",
+    "destinos_id": [
+      "BOG",
+      "BGA"
+    ],
+    "ciudad": "Yopal (Casanare)"
+  },
+  {
+    "id": "PPN",
+    "nombre": "Aeropuerto Guillermo León Valencia",
+    "latitud": 2.45245784943816,
+    "longitud": -76.609553004576,
+    "ubicacion": "Se halla inmerso dentro del área urbana de la ciudad de Popayán.\nSe sitúa a tan solo 1.7 kilómetros del sector histórico central.",
+    "descripcion": "Permite el acceso rápido a la Ciudad Blanca y sus atractivos.\nConecta al departamento del Cauca con diversos puntos nacionales.\nSu ubicación céntrica facilita los desplazamientos de los viajeros.\nJuega un papel importante en la conectividad del suroccidente.",
+    "destinos_id": [
+      "BOG",
+      "MDE",
+      "CLO",
+      "GPI",
+      "LMP",
+      "TMB"
+    ],
+    "ciudad": "Popayán (Cauca)"
+  },
+  {
+    "id": "MTR",
+    "nombre": "Internacional Los Garzones",
+    "latitud": 8.82519676071301,
+    "longitud": -75.8239514176695,
+    "ubicacion": "Se encuentra situado en la zona nororiente de la ciudad,\na una distancia aproximada de diez kilómetros del centro urbano.",
+    "descripcion": "Este terminal aéreo es la principal puerta de entrada a la hermosa región de Córdoba.\nConecta de manera eficiente a los viajeros con los centros urbanos más grandes del país.\nSus instalaciones facilitan el flujo turístico y comercial de toda la sabana colombiana.\nRepresenta un nodo fundamental para el desarrollo económico y la conectividad regional.",
+    "destinos_id": [
+      "BOG",
+      "BAQ",
+      "MDE"
+    ],
+    "ciudad": "Montería (Córdoba)"
+  },
+  {
+    "id": "PDA",
+    "nombre": "César Gaviria Trujillo",
+    "latitud": 3.85292122013327,
+    "longitud": -67.9065092145419,
+    "ubicacion": "Está localizado hacia el sector suroriente del área urbana,\na tan solo tres kilómetros de distancia del centro de Inírida.",
+    "descripcion": "Funciona como un enlace vital en medio de la vasta selva amazónica colombiana.\nPermite la integración de comunidades apartadas con el centro y los Llanos Orientales.\nLa operación aérea requiere de alta precisión debido a las condiciones de la región.\nEs un punto de abastecimiento y tránsito indispensable para pobladores y aventureros.",
+    "destinos_id": [
+      "BOG",
+      "VVC"
+    ],
+    "ciudad": "Inírida (Guainía)"
+  },
+  {
+    "id": "SJE",
+    "nombre": "Jorge Enrique González",
+    "latitud": 2.57140150061117,
+    "longitud": -72.6383237745788,
+    "ubicacion": "Se sitúa en la periferia nororiente del municipio,\nubicándose a corta distancia del casco urbano central.",
+    "descripcion": "Este aeropuerto conecta la puerta de la amazonia con el interior del país.\nFacilita el transporte de productos agrícolas y pasajeros hacia la capital nacional.\nSu pista recibe diariamente aeronaves que desafían la geografía selvática.\nDesempeña un rol estratégico para la economía local y la integración territorial.",
+    "destinos_id": [
+      "BOG"
+    ],
+    "ciudad": "San José del Guaviare (Guaviare)"
+  },
+  {
+    "id": "NVA",
+    "nombre": "Benito Salas Vargas",
+    "latitud": 2.94713612211049,
+    "longitud": -75.2926859280368,
+    "ubicacion": "Se encuentra emplazado dentro de la misma capital opita,\nsobre un corredor vial principal cercano al centro urbano.",
+    "descripcion": "Es el epicentro de la aviación comercial en el departamento del Huila.\nConecta a los viajeros con la cultura huilense y los destinos arqueológicos.\nOfrece itinerarios frecuentes hacia las principales ciudades de la nación.\nSu cercanía urbana permite un acceso rápido y cómodo para todos los usuarios.",
+    "destinos_id": [
+      "BOG",
+      "CLO",
+      "MDE",
+      "SVI"
+    ],
+    "ciudad": "Neiva (Huila)"
+  },
+  {
+    "id": "RCH",
+    "nombre": "Internacional Almirante Padilla",
+    "latitud": 11.5286829908598,
+    "longitud": -72.919268162372,
+    "ubicacion": "Se halla ubicado dentro de los límites de la ciudad,\na pocos minutos de la zona céntrica y costera.",
+    "descripcion": "Este aeródromo recibe a quienes visitan la mágica península de la Guajira.\nConecta la cultura wayuu y los paisajes desérticos con el resto de Colombia.\nJuega un papel crucial en el turismo regional y el comercio fronterizo.\nSu clima cálido y ubicación costera brindan una bienvenida inolvidable.",
+    "destinos_id": [
+      "BOG",
+      "MDE",
+      "BAQ"
+    ],
+    "ciudad": "Riohacha (La Guajira)"
+  },
+  {
+    "id": "PSO",
+    "nombre": "Antonio Nariño",
+    "latitud": 1.39720150007504,
+    "longitud": -77.2904286035504,
+    "ubicacion": "Se localiza en el municipio vecino de Chachagüí,\na una distancia considerable al norte de la capital pastusa.",
+    "descripcion": "Atraviesa la compleja geografía andina del sur del territorio nacional.\nConecta a la ciudad de Pasto mediante una vía montañosa serpenteante.\nEs fundamental para superar el aislamiento histórico de la región nariñense.\nSu ubicación en altura exige pericia técnica a las aerolíneas operativas.",
+    "destinos_id": [
+      "BOG",
+      "CLO",
+      "MDE"
+    ],
+    "ciudad": "Chachagüí (Nariño)"
+  },
+  {
+    "id": "CUC",
+    "nombre": "Internacional Camilo Daza",
+    "latitud": 7.92728353740366,
+    "longitud": -72.5082074929541,
+    "ubicacion": "Está situado en la zona urbana de la capital nortesantandereana,\na corta distancia de su centro histórico y comercial.",
+    "descripcion": "Funciona como un puente clave para el intercambio comercial con Venezuela.\nEs uno de los aeropuertos más transitados del oriente del país.\nConecta numerosas ciudades nacionales y ofrece vuelos internacionales.\nSu intensa actividad refleja la vitalidad económica de la frontera.",
+    "destinos_id": [
+      "BOG",
+      "AUC",
+      "BAQ",
+      "BGA",
+      "CLO",
+      "CTG",
+      "MDE",
+      "OCV",
+      "PEI",
+      "SMR",
+      "TNB",
+      "PTY"
+    ],
+    "ciudad": "Cúcuta (Norte de Santander)"
+  },
+  {
+    "id": "VGZ",
+    "nombre": "Aeropuerto de Villagarzón",
+    "latitud": 0.981412535594455,
+    "longitud": -76.6043902298913,
+    "ubicacion": "Se encuentra emplazado en el municipio de Villagarzón,\nprestando servicio principal a la vecina ciudad de Mocoa.",
+    "descripcion": "Es la puerta de entrada aérea al exuberante departamento del Putumayo.\nFacilita la movilidad en una zona de alta riqueza hídrica y ecológica.\nConecta la biodiversidad amazónica con los centros urbanos andinos.\nRepresenta una infraestructura crítica para el desarrollo del sur.",
+    "destinos_id": [
+      "BOG",
+      "PUU",
+      "CLO"
+    ],
+    "ciudad": "Villagarzón (Putumayo)"
+  },
+  {
+    "id": "AXM",
+    "nombre": "Internacional El Edén",
+    "latitud": 4.45294667546771,
+    "longitud": -75.7667273563339,
+    "ubicacion": "Se localiza en el sector suroccidental del territorio quindiano,\na pocos minutos del centro urbano de Armenia.",
+    "descripcion": "Este aeropuerto es el corazón aéreo del famoso Eje Cafetero.\nRecibe a miles de turistas atraídos por la cultura cafetera y sus paisajes.\nImpulsa de forma notable la economía turística de la región.\nOfrece conexiones estratégicas hacia los principales centros del país.",
+    "destinos_id": [
+      "BOG",
+      "MDE"
+    ],
+    "ciudad": "Armenia (Quindío)"
+  },
+  {
+    "id": "PEI",
+    "nombre": "Internacional Matecaña",
+    "latitud": 4.81655404831605,
+    "longitud": -75.7358267494614,
+    "ubicacion": "Está ubicado dentro del perímetro urbano de Pereira,\nsiendo de fácil acceso desde el centro de la ciudad.",
+    "descripcion": "Es uno de los terminales aéreos más importantes del occidente colombiano.\nCuenta con una operación nacional e internacional altamente dinámica.\nSu moderna infraestructura atiende una demanda creciente de pasajeros.\nFacilita la integración comercial y turística de la zona cafetera.",
+    "destinos_id": [
+      "BOG",
+      "CTG",
+      "MDE",
+      "SMR",
+      "ADZ",
+      "TLU",
+      "PTY",
+      "JFK"
+    ],
+    "ciudad": "Pereira (Risaralda)"
+  },
+  {
+    "id": "CZU",
+    "nombre": "Las Brujas",
+    "latitud": 9.33239255136099,
+    "longitud": -75.2833318108078,
+    "ubicacion": "Se encuentra localizado en el municipio de Corozal.\nSirve principalmente a la ciudad de Sincelejo y la región.",
+    "descripcion": "Este aeropuerto regional conecta la sabana sucreña con el centro.\nFacilita el transporte de pasajeros hacia destinos nacionales clave.\nSu infraestructura apoya el desarrollo económico y turístico local.\nRepresenta una puerta de entrada fundamental para el departamento.",
+    "destinos_id": [
+      "BOG",
+      "MDE"
+    ],
+    "ciudad": "Corozal (Sucre)"
+  },
+  {
+    "id": "CLO",
+    "nombre": "Internacional Alfonso Bonilla Aragón",
+    "latitud": 3.54366736417665,
+    "longitud": -76.3837643202611,
+    "ubicacion": "Está situado en el municipio de Palmira, Valle del Cauca.\nOpera como el principal terminal aéreo para la ciudad de Cali.",
+    "descripcion": "Es uno de los aeropuertos más importantes del occidente colombiano.\nCuenta con una alta conectividad hacia destinos nacionales e internacionales.\nDispone de modernas instalaciones para atender vuelos de gran envergadura.\nImpulsa el comercio, la industria y el turismo en toda la región.",
+    "destinos_id": [
+      "BOG",
+      "BAQ",
+      "BGA",
+      "CTG",
+      "CUC",
+      "FLA",
+      "GPI",
+      "IPI",
+      "MDE",
+      "PSO",
+      "PPN",
+      "UIB",
+      "ADZ",
+      "SMR",
+      "TCO",
+      "OTU",
+      "NVA",
+      "NQU",
+      "PDA",
+      "PUU",
+      "VVC",
+      "MAD",
+      "MIA",
+      "FLL",
+      "MEX",
+      "PTY",
+      "SCL",
+      "ANF",
+      "AUA"
+    ],
+    "ciudad": "Palmira (Valle del Cauca)"
+  },
+  {
+    "id": "MVP",
+    "nombre": "Fabio Alberto León Bentley",
+    "latitud": 1.25332320934301,
+    "longitud": -70.2337149594973,
+    "ubicacion": "Se sitúa en la zona oriente del área urbana de Mitú.\nPermite un acceso inmediato desde el centro de la localidad.",
+    "descripcion": "Es una terminal aérea esencial para la conectividad de la Amazonía.\nPermite la llegada de suministros y pasajeros a zonas apartadas.\nSu operación es vital para las comunidades indígenas de la región.\nConecta la selva profunda con los principales centros urbanos.",
+    "destinos_id": [
+      "BOG",
+      "VVC"
+    ],
+    "ciudad": "Mitú (Vaupés)"
+  },
+  {
+    "id": "PCR",
+    "nombre": "Germán Olano",
+    "latitud": 6.18522112743002,
+    "longitud": -67.4914108433674,
+    "ubicacion": "Se ubica en la zona nororiente cerca de la frontera.\nDista pocos kilómetros del centro urbano de Puerto Carreño.",
+    "descripcion": "Facilita la integración de la Orinoquía con el resto del país.\nJuega un papel estratégico en la soberanía y conectividad nacional.\nRecibe aeronaves comerciales y de carga que abastecen la zona.\nEs el motor logístico para el departamento de Vichada.",
+    "destinos_id": [
+      "BOG",
+      "VVC",
+      "NAR"
+    ],
+    "ciudad": "Puerto Carreño (Vichada)"
+  },
+  {
+    "id": "ACD",
+    "nombre": "Hacaritama",
+    "latitud": 8.2477357834093,
+    "longitud": -73.579501061083,
+    "ubicacion": "Se localiza hacia el nororiente del municipio de Aguachica.\nSu distancia permite un rápido desplazamiento vial hacia el centro.",
+    "descripcion": "Conecta al sur del Cesar con los hubs aéreos principales.\nFavorece la movilidad de comerciantes y viajeros de la región.\nSu actividad aérea dinamiza la economía local y departamental.\nRepresenta un punto estratégico de transporte en el Magdalena Medio.",
+    "destinos_id": [
+      "BOG",
+      "CUC",
+      "BGA"
+    ],
+    "ciudad": "Aguachica (Cesar)"
+  },
+  {
+    "id": "IPI",
+    "nombre": "San Luis",
+    "latitud": 0.858644245423321,
+    "longitud": -77.6755991858631,
+    "ubicacion": "Se emplaza en jurisdicción del municipio vecino de Aldana.\nSirve de manera directa a la ciudad fronteriza de Ipiales.",
+    "descripcion": "Destaca por estar ubicado en una zona montañosa compleja.\nConecta el sur de Nariño con el centro y occidente del país.\nEs clave para el intercambio comercial con la vecina frontera.\nFacilita el turismo hacia los santuarios religiosos de la zona.",
+    "destinos_id": [
+      "BOG",
+      "CLO",
+      "PUU"
+    ],
+    "ciudad": "Ipiales (Nariño)"
+  },
+  {
+    "id": "LQM",
+    "nombre": "Aeropuerto de La Macarena",
+    "latitud": 2.17790928613995,
+    "longitud": -73.7875684286622,
+    "ubicacion": "Está localizado dentro del perímetro urbano sureño.\nProporciona un acceso directo al corazón de la municipalidad.",
+    "descripcion": "Es la puerta de entrada principal hacia Caño Cristales.\nRecibe miles de turistas atraídos por la riqueza ambiental.\nSu operación es fundamental para el ecoturismo nacional.\nConecta la biodiversidad llanera con las grandes ciudades.",
+    "destinos_id": [
+      "BOG",
+      "VVC"
+    ],
+    "ciudad": "La Macarena (Meta)"
+  },
+  {
+    "id": "PTX",
+    "nombre": "Contador",
+    "latitud": 1.85716793063246,
+    "longitud": -76.0904068047258,
+    "ubicacion": "Se sitúa en el sector occidental del municipio.\nEl trayecto hacia el centro toma pocos minutos por vía terrestre.",
+    "descripcion": "Sirve a la pujante subregión del sur del departamento del Huila.\nImpulsa el transporte de productos agrícolas como el café.\nFacilita la llegada de visitantes al parque arqueológico.\nConecta de forma eficiente a Pitalito con el centro del país.",
+    "destinos_id": [
+      "BOG",
+      "CLO"
+    ],
+    "ciudad": "Pitalito (Huila)"
+  },
+  {
+    "id": "PUU",
+    "nombre": "Tres de Mayo",
+    "latitud": 0.501996468476022,
+    "longitud": -76.502248824153,
+    "ubicacion": "Se encuentra emplazado muy cerca de la zona urbana.\nPermite una rápida conexión vial con el centro de Puerto Asís.",
+    "descripcion": "Es un nodo crucial de transporte en el departamento del Putumayo.\nConecta la selva surandina con los principales centros urbanos.\nApoya las labores comerciales, petroleras e institucionales.\nGarantiza la conectividad en una zona de difícil acceso terrestre.",
+    "destinos_id": [
+      "BOG",
+      "CLO",
+      "IPI",
+      "LQM",
+      "NVA"
+    ],
+    "ciudad": "Puerto Asís (Putumayo)"
+  },
+  {
+    "id": "SVI",
+    "nombre": "Eduardo Falla Solano",
+    "latitud": 2.15160716224752,
+    "longitud": -74.7661438875615,
+    "ubicacion": "Se localiza en la zona norte del municipio.\nOfrece un acceso vial rápido hacia el centro urbano cercano.",
+    "descripcion": "Integra la región del Caguán con la red de aviación nacional.\nFacilita el transporte de pasajeros y carga regional.\nPromueve el desarrollo económico de las sabanas del Yarí.\nFunciona como un enlace vital para el departamento del Caquetá.",
+    "destinos_id": [
+      "BOG",
+      "ACR",
+      "FLA"
+    ],
+    "ciudad": "San Vicente del Caguán (Caquetá)"
+  },
+  {
+    "id": "SKSR",
+    "nombre": "Los Colonizadores",
+    "latitud": 6.95452410384177,
+    "longitud": -71.8572871907887,
+    "ubicacion": "Está ubicado al oriente de la ciudad de Saravena.\nSe encuentra a 2,3 km del centro con un tiempo de viaje de 7 minutos.",
+    "descripcion": "Este aeropuerto sirve como la principal puerta de entrada aérea para la región de Saravena.\nConecta a los habitantes locales con los centros urbanos más importantes del país.\nSu infraestructura facilita el transporte de pasajeros y carga esencial para la zona.\nJuega un papel vital en la integración y desarrollo económico del departamento.",
+    "destinos_id": [
+      "BOG",
+      "BGA"
+    ],
+    "ciudad": "Saravena (Arauca)"
+  },
+  {
+    "id": "SKTM",
+    "nombre": "La Florida",
+    "latitud": 1.813059702827,
+    "longitud": -78.7525206825316,
+    "ubicacion": "Está ubicado al occidente de la ciudad de Tumaco.\nSe sitúa a una distancia aproximada de 4 km del centro urbano.",
+    "descripcion": "La terminal aérea conecta la costa pacífica nariñense con el interior del territorio colombiano.\nEs un punto estratégico para el comercio, el turismo y la movilidad regional.\nFacilita el flujo constante de viajeros hacia los principales centros de conexión nacional.\nSu operación diaria es fundamental para superar el aislamiento geográfico de la zona.",
+    "destinos_id": [
+      "BOG",
+      "CLO"
+    ],
+    "ciudad": "Tumaco (Nariño)"
+  },
+  {
+    "id": "SKNQ",
+    "nombre": "Reyes Murillo",
+    "latitud": 5.70820968097218,
+    "longitud": -77.2661862355783,
+    "ubicacion": "Está ubicado en el centro costero del municipio de Nuquí.\nSe encuentra emplazado dentro de la región del departamento de Chocó.",
+    "descripcion": "Este aeródromo es clave para el ecoturismo y la llegada de visitantes al Pacífico colombiano.\nPermite la conexión rápida entre la selva tropical, el mar y las ciudades principales.\nEs indispensable para el abastecimiento y la comunicación de las comunidades locales.\nSu pista recibe vuelos regionales que dinamizan la economía turística de la zona.",
+    "destinos_id": [
+      "UIB",
+      "PEI",
+      "MDE",
+      "BUN",
+      "CRC"
+    ],
+    "ciudad": "Nuquí (Chocó)"
+  },
+  {
+    "id": "SKBS",
+    "nombre": "José Celestino Mutis",
+    "latitud": 6.20263549134765,
+    "longitud": -77.3946648728646,
+    "ubicacion": "Está situado a 3 km de la cabecera municipal de Bahía Solano.\nEl tiempo de recorrido desde el centro es de aproximadamente 14 minutos.",
+    "descripcion": "La terminal aérea facilita el acceso a uno de los destinos de biodiversidad más ricos.\nConecta directamente a los viajeros con la oferta natural del departamento de Chocó.\nRepresenta la principal vía de transporte seguro y rápido para la población local.\nImpulsa el desarrollo turístico sostenible de esta apartada región costera.",
+    "destinos_id": [
+      "MDE"
+    ],
+    "ciudad": "Bahía Solano (Chocó)"
+  },
+  {
+    "id": "SKTL",
+    "nombre": "Golfo de Morrosquillo",
+    "latitud": 9.51254837235518,
+    "longitud": -75.5866674244855,
+    "ubicacion": "Está ubicado al sur, en el municipio costero de Tolú.\nSe halla a 1,5 km del centro con un tiempo estimado de 5 minutos.",
+    "descripcion": "Este aeropuerto potencia el turismo vacacional hacia las playas del golfo de Morrosquillo.\nOfrece una alternativa rápida de transporte para los visitantes provenientes de centros urbanos.\nSu cercanía con la zona urbana optimiza la llegada y salida de los pasajeros.\nContribuye significativamente al crecimiento de la infraestructura hotelera y comercial.",
+    "destinos_id": [
+      "MDE"
+    ],
+    "ciudad": "Tolú (Sucre)"
+  },
+  {
+    "id": "SKLG",
+    "nombre": "Caucaya",
+    "latitud": -0.18111893589756,
+    "longitud": -74.7769932939236,
+    "ubicacion": "Está ubicado en la zona nororiente de Puerto Leguízamo.\nSe encuentra a una distancia de 2,7 km del centro de la ciudad.",
+    "descripcion": "Es un nodo logístico esencial para la conectividad en la vasta región amazónica.\nPermite el tránsito de pasajeros y suministros hacia diferentes puntos del sur del país.\nSu operación reduce los tiempos de desplazamiento en una zona de difícil acceso fluvial.\nGarantiza la presencia institucional y la integración de las comunidades ribereñas.",
+    "destinos_id": [
+      "BOG",
+      "PIZ",
+      "PUU",
+      "FLA"
+    ],
+    "ciudad": "Puerto Leguízamo (Putumayo)"
+  },
+  {
+    "id": "SKCH",
+    "nombre": "Aeropuerto de la Chorrera",
+    "latitud": -1.45830925277552,
+    "longitud": -72.8025159845713,
+    "ubicacion": "Está ubicado hacia el sector suroccidente de la localidad.\nSirve como enlace directo para las comunidades indígenas de la Amazonía.",
+    "descripcion": "Esta pequeña pista facilita la comunicación en medio de la espesa selva amazónica.\nEs vital para el transporte de alimentos, medicinas y personal de salud a la zona.\nConecta a los habitantes locales con centros de mayor tamaño dentro de la región.\nRepresenta un salvavidas logístico para una de las áreas más aisladas del país.",
+    "destinos_id": [
+      "ACR",
+      "LET"
+    ],
+    "ciudad": "La Chorrera (Amazonas)"
+  },
+  {
+    "id": "SKCP",
+    "nombre": "Narciza Navas de Capurganá",
+    "latitud": 8.63074566467448,
+    "longitud": -77.3503837645604,
+    "ubicacion": "Está ubicado en el corregimiento turístico de Capurganá.\nPertenece al municipio de Acandí en el departamento de Chocó.",
+    "descripcion": "El aeródromo es la puerta de entrada para turistas que buscan el mar Caribe.\nSu operación fomenta la economía local basada en la hotelería y los servicios.\nEvita largas travesías marítimas o terrestres para llegar al golfo de Urabá.\nEs una infraestructura indispensable para el turismo ecológico de la frontera.",
+    "destinos_id": [
+      "MDE"
+    ],
+    "ciudad": "Acandí (Chocó)"
+  },
+  {
+    "id": "SKAR",
+    "nombre": "Aeropuerto de La Araracuara",
+    "latitud": -0.601377447308083,
+    "longitud": -72.3962903541035,
+    "ubicacion": "El aeropuerto está ubicado dentro del municipio de Solano.\nSe encuentra emplazado en la región del departamento del Caquetá.",
+    "descripcion": "Esta pista atiende las necesidades de transporte en el corazón de la selva sur.\nConecta rutas aéreas esenciales entre las regiones de Caquetá y el Amazonas.\nFacilita el traslado de investigadores, autoridades y pobladores locales.\nJuega un papel estratégico en la conectividad de áreas de difícil acceso terrestre.",
+    "destinos_id": [
+      "FLA",
+      "LCH",
+      "LET"
+    ],
+    "ciudad": "Solano (Caquetá)"
+  },
+  {
+    "id": "SKPV",
+    "nombre": "Aeropuerto El Embrujo",
+    "latitud": 13.3597190725285,
+    "longitud": -81.3591394193716,
+    "ubicacion": "Se encuentra ubicado al oriente de la isla de Providencia.\nLa distancia aproximada es de 6 km desde el centro insular.",
+    "descripcion": "Es la única vía de acceso rápido para conectar la isla con el archipiélago y el continente.\nSu pista recibe aeronaves regionales que transportan turistas y residentes.\nEs fundamental para la economía insular y el abastecimiento de productos básicos.\nSu ubicación ofrece vistas panorámicas impresionantes durante los aterrizajes.",
+    "destinos_id": [
+      "ADZ",
+      "MDE"
+    ],
+    "ciudad": "Providencia (San Andrés y Providencia)"
+  },
+  {
+    "id": "APO",
+    "nombre": "Antonio Roldán Betancourt",
+    "latitud": 7.81117,
+    "longitud": -76.71341,
+    "ubicacion": "Situado en el municipio de Carepa, a 6 km de distancia.\nSe encuentra a 15 minutos en vehículo del centro de Apartadó.",
+    "descripcion": "Este aeródromo sirve como la principal puerta de entrada aérea.\nConecta la región bananera con los centros urbanos más grandes.\nFacilita el transporte comercial en la zona de Urabá.\nCuenta con una pista pavimentada para aeronaves medianas.",
+    "destinos_id": [
+      "BOG",
+      "MDE"
+    ],
+    "ciudad": "Carepa (Antioquia)"
+  },
+  {
+    "id": "BUN",
+    "nombre": "Gerardo Tovar López",
+    "latitud": 3.819722,
+    "longitud": -76.989722,
+    "ubicacion": "Emplazado en el principal puerto del pacífico vallecaucano.\nSe encuentra a solo 3 km y 10 minutos del centro urbano.",
+    "descripcion": "Terminal aérea clave para la conectividad de la costa pacífica.\nPermite el flujo rápido de pasajeros hacia la capital nacional.\nOpera principalmente con vuelos regionales de pasajeros.\nSu ubicación costera exige protocolos operativos especializados.",
+    "destinos_id": [
+      "BOG"
+    ],
+    "ciudad": "Buenaventura (Valle del Cauca)"
+  },
+  {
+    "id": "CRC",
+    "nombre": "Santa Ana",
+    "latitud": 4.758333,
+    "longitud": -75.955833,
+    "ubicacion": "Localizado en el departamento del Valle del Cauca, en Cartago.\nSe halla a 1.5 km, equivalentes a 5 minutos del centro urbano.",
+    "descripcion": "Histórica terminal que hoy prioriza la aviación corporativa.\nSirve como base principal para escuelas de aviación civil.\nConecta de manera directa con apartados municipios selváticos.\nDispone de instalaciones ideales para el entrenamiento de pilotos.",
+    "destinos_id": [
+      "BSC",
+      "NUI",
+      "UIB",
+      "MDE"
+    ],
+    "ciudad": "Cartago (Valle del Cauca)"
+  },
+  {
+    "id": "EJA",
+    "nombre": "Yariguíes",
+    "latitud": 7.0244444444444,
+    "longitud": -73.806666666667,
+    "ubicacion": "Situado a 10 km de la ciudad petrolera de Barrancabermeja.\nOperado bajo concesión privada para garantizar servicios óptimos.",
+    "descripcion": "Crucial para la industria de hidrocarburos en Santander.\nDispone de una torre de control propia y moderna infraestructura.\nCanaliza el tráfico ejecutivo y comercial hacia la capital.\nContribuye fuertemente al desarrollo económico regional.",
+    "destinos_id": [
+      "BOG"
+    ],
+    "ciudad": "Barrancabermeja (Santander)"
+  },
+  {
+    "id": "GPI",
+    "nombre": "Juan Casiano",
+    "latitud": 2.57083,
+    "longitud": -77.89778,
+    "ubicacion": "Emplazado en la costa pacífica del departamento del Cauca.\nSe ubica a 1 km al oeste del área céntrica del municipio.",
+    "descripcion": "Conecta comunidades aisladas con las principales metrópolis.\nVital para el abastecimiento y movilidad de la población local.\nSoporta operaciones aéreas en condiciones climáticas desafiantes.\nRepresenta el único enlace rápido con el interior del país.",
+    "destinos_id": [
+      "BOG",
+      "CLO",
+      "MDE",
+      "TIB"
+    ],
+    "ciudad": "Guapi (Cauca)"
+  },
+  {
+    "id": "IMR",
+    "nombre": "Morelia",
+    "latitud": 3.75,
+    "longitud": -71.45611,
+    "ubicacion": "Instalado dentro del complejo petrolero de Morelía.\nSe localiza a 93 km al sureste de la cabecera de Puerto Gaitán.",
+    "descripcion": "Aeropuerto de carácter privado enfocado en la industria energética.\nFacilita el traslado exclusivo de personal técnico y obrero.\nOpera frecuencias estacionales acordes a la actividad del campo.\nOptimiza los tiempos logísticos de las empresas petroleras.",
+    "destinos_id": [
+      "BOG"
+    ],
+    "ciudad": "Puerto Gaitán (Meta)"
+  },
+  {
+    "id": "PTZ",
+    "nombre": "Juan José Rondón",
+    "latitud": 5.7644166666667,
+    "longitud": -73.105708333333,
+    "ubicacion": "Ubicado en el municipio boyacense de Paipa, a 2 km al sur.\nSe encuentra emplazado estratégicamente cerca del Lago Sochagota.",
+    "descripcion": "Impulsa el turismo y comercio en el Altiplano Cundiboyacense.\nFacilita la llegada de visitantes a las famosas termales.\nConecta la región con centros de comercio del oriente y centro.\nPosee una ubicación privilegiada rodeada de montañas andinas.",
+    "destinos_id": [
+      "MDE",
+      "EYP"
+    ],
+    "ciudad": "Paipa (Boyacá)"
+  },
+  {
+    "id": "ELB",
+    "nombre": "El Tomin",
+    "latitud": 7.59638889,
+    "longitud": -74.80888889,
+    "ubicacion": "Situado en la subregión antioqueña del Bajo Cauca.\nSirve directamente a la población del municipio de El Bagre.",
+    "descripcion": "Vital para la conectividad de zonas mineras y rurales.\nPermite el flujo constante de pasajeros hacia la capital departamental.\nReduce drásticamente los tiempos de viaje por vía terrestre.\nCuenta con una pista adecuada para aeronaves de tipo turbohélice.",
+    "destinos_id": [
+      "MDE"
+    ],
+    "ciudad": "El Bagre (Antioquia)"
+  },
+  {
+    "id": "Min",
+    "nombre": "El Pindo",
+    "latitud": 7.9733333333333,
+    "longitud": -75.441277777778,
+    "ubicacion": "Emplazado en tierras cordobesas, a 1 km al oeste urbano.\nSe encuentra localizado en las inmediaciones del río San Jorge.",
+    "descripcion": "Facilita la comunicación aérea del municipio de Montelíbano.\nConecta eficientemente la zona minera con Medellín.\nOpera principalmente vuelos comerciales de corta distancia.\nEs un pilar para el desarrollo económico del sur cordobés.",
+    "destinos_id": [
+      "MDE"
+    ],
+    "ciudad": "Montelíbano (Córdoba)"
+  },
+  {
+    "id": "COG",
+    "nombre": "Mandinga",
+    "latitud": 5.08333333,
+    "longitud": -76.68333333,
+    "ubicacion": "Ubicado en la zona selvática del departamento del Chocó.\nSirve de manera simultánea a los municipios de Condoto e Istmina.",
+    "descripcion": "Posee una pista corta limitada a aeronaves pequeñas.\nSolo permite el arribo seguro de aviones de hasta 19 pasajeros.\nCrucial para la movilidad en zonas de difícil acceso terrestre.\nConecta esta apartada región chocoana con los centros del país.",
+    "destinos_id": [
+      "CLO",
+      "MDE"
+    ],
+    "ciudad": "Istmina (Chocó)"
+  },
+  {
+    "id": "TIB",
+    "nombre": "Aeropuerto de Timbiquí",
+    "latitud": 2.77777778,
+    "longitud": -77.66805556,
+    "ubicacion": "Se encuentra situado en el municipio de Timbiquí, Cauca,\na la orilla derecha del río y cerca del océano Pacífico.",
+    "descripcion": "Este aeródromo sirve como una puerta clave de conexión\npara la comunidad local y los viajeros que exploran\nla región del Pacífico caucano. Sus operaciones aéreas\nson fundamentales para el suministro y transporte regional.",
+    "destinos_id": [
+      "CLO",
+      "PPN"
+    ],
+    "ciudad": "Timbiquí (Cauca)"
+  },
+  {
+    "id": "CAQ",
+    "nombre": "Aeropuerto Juan H. White",
+    "latitud": 7.968022222,
+    "longitud": -75.19815278,
+    "ubicacion": "Está localizado en el borde sur de la ciudad de Caucasia,\nen el departamento de Antioquia, junto al río Cauca.",
+    "descripcion": "El aeropuerto facilita la movilidad comercial y de pasajeros\nentre el bajo cauca antioqueño y la capital departamental.\nJuega un papel estratégico en el desarrollo económico\ny la integración de esta subregión colombiana.",
+    "destinos_id": [
+      "MDE"
+    ],
+    "ciudad": "Caucasia (Antioquia)"
+  },
+  {
+    "id": "LPD",
+    "nombre": "Aeropuerto de La Pedrera",
+    "latitud": -1.32639,
+    "longitud": -69.58056,
+    "ubicacion": "Se ubica en la ribera del río Caquetá dentro del municipio\nde La Pedrera, sirviendo a comunidades amazónicas remotas.",
+    "descripcion": "Es una terminal vital para la conectividad de la Amazonía\ny el apoyo a misiones de vigilancia en la frontera.\nSu pista corta recibe principalmente vuelos de aerolíneas\nestatales que abastecen a pobladores indígenas locales.",
+    "destinos_id": [
+      "LET"
+    ],
+    "ciudad": "La Pedrera (Amazonas)"
+  },
+  {
+    "id": "TARA",
+    "nombre": "Aeropuerto Ipiranga (Tarapacá)",
+    "latitud": -2.89472,
+    "longitud": -69.74722,
+    "ubicacion": "Se sitúa en la orilla oeste del río Putumayo en Tarapacá,\nAmazonas, a pocos kilómetros de la frontera brasileña.",
+    "descripcion": "Esta infraestructura conecta la densa selva amazónica\ncon los centros urbanos principales del sur del país.\nSu operación regular reduce significativamente el aislamiento\ngeográfico de los habitantes de esta zona fronteriza.",
+    "destinos_id": [
+      "LET"
+    ],
+    "ciudad": "Tarapacá (Amazonas)"
+  },
+  {
+    "id": "ACD",
+    "nombre": "Aeropuerto Alcides Fernández",
+    "latitud": 8.498055556,
+    "longitud": -77.27388889,
+    "ubicacion": "Se encuentra en la costa Caribe del departamento del Chocó,\noperando cerca de la frontera con la hermana república de Panamá.",
+    "descripcion": "Renovado para impulsar el turismo y la economía regional,\neste aeropuerto recibe vuelos comerciales y chárter.\nEs un punto clave para acceder a las hermosas playas\ny selvas vírgenes del golfo de Urabá y sus alrededores.",
+    "destinos_id": [
+      "MDE"
+    ],
+    "ciudad": "Acandí (Chocó)"
+  },
+  {
+    "id": "MMP",
+    "nombre": "Aeropuerto San Bernardo",
+    "latitud": 9.25972,
+    "longitud": -74.43778,
+    "ubicacion": "Está emplazado a corta distancia al noroeste de Mompox,\nBolívar, junto al emblemático brazo del río Magdalena.",
+    "descripcion": "Permite el acceso a una ciudad histórica declarada por\nla UNESCO como Patrimonio de la Humanidad por su arquitectura.\nLos turistas disfrutan de una vía rápida y directa\npara conocer la magia colonial de esta bella región.",
+    "destinos_id": [
+      "CTG",
+      "MDE"
+    ],
+    "ciudad": "Mompós (Bolívar)"
+  },
+  {
+    "id": "SGZ",
+    "nombre": "Aeropuerto Los Pozos",
+    "latitud": 6.59027778,
+    "longitud": -73.12888889,
+    "ubicacion": "Se localiza en la zona norte de San Gil, Santander,\nservido en una altitud montañosa ideal para el turismo.",
+    "descripcion": "Conocido por servir a la capital turística de Santander,\neste aeródromo fomenta la llegada de aventureros.\nTras importantes remodelaciones, recibe vuelos estacionales\nque dinamizan los deportes extremos y la economía local.",
+    "destinos_id": [
+      "BGA",
+      "MDE"
+    ],
+    "ciudad": "San Gil (Santander)"
+  },
+  {
+    "id": "OCV",
+    "nombre": "Aeropuerto Aguas Claras",
+    "latitud": 8.31528,
+    "longitud": -73.35833,
+    "ubicacion": "Se halla situado al norte de la ciudad de Ocaña,\nen el departamento de Norte de Santander y su relieve.",
+    "descripcion": "Ha sido históricamente un punto de gran relevancia\npara la conectividad terrestre y aérea del Catatumbo.\nSu pista pavimentada facilita operaciones regulares\nque comunican a los habitantes con los centros urbanos.",
+    "destinos_id": [
+      "CUC",
+      "MDE"
+    ],
+    "ciudad": "Ocaña (Norte de Santander)"
+  },
+  {
+    "id": "TIBU",
+    "nombre": "Aeropuerto de Tibú",
+    "latitud": 8.63139,
+    "longitud": -72.73194,
+    "ubicacion": "Se emplaza en el borde sur del municipio de Tibú,\nNorte de Santander, muy cerca de la frontera con Venezuela.",
+    "descripcion": "Esta terminal aérea cumple una función estratégica\npara el transporte de pasajeros en zona de frontera.\nSu pista facilita la integración comercial y social\ncon la capital del departamento norte-santandereano.",
+    "destinos_id": [
+      "CUC"
+    ],
+    "ciudad": "Tibú (Norte de Santander)"
+  },
+  {
+    "id": "IGO",
+    "nombre": "Aeropuerto de El Charco",
+    "latitud": 2.44968,
+    "longitud": -78.09443,
+    "ubicacion": "Se sitúa en la orilla del río Tapaje en El Charco,\nNariño, dentro de la rica y biodiversa región pacífica.",
+    "descripcion": "El establecimiento de nuevas rutas aéreas comerciales\na este aeródromo ha transformado la movilidad regional.\nPermite conectar de forma rápida a los habitantes locales\ncon las principales ciudades del suroccidente colombiano.",
+    "destinos_id": [
+      "CLO"
+    ],
+    "ciudad": "El Charco (Nariño)"
+  }
+]

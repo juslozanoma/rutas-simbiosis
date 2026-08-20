@@ -1,0 +1,470 @@
+/**
+ * panel.js
+ * ---------------------------------------------------------------------------
+ * Navegación y panel: pestañas (escritorio/móvil), panel Ruta y eventos
+ * generales de la interfaz (initEventos).
+ * ---------------------------------------------------------------------------
+ */
+
+  /** Pone el valor (km o min) en letra pequeña sobre el pulgar del deslizador. */
+  function _actualizarThumbValor(slider, thumbId, unidad) {
+    const span = document.getElementById(thumbId);
+    if (!slider || !span) return;
+    const min = Number(slider.min) || 1;
+    const max = Number(slider.max) || 60;
+    const val = Number(slider.value);
+    const pct = Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100));
+    span.textContent = `${val} ${unidad}`;
+    span.style.left = `${pct}%`;
+  }
+
+  function activarPanelTab(tab) {
+    // Con el catálogo de puertos/aeropuertos (A/P) o la ruta desde archivo (K)
+    // activos, la pestaña Descubre queda oculta y los cuadros de búsqueda no
+    // deben reaparecer al volver a Ruta. En departamentos (D) y municipios (M)
+    // la pestaña Descubre sigue disponible.
+    if (tab === 'descubre' && (_puertosVisibles || _aeropuertosVisibles || _fronteraVisibles || _rutaArchivoActiva)) return;
+    el.appRoot.setAttribute('data-panel-tab', tab);
+    if (tab === 'descubre' && el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = true;
+    else if (tab === 'ruta' && el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = false;
+    document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('panel-tab--active'));
+    if (tab === 'ruta') {
+      el.btnTabPanelRuta.classList.add('panel-tab--active');
+      el.panelDescubreActions.hidden = true;
+      el.loadingSitios.hidden = true;
+      el.panelSitios.hidden = true;
+      el.panelSitios.scrollTop = 0;
+      el.panelLocate.hidden = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles || _rutaArchivoActiva || _tourActivo;
+      if (el.panelTour) el.panelTour.hidden = !_tourActivo;
+      el.panelEscalas.hidden = true;
+      // Con un catálogo (P/A/D/M/C/F) activo, al volver a Ruta se repone su
+      // listado (el cambio a Descubre oculta el panel de paradas).
+      const infraActiva = _puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles;
+      if (_tourActivo) {
+        el.panelParadas.hidden = true;
+      } else if (infraActiva) {
+        if (typeof renderizarInfraListado === 'function') renderizarInfraListado();
+      } else if (state.rutaActual && !(_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles || _rutaArchivoActiva)) {
+        el.panelParadas.hidden = false;
+      }
+      const ocultarTestigo = !state.rutaActual || _soMostrarSitiosVisto || (_puertosVisibles || _aeropuertosVisibles || _departamentosVisibles || _municipiosVisibles || _categoriasVisibles || _fronteraVisibles || _rutaArchivoActiva);
+      el.btnMostrarSitiosCercanos.hidden = ocultarTestigo;
+      el.btnMostrarSitiosCercanos.disabled = ocultarTestigo;
+      sincronizarModoRutaMovil();
+      if (el.btnSubirRutaPropia) el.btnSubirRutaPropia.hidden = false;
+      if (el.btnIniciarTour) el.btnIniciarTour.hidden = false;
+      if (el.btnAccionesRuta) el.btnAccionesRuta.hidden = false;
+    } else {
+      el.btnTabPanelDescubre.classList.add('panel-tab--active');
+      el.panelLocate.hidden = true;
+      el.panelEscalas.hidden = true;
+      el.panelParadas.hidden = true;
+      // En el tour, al abrir Descubre se ocultan el cuadro "Añadir otro
+      // destino" y la lista de destinos/sitios añadidos previamente.
+      if (el.panelTour) el.panelTour.hidden = true;
+      el.panelDescubreActions.hidden = false;
+      el.panelSitios.hidden = false;
+      _syncBotonSitios();
+      el.btnMostrarSitiosCercanos.hidden = true;
+      if (el.btnSubirRutaPropia) el.btnSubirRutaPropia.hidden = true;
+      if (el.btnIniciarTour) el.btnIniciarTour.hidden = true;
+      if (el.btnAccionesRuta) el.btnAccionesRuta.hidden = true;
+      if (!state.rutaActual && el.sitiosVacio && state.sitiosFiltrados.length === 0) {
+        el.sitiosVacio.hidden = false;
+        el.sitiosVacio.innerHTML = '<img src="/simbiosis.png" alt="" class="empty-state__icono"><span class="empty-state__texto">Calcula primero una ruta para descubrir nuevos sitios turísticos.</span>';
+        if (el.sitiosLista) el.sitiosLista.hidden = true;
+      } else {
+        _asegurarListadoSitios();
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------
+  // Inicialización
+  // -------------------------------------------------------------------
+
+  function setMobileTab(tab) {
+    el.appRoot.setAttribute('data-mobile-tab', tab);
+    el.appRoot.setAttribute('data-mobile-panel', 'expanded');
+    el.btnTabDescubre.classList.toggle('mobile-tab-btn--active', tab === 'descubre');
+    el.btnTabRuta.classList.toggle('mobile-tab-btn--active', tab === 'ruta');
+    if (el.btnTabAltimetria) {
+      el.btnTabAltimetria.classList.toggle('mobile-tab-btn--active', tab === 'altimetria');
+    }
+    if (tab === 'altimetria') {
+      if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = false;
+      if (typeof _activarSeguimientoConVuelos === 'function') _activarSeguimientoConVuelos();
+      _cargarElevacionAltimetria('altimetria-chart-panel');
+      if (typeof _mostrarTipBotonVS === 'function') _mostrarTipBotonVS();
+    } else {
+      if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = true;
+    }
+    // Sync panel hidden states with mobile tab
+    if (tab === 'ruta') {
+      activarPanelTab('ruta');
+    } else if (tab === 'descubre') {
+      activarPanelTab('descubre');
+    }
+    if (typeof _syncAltimetriaMapa === 'function') _syncAltimetriaMapa();
+    setTimeout(() => MapModule.invalidateSize(), 220);
+  }
+
+
+  function toggleMobileTab(tab) {
+    if (tab === 'descubre' && el.btnTabDescubre && el.btnTabDescubre.disabled) return;
+    if (tab === 'descubre' && (_puertosVisibles || _aeropuertosVisibles || _fronteraVisibles || _rutaArchivoActiva)) return;
+    const currentTab = el.appRoot.getAttribute('data-mobile-tab');
+    const isCollapsed = el.appRoot.getAttribute('data-mobile-panel') === 'collapsed';
+    if (currentTab === tab && !isCollapsed) {
+      el.appRoot.setAttribute('data-mobile-panel', 'collapsed');
+      el.btnTabDescubre.classList.remove('mobile-tab-btn--active');
+      el.btnTabRuta.classList.remove('mobile-tab-btn--active');
+      if (el.btnTabAltimetria) el.btnTabAltimetria.classList.remove('mobile-tab-btn--active');
+      if (el.altimetriaPanelMovil) el.altimetriaPanelMovil.hidden = true;
+      if (typeof _syncAltimetriaMapa === 'function') _syncAltimetriaMapa();
+      setTimeout(() => MapModule.invalidateSize(), 220);
+    } else {
+      setMobileTab(tab);
+    }
+  }
+
+
+  function actualizarTextoSeguimiento() {
+    const activo = AltimetriaModule.isFollowActivo();
+    const pcBtn = document.getElementById('btn-seguimiento-altimetria');
+    const movBtn = document.getElementById('btn-seguimiento-altimetria-panel');
+    if (pcBtn) {
+      const label = pcBtn.querySelector('.altimetria__seguimiento-label');
+      if (label) label.textContent = activo ? 'Seguimiento activado' : 'Seguimiento inactivado';
+      pcBtn.setAttribute('aria-pressed', String(activo));
+    }
+    if (movBtn) movBtn.setAttribute('aria-pressed', String(activo));
+  }
+
+
+  function initEventos() {
+    el.btnCalcular.addEventListener('click', () => {
+      UndoManager.registrar();
+      calcularRutaPrincipal();
+    });
+    if (el.btnAereo) {
+      el.btnAereo.addEventListener('click', () => {
+        // El avión siempre calcula la ruta aérea (volver a carretera = botón calcular).
+        UndoManager.registrar();
+        calcularRutaAerea();
+      });
+    }
+    if (el.btnFluvial) {
+      el.btnFluvial.addEventListener('click', () => {
+        // El barco siempre calcula la ruta por río (volver a carretera = botón calcular).
+        UndoManager.registrar();
+        calcularRutaFluvial();
+      });
+    }
+
+    function toggleSitiosHandler() {
+      const visible = MapModule.toggleSitios();
+      if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.setAttribute('aria-pressed', String(visible));
+    }
+    if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.addEventListener('click', toggleSitiosHandler);
+
+    if (el.btnDescubreVisibles) {
+      el.btnDescubreVisibles.addEventListener('click', toggleSitiosVisibles);
+    }
+
+    if (el.btnFullscreen) {
+      el.btnFullscreen.addEventListener('click', () => {
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+          el.btnFullscreen.setAttribute('aria-pressed', 'false');
+        } else {
+          document.documentElement.requestFullscreen().catch(() => {});
+          el.btnFullscreen.setAttribute('aria-pressed', 'true');
+        }
+      });
+      document.addEventListener('fullscreenchange', () => {
+        el.btnFullscreen.setAttribute('aria-pressed', String(!!document.fullscreenElement));
+      });
+    }
+
+    el.btnTabDescubre.addEventListener('click', () => toggleMobileTab('descubre'));
+    el.btnTabRuta.addEventListener('click', () => toggleMobileTab('ruta'));
+    if (el.btnAgregarIntermedio) {
+      // stopPropagation: el click que crea la fila no debe llegar al
+      // onClickOutside de la fila y cerrar su lista recién desplegada.
+      el.btnAgregarIntermedio.addEventListener('click', (e) => {
+        e.stopPropagation();
+        agregarPuebloIntermedioDesdeLista();
+      });
+    }
+    // Descubre Colombia buttons handlers
+    let desplegandoDescubre = null; // 'categorias' | 'desvios' | 'ordenar'
+    if (el.btnDescubreCategorias) {
+      el.btnDescubreCategorias.addEventListener('click', () => {
+        const abrir = desplegandoDescubre !== 'categorias';
+        _cerrarDesplegadosDescubre();
+        if (abrir) {
+          el.btnDescubreCategorias.classList.add('descubre-btn--active');
+          el.descubreDropdownCategorias.hidden = false;
+          desplegandoDescubre = 'categorias';
+        }
+      });
+    }
+    if (el.btnDescubreDesvios) {
+      el.btnDescubreDesvios.addEventListener('click', () => {
+        const abrir = desplegandoDescubre !== 'desvios';
+        _cerrarDesplegadosDescubre();
+        if (abrir) {
+          el.btnDescubreDesvios.classList.add('descubre-btn--active');
+          el.descubreDropdownDesvios.hidden = false;
+          desplegandoDescubre = 'desvios';
+          // Posicionar ya el tooltip (x km / x min) sobre el pulgar de cada
+          // deslizador al abrir el menú de filtrar.
+          _actualizarThumbValor(el.filtroDistancia, 'filtro-distancia-thumb', 'km');
+          _actualizarThumbValor(el.filtroTiempo, 'filtro-tiempo-thumb', 'min');
+        }
+      });
+    }
+    if (el.btnDescubreOrdenar) {
+      el.btnDescubreOrdenar.addEventListener('click', () => {
+        const abrir = desplegandoDescubre !== 'ordenar';
+        _cerrarDesplegadosDescubre();
+        if (abrir) {
+          el.btnDescubreOrdenar.classList.add('descubre-btn--active');
+          el.descubreDropdownOrdenar.hidden = false;
+          desplegandoDescubre = 'ordenar';
+        }
+      });
+    }
+    function _cerrarDesplegadosDescubre() {
+      desplegandoDescubre = null;
+      [el.btnDescubreCategorias, el.btnDescubreDesvios, el.btnDescubreOrdenar].forEach(b => { if (b) b.classList.remove('descubre-btn--active'); });
+      [el.descubreDropdownCategorias, el.descubreDropdownDesvios, el.descubreDropdownOrdenar].forEach(d => { if (d) d.hidden = true; });
+      _actualizarEstadoBotonesDescubre();
+    }
+    if (el.btnOrdenOrigen) el.btnOrdenOrigen.addEventListener('click', () => aplicarOrdenSitios('origen'));
+    if (el.btnOrdenDestino) el.btnOrdenDestino.addEventListener('click', () => aplicarOrdenSitios('destino'));
+    if (el.buscarSitios) {
+      el.buscarSitios.addEventListener('input', _aplicarBusquedaSitios);
+    }
+    state.ordenSitios = 'origen';
+    actualizarBotonesOrden();
+    _actualizarEstadoBotonesDescubre();
+
+    // Tab switching (panel tabs - desktop)
+    if (el.btnTabPanelRuta) {
+      el.btnTabPanelRuta.addEventListener('click', () => activarPanelTab('ruta'));
+    }
+    if (el.btnTabPanelDescubre) {
+      el.btnTabPanelDescubre.addEventListener('click', () => activarPanelTab('descubre'));
+    }
+
+    el.loadingSitios = document.getElementById('loading-sitios');
+    el.loadingRuta = document.getElementById('loading-ruta');
+    el.loadingMsg = el.loadingSitios.querySelector('.loading-sitios__msg');
+    el.spinnerBike = el.loadingSitios.querySelector('.spinner-bike');
+    el.mensajesCarga = [
+      'Cargando lugares cercanos…',
+      'Buscando sitios turísticos…',
+      'Calculando distancias…',
+      'Preparando resultados…',
+      'Casi listo…',
+    ];
+
+    // Cerrar menús de Descubre al desplazar la lista o interactuar con el mapa
+    const sitiosScroll = document.querySelector('.panel-sites__scroll');
+    if (sitiosScroll) {
+      sitiosScroll.addEventListener('scroll', () => {
+        if (desplegandoDescubre) _cerrarDesplegadosDescubre();
+      }, { passive: true });
+    }
+    document.getElementById('map')?.addEventListener('mousedown', () => {
+      if (desplegandoDescubre) _cerrarDesplegadosDescubre();
+    });
+    document.getElementById('map')?.addEventListener('touchstart', () => {
+      if (desplegandoDescubre) _cerrarDesplegadosDescubre();
+    }, { passive: true });
+
+    // Init Ruta tab
+    activarPanelTab('ruta');
+
+    // Ruta tab: locate panel visible by default
+    el.panelLocate.hidden = false;
+    el.panelEscalas.hidden = true;
+
+    // Altimetría - desktop button
+    if (el.btnAltimetria) {
+      el.btnAltimetria.addEventListener('click', () => toggleAltimetria());
+    }
+    // Altimetría - mobile tab
+    if (el.btnTabAltimetria) {
+      el.btnTabAltimetria.addEventListener('click', () => toggleMobileTab('altimetria'));
+      // Pulsación larga en el ícono inferior de bicicleta/senderista: abre el
+      // selector de vehículo para cambiar el ícono (en modo ruta de archivo
+      // cambia el del caminante).
+      if (typeof engancharLongPress === 'function') {
+        engancharLongPress(el.btnTabAltimetria, (evt) => {
+          if (typeof TransportConfigModule !== 'undefined' && typeof TransportConfigModule.abrirSelector === 'function') {
+            TransportConfigModule.abrirSelector(evt.clientX, evt.clientY);
+          }
+        });
+      }
+    }
+    if (el.btnCerrarAltimetria) {
+      el.btnCerrarAltimetria.addEventListener('click', () => cerrarAltimetria());
+    }
+
+    // Sort buttons in descubre dropdown: dos toggles (desde origen/destino y
+    // orden ascendente/descendente). En modo Tour el botón de dirección lo
+    // maneja el tour (tour.js), por eso aquí se ignora en ese modo.
+    if (el.btnOrdenOrigenDes) {
+      el.btnOrdenOrigenDes.addEventListener('click', () => alternarOrdenSitios());
+    }
+    if (el.btnOrdenDir) {
+      el.btnOrdenDir.addEventListener('click', () => {
+        if (el.appRoot && el.appRoot.getAttribute('data-tour-activo') === 'true') return;
+        alternarDireccionOrdenSitios();
+      });
+    }
+
+    el.btnMostrarSitiosCercanos.addEventListener('click', () => {
+      el.btnMostrarSitiosCercanos.hidden = true;
+      el.btnMostrarSitiosCercanos.disabled = true;
+      _asegurarListadoSitios();
+      activarPanelTab('descubre');
+      if (esMovil()) setMobileTab('descubre');
+    });
+    el.btnAplicarDistancia.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarDistancia));
+    el.btnAplicarTiempo.addEventListener('click', () => aplicarFiltrosConSpinner(el.btnAplicarTiempo));
+
+    el.checkDistancia.addEventListener('change', () => {
+      el.filtroDistancia.disabled = !el.checkDistancia.checked;
+      actualizarEstadoBotonesRetry();
+    });
+    el.checkTiempo.addEventListener('change', () => {
+      el.filtroTiempo.disabled = !el.checkTiempo.checked;
+      actualizarEstadoBotonesRetry();
+    });
+    el.filtroDistancia.addEventListener('input', () => {
+      _actualizarThumbValor(el.filtroDistancia, 'filtro-distancia-thumb', 'km');
+      actualizarEstadoBotonesRetry();
+    });
+    el.filtroTiempo.addEventListener('input', () => {
+      _actualizarThumbValor(el.filtroTiempo, 'filtro-tiempo-thumb', 'min');
+      actualizarEstadoBotonesRetry();
+    });
+
+    // Re-filtrar sitios visibles al mover/zoom del mapa
+    const _map = MapModule.getMap();
+    if (_map) {
+      _map.on('moveend', () => {
+        if (state.modoVisibilidad === 'visibles' && state.sitiosFiltrados.length > 0) {
+          // Si hay una ficha de sitio abierta no re-renderizar: al tocar un
+          // marcador el mapa se centra (moveend) y el re-render cerraría el cuadro.
+          if (document.querySelector('.sitio-overlay')) return;
+          renderizarSitios(_filtrarVisibles(state.sitiosFiltrados));
+        }
+      });
+
+      // Marcador temporal para hover del perfil de altimetría: el vehículo
+      // elegido por el usuario (o senderista en modo "Subir tu propia ruta")
+      // que avanza sobre la ruta apoyado en su base (ancla abajo-centro) y se
+      // orienta por el vector tangente sin saltos de 180°.
+      let _hoverMarker = null;
+      let _hoverCarEl = null;
+      let _hoverBearing = null;
+      let _hoverRotation = null;
+      const _rotContinua = (target, prev) => {
+        if (prev == null) return target;
+        let r = target;
+        while (r - prev > 180) r -= 360;
+        while (r - prev < -180) r += 360;
+        return r;
+      };
+      AltimetriaModule.setOnHover((p) => {
+        _hoverBearing = p.bearing != null ? p.bearing : null;
+        if (!_hoverMarker) {
+          _hoverMarker = L.marker([p.lat, p.lon], {
+            icon: L.divIcon({
+              className: 'altimetria-hover-car',
+              html: TransportConfigModule.divIconoHTML(26, 26, 'transform-origin:50% 100%;'),
+              iconSize: [26, 26],
+              iconAnchor: [13, 26],
+            }),
+            interactive: false,
+            pane: 'tooltipPane',
+            zIndexOffset: 1000,
+          }).addTo(_map);
+          _hoverCarEl = _hoverMarker.getElement()?.querySelector('.transport-vehiculo') || null;
+        } else {
+          _hoverMarker.setLatLng([p.lat, p.lon]);
+        }
+        if (_hoverCarEl && _hoverBearing != null) {
+          _hoverRotation = _rotContinua(_hoverBearing - 90, _hoverRotation);
+          _hoverCarEl.style.transform = `rotate(${_hoverRotation}deg)`;
+        }
+        _hoverMarker.bindTooltip(`${p.alt} msnm · ${p.dist} km`, {
+          permanent: true, direction: 'top', className: 'altimetria-map-tooltip',
+          offset: [0, -34],
+        }).openTooltip();
+      });
+
+      AltimetriaModule.setOnLeave(() => {
+        if (_hoverMarker) { _hoverMarker.remove(); _hoverMarker = null; _hoverCarEl = null; _hoverBearing = null; _hoverRotation = null; }
+      });
+
+      // Al cambiar el vehículo o su color se actualiza el carro hover del mapa.
+      if (typeof TransportConfigModule !== 'undefined' && TransportConfigModule.setOnCambio) {
+        TransportConfigModule.setOnCambio(() => {
+          if (_hoverMarker && _hoverMarker.getElement()) {
+            _hoverMarker.getElement().innerHTML = TransportConfigModule.divIconoHTML(26, 26, 'transform-origin:50% 100%;');
+            _hoverCarEl = _hoverMarker.getElement()?.querySelector('.transport-vehiculo') || null;
+            if (_hoverCarEl && _hoverBearing != null) {
+              _hoverRotation = _rotContinua(_hoverBearing - 90, _hoverRotation);
+              _hoverCarEl.style.transform = `rotate(${_hoverRotation}deg)`;
+            }
+          }
+        });
+      }
+
+      AltimetriaModule.setOnSetInicio((data) => {
+        AltimetriaModule.setRangoInicio(data.distKm);
+      });
+      AltimetriaModule.setOnSetFin((data) => {
+        AltimetriaModule.setRangoFin(data.distKm);
+      });
+      AltimetriaModule.setOnEliminarParada((data) => {
+        if (data.tipo === 'escala') eliminarEscala(data.id);
+        else if (data.tipo === 'parada') eliminarParada(data.id);
+      });
+      AltimetriaModule.setOnVerMapa((data) => {
+        _map.setView([data.lat, data.lon], 13, { animate: true });
+      });
+      AltimetriaModule.setOnCentrarMapa((data) => {
+        const conVuelos = !!(state.modoAereo && state.tramosAereo && state.tramosAereo.apSegs && state.tramosAereo.apSegs.length);
+        if (conVuelos) {
+          // Seguimiento con zoom: en una ruta con vuelos el mapa está encuadrado
+          // lejísimos y conviene acercarse a la ruta para ver el carro.
+          _map.setView([data.lat, data.lon], Math.max(_map.getZoom(), 11), { animate: true });
+        } else {
+          _map.panTo([data.lat, data.lon], { animate: true });
+        }
+      });
+
+      document.getElementById('btn-cerrar-altimetria')?.addEventListener('click', () => {
+        if (_hoverMarker) { _hoverMarker.remove(); _hoverMarker = null; }
+      });
+
+      function toggleSeguimientoBtn() {
+        AltimetriaModule.toggleFollow();
+        actualizarTextoSeguimiento();
+      }
+      document.getElementById('btn-seguimiento-altimetria')?.addEventListener('click', toggleSeguimientoBtn);
+      document.getElementById('btn-seguimiento-altimetria-panel')?.addEventListener('click', toggleSeguimientoBtn);
+      actualizarTextoSeguimiento();
+    }
+
+  }
+  // -------------------------------------------------------------------
+  // Vista móvil: alternar entre panel completo y mapa completo
+  // -------------------------------------------------------------------
