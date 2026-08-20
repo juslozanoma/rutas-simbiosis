@@ -435,8 +435,8 @@ input, select{ font-family: inherit; }
   width: 16px; height: 16px;
   display: block;
   background-color: var(--text-strong);
-  -webkit-mask-image: url('/icons/replay.svg');
-  mask-image: url('/icons/replay.svg');
+  -webkit-mask-image: url('../icons/replay.svg');
+  mask-image: url('../icons/replay.svg');
   -webkit-mask-repeat: no-repeat;
   -webkit-mask-position: center;
   -webkit-mask-size: contain;
@@ -499,8 +499,8 @@ input, select{ font-family: inherit; }
   width: 18px;
   height: 18px;
   background-color: #d64545;
-  -webkit-mask-image: url('/icons/replay.svg');
-  mask-image: url('/icons/replay.svg');
+  -webkit-mask-image: url('../icons/replay.svg');
+  mask-image: url('../icons/replay.svg');
   -webkit-mask-repeat: no-repeat;
   -webkit-mask-position: center;
   -webkit-mask-size: contain;
@@ -1848,11 +1848,11 @@ input, select{ font-family: inherit; }
 .tab-icon--20{ width: 20px; height: 20px; }
 .tab-icon--22{ width: 22px; height: 22px; }
 .tab-icon--26{ width: 26px; height: 26px; }
-.tab-icon--sign-post{ -webkit-mask-image: url('/icons/sign-post.svg'); mask-image: url('/icons/sign-post.svg'); }
-.tab-icon--colombia{ -webkit-mask-image: url('/icons/colombia.svg'); mask-image: url('/icons/colombia.svg'); }
-.tab-icon--bike{ -webkit-mask-image: url('/icons/bike.svg'); mask-image: url('/icons/bike.svg'); }
-.tab-icon--hiking{ -webkit-mask-image: url('/icons/hiking.svg'); mask-image: url('/icons/hiking.svg'); }
-.tab-icon--tour{ -webkit-mask-image: url('/icons/tour.svg'); mask-image: url('/icons/tour.svg'); }
+.tab-icon--sign-post{ -webkit-mask-image: url('../icons/sign-post.svg'); mask-image: url('../icons/sign-post.svg'); }
+.tab-icon--colombia{ -webkit-mask-image: url('../icons/colombia.svg'); mask-image: url('../icons/colombia.svg'); }
+.tab-icon--bike{ -webkit-mask-image: url('../icons/bike.svg'); mask-image: url('../icons/bike.svg'); }
+.tab-icon--hiking{ -webkit-mask-image: url('../icons/hiking.svg'); mask-image: url('../icons/hiking.svg'); }
+.tab-icon--tour{ -webkit-mask-image: url('../icons/tour.svg'); mask-image: url('../icons/tour.svg'); }
 .panel-tab--active .tab-icon,
 .mobile-tab-btn--active .tab-icon{ background-color: var(--teal-500); }
 
@@ -3110,7 +3110,7 @@ input, select{ font-family: inherit; }
   -webkit-mask-position: center; mask-position: center;
   -webkit-mask-size: contain; mask-size: contain;
 }
-.ctx-menu__ico--sign-post{ -webkit-mask-image: url('/icons/sign-post.svg'); mask-image: url('/icons/sign-post.svg'); }
+.ctx-menu__ico--sign-post{ -webkit-mask-image: url('../icons/sign-post.svg'); mask-image: url('../icons/sign-post.svg'); }
 .ctx-menu__ico-plus{ display: inline-flex; }
 .ctx-menu__ico-plus svg{ width: 16px; height: 16px; display: block; color: var(--teal-500); }
 .ctx-menu__ico-warning{ display: inline-flex; }

@@ -481,7 +481,7 @@ function FilaPuerto({ p, prefijo, nombre, distTexto }) {
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); accion(); } }}
     >
       <span className="parada-item__num parada-item__num--ico">
-        <img src="/icons/boat.svg" alt="Puerto" style={{ width: 12, height: 12, filter: 'brightness(0) invert(1)' }} />
+        <img src="./icons/boat.svg" alt="Puerto" style={{ width: 12, height: 12, filter: 'brightness(0) invert(1)' }} />
       </span>
       <span className="parada-item__nombre">
         <span className="parada-item__marquee">{nombre}{distTexto ? <span className="parada-item__dist">{distTexto}</span> : null}</span>
