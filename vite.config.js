@@ -186,7 +186,7 @@ function pluginApiLocal() {
 }
 
 export default defineConfig({
-  base: '/ruta-simbiosis/',
+  base: '/rutas-simbiosis/',
   plugins: [
     react(),
     pluginLegacyEstaticos(),
