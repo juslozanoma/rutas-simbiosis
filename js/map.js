@@ -818,7 +818,7 @@ const MapModule = (() => {
   // ---------------------------------------------------------------------
 
 function mostrarAlertaRuta(lnglat, mensaje, color) {
-    const icon = L.icon({
+    const icon = L./icon({
       iconUrl: 'icons/warning.svg',
       iconSize: [32, 32],
       iconAnchor: [16, 16],
@@ -964,7 +964,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     function render(lista) {
       div.innerHTML = lista.map((i) =>
         '<div class="ctx-menu__item' + (i.submenu ? ' ctx-menu__item--parent' : '') + '">' +
-        (i.icono ? '<span class="ctx-menu__icon">' + i.icono + '</span>' : '') +
+        (i./icono ? '<span class="ctx-menu__icon">' + i./icono + '</span>' : '') +
         '<span class="ctx-menu__texto">' + i.texto + '</span>' +
         (i.submenu ? '<span class="ctx-menu__chevron">›</span>' : '') +
         '</div>'
@@ -1710,7 +1710,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         const h = Math.floor(seg / 3600);
         const min = Math.round((seg % 3600) / 60);
         const durStr = h > 0 ? `${h} h ${min} min` : `${min} min`;
-        tooltipTxt = `${estilo.iconoEmoji} ${km.toFixed(1)} km · ${durStr}`;
+        tooltipTxt = `${estilo./iconoEmoji} ${km.toFixed(1)} km · ${durStr}`;
         linea.bindTooltip(tooltipTxt, { sticky: true, direction: 'top', className: 'altimetria-map-tooltip' });
       }
 
@@ -1724,7 +1724,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
         bearing = turf.bearing(turf.point(mid), turf.point(dest));
       } catch (e) { /* ignorar */ }
       const icono = L.divIcon({
-        html: estilo.iconoHtml(bearing),
+        html: estilo./iconoHtml(bearing),
         className: '',
         iconSize: [26, 26],
         iconAnchor: [13, 13],

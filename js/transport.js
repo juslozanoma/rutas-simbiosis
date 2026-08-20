@@ -13,9 +13,9 @@
  */
 const TransportConfigModule = (() => {
 
-  const _KEY_ICONO = 'transport.icono';
+  const _KEY_ICONO = 'transport./icono';
   const _KEY_COLOR = 'transport.color';
-  const _KEY_ICONO_HIKING = 'transport.icono-hiking';
+  const _KEY_ICONO_HIKING = 'transport./icono-hiking';
 
   /** Vehículos disponibles. `path` es la ubicación del SVG (negro, monocromo). */
   const ICONOS = [
