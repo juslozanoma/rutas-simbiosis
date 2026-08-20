@@ -220,7 +220,7 @@ function PanelLateral() {
             <span id="altimetria-dist-panel"></span>
             <span id="altimetria-alt-panel"></span>
           </span>
-          <button type="button" id="btn-seguimiento-altimetria-panel" className="altimetria__seguimiento" title="Activar o desactivar el seguimiento" aria-pressed="true"><img src="/scope.svg" alt="" width="12" height="21" /><span className="altimetria__seguimiento-label">Seguimiento</span></button>
+          <button type="button" id="btn-seguimiento-altimetria-panel" className="altimetria__seguimiento" title="Activar o desactivar el seguimiento" aria-pressed="true"><img src="/icons/scope.svg" alt="" width="12" height="21" /><span className="altimetria__seguimiento-label">Seguimiento</span></button>
         </div>
         <div className="altimetria__chart" id="altimetria-chart-panel"></div>
       </div>

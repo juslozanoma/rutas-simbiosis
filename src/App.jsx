@@ -10,7 +10,6 @@
 import MapaFull from './components/shell/MapaFull';
 import PanelLateral from './components/shell/PanelLateral';
 import BarraMovil from './components/shell/BarraMovil';
-import Dialogos from './components/shell/Dialogos';
 import TransportSelector from './components/TransportSelector';
 import MunicipioCombos from './components/MunicipioCombo';
 import ParadasLista from './components/ParadasLista';
@@ -25,6 +24,10 @@ import MenuAltimetria from './components/MenuAltimetria';
 import BannerComparar from './components/BannerComparar';
 import TourDestinosLista from './components/TourDestinosLista';
 import InfraListado from './components/InfraListado';
+import RutasArchivoLista from './components/RutasArchivoLista';
+import BuscarSitiosBar from './components/BuscarSitiosBar';
+import CargarRutaDialogo from './components/CargarRutaDialogo';
+import NuevoPuertoDialogo from './components/NuevoPuertoDialogo';
 
 export default function App() {
   return (
@@ -34,7 +37,6 @@ export default function App() {
         <PanelLateral />
       </div>
       <BarraMovil />
-      <Dialogos />
       <TransportSelector />
       <MunicipioCombos />
       <ParadasLista />
@@ -49,6 +51,10 @@ export default function App() {
       <BannerComparar />
       <TourDestinosLista />
       <InfraListado />
+      <RutasArchivoLista />
+      <BuscarSitiosBar />
+      <CargarRutaDialogo />
+      <NuevoPuertoDialogo />
     </>
   );
 }

@@ -43,7 +43,7 @@
       PersistenciaJsonModule.guardarPuertos(state.puertos).then((res) => {
         if (typeof _mostrarNotificacion !== 'function') return;
         if (res === true) _mostrarNotificacion('Puerto movido: ' + puerto.nombre + ' — JSON guardado.');
-        else if (res === false) _mostrarNotificacion('No se pudo guardar el JSON en su ubicación; se descargó una copia.');
+        else if (res === false) _mostrarNotificacion('No se pudo guardar el JSON en su ubicación; se guardó una copia en el navegador.');
       });
     });
     // "Agregar puerto aquí" (clic derecho en el mapa): abre el formulario.
@@ -253,53 +253,63 @@
   let _npLat = null;
   let _npLng = null;
   let _npEditandoId = null;
+  // Snapshot del diálogo de puerto: lo lee el componente React
+  // (NuevoPuertoDialogo) para pintar overlay, campos, título y error.
+  let _npSnapshot = null;
 
-  function _npFijarTitulo(editando) {
-    const titulo = document.getElementById('np-titulo');
-    if (titulo) titulo.textContent = editando ? 'Editar puerto' : 'Agregar puerto';
-    const guardar = document.getElementById('np-guardar');
-    if (guardar) guardar.textContent = editando ? 'Guardar cambios' : 'Guardar puerto';
+  /** Pide a React que vuelva a renderizar el diálogo de puerto. */
+  function _notificarDialogoNuevoPuerto() {
+    if (typeof window !== 'undefined' && window.SimbiosisUI && typeof window.SimbiosisUI.notificarDialogoNuevoPuerto === 'function') {
+      window.SimbiosisUI.notificarDialogoNuevoPuerto();
+    }
   }
 
   function abrirDialogoNuevoPuerto(lat, lng) {
     _npLat = lat;
     _npLng = lng;
     _npEditandoId = null;
-    _npFijarTitulo(false);
-    ['np-nombre', 'np-ciudad', 'np-rio', 'np-descripcion'].forEach((id) => {
-      const e = document.getElementById(id);
-      if (e) e.value = '';
-    });
-    const err = document.getElementById('np-error');
-    if (err) { err.hidden = true; err.textContent = ''; }
-    const dlg = document.getElementById('panel-nuevo-puerto');
-    if (dlg) dlg.hidden = false;
-    const nombre = document.getElementById('np-nombre');
-    if (nombre) setTimeout(() => nombre.focus(), 50);
+    _npSnapshot = {
+      visible: true,
+      editando: false,
+      valores: { nombre: '', ciudad: '', rio: '', descripcion: '' },
+      error: '',
+    };
+    _notificarDialogoNuevoPuerto();
   }
 
   function abrirDialogoEditarPuerto(p) {
     _npLat = Number(p.latitud);
     _npLng = Number(p.longitud);
     _npEditandoId = p.id;
-    _npFijarTitulo(true);
-    const valores = { 'np-nombre': p.nombre, 'np-ciudad': p.ciudad, 'np-rio': p.rio, 'np-descripcion': p.descripcion };
-    Object.keys(valores).forEach((id) => {
-      const e = document.getElementById(id);
-      if (e) e.value = valores[id] || '';
-    });
-    const err = document.getElementById('np-error');
-    if (err) { err.hidden = true; err.textContent = ''; }
-    const dlg = document.getElementById('panel-nuevo-puerto');
-    if (dlg) dlg.hidden = false;
-    const nombre = document.getElementById('np-nombre');
-    if (nombre) setTimeout(() => nombre.focus(), 50);
+    _npSnapshot = {
+      visible: true,
+      editando: true,
+      valores: {
+        nombre: p.nombre || '',
+        ciudad: p.ciudad || '',
+        rio: p.rio || '',
+        descripcion: p.descripcion || '',
+      },
+      error: '',
+    };
+    _notificarDialogoNuevoPuerto();
   }
 
   function cerrarDialogoNuevoPuerto() {
     _npEditandoId = null;
-    const dlg = document.getElementById('panel-nuevo-puerto');
-    if (dlg) dlg.hidden = true;
+    if (_npSnapshot) {
+      _npSnapshot.visible = false;
+      _notificarDialogoNuevoPuerto();
+    }
+  }
+
+  if (typeof window !== 'undefined' && window.SimbiosisUI) {
+    /** Snapshot del diálogo de puerto (null si nunca se ha abierto). */
+    window.SimbiosisUI.datosDialogoNuevoPuerto = () => _npSnapshot;
+    /** Guarda el puerto con los valores del formulario (lo invoca React). */
+    window.SimbiosisUI.guardarNuevoPuerto = (valores) => guardarNuevoPuerto(valores);
+    /** Cierra el diálogo de puerto (lo invoca React). */
+    window.SimbiosisUI.cerrarDialogoNuevoPuerto = () => cerrarDialogoNuevoPuerto();
   }
 
   function _generarIdPuerto(nombre) {
@@ -316,14 +326,16 @@
     return id;
   }
 
-  function guardarNuevoPuerto() {
-    const nombre = (document.getElementById('np-nombre').value || '').trim();
-    const ciudad = (document.getElementById('np-ciudad').value || '').trim();
-    const rio = (document.getElementById('np-rio').value || '').trim();
-    const descripcion = (document.getElementById('np-descripcion').value || '').trim();
-    const err = document.getElementById('np-error');
+  function guardarNuevoPuerto(valores) {
+    const nombre = String((valores && valores.nombre) || '').trim();
+    const ciudad = String((valores && valores.ciudad) || '').trim();
+    const rio = String((valores && valores.rio) || '').trim();
+    const descripcion = String((valores && valores.descripcion) || '').trim();
     if (!nombre || !ciudad || !rio) {
-      if (err) { err.hidden = false; err.textContent = 'Nombre, ciudad y río son obligatorios.'; }
+      if (_npSnapshot) {
+        _npSnapshot.error = 'Nombre, ciudad y río son obligatorios.';
+        _notificarDialogoNuevoPuerto();
+      }
       return;
     }
 
@@ -340,7 +352,7 @@
           PersistenciaJsonModule.guardarPuertos(state.puertos).then((res) => {
             if (typeof _mostrarNotificacion !== 'function') return;
             if (res === true) _mostrarNotificacion('Puerto actualizado: ' + nombre + ' — JSON guardado.');
-            else if (res === false) _mostrarNotificacion('Puerto actualizado; no se pudo sobrescribir el JSON, se descargó una copia.');
+            else if (res === false) _mostrarNotificacion('Puerto actualizado; no se pudo sobrescribir el JSON, se guardó una copia en el navegador.');
     });
 
     // Cargar el grafo de ríos una sola vez al iniciar (motor fluvial).
@@ -371,7 +383,7 @@
       PersistenciaJsonModule.guardarPuertos(state.puertos).then((res) => {
         if (typeof _mostrarNotificacion !== 'function') return;
         if (res === true) _mostrarNotificacion('Puerto agregado: ' + nombre + ' — JSON guardado.');
-        else if (res === false) _mostrarNotificacion('Puerto agregado; no se pudo sobrescribir el JSON, se descargó una copia.');
+        else if (res === false) _mostrarNotificacion('Puerto agregado; no se pudo sobrescribir el JSON, se guardó una copia en el navegador.');
       });
     }
   }
@@ -386,17 +398,16 @@
       PersistenciaJsonModule.guardarPuertos(state.puertos).then((res) => {
         if (typeof _mostrarNotificacion !== 'function') return;
         if (res === true) _mostrarNotificacion('Puerto borrado: ' + p.nombre + ' — JSON guardado.');
-        else if (res === false) _mostrarNotificacion('Puerto borrado; no se pudo sobrescribir el JSON, se descargó una copia.');
+        else if (res === false) _mostrarNotificacion('Puerto borrado; no se pudo sobrescribir el JSON, se guardó una copia en el navegador.');
       });
     }
   }
 
   function initNuevoPuerto() {
-    const guardar = document.getElementById('np-guardar');
-    if (guardar) guardar.addEventListener('click', guardarNuevoPuerto);
-    const cancelar = document.getElementById('np-cancelar');
-    if (cancelar) cancelar.addEventListener('click', cerrarDialogoNuevoPuerto);
-    // El diálogo solo se cierra con Guardar o Cancelar (no al hacer clic fuera).
+    // El diálogo de puerto es React (NuevoPuertoDialogo): Guardar y Cancelar
+    // los maneja el componente con los puentes guardarNuevoPuerto y
+    // cerrarDialogoNuevoPuerto. El diálogo solo se cierra con esos botones
+    // (no al hacer clic fuera).
   }
 
   // -------------------------------------------------------------------
@@ -959,27 +970,13 @@
     if (typeof _syncBotonAltimetria === 'function') _syncBotonAltimetria();
   }
 
-  // Recarga automática SOLO cuando el servidor lo anuncia (server.js), y ese
-  // servidor solo avisa cuando cambian .html o .js. No recarga al guardar
-  // puertos (JSON), ni por cambios de CSS/SVG. La cabecera X-Simbiosis-Server
-  // la añade server.js: si la app corre en otro servidor (p. ej. Live Server
-  // de VSCode) no se consulta /__server_info__ y se evita un 404 en consola.
-  function initRecargaPorServidor() {
-    fetch(location.pathname, { method: 'HEAD' })
-      .then((res) => (res && res.headers.get('X-Simbiosis-Server') === '1' ? fetch('/__server_info__') : null))
-      .then((res) => (res && res.ok ? res.json() : null))
-      .then((info) => {
-        if (!info || !info.events) return;
-        const es = new EventSource('/events');
-        es.onmessage = () => { location.reload(); };
-      })
-      .catch(() => {});
-  }
+  // La recarga automática al cambiar scripts clásicos (js/) la gestiona ahora
+  // el plugin de Vite (simbiosis-api-local), que pide una recarga completa por
+  // el canal de HMR; ya no existe el SSE de server.js.
 
   document.addEventListener('DOMContentLoaded', initNuevoPuerto);
   document.addEventListener('DOMContentLoaded', initReiniciar);
   document.addEventListener('DOMContentLoaded', initTour);
-  document.addEventListener('DOMContentLoaded', initRecargaPorServidor);
   document.addEventListener('DOMContentLoaded', initGuardarMapa);
 
   document.addEventListener('DOMContentLoaded', init);

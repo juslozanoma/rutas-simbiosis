@@ -27,13 +27,3 @@ if (raiz) {
 }
 
 console.log('[Simbiosis] Vite + React activo');
-
-// PWA: el service worker solo se registra en producción (en desarrollo Vite
-// ya gestiona la recarga con HMR y evitaríamos cachés estropeadas).
-if ('serviceWorker' in navigator && !import.meta.env.DEV) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch((err) => {
-      console.warn('No se pudo registrar el Service Worker:', err);
-    });
-  });
-}

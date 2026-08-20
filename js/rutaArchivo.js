@@ -49,6 +49,14 @@ const RutaArchivoModule = (() => {
   // cargada): la barra superior muestra su distancia y tiempo.
   let _ultimaRutaActivadaId = null;
 
+  // Snapshot con los descriptores de las fichas del listado (modo 'archivo'):
+  // lo lee el componente React RutasArchivoLista para pintar las tarjetas.
+  let _rutasSnapshot = [];
+
+  // Snapshot del diálogo de carga de rutas (tecla K): lo lee el componente
+  // React CargarRutaDialogo para pintar overlay, etiqueta, error y botones.
+  let _dialogoCargarRutaSnapshot = null;
+
   // -------------------------------------------------------------------
   // Persistencia en localStorage
   // -------------------------------------------------------------------
@@ -104,32 +112,38 @@ const RutaArchivoModule = (() => {
   // -------------------------------------------------------------------
 
   function abrirDialogo() {
-    if (!el.panelCargarRuta) return;
-    if (el.cargarRutaError) { el.cargarRutaError.hidden = true; el.cargarRutaError.textContent = ''; }
-    if (el.cargarRutaFileLabel) el.cargarRutaFileLabel.textContent = 'Elegir archivo…';
-    if (el.inputRutaArchivo) el.inputRutaArchivo.value = '';
-    // "Continuar con la actual" solo cuando hay rutas guardadas y el modo
-    // no está activo (las rutas ya están en el mapa).
-    if (el.btnContinuarRuta) el.btnContinuarRuta.hidden = !_rutas.length || _modoActivo;
-    el.panelCargarRuta.hidden = false;
+    // El diálogo lo renderiza React (CargarRutaDialogo); aquí solo se guarda el
+    // snapshot con su estado y se notifica al puente.
+    _dialogoCargarRutaSnapshot = {
+      visible: true,
+      error: '',
+      label: 'Elegir archivo…',
+      // "Continuar con la actual" solo cuando hay rutas guardadas y el modo no
+      // está activo (las rutas ya están en el mapa).
+      continuarVisible: Boolean(_rutas.length) && !_modoActivo,
+    };
+    _notificarDialogoCargarRuta();
   }
 
   function cerrarDialogo() {
-    if (el.panelCargarRuta) el.panelCargarRuta.hidden = true;
+    if (_dialogoCargarRutaSnapshot) {
+      _dialogoCargarRutaSnapshot.visible = false;
+      _notificarDialogoCargarRuta();
+    }
   }
 
   /** Tecla K: abre el diálogo o, si ya está abierto, vuelve a la normalidad
    *  (las rutas guardadas permanecen en localStorage). */
   function toggleK() {
-    if (!el.panelCargarRuta) return;
-    if (!el.panelCargarRuta.hidden) salirModo();
+    const abierto = Boolean(_dialogoCargarRutaSnapshot && _dialogoCargarRutaSnapshot.visible);
+    if (abierto) salirModo();
     else abrirDialogo();
   }
 
   function _mostrarError(msg) {
-    if (el.cargarRutaError) {
-      el.cargarRutaError.textContent = msg;
-      el.cargarRutaError.hidden = false;
+    if (_dialogoCargarRutaSnapshot) {
+      _dialogoCargarRutaSnapshot.error = msg;
+      _notificarDialogoCargarRuta();
     }
   }
 
@@ -1107,16 +1121,6 @@ const RutaArchivoModule = (() => {
     if (el.paradasContador) el.paradasContador.textContent = _totalKm().toFixed(1) + ' km';
   }
 
-  /** Número que muestra cada ficha del listado. Durante una unión en curso la
-   *  ruta elegida como origen (1) se marca con un círculo verde y las demás
-   *  con un círculo gris (2), para saber cómo se unirán. */
-  function _numeroTarjeta(r, i) {
-    if (_rutaUnirSeleccionada == null) return (i + 1) + '.';
-    return _rutaUnirSeleccionada === r.id
-      ? '<span class="sitio-card__num-badge sitio-card__num-badge--uno">1</span>'
-      : '<span class="sitio-card__num-badge sitio-card__num-badge--dos">2</span>';
-  }
-
   function _renderTarjetas() {
     if (!el.paradasLista) return;
     // Si React está renderizando la lista de paradas, desmontarlo primero: el
@@ -1126,40 +1130,87 @@ const RutaArchivoModule = (() => {
     if (window.SimbiosisUI && typeof window.SimbiosisUI.notificarListaRuta === 'function') {
       window.SimbiosisUI.notificarListaRuta();
     }
-    el.paradasLista.innerHTML = '';
-    _rutas.forEach((r, i) => {
-      const oculta = _rutasOcultas.has(r.id);
-      const ojoSvg = oculta
-        ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
-        : '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-      const li = Utils.crearElemento(`
-        <li class="sitio-card${oculta ? ' sitio-card--ruta-oculta' : ''}${_rutaUnirSeleccionada === r.id ? ' sitio-card--unir-seleccionada' : ''}" data-ruta-archivo-id="${r.id}">
-          <div class="sitio-card__top">
-            <span class="sitio-card__nombre"><span class="sitio-card__dot" style="background:${r.color || '#2f7a6b'}"></span><span class="sitio-card__num">${_numeroTarjeta(r, i)}</span>${_escapeHtml(r.nombre)}</span>
-            <div class="sitio-card__top-right">
-              <button type="button" class="sitio-card__ojo" data-toggle-ruta="${r.id}" title="${oculta ? 'Mostrar en el mapa' : 'Ocultar del mapa'}" aria-label="${oculta ? 'Mostrar en el mapa' : 'Ocultar del mapa'}" aria-pressed="${oculta ? 'false' : 'true'}">${ojoSvg}</button>
-              <button type="button" class="sitio-card__quitar" data-quitar-ruta="${r.id}" title="Quitar ruta de la memoria" aria-label="Quitar ruta de la memoria">&times;</button>
-            </div>
-          </div>
-          <p class="sitio-card__ciudad">${r.km.toFixed(1)} km totales</p>
-        </li>
-      `);
-      // Clic derecho (o pulsación larga en táctil) sobre la ficha: menú con
-      // "Cambiar nombre de la ruta" y "Unir esta ruta con otra".
-      li.addEventListener('contextmenu', (evt) => {
-        evt.preventDefault();
-        _abrirMenuTarjeta(r.id, evt.clientX, evt.clientY);
-      });
-      if (typeof engancharLongPress === 'function') {
-        engancharLongPress(li, (evt) => _abrirMenuTarjeta(r.id, evt.clientX, evt.clientY));
-      }
-      el.paradasLista.appendChild(li);
-    });
+    // La lista la renderiza React (RutasArchivoLista, portal a #paradas-lista);
+    // aquí solo se guarda el snapshot con los descriptores de cada ficha y se
+    // notifica al puente para que re-pinte las tarjetas.
+    const enUnir = _rutaUnirSeleccionada != null;
+    _rutasSnapshot = _rutas.map((r, i) => ({
+      id: String(r.id),
+      nombre: r.nombre,
+      km: r.km != null ? Number(r.km) : 0,
+      color: r.color || '#2f7a6b',
+      oculta: _rutasOcultas.has(r.id),
+      enUnir,
+      unirActiva: _rutaUnirSeleccionada === r.id,
+      pos: i + 1,
+    }));
     _actualizarStats();
     // El listado no lleva la palabra "Ruta" como título (ni móvil ni PC).
     if (el.paradasTitulo) el.paradasTitulo.textContent = '';
     if (el.btnAgregarIntermedio) el.btnAgregarIntermedio.hidden = true;
     if (el.panelParadas) el.panelParadas.hidden = false;
+    _notificarRutasArchivo();
+  }
+
+  // -------------------------------------------------------------------
+  // Puente con React (lista de rutas de archivo). El contenedor #paradas-lista
+  // es COMPARTIDO: en modo 'archivo' lo renderiza el componente React
+  // (RutasArchivoLista, portal); los getters se exponen en window.SimbiosisUI
+  // para que React decida cuándo montar y qué acciones ejecutar.
+  // -------------------------------------------------------------------
+
+  /** Pide a React que vuelva a renderizar las tarjetas del listado. */
+  function _notificarRutasArchivo() {
+    if (typeof window !== 'undefined' && window.SimbiosisUI && typeof window.SimbiosisUI.notificarRutasArchivo === 'function') {
+      window.SimbiosisUI.notificarRutasArchivo();
+    }
+  }
+
+  /** Pide a React que vuelva a renderizar el diálogo de carga de rutas. */
+  function _notificarDialogoCargarRuta() {
+    if (typeof window !== 'undefined' && window.SimbiosisUI && typeof window.SimbiosisUI.notificarDialogoCargarRuta === 'function') {
+      window.SimbiosisUI.notificarDialogoCargarRuta();
+    }
+  }
+
+  if (typeof window !== 'undefined' && window.SimbiosisUI) {
+    /** Snapshot de las fichas (solo en modo 'archivo'). */
+    window.SimbiosisUI.datosRutasArchivo = () => _modoActivo && _rutaArchivoActiva
+      ? { items: _rutasSnapshot }
+      : null;
+    /** Clic sobre una ficha: muestra la ruta en el mapa y su altimetría. */
+    window.SimbiosisUI.clicTarjetaRutaArchivo = (id) => _clicTarjeta(String(id));
+    /** Ojo de la ficha: muestra u oculta la ruta en el mapa. */
+    window.SimbiosisUI.alternarVisibilidadRutaArchivo = (id) => _alternarVisibilidadRuta(String(id));
+    /** X de la ficha: quita la ruta de la memoria. */
+    window.SimbiosisUI.quitarRutaArchivo = (id) => quitarRuta(String(id));
+    /** Menú contextual (clic derecho / pulsación larga) de una ficha. */
+    window.SimbiosisUI.abrirMenuTarjetaRutaArchivo = (id, clientX, clientY) => _abrirMenuTarjeta(String(id), clientX, clientY);
+    /** Snapshot del diálogo de carga de rutas (null si nunca se ha abierto). */
+    window.SimbiosisUI.datosDialogoCargarRuta = () => _dialogoCargarRutaSnapshot;
+    /** Archivos elegidos en el diálogo (lo invoca React desde el input file). */
+    window.SimbiosisUI.procesarArchivosRuta = async (files) => {
+      const lista = Array.from(files || []);
+      if (!lista.length) return;
+      // Con varios archivos seleccionados se cargan todos: la primera actúa
+      // como la ruta nueva normal (activa el modo, centra la vista y muestra
+      // la altimetría); el resto se añaden visibles al listado y al mapa.
+      if (_dialogoCargarRutaSnapshot) {
+        _dialogoCargarRutaSnapshot.label = lista.length === 1
+          ? lista[0].name
+          : lista.length + ' rutas seleccionadas';
+        _notificarDialogoCargarRuta();
+      }
+      let procesada = false;
+      for (const file of lista) {
+        const ok = await procesarArchivo(file, { soloAnadir: procesada });
+        if (ok && !procesada) procesada = true;
+      }
+    };
+    /** "Continuar con la actual": vuelve a mostrar las rutas guardadas. */
+    window.SimbiosisUI.continuarRuta = () => continuar();
+    /** Cancelar / clic fuera del diálogo: lo cierra. */
+    window.SimbiosisUI.cerrarDialogoRuta = () => cerrarDialogo();
   }
 
   function _restaurarPanel() {
@@ -1188,34 +1239,9 @@ const RutaArchivoModule = (() => {
 
   function initEventos() {
     _cargarGuardadas();
-    if (el.inputRutaArchivo) {
-      el.inputRutaArchivo.addEventListener('change', async () => {
-        const files = Array.from(el.inputRutaArchivo.files || []);
-        if (!files.length) return;
-        // Con varios archivos seleccionados se cargan todos: la primera actúa
-        // como la ruta nueva normal (activa el modo, centra la vista y muestra
-        // la altimetría); el resto se añaden visibles al listado y al mapa.
-        if (el.cargarRutaFileLabel) {
-          el.cargarRutaFileLabel.textContent = files.length === 1
-            ? files[0].name
-            : files.length + ' rutas seleccionadas';
-        }
-        let procesada = false;
-        for (const file of files) {
-          const ok = await procesarArchivo(file, { soloAnadir: procesada });
-          if (ok && !procesada) procesada = true;
-        }
-        // Se limpia el input para poder volver a elegir los mismos archivos.
-        if (el.inputRutaArchivo) el.inputRutaArchivo.value = '';
-      });
-    }
-    if (el.btnContinuarRuta) el.btnContinuarRuta.addEventListener('click', continuar);
-    if (el.btnCerrarCargarRuta) el.btnCerrarCargarRuta.addEventListener('click', cerrarDialogo);
-    if (el.panelCargarRuta) {
-      el.panelCargarRuta.addEventListener('click', (e) => {
-        if (e.target === el.panelCargarRuta) cerrarDialogo();
-      });
-    }
+    // El diálogo de carga (tecla K) es React (CargarRutaDialogo): el input de
+    // archivo, "Continuar con la actual" y Cancelar los maneja el componente
+    // con los puentes procesarArchivosRuta/continuarRuta/cerrarDialogoRuta.
     if (el.btnGps) el.btnGps.addEventListener('click', toggleSeguimiento);
     // Clic derecho / pulsación larga sobre un punto de una ruta en el mapa.
     if (typeof MapModule.setOnMenuPuntoRutaArchivo === 'function') {
@@ -1233,29 +1259,6 @@ const RutaArchivoModule = (() => {
     // y vuelve al menú normal de Rutas y Descubre Colombia.
     if (el.btnCerrarRutasArchivo) el.btnCerrarRutasArchivo.addEventListener('click', salirModo);
     if (el.btnCerrarRutasArchivoDesktop) el.btnCerrarRutasArchivoDesktop.addEventListener('click', salirModo);
-    if (el.paradasLista) {
-      el.paradasLista.addEventListener('click', (e) => {
-        // Clic sintético tras una pulsación larga (menú contextual abierto):
-        // se ignora para que no cierre el menú ni abra la altimetría.
-        if (_suprimirProximoClic) return;
-        const ojo = e.target.closest('[data-toggle-ruta]');
-        if (ojo) {
-          e.stopPropagation();
-          _alternarVisibilidadRuta(ojo.getAttribute('data-toggle-ruta'));
-          return;
-        }
-        const btn = e.target.closest('[data-quitar-ruta]');
-        if (btn) {
-          e.stopPropagation();
-          quitarRuta(btn.getAttribute('data-quitar-ruta'));
-          return;
-        }
-        const tarjeta = e.target.closest('[data-ruta-archivo-id]');
-        if (tarjeta) {
-          _clicTarjeta(tarjeta.getAttribute('data-ruta-archivo-id'));
-        }
-      });
-    }
   }
 
   return {

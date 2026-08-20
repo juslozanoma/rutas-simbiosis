@@ -32,7 +32,7 @@ export default function MobileSummary() {
           </svg>
         </button>
         <button type="button" id="btn-guardar" className="summary-btn" title="Guardar el estado del mapa" aria-label="Guardar el estado del mapa">
-          <img src="/save.svg" alt="" width="15" height="15" style={{ filter: 'brightness(0) invert(1)' }} />
+          <img src="/icons/save.svg" alt="" width="15" height="15" style={{ filter: 'brightness(0) invert(1)' }} />
         </button>
         <button
           type="button"
