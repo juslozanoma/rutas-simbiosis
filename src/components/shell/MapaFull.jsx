@@ -57,7 +57,7 @@ function MapaFull() {
       {/* Botones flotantes del mapa */}
       <div className="btns-map" id="btns-map">
         <button type="button" id="btn-altimetria" className="btn-map-icon" title="Perfil de elevación" aria-label="Perfil de elevación">
-          <img src="./icons/bike.svg" alt="" width="20" height="20" style={{ filter: 'brightness(0) invert(1)' }} />
+          <img src={`${import.meta.env.BASE_URL}icons/bike.svg`} alt="" width="20" height="20" style={{ filter: 'brightness(0) invert(1)' }} />
         </button>
       </div>
       {/* Botón GPS (ruta desde archivo KML/GPX; en PC va debajo de la rosa de
