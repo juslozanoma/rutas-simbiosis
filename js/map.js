@@ -819,7 +819,7 @@ const MapModule = (() => {
 
 function mostrarAlertaRuta(lnglat, mensaje, color) {
     const icon = L.icon({
-      iconUrl: '/icons/warning.svg',
+      iconUrl: './icons/warning.svg',
       iconSize: [32, 32],
       iconAnchor: [16, 16],
       popupAnchor: [0, -16],
@@ -1406,7 +1406,6 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
    * la geometría real dibujada).
    */
   function dibujarRuta(geojsonLineString, meta = {}) {
-    console.log('[RUTA] dibujarRuta called', { meta });
     limpiarRuta();
     _rutaGeojson = geojsonLineString;
 

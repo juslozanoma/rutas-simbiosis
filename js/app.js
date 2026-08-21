@@ -507,7 +507,6 @@
    *  departamento/sitio/frontera). */
   function _menuCatalogo(tipo, item, marker, clientX, clientY) {
     if (!item) return;
-    console.log('[menu] contexto catalogo tipo=', tipo, 'item=', item.nombre);
     const opciones = [
       { etiqueta: 'Ver más información', accion: () => _verInfoCatalogo(tipo, item) },
       { etiqueta: 'Mover', accion: () => MapModule.iniciarArrastreCatalogo(marker, tipo, item.id) },
