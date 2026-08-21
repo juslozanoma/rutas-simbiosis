@@ -49,7 +49,7 @@ function MapaFull() {
             <span id="altimetria-dist"></span>
             <span id="altimetria-alt"></span>
           </span>
-          <button type="button" id="btn-seguimiento-altimetria" className="altimetria__seguimiento" title="Activar o desactivar el seguimiento en el mapa" aria-pressed="true"><img src="./icons/scope.svg" alt="" width="12" height="21" /><span className="altimetria__seguimiento-label">Seguimiento activado</span></button>
+          <button type="button" id="btn-seguimiento-altimetria" className="altimetria__seguimiento" title="Activar o desactivar el seguimiento en el mapa" aria-pressed="true"><img src="/rutas-simbiosis/icons/scope.svg" alt="" width="12" height="21" /><span className="altimetria__seguimiento-label">Seguimiento activado</span></button>
           <button type="button" id="btn-cerrar-altimetria" className="altimetria__close">&times;</button>
         </div>
         <div className="altimetria__chart" id="altimetria-chart"></div>
@@ -64,13 +64,13 @@ function MapaFull() {
            los vientos, arriba a la derecha del mapa) */}
       <div className="btns-map btns-map--gps-solo" id="btns-map-gps-solo">
         <button type="button" id="btn-gps" className="btn-map-icon" title="Activar ubicación GPS" aria-label="Activar ubicación GPS" hidden>
-          <img src="./icons/gps.svg" alt="" width="22" height="22" style={{ filter: 'brightness(0) invert(1)' }} />
+          <img src="/rutas-simbiosis/icons/gps.svg" alt="" width="22" height="22" style={{ filter: 'brightness(0) invert(1)' }} />
         </button>
       </div>
       {/* Botones de satélite */}
       <div className="btns-map btns-map--gps" id="btns-map-gps">
         <button type="button" id="btn-satelite" className="btn-map-icon" title="Cambiar a vista satelital" aria-label="Cambiar a vista satelital" aria-pressed="false">
-          <img src="./icons/satellite.svg" alt="" width="20" height="20" style={{ filter: 'brightness(0) invert(1)' }} />
+          <img src="/rutas-simbiosis/icons/satellite.svg" alt="" width="20" height="20" style={{ filter: 'brightness(0) invert(1)' }} />
         </button>
       </div>
       {/* Rosa de los vientos (rotar el mapa en cualquier momento) */}

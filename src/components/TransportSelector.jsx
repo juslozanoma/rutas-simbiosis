@@ -84,6 +84,9 @@ export default function TransportSelector() {
   }, [abierto, peticion]);
 
   // Cierra con Escape o clic fuera del selector.
+  // Se usa 'mousedown' en lugar de 'click' para evitar que el mismo clic que
+  // abre el selector (en el mapa o la altimetría) cierre inmediatamente el
+  // panel: mousedown se dispara antes de que el clic se propague al document.
   useEffect(() => {
     if (!abierto) return;
     const alClic = (e) => {
@@ -92,10 +95,10 @@ export default function TransportSelector() {
     const alTecla = (e) => {
       if (e.key === 'Escape') setAbierto(false);
     };
-    document.addEventListener('click', alClic);
+    document.addEventListener('mousedown', alClic);
     document.addEventListener('keydown', alTecla);
     return () => {
-      document.removeEventListener('click', alClic);
+      document.removeEventListener('mousedown', alClic);
       document.removeEventListener('keydown', alTecla);
     };
   }, [abierto]);

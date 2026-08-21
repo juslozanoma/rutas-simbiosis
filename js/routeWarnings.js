@@ -23,7 +23,6 @@ const RouteWarningsModule = (() => {
     }
     const personalizadas = _leerPersonalizadas();
     _rutas = [...desdeArchivo, ...personalizadas];
-    console.log('RouteWarnings: cargadas', _rutas.length, 'rutas (', desdeArchivo.length, 'oficiales,', personalizadas.length, 'personalizadas)');
   }
 
   function _leerPersonalizadas() {

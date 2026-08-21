@@ -117,25 +117,20 @@
       let totalKm = ruta.distanciaMetros / 1000;
       const alertasIniciales = RouteWarningsModule.verificar(ruta.geojson, totalKm);
       if (alertasIniciales.length > 0) {
-        console.log('Warnings detectados en ruta principal:', alertasIniciales.length);
         try {
           const alternativas = await RoutingModule.calcularAlternativas(puntosRuta, PERFIL_FIJO);
-          console.log('Alternativas recibidas de OSRM:', alternativas.length);
           let seleccionada = false;
           for (let i = 1; i < alternativas.length; i++) {
             const alt = alternativas[i];
             const altKm = alt.distanciaMetros / 1000;
             const altAlertas = RouteWarningsModule.verificar(alt.geojson, altKm);
-            console.log(`  Alt ${i}: ${altAlertas.length} warnings, ${altKm.toFixed(0)} km`);
             if (altAlertas.length === 0) {
               ruta = alt;
               totalKm = altKm;
               seleccionada = true;
-              console.log(`  → Seleccionada alternativa ${i}`);
               break;
             }
           }
-          if (!seleccionada) console.log('  Ninguna alternativa limpia, se mantiene la ruta principal');
         } catch (err) {
           console.warn('No se pudieron obtener alternativas:', err);
         }

@@ -25,5 +25,3 @@ if (raiz) {
 } else {
   console.warn('[Simbiosis] No se encontró #simbiosis-root para montar React');
 }
-
-console.log('[Simbiosis] Vite + React activo');

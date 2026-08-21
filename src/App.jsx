@@ -28,6 +28,7 @@ import RutasArchivoLista from './components/RutasArchivoLista';
 import BuscarSitiosBar from './components/BuscarSitiosBar';
 import CargarRutaDialogo from './components/CargarRutaDialogo';
 import NuevoPuertoDialogo from './components/NuevoPuertoDialogo';
+import CatalogoEditarDialogo from './components/CatalogoEditarDialogo';
 
 export default function App() {
   return (
@@ -55,6 +56,7 @@ export default function App() {
       <BuscarSitiosBar />
       <CargarRutaDialogo />
       <NuevoPuertoDialogo />
+      <CatalogoEditarDialogo />
     </>
   );
 }

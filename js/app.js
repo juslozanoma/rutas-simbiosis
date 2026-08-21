@@ -353,13 +353,8 @@
             if (typeof _mostrarNotificacion !== 'function') return;
             if (res === true) _mostrarNotificacion('Puerto actualizado: ' + nombre + ' — JSON guardado.');
             else if (res === false) _mostrarNotificacion('Puerto actualizado; no se pudo sobrescribir el JSON, se guardó una copia en el navegador.');
-    });
-
-    // Cargar el grafo de ríos una sola vez al iniciar (motor fluvial).
-    if (typeof FluvialModule !== 'undefined' && typeof FluvialModule.cargar === 'function') {
-      FluvialModule.cargar();
-    }
-  }
+          });
+        }
       }
       return;
     }
@@ -507,7 +502,6 @@
    *  departamento/sitio/frontera). */
   function _menuCatalogo(tipo, item, marker, clientX, clientY) {
     if (!item) return;
-    console.log('[menu] contexto catalogo tipo=', tipo, 'item=', item.nombre);
     const opciones = [
       { etiqueta: 'Ver más información', accion: () => _verInfoCatalogo(tipo, item) },
       { etiqueta: 'Mover', accion: () => MapModule.iniciarArrastreCatalogo(marker, tipo, item.id) },
@@ -620,45 +614,55 @@
     }
   }
 
-  /** Diálogo genérico de edición de un ítem del catálogo. */
+  // Snapshot del diálogo genérico de edición de catálogo: lo lee React
+  // (CatalogoEditarDialogo) para pintar overlay y campos.
+  let _catalogoEditSnapshot = null;
+  let _catalogoEditItem = null;
+
+  function _notificarDialogoCatalogo() {
+    if (typeof window !== 'undefined' && window.SimbiosisUI && typeof window.SimbiosisUI.notificarDialogoCatalogo === 'function') {
+      window.SimbiosisUI.notificarDialogoCatalogo();
+    }
+  }
+
+  function cerrarDialogoCatalogo() {
+    if (_catalogoEditSnapshot) {
+      _catalogoEditSnapshot.visible = false;
+      _notificarDialogoCatalogo();
+    }
+  }
+
+  function guardarCatalogoEdit(valores) {
+    if (!_catalogoEditItem || !_catalogoEditSnapshot) return;
+    const tipo = _catalogoEditSnapshot.tipo;
+    const campos = _catalogoEditSnapshot.campos;
+    campos.forEach((c, i) => {
+      _catalogoEditItem[c.key] = valores[i] != null ? valores[i] : '';
+    });
+    const item = _catalogoEditItem;
+    cerrarDialogoCatalogo();
+    _despuesEditarCatalogo(tipo);
+    _guardarCatalogo(tipo);
+    _mostrarNotificacion('Guardado: ' + (item.nombre || ''));
+  }
+
+  if (typeof window !== 'undefined' && window.SimbiosisUI) {
+    window.SimbiosisUI.datosDialogoCatalogo = () => _catalogoEditSnapshot;
+    window.SimbiosisUI.cerrarDialogoCatalogo = () => cerrarDialogoCatalogo();
+    window.SimbiosisUI.guardarCatalogoEdit = (valores) => guardarCatalogoEdit(valores);
+  }
+
+  /** Diálogo genérico de edición de un ítem del catálogo (ahora React). */
   function _editarItemCatalogo(tipo, item) {
     const campos = _camposEdicion(tipo, item);
-    const overlay = document.createElement('div');
-    overlay.className = 'dialog-overlay';
-    let html = `<div class="dialog">
-      <h3 class="dialog__title">Editar ${_etiquetaTipo(tipo)}</h3>`;
-    campos.forEach((c, i) => {
-      const valor = _escHtml(c.value);
-      const attrs = 'autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"';
-      if (c.textarea) {
-        html += `<label class="nuevo-puerto__label">${c.label}<textarea class="nuevo-puerto__input" data-idx="${i}" rows="3" ${attrs}>${valor}</textarea></label>`;
-      } else {
-        html += `<label class="nuevo-puerto__label">${c.label}<input type="search" class="nuevo-puerto__input" data-idx="${i}" value="${valor}" ${attrs}></label>`;
-      }
-    });
-    html += `<p class="dialog__error" hidden id="catalogo-edit-error"></p>
-      <div class="dialog__actions">
-        <button type="button" class="dialog__btn dialog__btn--cancel" id="catalogo-edit-cancel">Cancelar</button>
-        <button type="button" class="dialog__btn dialog__btn--save" id="catalogo-edit-save">Guardar</button>
-      </div>
-    </div>`;
-    overlay.innerHTML = html;
-    document.body.appendChild(overlay);
-    const primero = overlay.querySelector('.nuevo-puerto__input');
-    if (primero) setTimeout(() => primero.focus(), 50);
-
-    overlay.querySelector('#catalogo-edit-cancel').addEventListener('click', () => overlay.remove());
-    overlay.querySelector('#catalogo-edit-save').addEventListener('click', () => {
-      campos.forEach((c, i) => {
-        const el = overlay.querySelector(`[data-idx="${i}"]`);
-        if (el) item[c.key] = el.value;
-      });
-      overlay.remove();
-      _despuesEditarCatalogo(tipo);
-      _guardarCatalogo(tipo);
-      _mostrarNotificacion('Guardado: ' + (item.nombre || ''));
-    });
-    overlay.querySelector('.dialog').addEventListener('click', (e) => e.stopPropagation());
+    _catalogoEditItem = item;
+    _catalogoEditSnapshot = {
+      visible: true,
+      tipo,
+      etiqueta: _etiquetaTipo(tipo),
+      campos,
+    };
+    _notificarDialogoCatalogo();
   }
 
   // -------------------------------------------------------------------

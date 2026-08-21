@@ -2,11 +2,12 @@
  * persistenciaJson.js
  * ---------------------------------------------------------------------------
  * Guardado de los JSON de datos en local, SIN ventanas ni descargas:
- *  - Si la app se sirve con server.js (que expone POST /api/catalogo), escribe
- *    directamente en data/<archivo>.json (el archivo real del proyecto).
- *  - Si no hay servidor de guardado (p. ej. Live Server), guarda una copia en
- *    el almacenamiento privado del navegador (OPFS), que se conserva entre
- *    sesiones y se usa al cargar. Cero selectores, cero descargas.
+ *  - Si la app se sirve con Vite (plugin simbiosis-api-local, que expone
+ *    POST /api/catalogo), escribe directamente en data/<archivo>.json
+ *    (el archivo real del proyecto).
+ *  - Si no hay servidor de guardado (p. ej. un servidor de producción estático),
+ *    guarda una copia en el almacenamiento privado del navegador (OPFS), que
+ *    se conserva entre sesiones y se usa al cargar.
  * ---------------------------------------------------------------------------
  */
 const PersistenciaJsonModule = (() => {
@@ -21,7 +22,7 @@ const PersistenciaJsonModule = (() => {
   };
 
   // -------------------------------------------------------------------
-  // Guardado por servidor (server.js): POST /api/catalogo
+  // Guardado por servidor (Vite plugin simbiosis-api-local): POST /api/catalogo
   // -------------------------------------------------------------------
 
   async function _guardarPorServidor(clave, datos) {
@@ -77,8 +78,8 @@ const PersistenciaJsonModule = (() => {
   // -------------------------------------------------------------------
 
   /** Guarda un catálogo: primero intenta escribir el archivo real vía el
-   *  servidor (server.js) y, si no es posible, guarda en el navegador (OPFS).
-   *  Devuelve true si se pudo guardar, false en caso contrario. */
+   *  servidor (Vite plugin API) y, si no es posible, guarda en el navegador
+   *  (OPFS). Devuelve true si se pudo guardar, false en caso contrario. */
   async function guardarJson(clave, datos) {
     const archivo = ARCHIVOS[clave];
     if (!archivo) return false;

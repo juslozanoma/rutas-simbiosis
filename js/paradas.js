@@ -423,7 +423,6 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
       console.warn('[paradas] Sortable no disponible o sin lista de paradas');
       return;
     }
-    console.log('[paradas] Inicializando drag & drop (Sortable)');
     _sortablesParadas.forEach((s) => { try { s.destroy(); } catch (e) {} });
     _sortablesParadas = [];
     const draggable = '.parada-item:not(.parada-item--dia):not(.parada-item--continua)'
@@ -449,7 +448,6 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
   async function _aplicarDragParadas(evt) {
     if (!evt || !evt.item) return;
     const tipo = evt.item.dataset.tipoParada;
-    console.log('[paradas] Drag finalizado, item tipo=', tipo, 'id=', evt.item.dataset.paradaId);
     if (!['parada', 'escala', 'origen', 'destino'].includes(tipo)) return;
     UndoManager.registrar();
     try {
@@ -508,7 +506,6 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
    *  Si un extremo quedó en medio pasa a ser una parada. Siempre que cambia el
    *  orden de las paradas se recalcula la ruta completa. */
   async function _aplicarOrdenNuevo(nuevo) {
-    console.log('[paradas] _aplicarOrdenNuevo, nuevo orden =', nuevo.map((o) => o.tipo + ':' + o.id).join(' > '));
     if (!nuevo || nuevo.length < 2) return;
     const resolver = (o) => {
       if (o.tipo === 'origen') return state.origen;
@@ -533,8 +530,6 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
       if (nuevo[i].tipo === 'escala') nuevasEscalas.push(obj);
       else nuevasParadas.push(obj);
     }
-
-    console.log('[paradas] cambiaOrigen=', cambiaOrigen, 'cambiaDestino=', cambiaDestino);
 
     state.origen = origObj;
     state.destino = destObj;
@@ -567,7 +562,6 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
    *  el destino y calcula la ruta en avión hasta él. `tipo` es 'parada' o
    *  'escala'. */
   function llegarEnAvionAParada(objeto, tipo) {
-    console.log('[paradas] llegarEnAvionAParada ->', objeto && objeto.nombre, 'tipo=', tipo);
     if (!objeto || typeof calcularRutaAerea !== 'function') return;
     if (state.destino && state.destino.id != null && String(state.destino.id) === String(objeto.id)) return;
     UndoManager.registrar();
@@ -588,7 +582,6 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
   /** Desde el menú contextual del destino: calcula la ruta en avión hasta el
    *  destino actual y actualiza la lista de paradas (aeropuertos, distancias). */
   async function llegarEnAvionAlDestino() {
-    console.log('[paradas] llegarEnAvionAlDestino');
     if (typeof calcularRutaAerea !== 'function') return;
     if (typeof _limpiarTurfYListado === 'function') _limpiarTurfYListado();
     try {
@@ -1444,7 +1437,6 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
   }
 
   function renderizarParadas() {
-    console.log('[paradas] renderizarParadas()');
     sincronizarOrden();
     // Con el catálogo de puertos/aeropuertos (A/P) o la ruta desde archivo (K)
     // activos, la lista de la pestaña Ruta la ocupa otro contenido; no mezclar.
