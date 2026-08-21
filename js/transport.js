@@ -19,21 +19,21 @@ const TransportConfigModule = (() => {
 
   /** Vehículos disponibles. `path` es la ubicación del SVG (negro, monocromo). */
   const ICONOS = [
-    { file: 'car.svg', path: './icons/car.svg', nombre: 'Carro' },
-    { file: 'car2.svg', path: './icons/car2.svg', nombre: 'Carro deportivo' },
-    { file: 'car3.svg', path: './icons/car3.svg', nombre: 'Auto' },
-    { file: 'car4.svg', path: './icons/car4.svg', nombre: 'Carro familiar' },
-    { file: 'suv.svg', path: './icons/suv.svg', nombre: 'SUV' },
-    { file: 'pickup.svg', path: './icons/pickup.svg', nombre: 'Camioneta' },
-    { file: 'motorcycle.svg', path: './icons/motorcycle.svg', nombre: 'Moto' },
-    { file: 'motorcycle2.svg', path: './icons/motorcycle2.svg', nombre: 'Motocicleta' },
-    { file: 'motorcycle3.svg', path: './icons/motorcycle3.svg', nombre: 'Moto clásica' },
-    { file: 'scooter.svg', path: './icons/scooter.svg', nombre: 'Scooter' },
-    { file: 'bike.svg', path: '../icons/bike.svg', nombre: 'Bicicleta' },
-    { file: 'boat.svg', path: './icons/boat.svg', nombre: 'Barco' },
-    { file: 'airplane.svg', path: './icons/airplane.svg', nombre: 'Avión' },
-    { file: 'hiking.svg', path: './icons/hiking.svg', nombre: 'Senderista' },
-    { file: 'helicopter.svg', path: './icons/helicopter.svg', nombre: 'Helicóptero' },
+    { file: 'car.svg', path: '/rutas-simbiosis/icons/car.svg', nombre: 'Carro' },
+    { file: 'car2.svg', path: '/rutas-simbiosis/icons/car2.svg', nombre: 'Carro deportivo' },
+    { file: 'car3.svg', path: '/rutas-simbiosis/icons/car3.svg', nombre: 'Auto' },
+    { file: 'car4.svg', path: '/rutas-simbiosis/icons/car4.svg', nombre: 'Carro familiar' },
+    { file: 'suv.svg', path: '/rutas-simbiosis/icons/suv.svg', nombre: 'SUV' },
+    { file: 'pickup.svg', path: '/rutas-simbiosis/icons/pickup.svg', nombre: 'Camioneta' },
+    { file: 'motorcycle.svg', path: '/rutas-simbiosis/icons/motorcycle.svg', nombre: 'Moto' },
+    { file: 'motorcycle2.svg', path: '/rutas-simbiosis/icons/motorcycle2.svg', nombre: 'Motocicleta' },
+    { file: 'motorcycle3.svg', path: '/rutas-simbiosis/icons/motorcycle3.svg', nombre: 'Moto clásica' },
+    { file: 'scooter.svg', path: '/rutas-simbiosis/icons/scooter.svg', nombre: 'Scooter' },
+    { file: 'bike.svg', path: '/rutas-simbiosis/icons/bike.svg', nombre: 'Bicicleta' },
+    { file: 'boat.svg', path: '/rutas-simbiosis/icons/boat.svg', nombre: 'Barco' },
+    { file: 'airplane.svg', path: '/rutas-simbiosis/icons/airplane.svg', nombre: 'Avión' },
+    { file: 'hiking.svg', path: '/rutas-simbiosis/icons/hiking.svg', nombre: 'Senderista' },
+    { file: 'helicopter.svg', path: '/rutas-simbiosis/icons/helicopter.svg', nombre: 'Helicóptero' },
   ];
 
   /** Paleta de colores ofrecida al usuario. */
@@ -79,7 +79,7 @@ const TransportConfigModule = (() => {
   /** Ruta del SVG de un ícono dado (por defecto senderista si no existe). */
   function _pathDeIcono(file) {
     const def = ICONOS.find((i) => i.file === file);
-    return def ? def.path : './icons/hiking.svg';
+    return def ? def.path : '/rutas-simbiosis/icons/hiking.svg';
   }
 
   /** Ruta del SVG (monocromo) que se muestra como vehículo. */
