@@ -18,6 +18,25 @@
       const extremo = tipo === 'origen' ? state.origen : state.destino;
       if (extremo) mostrarCuadroExtremo(tipo, extremo.nombre || '', extremo.departamento || '');
     });
+    // Menú contextual de los pines A/Z del mapa (clic derecho / pulsación
+    // larga): las mismas opciones que la fila de origen/destino del panel.
+    MapModule.setOnMenuExtremo((subTipo, clientX, clientY) => {
+      const opciones = [];
+      if (subTipo === 'origen') {
+        opciones.push({ etiqueta: 'Cambiar lugar de origen', icono: '/rutas-simbiosis/icons/replay.svg', accion: () => irCambiarOrigen() });
+      } else {
+        opciones.push({ etiqueta: 'Cambiar lugar de destino', icono: '/rutas-simbiosis/icons/replay.svg', accion: () => irCambiarDestino() });
+        opciones.push({ etiqueta: 'Llegar en avión a este lugar', icono: '/rutas-simbiosis/icons/airplane.svg', accion: () => llegarEnAvionAlDestino() });
+      }
+      abrirMenuFila(opciones, clientX, clientY);
+    });
+    // Menú contextual del pin de un pueblo intermedio en el mapa.
+    MapModule.setOnMenuEscala((escala, clientX, clientY) => {
+      abrirMenuFila([
+        { etiqueta: 'Llegar en avión a este lugar', icono: '/rutas-simbiosis/icons/airplane.svg', accion: () => llegarEnAvionAParada(escala, 'escala') },
+        { etiqueta: 'Cambiar pueblo intermedio', icono: '/rutas-simbiosis/icons/replay.svg', accion: () => cambiarPueblo(escala) },
+      ], clientX, clientY);
+    });
     // Clic en un puerto/aeropuerto del mapa: solo líneas hacia sus conexiones
     // (la ficha informativa se muestra al pulsar en la lista de Descubre).
     MapModule.setOnClicInfraGlobal((tipo, item) => {
