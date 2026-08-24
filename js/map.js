@@ -1206,6 +1206,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       if (el.icoDescubreTabDesktop) el.icoDescubreTabDesktop.hidden = true;
       if (el.sitiosContadorTab) el.sitiosContadorTab.hidden = false;
       if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.hidden = false;
+      if (typeof _syncIndicadorDescubre === 'function') _syncIndicadorDescubre();
       if (typeof activarPanelTab === 'function') activarPanelTab('descubre');
       if (typeof esMovil === 'function' && esMovil() && typeof setMobileTab === 'function') setMobileTab('descubre');
     }
@@ -2832,7 +2833,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const tip = document.createElement('div');
     tip.className = 'rosa-vientos-tip';
     tip.setAttribute('role', 'status');
-    tip.innerHTML = '<span class="rosa-vientos-tip__texto">Mueve este botón para rotar el mapa</span>';
+    tip.innerHTML = '<span class="rosa-vientos-tip__texto">Mueve este botón para rotar el mapa.<br>Oprime una vez para apuntar al norte.</span>';
     contenedor.appendChild(tip);
     setTimeout(() => {
       tip.classList.add('rosa-vientos-tip--oculto');

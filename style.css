@@ -48,7 +48,14 @@ body{
   -webkit-font-smoothing: antialiased;
 }
 h1, h2, h3{ margin: 0; }
-button{ font-family: inherit; }
+button{
+  font-family: inherit;
+  /* Sin selección de texto en botones: mantener oprimido no selecciona ni
+     dispara el menú de copia del sistema. */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
 input, select{ font-family: inherit; }
 .mono{ font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 :focus-visible{ outline: 2px solid var(--teal-500); outline-offset: 2px; }
@@ -889,20 +896,20 @@ input, select{ font-family: inherit; }
 
 /* --- Spinner de cálculo de ruta (monalisa) --- */
 .loading-ruta{
-  padding: 30px 10px;
+  padding: 20px 10px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 100px;
+  min-height: 250px;
   justify-content: center;
 }
 .loading-ruta[hidden]{
   display: none;
 }
 .loading-ruta .loader{
-  width: 200px;
-  height: 200px;
+  width: 250px;
+  height: 250px;
   display: block;
   margin: 0 auto;
 }
@@ -3461,6 +3468,8 @@ input, select{ font-family: inherit; }
 .parada-item{
   cursor: pointer;
   -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
   /* pan-y: el scroll vertical de la lista sigue siendo nativo, pero el
      deslizamiento horizontal (borrar con swipe) lo gestiona el JS y el
      navegador no lo secuestra como gesto de pan. */

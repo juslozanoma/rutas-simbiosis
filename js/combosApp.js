@@ -127,6 +127,7 @@
     if (el.sitiosContador) el.sitiosContador.textContent = '0';
     if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = '0';
     if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = '0';
+    if (typeof _syncIndicadorDescubre === 'function') _syncIndicadorDescubre();
     renderizarCategoriasMenu([]);
     _syncBotonSitios();
     if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.hidden = true;

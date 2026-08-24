@@ -3,6 +3,8 @@
 .loader {
   display: inline-block;
   vertical-align: middle;
+  width: 250px;
+  height: 250px;
 }
 
 .loader path {

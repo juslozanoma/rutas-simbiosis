@@ -557,6 +557,17 @@
   }
 
 
+  /** Indicador de la pestaña Descubre: con conteo en 0 se muestra el ícono del
+   *  mapa de Colombia; cuando hay sitios, el número. */
+  function _syncIndicadorDescubre() {
+    const n = el.sitiosContadorTab ? parseInt(el.sitiosContadorTab.textContent, 10) : 0;
+    const cero = !isFinite(n) || n <= 0;
+    if (el.icoDescubreTab) el.icoDescubreTab.hidden = !cero;
+    if (el.icoDescubreTabDesktop) el.icoDescubreTabDesktop.hidden = !cero;
+    if (el.sitiosContadorTab) el.sitiosContadorTab.hidden = cero;
+    if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.hidden = cero;
+  }
+
   function _habilitarMostrarSitios() {
     // Habilita la pestaña Descubre tras calcular una ruta.
     if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
@@ -565,6 +576,7 @@
     if (el.icoDescubreTabDesktop) el.icoDescubreTabDesktop.hidden = true;
     if (el.sitiosContadorTab) el.sitiosContadorTab.hidden = false;
     if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.hidden = false;
+    _syncIndicadorDescubre();
     // El testigo "Mostrar sitios" solo aparece tras calcular la PRIMERA ruta
     // y luego se elimina para siempre.
     if (_soMostrarSitiosVisto) {

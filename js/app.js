@@ -740,6 +740,7 @@
     if (el.sitiosContador) el.sitiosContador.textContent = '0';
     if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = '0';
     if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = '0';
+    if (typeof _syncIndicadorDescubre === 'function') _syncIndicadorDescubre();
     // La lista de paradas puede pertenecer a React (modo 'paradas'), al
     // catálogo infra (A/P/D/M/C) o al listado de rutas desde archivo (K). Con
     // React montado no se limpia con innerHTML: se notifica al puente para que
