@@ -208,6 +208,13 @@ function PanelLateral() {
         </div>
       </section>
 
+      {/* Zona informativa (escritorio): las fichas que antes flotaban sobre el
+          mapa (sitios, pueblos, extremos, aeropuertos, puertos, municipios,
+          departamentos y frontera) se muestran aquí, en la mitad inferior del
+          panel. Vanilla (tourism.js) la usa como contenedor en PC; en móvil
+          permanece oculta y las fichas siguen saliendo sobre el mapa. */}
+      <div id="panel-info"></div>
+
       {/* Altimetría como pestaña del panel */}
       <div id="altimetria-panel" className="altimetria-panel" hidden>
         <div className="altimetria__header">

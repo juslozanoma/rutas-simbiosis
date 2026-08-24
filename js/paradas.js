@@ -1154,30 +1154,66 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
   }
 
   /** Muestra en el mapa (y deja lista en Descubre) los sitios turísticos de un
-   *  departamento o los que están a 30 km de un municipio. */
+   *  departamento o los que están a 30 km de un municipio. Igual que la
+   *  búsqueda con clic derecho: muestra la barra de radio sobre el mapa y pasa
+   *  directo a la pestaña Descubre. */
   function _mostrarSitiosTurísticos(item, tipo) {
+    const lat = Number(item.lat);
+    const lng = Number(item.lon);
+    // Contexto para la barra de radio del mapa: la X restaurará este listado.
+    if (typeof MapModule !== 'undefined' && typeof MapModule.iniciarBusquedaSitios === 'function') {
+      MapModule.iniciarBusquedaSitios(lat, lng);
+    }
     let lista;
     if (tipo === 'departamento') {
       // Coincide por departamento; también por la capital (p. ej. los sitios de
       // San Andrés se registran con otra grafía del departamento).
       lista = state.sitios.filter((s) => s.departamento === item.nombre || s.municipio === item.capital);
-    } else {
-      const centro = turf.point([Number(item.lon), Number(item.lat)]);
-      lista = state.sitios.filter((s) => {
-        if (s.lat == null || s.lon == null || isNaN(Number(s.lat)) || isNaN(Number(s.lon))) return false;
-        const d = turf.distance(centro, turf.point([Number(s.lon), Number(s.lat)]), { units: 'kilometers' });
-        return d <= 30;
+      lista = lista.slice().sort((a, b) => {
+        const da = Math.hypot(Number(a.lat) - lat, Number(a.lon) - lng);
+        const db = Math.hypot(Number(b.lat) - lat, Number(b.lon) - lng);
+        return da - db;
       });
+    } else {
+      const centro = turf.point([lng, lat]);
+      const conDist = [];
+      state.sitios.forEach((s) => {
+        if (s.lat == null || s.lon == null || isNaN(Number(s.lat)) || isNaN(Number(s.lon))) return;
+        const d = turf.distance(centro, turf.point([Number(s.lon), Number(s.lat)]), { units: 'kilometers' });
+        if (d <= 30) conDist.push([s, d]);
+      });
+      conDist.sort((a, b) => a[1] - b[1]);
+      lista = conDist.map((x) => x[0]);
     }
     state.sitiosFiltradosBase = lista;
     state.sitiosFiltrados = lista;
     state.modoVisibilidad = 'completa';
+    state.categoriasSeleccionadas = [];
+    if (typeof MapModule !== 'undefined' && typeof MapModule.asegurarClusterSitios === 'function') {
+      MapModule.asegurarClusterSitios();
+    }
     if (typeof renderizarSitios === 'function') renderizarSitios(lista);
+    if (typeof renderizarCategoriasMenu === 'function') {
+      const cats = new Map();
+      lista.forEach((s) => {
+        if (!s.categoria) return;
+        const c = s.categoria.trim();
+        cats.set(c, (cats.get(c) || 0) + 1);
+      });
+      renderizarCategoriasMenu([...cats.entries()]);
+    }
     // La pestaña Descubre queda disponible (en modos D/M se mantiene visible).
     if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.hidden = false;
     if (el.btnTabDescubre) el.btnTabDescubre.hidden = false;
     if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
     if (el.btnTabDescubre) el.btnTabDescubre.disabled = false;
+    // Barra de filtro por radio (la misma del clic derecho → buscar sitios).
+    if (typeof MapModule !== 'undefined' && typeof MapModule.mostrarBarraBuscarSitios === 'function') {
+      MapModule.mostrarBarraBuscarSitios(lat, lng);
+    }
+    // Salto directo a la pestaña Descubre con el listado ya montado.
+    if (typeof activarPanelTab === 'function') activarPanelTab('descubre');
+    if (typeof esMovil === 'function' && esMovil() && typeof setMobileTab === 'function') setMobileTab('descubre');
   }
 
   // -------------------------------------------------------------------

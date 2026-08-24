@@ -285,7 +285,41 @@ const MapModule = (() => {
 
     _crearRosaVientos();
 
+    // Simetría en escritorio: los botones satélite y rosa de los vientos quedan
+    // a 12 px debajo de la barra superior (la misma distancia que los separa
+    // del borde izquierdo/derecho). Se mide la barra real para no depender de
+    // alturas estimadas; en móvil se limpia el estilo inline (mandan las
+    // reglas de las media queries).
+    _alinearBotonesSuperiores();
+    window.addEventListener('resize', _alinearBotonesSuperiores);
+    setTimeout(_alinearBotonesSuperiores, 300);
+
     return map;
+  }
+
+  /** Coloca los contenedores de satélite, rosa de los vientos y GPS a 12 px
+   *  por debajo del borde inferior de la barra superior (buscador), solo en
+   *  escritorio. */
+  function _alinearBotonesSuperiores() {
+    const satelite = document.getElementById('btns-map-gps');
+    const compass = document.getElementById('btns-map-compass');
+    const gpsSolo = document.getElementById('btns-map-gps-solo');
+    if (!satelite || !compass || !gpsSolo) return;
+    if (typeof esMovil === 'function' && esMovil()) {
+      satelite.style.top = '';
+      compass.style.top = '';
+      gpsSolo.style.top = '';
+      return;
+    }
+    const barra = document.getElementById('buscar-lugar');
+    let top = 44;
+    if (barra) {
+      top = Math.round(barra.getBoundingClientRect().bottom) + 12;
+    }
+    satelite.style.top = top + 'px';
+    compass.style.top = top + 'px';
+    // El GPS vive 40 px más abajo (icono 34 + hueco 6), como antes con 44→84.
+    gpsSolo.style.top = (top + 40) + 'px';
   }
 
   /** Devuelve la instancia cruda de Leaflet (uso controlado, solo lectura conceptual). */
@@ -1233,6 +1267,24 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     _buscarSitiosSnapshot = { radio: 30 };
     _colocarBarraBuscarSitios();
     _notificarBuscarSitios();
+  }
+
+  /** Inicia el contexto de búsqueda de sitios (barra de radio): guarda el
+   *  listado previo para restaurarlo con la X de la barra. Debe llamarse
+   *  ANTES de modificar state.sitiosFiltrados*. */
+  function iniciarBusquedaSitios(lat, lng) {
+    _buscarSitiosCtx = {
+      origen: [lat, lng],
+      base: state.sitiosFiltradosBase,
+      filtrados: state.sitiosFiltrados,
+      modoVisibilidad: state.modoVisibilidad,
+      categorias: state.categoriasSeleccionadas ? [...state.categoriasSeleccionadas] : [],
+    };
+  }
+
+  /** Garantiza que la capa de marcadores de sitios esté visible en el mapa. */
+  function asegurarClusterSitios() {
+    if (map && !map.hasLayer(clusterSitios)) map.addLayer(clusterSitios);
   }
 
   /** Ajusta el anclaje de la barra: sobre el borde inferior del mapa; si el
@@ -2890,6 +2942,9 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     setOnMenuPuntoRutaArchivo,
     setOnMenuExtremo,
     setOnMenuEscala,
+    iniciarBusquedaSitios,
+    mostrarBarraBuscarSitios: _mostrarBarraBuscarSitios,
+    asegurarClusterSitios,
     dibujarConexiones,
     limpiarConexiones,
     estanConexionesAbiertas,

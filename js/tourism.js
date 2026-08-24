@@ -121,7 +121,12 @@ const TourismModule = (() => {
     _notificarPopupSitio();
     _notificarCuadroInfo();
     if (_popupOverlay) {
-      _popupOverlay.remove();
+      // Solo se elimina si es un overlay flotante creado aquí; la zona
+      // informativa del panel (#panel-info) es persistente y se vacía sola
+      // al desmontarse React (queda oculta por CSS con :empty).
+      if (_popupOverlay.classList && _popupOverlay.classList.contains('sitio-overlay')) {
+        _popupOverlay.remove();
+      }
       _popupOverlay = null;
     }
     if (_popupSitioId != null) {
@@ -132,8 +137,20 @@ const TourismModule = (() => {
     }
   }
 
-  /** Monta la ficha centrada (o en la mitad inferior en celular para pueblos/paradas). */
+  /** Monta la ficha: en escritorio dentro de la zona informativa del panel
+   *  (#panel-info, mitad inferior de la pestaña Ruta); en celular sigue como
+   *  cuadro sobre el mapa (centrado u hoja inferior). */
   function _montarCuadroCentrado(nodo, abajo) {
+    // En escritorio la ficha vive en el panel lateral: nada flotando en el mapa.
+    if (window.innerWidth > 860) {
+      const zona = document.getElementById('panel-info');
+      if (zona) {
+        if (nodo) zona.appendChild(nodo);
+        _popupOverlay = zona;
+        return true;
+      }
+    }
+
     const mapContainer = (typeof MapModule !== 'undefined' && MapModule.getMap)
       ? (MapModule.getMap().getContainer())
       : null;
