@@ -395,18 +395,11 @@ function FilaExtremo({ letra, nombre, distTexto, subTipo, origen, destino }) {
   };
   const opciones = () => {
     const ops = [];
-    if (subTipo === 'origen') ops.push({ etiqueta: 'Cambiar lugar de origen', accion: () => w.irCambiarOrigen() });
-    else ops.push({ etiqueta: 'Cambiar lugar de destino', accion: () => w.irCambiarDestino() });
-    if (subTipo === 'destino') ops.push({ etiqueta: 'Llegar en avión a este lugar', accion: () => w.llegarEnAvionAlDestino() });
-    ops.push({
-      etiqueta: 'Ubicar en el mapa',
-      accion: () => {
-        const extremo = subTipo === 'origen' ? origen : destino;
-        if (extremo && extremo.lat != null) {
-          if (typeof w.mostrarCuadroExtremo === 'function') w.mostrarCuadroExtremo(subTipo, extremo.nombre || '', (extremo.departamento || ''));
-        }
-      },
-    });
+    if (subTipo === 'origen') ops.push({ etiqueta: 'Cambiar lugar de origen', icono: '/rutas-simbiosis/icons/replay.svg', accion: () => w.irCambiarOrigen() });
+    else {
+      ops.push({ etiqueta: 'Cambiar lugar de destino', icono: '/rutas-simbiosis/icons/replay.svg', accion: () => w.irCambiarDestino() });
+      ops.push({ etiqueta: 'Llegar en avión a este lugar', icono: '/rutas-simbiosis/icons/airplane.svg', accion: () => w.llegarEnAvionAlDestino() });
+    }
     return ops;
   };
   const abrirMenuBtn = (e) => {
@@ -504,16 +497,14 @@ function FilaItem({ item, etiqueta, nombre, distTexto }) {
   const construirOpciones = () => {
     if (item.tipo === 'parada') {
       return [
-        { etiqueta: 'Llegar en avión a este lugar', accion: () => w.llegarEnAvionAParada(e, 'parada') },
+        { etiqueta: 'Llegar en avión a este lugar', icono: '/rutas-simbiosis/icons/airplane.svg', accion: () => w.llegarEnAvionAParada(e, 'parada') },
         { etiqueta: 'Ubicar en el mapa', accion: () => w.mostrarCuadroParada(e) },
         { etiqueta: 'Eliminar de la ruta', accion: () => w.eliminarParada(e.id) },
       ];
     }
     return [
-      { etiqueta: 'Llegar en avión a este lugar', accion: () => w.llegarEnAvionAParada(e, 'escala') },
-      { etiqueta: 'Cambiar pueblo intermedio', accion: () => w.cambiarPueblo(e) },
-      { etiqueta: 'Eliminar pueblo intermedio', accion: () => w.eliminarEscala(e.id) },
-      { etiqueta: 'Ubicar en la ruta', accion: () => w.mostrarCuadroEscala(e) },
+      { etiqueta: 'Llegar en avión a este lugar', icono: '/rutas-simbiosis/icons/airplane.svg', accion: () => w.llegarEnAvionAParada(e, 'escala') },
+      { etiqueta: 'Cambiar pueblo intermedio', icono: '/rutas-simbiosis/icons/replay.svg', accion: () => w.cambiarPueblo(e) },
     ];
   };
   const abrirMenuBtn = (e) => {

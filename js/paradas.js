@@ -278,8 +278,13 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
   function abrirMenuFila(opciones, clientX, clientY) {
     cerrarMenuFila();
     // El menú lo renderiza React (MenuFila, portal a document.body); aquí solo
-    // se guardan las opciones (con sus acciones) y la posición y se notifica.
-    _menuFilaOpciones = (opciones || []).map((op) => ({ etiqueta: op.etiqueta, accion: op.accion }));
+    // se guardan las opciones (con sus acciones e ícono opcional) y la
+    // posición y se notifica.
+    _menuFilaOpciones = (opciones || []).map((op) => ({
+      etiqueta: op.etiqueta,
+      accion: op.accion,
+      icono: op.icono,
+    }));
     _menuFilaX = clientX;
     _menuFilaY = clientY;
     _notificarMenuFila();

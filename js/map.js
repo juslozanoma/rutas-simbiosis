@@ -497,21 +497,91 @@ const MapModule = (() => {
   let _onMenuPuntoRutaArchivo = null;
 
   function setOnMenuPuntoRutaArchivo(fn) { _onMenuPuntoRutaArchivo = fn; }
+
+  // Menú contextual de los pines del viaje (origen/destino y pueblos
+  // intermedios): mismo menú que el panel de paradas. Clic derecho en PC y
+  // pulsación larga en celular.
+  let _onMenuExtremo = null;
+  let _onMenuEscala = null;
+
+  function setOnMenuExtremo(fn) { _onMenuExtremo = fn; }
+  function setOnMenuEscala(fn) { _onMenuEscala = fn; }
+
+  // Tras una pulsación larga se suprime el clic sintético que el navegador
+  // dispara al levantar el dedo (evita abrir la ficha encima del menú).
+  let _pinMenuSuprimirHasta = 0;
+
+  /** Pulsación larga (~550 ms) sobre el elemento DOM de un marcador. */
+  function _longPressMarcador(marker, alDisparar) {
+    marker.on('add', () => {
+      const el = marker.getElement();
+      if (!el || el._lpListo) return;
+      el._lpListo = true;
+      let timer = null;
+      let sx = 0;
+      let sy = 0;
+      const cancelar = () => { if (timer) { clearTimeout(timer); timer = null; } };
+      el.addEventListener('touchstart', (evt) => {
+        if (evt.touches.length !== 1) { cancelar(); return; }
+        const t = evt.touches[0];
+        sx = t.clientX;
+        sy = t.clientY;
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          timer = null;
+          navigator.vibrate && navigator.vibrate(20);
+          _pinMenuSuprimirHasta = Date.now() + 700;
+          alDisparar(sx, sy);
+        }, 550);
+      }, { passive: true });
+      el.addEventListener('touchmove', (evt) => {
+        if (!timer) return;
+        const t = evt.touches[0];
+        if (Math.abs(t.clientX - sx) > 10 || Math.abs(t.clientY - sy) > 10) cancelar();
+      }, { passive: true });
+      el.addEventListener('touchend', cancelar);
+      el.addEventListener('touchcancel', cancelar);
+    });
+  }
+
+  /** Menú contextual de un pin: clic secundario o pulsación larga. Debe
+   *  llamarse ANTES de añadir el marcador al mapa (el toque se engancha en
+   *  el evento 'add'). */
+  function _menuPin(marker, dispararMenu) {
+    marker.on('contextmenu', (ev) => {
+      if (ev.originalEvent) ev.originalEvent.preventDefault();
+      L.DomEvent.stopPropagation(ev);
+      const p = ev.originalEvent || {};
+      dispararMenu(p.clientX || 0, p.clientY || 0);
+    });
+    _longPressMarcador(marker, (x, y) => dispararMenu(x, y));
+  }
+
   function setMarcadorOrigen(lat, lon, etiqueta) {
     if (markerOrigen) map.removeLayer(markerOrigen);
-    markerOrigen = L.marker([lat, lon], { icon: iconoOrigen(), zIndexOffset: 50 })
-      .bindTooltip(`Origen: ${etiqueta}`, { direction: 'top', offset: [0, -10] })
-      .addTo(map);
-    markerOrigen.on('click', () => { if (_onClicMarcadorExtremo) _onClicMarcadorExtremo('origen'); });
+    const mk = L.marker([lat, lon], { icon: iconoOrigen(), zIndexOffset: 50 })
+      .bindTooltip(`Origen: ${etiqueta}`, { direction: 'top', offset: [0, -10] });
+    mk.on('click', () => {
+      if (Date.now() < _pinMenuSuprimirHasta) return;
+      if (_onClicMarcadorExtremo) _onClicMarcadorExtremo('origen');
+    });
+    _menuPin(mk, (x, y) => { if (_onMenuExtremo) _onMenuExtremo('origen', x, y); });
+    mk.addTo(map);
+    markerOrigen = mk;
     _coordOrigen = [lat, lon];
   }
 
   function setMarcadorDestino(lat, lon, etiqueta) {
     if (markerDestino) map.removeLayer(markerDestino);
-    markerDestino = L.marker([lat, lon], { icon: iconoDestino(), zIndexOffset: 50 })
-      .bindTooltip(`Destino: ${etiqueta}`, { direction: 'top', offset: [0, -10] })
-      .addTo(map);
-    markerDestino.on('click', () => { if (_onClicMarcadorExtremo) _onClicMarcadorExtremo('destino'); });
+    const mk = L.marker([lat, lon], { icon: iconoDestino(), zIndexOffset: 50 })
+      .bindTooltip(`Destino: ${etiqueta}`, { direction: 'top', offset: [0, -10] });
+    mk.on('click', () => {
+      if (Date.now() < _pinMenuSuprimirHasta) return;
+      if (_onClicMarcadorExtremo) _onClicMarcadorExtremo('destino');
+    });
+    _menuPin(mk, (x, y) => { if (_onMenuExtremo) _onMenuExtremo('destino', x, y); });
+    mk.addTo(map);
+    markerDestino = mk;
     _coordDestino = [lat, lon];
   }
 
@@ -663,12 +733,15 @@ const MapModule = (() => {
       // En celular el clic sobre el pueblo intermedio abre su ficha en el panel
       // inferior y deja el nombre como tooltip; en escritorio sigue el popup.
       marker.on('click', () => {
+        if (Date.now() < _pinMenuSuprimirHasta) return;
         if (typeof esMovil === 'function' && esMovil()) {
           if (marker.getPopup && marker.getPopup()) marker.closePopup();
           marker.openTooltip();
           if (typeof mostrarCuadroEscala === 'function') mostrarCuadroEscala(e);
         }
       });
+      // Menú contextual del pin (mismo menú que la fila del panel).
+      _menuPin(marker, (x, y) => { if (_onMenuEscala) _onMenuEscala(e, x, y); });
       marker.bindPopup(`
         <div class="popup-sitio">
           <div class="popup-sitio__head">
@@ -856,6 +929,9 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const objetivo = e.originalEvent && e.originalEvent.target;
     if (objetivo && objetivo.closest && objetivo.closest('.ruta-archivo-hover')) return;
     if (objetivo && objetivo.closest && objetivo.closest('.desvio-point')) return;
+    // Sobre cualquier pin del mapa no se abre el menú del mapa: los pines del
+    // viaje tienen su propio menú y el resto de marcadores el suyo.
+    if (objetivo && objetivo.closest && objetivo.closest('.leaflet-marker-icon')) return;
     _cerrarCtxMenu();
     // "Marcar tramo destapado" solo cuando no están visibles ni los puertos
     // (P), ni los aeropuertos (A), ni la opción de subir tu propia ruta.
@@ -2812,6 +2888,8 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     iniciarArrastreCatalogo,
     setOnAgregarPuertoEn,
     setOnMenuPuntoRutaArchivo,
+    setOnMenuExtremo,
+    setOnMenuEscala,
     dibujarConexiones,
     limpiarConexiones,
     estanConexionesAbiertas,

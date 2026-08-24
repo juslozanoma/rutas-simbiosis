@@ -78,6 +78,21 @@ function MenuContenido({ opciones, x, y }) {
             if (u && typeof u.ejecutarMenuFila === 'function') u.ejecutarMenuFila(i);
           }}
         >
+          {op.icono && (
+            <span
+              className="fila-menu__ico"
+              style={{
+                WebkitMaskImage: "url('" + op.icono + "')",
+                maskImage: "url('" + op.icono + "')",
+                WebkitMaskRepeat: 'no-repeat',
+                maskRepeat: 'no-repeat',
+                WebkitMaskPosition: 'center',
+                maskPosition: 'center',
+                WebkitMaskSize: 'contain',
+                maskSize: 'contain',
+              }}
+            />
+          )}
           {op.etiqueta}
         </div>
       ))}
