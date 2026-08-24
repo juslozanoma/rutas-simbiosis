@@ -57,19 +57,21 @@ function FichaSitio({ sitio, color }) {
     : '';
   return (
     <div className="popup-sitio">
-      <button
-        type="button"
-        className="popup-sitio__close"
-        title="Cerrar"
-        onClick={() => {
-          const u = _ui();
-          if (u && typeof u.cerrarPopupSitio === 'function') u.cerrarPopupSitio();
-        }}
-      >
-        &times;
-      </button>
       <span className="popup-sitio__cat" style={{ background: color + '22', color }}>{sitio.categoria}</span>
-      <h3 className="popup-sitio__nombre">{sitio.nombre}</h3>
+      <div className="popup-sitio__fila-titulo">
+        <h3 className="popup-sitio__nombre">{sitio.nombre}</h3>
+        <button
+          type="button"
+          className="popup-sitio__close"
+          title="Cerrar"
+          onClick={() => {
+            const u = _ui();
+            if (u && typeof u.cerrarPopupSitio === 'function') u.cerrarPopupSitio();
+          }}
+        >
+          &times;
+        </button>
+      </div>
       <p className="popup-sitio__ciudad" />
       <p className="popup-sitio__ubicacion">{sitio.municipio}, {sitio.departamento}</p>
       <p className="popup-sitio__desc">{sitio.descripcion || ''}</p>

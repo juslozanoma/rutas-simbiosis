@@ -456,6 +456,19 @@
   // o geometrychange) aplica el lift al instante, el bloque sigue la animación
   // del teclado y las listas abiertas se reposicionan en el mismo instante.
 
+  // Marca de que fuimos nosotros quienes ocultaron la lista de días y paradas
+  // por la monalisa; así solo se restaura si fue este mecanismo el que la ocultó.
+  let _paradasOcultasPorMonalisa = false;
+  let _escalasOcultasPorMonalisa = false;
+  let _btnIntermedioOcultoPorMonalisa = false;
+  let _filasExtremosOcultasPorMonalisa = false;
+
+  /** ¿Está la monalisa visible en este instante? Lo consultan otros módulos
+   *  (p. ej. renderizarParadas) para no re-mostrar lo que ella oculta. */
+  function monalisaEstaVisible() {
+    return !!(el.loadingRuta && !el.loadingRuta.hidden);
+  }
+
   function ponerEnCargaRuta(cargando, silencioso = false) {
     if (cargando) el.btnCalcular.disabled = true;
     el.btnCalcular.setAttribute('data-loading', cargando ? 'true' : 'false');
@@ -464,6 +477,51 @@
     // El spinner Monalisa no debe aparecer en la pestaña Descubre ni en recálculos
     // silenciosos (p. ej. al agregar un sitio a la ruta).
     if (el.loadingRuta) el.loadingRuta.hidden = !cargando || silencioso || estaEnPestanaDescubre();
+    // Mientras la monalisa esté visible se ocultan temporalmente la lista de
+    // días y paradas, los cuadros de pueblo intermedio y el botón "Añadir
+    // parada" (escritorio); en móvil su rama propia ya oculta la lista. Al irse
+    // la monalisa, todo vuelve a aparecer.
+    const monalisaVisible = el.loadingRuta ? !el.loadingRuta.hidden : false;
+    if (!esMovil() && el.panelParadas) {
+      if (monalisaVisible) {
+        if (!el.panelParadas.hidden) _paradasOcultasPorMonalisa = true;
+        el.panelParadas.hidden = true;
+        if (el.panelEscalas && !el.panelEscalas.classList.contains('oculto-por-monalisa')) _escalasOcultasPorMonalisa = true;
+        if (el.panelEscalas) el.panelEscalas.classList.add('oculto-por-monalisa');
+        if (el.btnAgregarIntermedio && !el.btnAgregarIntermedio.classList.contains('oculto-por-monalisa')) _btnIntermedioOcultoPorMonalisa = true;
+        if (el.btnAgregarIntermedio) el.btnAgregarIntermedio.classList.add('oculto-por-monalisa');
+        // Filas de origen/destino con sus combos y botones (avión, barco,
+        // calcular ruta): ocultas mientras la monalisa está visible.
+        const filaOrigen = document.getElementById('row-origen');
+        const filaDestino = document.getElementById('row-destino');
+        if ((filaOrigen && !filaOrigen.classList.contains('oculto-por-monalisa'))
+          || (filaDestino && !filaDestino.classList.contains('oculto-por-monalisa'))) {
+          _filasExtremosOcultasPorMonalisa = true;
+        }
+        if (filaOrigen) filaOrigen.classList.add('oculto-por-monalisa');
+        if (filaDestino) filaDestino.classList.add('oculto-por-monalisa');
+      } else {
+        if (_paradasOcultasPorMonalisa) {
+          _paradasOcultasPorMonalisa = false;
+          if (!estaEnPestanaDescubre()) el.panelParadas.hidden = false;
+        }
+        if (_escalasOcultasPorMonalisa) {
+          _escalasOcultasPorMonalisa = false;
+          el.panelEscalas.classList.remove('oculto-por-monalisa');
+        }
+        if (_btnIntermedioOcultoPorMonalisa) {
+          _btnIntermedioOcultoPorMonalisa = false;
+          el.btnAgregarIntermedio.classList.remove('oculto-por-monalisa');
+        }
+        if (_filasExtremosOcultasPorMonalisa) {
+          _filasExtremosOcultasPorMonalisa = false;
+          const fo = document.getElementById('row-origen');
+          const fd = document.getElementById('row-destino');
+          if (fo) fo.classList.remove('oculto-por-monalisa');
+          if (fd) fd.classList.remove('oculto-por-monalisa');
+        }
+      }
+    }
     if (cargando && el.loadingSitios) el.loadingSitios.hidden = true;
     el.btnAgregarEscala.disabled = cargando;
     el.origenInput.disabled = cargando;

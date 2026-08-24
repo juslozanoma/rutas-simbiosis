@@ -297,29 +297,37 @@ const MapModule = (() => {
     return map;
   }
 
-  /** Coloca los contenedores de satélite, rosa de los vientos y GPS a 12 px
-   *  por debajo del borde inferior de la barra superior (buscador), solo en
-   *  escritorio. */
+  /** Coloca los contenedores de satélite y rosa de los vientos DEBAJO de la
+   *  barra superior (buscador), con una separación de 12 px igual al margen
+   *  lateral que los separa de los bordes izquierdo/derecho (simetría); el
+   *  GPS queda justo debajo de la rosa. En móvil se limpia el estilo inline
+   *  (mandan las media queries). */
   function _alinearBotonesSuperiores() {
     const satelite = document.getElementById('btns-map-gps');
     const compass = document.getElementById('btns-map-compass');
     const gpsSolo = document.getElementById('btns-map-gps-solo');
     if (!satelite || !compass || !gpsSolo) return;
+    // El botón flotante de mostrar/ocultar sitios queda en la misma columna
+    // izquierda, justo debajo del satélite (antes quedaba superpuesto).
+    const flotanteSitios = document.getElementById('btn-toggle-sitios-float');
     if (typeof esMovil === 'function' && esMovil()) {
       satelite.style.top = '';
       compass.style.top = '';
       gpsSolo.style.top = '';
+      if (flotanteSitios) flotanteSitios.style.top = '';
       return;
     }
+    const btn = satelite.firstElementChild;
+    const altoBtn = (btn && btn.offsetHeight) || 34;
     const barra = document.getElementById('buscar-lugar');
     let top = 44;
-    if (barra) {
+    if (barra && barra.offsetParent !== null) {
       top = Math.round(barra.getBoundingClientRect().bottom) + 12;
     }
     satelite.style.top = top + 'px';
     compass.style.top = top + 'px';
-    // El GPS vive 40 px más abajo (icono 34 + hueco 6), como antes con 44→84.
-    gpsSolo.style.top = (top + 40) + 'px';
+    gpsSolo.style.top = (top + altoBtn + 6) + 'px';
+    if (flotanteSitios) flotanteSitios.style.top = (top + altoBtn + 6) + 'px';
   }
 
   /** Devuelve la instancia cruda de Leaflet (uso controlado, solo lectura conceptual). */
@@ -754,49 +762,19 @@ const MapModule = (() => {
       const num = e._numero || ++indiceEscala;
       const marker = L.marker([e.lat, e.lon], { icon: _iconoEscala(num), zIndexOffset: 950 });
       _marcadorEscalas.set(e.id, marker);
-      const muni = _municipioDe(e);
-      let nombrePop = '';
-      if (e.nombre) {
-        nombrePop = e.nombre === 'Bogotá D.C.'
-          ? 'Bogotá, D.C.'
-          : (e.departamento && e.departamento !== e.nombre ? `${e.nombre}, ${e.departamento}` : e.nombre);
-        if (muni && muni.ano_fundacion) nombrePop += ` (${muni.ano_fundacion})`;
-      }
       // Tooltip con el nombre del pueblo intermedio sobre su ícono.
       marker.bindTooltip(e.nombre || 'Pueblo intermedio', { direction: 'top', offset: [0, -16], className: 'site-label' });
-      // En celular el clic sobre el pueblo intermedio abre su ficha en el panel
-      // inferior y deja el nombre como tooltip; en escritorio sigue el popup.
+      // Clic sobre el pin (PC y celular): centra el pueblo, muestra su tooltip
+      // con el nombre y abre su ficha informativa (en escritorio va al panel
+      // lateral; en celular, a la hoja inferior). Ya no se abre popup en el mapa.
       marker.on('click', () => {
         if (Date.now() < _pinMenuSuprimirHasta) return;
-        if (typeof esMovil === 'function' && esMovil()) {
-          if (marker.getPopup && marker.getPopup()) marker.closePopup();
-          marker.openTooltip();
-          if (typeof mostrarCuadroEscala === 'function') mostrarCuadroEscala(e);
-        }
+        if (marker.getPopup && marker.getPopup()) marker.closePopup();
+        marker.openTooltip();
+        if (typeof mostrarCuadroEscala === 'function') mostrarCuadroEscala(e);
       });
       // Menú contextual del pin (mismo menú que la fila del panel).
       _menuPin(marker, (x, y) => { if (_onMenuEscala) _onMenuEscala(e, x, y); });
-      marker.bindPopup(`
-        <div class="popup-sitio">
-          <div class="popup-sitio__head">
-            <span class="popup-sitio__cat">Pueblo intermedio</span>
-            ${muni && muni.temperatura_promedio ? `<span class="popup-sitio__stat">${muni.temperatura_promedio}</span>` : ''}
-            ${muni && muni.altura ? `<span class="popup-sitio__stat">${_msnm(muni.altura)}</span>` : ''}
-          </div>
-          <h3 class="popup-sitio__nombre">${nombrePop}</h3>
-          ${_htmlDatosMunicipio(muni)}
-          ${muni && muni.descripción ? `<p class="popup-sitio__desc">${muni.descripción}</p>` : ''}
-          <p class="popup-sitio__dist mono"></p>
-        </div>
-      `);
-      marker.on('popupopen', (ev) => {
-        const el = ev.popup.getElement();
-        const catBadge = el && el.querySelector('.popup-sitio__cat');
-        if (catBadge) {
-          catBadge.style.background = '#4a6fa522';
-          catBadge.style.color = '#4a6fa5';
-        }
-      });
       marker.addTo(capaEscalas);
     });
   }

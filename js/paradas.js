@@ -1495,7 +1495,10 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
       return p && !p._dragGenerated;
     }).length;
     const incluirExtremos = Boolean(state.rutaActual && state.origen && state.destino);
-    el.panelParadas.hidden = estaEnPestanaDescubre() || !state.rutaActual || (!incluirExtremos && total === 0);
+    // Mientras la monalisa esté visible el panel permanece oculto, aunque ya
+    // haya ruta calculada a mitad del proceso (cálculo inicial).
+    const conMonalisa = (typeof monalisaEstaVisible === 'function') ? monalisaEstaVisible() : false;
+    el.panelParadas.hidden = conMonalisa || estaEnPestanaDescubre() || !state.rutaActual || (!incluirExtremos && total === 0);
 
     // Quita asignaciones de día de paradas que ya no existen.
     if (state.diasOrden) {

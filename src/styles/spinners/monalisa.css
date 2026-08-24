@@ -1,7 +1,6 @@
 /* From Uiverse.io by SelfMadeSystem */
+/* El tamaño lo fija cada contexto (style.css); aquí solo presentación. */
 .loader {
-  width: 4em;
-  height: 4em;
   display: inline-block;
   vertical-align: middle;
 }

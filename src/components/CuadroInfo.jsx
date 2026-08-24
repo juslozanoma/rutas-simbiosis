@@ -62,17 +62,6 @@ function CuadroContenido({ info }) {
   const conCabecera = info.botonCabecera && info.botonCabecera.etiqueta;
   return (
     <div className="popup-sitio">
-      <button
-        type="button"
-        className="popup-sitio__close"
-        title="Cerrar"
-        onClick={() => {
-          const u = _ui();
-          if (u && typeof u.cerrarPopupSitio === 'function') u.cerrarPopupSitio();
-        }}
-      >
-        &times;
-      </button>
       {!info.categoria && !info.rio && conCabecera && (
         <button type="button" className="popup-sitio__header-btn" onClick={ejecutarCabecera}>{info.botonCabecera.etiqueta}</button>
       )}
@@ -89,7 +78,21 @@ function CuadroContenido({ info }) {
           )}
         </div>
       )}
-      <h3 className="popup-sitio__nombre">{info.nombre}</h3>
+      <div className="popup-sitio__fila-titulo">
+        <h3 className="popup-sitio__nombre">{info.nombre}</h3>
+        <button
+          type="button"
+          className="popup-sitio__close"
+          title="Cerrar"
+          aria-label="Cerrar"
+          onClick={() => {
+            const u = _ui();
+            if (u && typeof u.cerrarPopupSitio === 'function') u.cerrarPopupSitio();
+          }}
+        >
+          &times;
+        </button>
+      </div>
       {partes.length > 0 && <div className="popup-sitio__datos">{partes.join(' · ')}</div>}
       {info.ciudad && <p className="popup-sitio__ciudad">{info.ciudad}</p>}
       {info.ubicacion && <p className="popup-sitio__ubicacion">{info.ubicacion}</p>}

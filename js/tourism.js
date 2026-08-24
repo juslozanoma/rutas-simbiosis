@@ -129,6 +129,11 @@ const TourismModule = (() => {
       }
       _popupOverlay = null;
     }
+    // Sin ficha activa se retiran las marcas que ajustan la lista de paradas.
+    const zonaInfo = document.getElementById('panel-info');
+    if (zonaInfo) zonaInfo.classList.remove('con-ficha');
+    const raizApp = document.getElementById('app');
+    if (raizApp) raizApp.classList.remove('ficha-info-activa');
     if (_popupSitioId != null) {
       if (typeof MapModule !== 'undefined' && MapModule.cerrarTooltipSitio) {
         MapModule.cerrarTooltipSitio(_popupSitioId);
@@ -145,7 +150,16 @@ const TourismModule = (() => {
     if (window.innerWidth > 860) {
       const zona = document.getElementById('panel-info');
       if (zona) {
+        // La ficha pertenece a la pestaña Ruta: si el usuario está viendo
+        // Descubre se pasa a Ruta para que la ficha sea visible.
+        if (typeof estaEnPestanaDescubre === 'function' && estaEnPestanaDescubre()
+            && typeof activarPanelTab === 'function') {
+          activarPanelTab('ruta');
+        }
         if (nodo) zona.appendChild(nodo);
+        zona.classList.add('con-ficha');
+        const raizApp = document.getElementById('app');
+        if (raizApp) raizApp.classList.add('ficha-info-activa');
         _popupOverlay = zona;
         return true;
       }

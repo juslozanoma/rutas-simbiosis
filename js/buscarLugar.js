@@ -28,7 +28,7 @@ const BuscarLugarModule = (() => {
 
   function _construirIndice() {
     const items = [];
-    const push = (tipo, nombre, subtitulo, lat, lon, zoom) => {
+    const push = (tipo, nombre, subtitulo, lat, lon, zoom, ref) => {
       if (nombre == null || lat == null || lon == null) return;
       const n = Number(lat);
       const o = Number(lon);
@@ -40,14 +40,15 @@ const BuscarLugarModule = (() => {
         lat: n,
         lon: o,
         zoom,
+        ref,
         busca: _normalizar(nombre) + ' ' + _normalizar(subtitulo),
       });
     };
-    (state.municipios || []).forEach((m) => push('Municipio', m.nombre, m.departamento || '', m.lat, m.lon, 12));
-    (state.departamentos || []).forEach((d) => push('Departamento', d.nombre, 'Capital: ' + (d.capital || ''), d.lat, d.lon, 7));
-    (state.sitios || []).forEach((s) => push('Sitio turístico', s.nombre, [s.municipio, s.departamento].filter(Boolean).join(', '), s.lat, s.lon, 15));
-    (state.aeropuertos || []).forEach((a) => push('Aeropuerto', a.nombre, a.ciudad || '', a.latitud, a.longitud, 12));
-    (state.puertos || []).forEach((p) => push('Puerto', p.nombre, [p.ciudad, p.rio].filter(Boolean).join(', '), p.latitud, p.longitud, 14));
+    (state.municipios || []).forEach((m) => push('Municipio', m.nombre, m.departamento || '', m.lat, m.lon, 12, m));
+    (state.departamentos || []).forEach((d) => push('Departamento', d.nombre, 'Capital: ' + (d.capital || ''), d.lat, d.lon, 7, d));
+    (state.sitios || []).forEach((s) => push('Sitio turístico', s.nombre, [s.municipio, s.departamento].filter(Boolean).join(', '), s.lat, s.lon, 15, s));
+    (state.aeropuertos || []).forEach((a) => push('Aeropuerto', a.nombre, a.ciudad || '', a.latitud, a.longitud, 12, a));
+    (state.puertos || []).forEach((p) => push('Puerto', p.nombre, [p.ciudad, p.rio].filter(Boolean).join(', '), p.latitud, p.longitud, 14, p));
     return items;
   }
 
@@ -98,9 +99,17 @@ const BuscarLugarModule = (() => {
         MapModule.mostrarLugarBuscado(r.tipo, r);
       }
     }
-    // La ficha informativa no se abre al seleccionar: en escritorio solo se
-    // muestra al hacer clic en el marcador y en celular queda visible el
-    // tooltip con su "×" para ocultar el elemento del mapa.
+    // En escritorio la ficha informativa se abre directamente en el panel
+    // lateral (#panel-info, funnel de TourismModule). En celular se mantiene
+    // el comportamiento previo: queda visible el tooltip con su "×".
+    if (typeof esMovil === 'function' && !esMovil() && r.ref && typeof TourismModule !== 'undefined') {
+      if (r.tipo === 'Sitio turístico' && typeof TourismModule.mostrarPopupSitio === 'function') {
+        TourismModule.mostrarPopupSitio(r.ref);
+      } else if (typeof mostrarCuadroInfra === 'function') {
+        const tipo = { 'Municipio': 'municipio', 'Departamento': 'departamento', 'Aeropuerto': 'aeropuerto', 'Puerto': 'puerto' }[r.tipo];
+        if (tipo) mostrarCuadroInfra(tipo, r.ref);
+      }
+    }
     // Tras una búsqueda el cuadro se reinicia: queda vacío y la lista oculta.
     _input.value = '';
     _cerrar(true);
