@@ -573,7 +573,7 @@ input, select{ font-family: inherit; }
   top: calc(100% + 10px);
   right: 0;
   z-index: 950;
-  background: var(--ink-900);
+  background: var(--teal-500);
   color: #ffffff;
   font-size: 0.7rem;
   font-weight: 600;
@@ -586,12 +586,12 @@ input, select{ font-family: inherit; }
   content: '';
   position: absolute;
   top: -6px;
-  right: 16px;
+  right: 46px;
   width: 0;
   height: 0;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-bottom: 7px solid var(--ink-900);
+  border-bottom: 7px solid var(--teal-500);
 }
 .paradas-lista{
   list-style: none;
@@ -2033,6 +2033,8 @@ input, select{ font-family: inherit; }
 /* GPS activo: el icono (blanco por defecto) pasa a rojo y el círculo a
    blanco, sin borde. */
 #btn-gps.activo{ background: #ffffff; border: none; }
+/* GPS activo con el indicador fuera de la vista del mapa: botón al 50%. */
+#btn-gps.gps-opaca{ opacity: 0.5; }
 #btn-gps.activo img{
   filter: invert(17%) sepia(93%) saturate(7488%) hue-rotate(358deg) brightness(92%) contrast(119%) !important;
 }
@@ -2086,6 +2088,21 @@ input, select{ font-family: inherit; }
   display: block;
   filter: brightness(0) invert(1);
 }
+/* Flechas cardinales alrededor de la aguja: ocultas en PC; solo el celular
+   muestra este icono compuesto (ver media query de rosa-vientos). */
+.rosa-vientos__flecha{
+  display: none;
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  pointer-events: none;
+}
+.rosa-vientos__flecha img{
+  width: 100%;
+  height: 100%;
+  display: block;
+  filter: brightness(0) invert(1);
+}
 /* Formato estándar de los avisos automáticos de la app: fondo verde
    (--teal-500) con letras blancas y flecha del mismo color. */
 /* Aviso automático de la rosa de los vientos: aparece a la izquierda del
@@ -2118,6 +2135,23 @@ input, select{ font-family: inherit; }
   border-left-color: var(--teal-500);
 }
 .rosa-vientos-tip--oculto{ opacity: 0; }
+/* Rosa de los vientos en celular: círculo 1.5 veces más grande, con 70% de
+   opacidad mientras no se esté oprimiendo (al oprimir vuelve al 100%) y las
+   cuatro flechas cardinales apuntando hacia afuera alrededor de la aguja. */
+@media (max-width: 860px){
+  .rosa-vientos{
+    width: 51px;
+    height: 51px;
+    opacity: 0.7;
+    transition: opacity 0.15s ease;
+  }
+  .rosa-vientos:active{ opacity: 1; }
+  .rosa-vientos__flecha{ display: block; }
+  .rosa-vientos__flecha--norte{ top: 3px; left: 50%; margin-left: -5.5px; }
+  .rosa-vientos__flecha--sur{ bottom: 3px; left: 50%; margin-left: -5.5px; transform: rotate(180deg); }
+  .rosa-vientos__flecha--este{ right: 3px; top: 50%; margin-top: -5.5px; transform: rotate(90deg); }
+  .rosa-vientos__flecha--oeste{ left: 3px; top: 50%; margin-top: -5.5px; transform: rotate(-90deg); }
+}
 /* Aviso automático del botón "Mostrar sitios turísticos cercanos": aparece la
    primera vez que se calcula el listado de sitios indicando su función. */
 .btn-mostrar-sitios-tip{

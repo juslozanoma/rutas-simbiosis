@@ -136,7 +136,7 @@ function PanelLateral() {
             <div className="filter-row__field">
               <div className="filter-row__range">
                 <span className="filter-row__thumb-val" id="filtro-distancia-thumb">5 km</span>
-                <input type="range" id="filtro-distancia" min="1" max="60" value="5" step="1" disabled />
+                <input type="range" id="filtro-distancia" min="1" max="40" value="5" step="1" disabled />
               </div>
             </div>
             <button type="button" id="btn-aplicar-distancia" className="icon-btn" title="Recalcular filtro de distancia" aria-label="Recalcular filtro de distancia" disabled>
@@ -150,7 +150,7 @@ function PanelLateral() {
             <div className="filter-row__field">
               <div className="filter-row__range">
                 <span className="filter-row__thumb-val" id="filtro-tiempo-thumb">30 min</span>
-                <input type="range" id="filtro-tiempo" min="1" max="120" value="30" step="1" disabled />
+                <input type="range" id="filtro-tiempo" min="1" max="90" value="30" step="1" disabled />
               </div>
             </div>
             <button type="button" id="btn-aplicar-tiempo" className="icon-btn" title="Recalcular filtro de tiempo" aria-label="Recalcular filtro de tiempo" disabled>

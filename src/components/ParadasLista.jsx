@@ -337,7 +337,11 @@ function construirFilas(datos) {
         ? Number(ultimoRegular.item.datos._distKm)
         : 0;
       const segKm = Math.max(0, tKm - prev);
-      distTexto = ` — ${segKm.toFixed(1)} km (${tKm.toFixed(1)} km)`;
+      // Sin paradas intermedias solo se muestran Origen y Destino: la distancia
+      // del tramo ES la total, no hace falta el paréntesis.
+      distTexto = items.length === 0
+        ? ` — ${tKm.toFixed(1)} km`
+        : ` — ${segKm.toFixed(1)} km (${tKm.toFixed(1)} km)`;
     }
     agregarItem({
       key: 'extremo-destino', tipo: 'extremo', letra: 'Z', nombre: formatMunicipio(destino),
