@@ -2846,7 +2846,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const tip = document.createElement('div');
     tip.className = 'rosa-vientos-tip';
     tip.setAttribute('role', 'status');
-    tip.innerHTML = '<span class="rosa-vientos-tip__texto">Mueve este botón para rotar el mapa.<br>Oprime una vez para apuntar al norte. </span>';
+    tip.innerHTML = '<span class="rosa-vientos-tip__texto">Mueve este botón para rotar el mapa. Oprime una vez para apuntar al norte. </span>';
     contenedor.appendChild(tip);
     setTimeout(() => {
       tip.classList.add('rosa-vientos-tip--oculto');
