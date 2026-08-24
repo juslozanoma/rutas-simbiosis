@@ -818,9 +818,21 @@ const RutaArchivoModule = (() => {
   // Seguimiento GPS
   // -------------------------------------------------------------------
 
+  // Persistencia del seguimiento entre sesiones + wake lock para que el
+  // rastreo y las alertas de voz continúen con la pantalla apagada.
+  const CLAVE_SEGUIMIENTO = 'rutaArchivo.seguimiento';
+  let _wakeLock = null;
+
   function toggleSeguimiento() {
-    if (_watcherId != null) _desactivarSeguimiento();
-    else activarSeguimiento();
+    if (_watcherId == null) { activarSeguimiento(); return; }
+    // Con el indicador fuera de la vista: recentra por esa sola vez y el GPS
+    // sigue activo. Con el indicador visible: apaga el GPS como siempre.
+    if (!_enVista() && _ultimaPosicion) {
+      MapModule.centrarEn(_ultimaPosicion[0], _ultimaPosicion[1]);
+      _syncBotonFueraVista();
+      return;
+    }
+    _desactivarSeguimiento();
   }
 
   function activarSeguimiento() {
@@ -831,9 +843,14 @@ const RutaArchivoModule = (() => {
     }
     const rutaActual = _rutas.find((r) => r.id === _rutaActualId);
     if (!rutaActual) return;
+    try { localStorage.setItem(CLAVE_SEGUIMIENTO, String(_rutaActualId)); } catch (e) { /* sin persistencia */ }
     const linea = turf.lineString(rutaActual.coords.map((c) => [c[1], c[0]]));
     if (el.seguirRuta) el.seguirRuta.hidden = false;
-    if (el.btnGps) el.btnGps.classList.add('activo');
+    if (el.btnGps) {
+      el.btnGps.hidden = false;
+      el.btnGps.classList.add('activo');
+      el.btnGps.classList.remove('gps-opaca');
+    }
     _rumboActual = null;
     _rumboSuave = null;
     _lecturasRumbo = [];
@@ -865,12 +882,9 @@ const RutaArchivoModule = (() => {
           primeraFijacion = false;
           MapModule.centrarEn(lat, lon);
         }
-        // Si la ubicación queda fuera de la vista, el seguimiento se desactiva
-        // (el usuario puede volver a centrar pulsando el botón GPS).
-        if (!_enVista()) {
-          _desactivarSeguimiento();
-          return;
-        }
+        // El GPS permanece activo aunque el indicador salga de la vista: solo
+        // se marca el botón opaco (50%) para invitar a recentrarlo.
+        _syncBotonFueraVista();
         const km = _progresoKm(linea, lat, lon);
         _actualizarAvanceRuta(rutaActual, km, pos);
         _verificarDesvio(linea, lat, lon);
@@ -882,15 +896,46 @@ const RutaArchivoModule = (() => {
       },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
     );
-    // Si el usuario aleja la ubicación del mapa con un paneo, se desactiva
-    // enseguida (no espera a la siguiente fijación del GPS).
+    // Si el usuario aleja la ubicación del mapa con un paneo, el botón queda
+    // opaco (el seguimiento NO se desactiva).
     if (typeof MapModule.onMoveend === 'function') {
       _quitarOyenteMoveend = MapModule.onMoveend(() => {
-        if (_watcherId != null && _ultimaPosicion && !_enVista()) _desactivarSeguimiento();
+        if (_watcherId != null) _syncBotonFueraVista();
       });
     }
     _iniciarOrientacion();
+    _pedirWakeLock();
   }
+
+  /** Marca el botón GPS como opaco cuando el indicador de ubicación está
+   *  fuera de la vista del mapa. */
+  function _syncBotonFueraVista() {
+    if (!el.btnGps) return;
+    const fuera = _watcherId != null && !_enVista();
+    el.btnGps.classList.toggle('gps-opaca', fuera);
+  }
+
+  /** Pide un wake lock de pantalla para que el rastreo y las alertas de voz
+   *  continúen aunque el usuario no toque la pantalla. */
+  async function _pedirWakeLock() {
+    try {
+      if ('wakeLock' in navigator && !_wakeLock) {
+        _wakeLock = await navigator.wakeLock.request('screen');
+        _wakeLock.addEventListener('release', () => { _wakeLock = null; });
+      }
+    } catch (e) { /* sin wake lock */ }
+  }
+
+  function _liberarWakeLock() {
+    try {
+      if (_wakeLock) { _wakeLock.release(); _wakeLock = null; }
+    } catch (e) { /* sin wake lock */ }
+  }
+
+  // Al volver a primer plano se renueva el wake lock (caduca al bloquear).
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && _watcherId != null) _pedirWakeLock();
+  });
 
   /** ¿La última posición conocida está dentro de la vista actual del mapa? */
   function _enVista() {
@@ -1055,6 +1100,9 @@ const RutaArchivoModule = (() => {
         _hablar('Te estás desviando de la ruta.');
       }
     } else {
+      // Al volver a estar sobre la ruta después de un desvío se anuncia una
+      // sola vez por episodio.
+      if (_avisoDesvioActivo) _hablar('Haz recuperado tu ruta.');
       _avisoDesvioActivo = false;
     }
   }
@@ -1081,6 +1129,8 @@ const RutaArchivoModule = (() => {
       _quitarOyenteMoveend();
       _quitarOyenteMoveend = null;
     }
+    try { localStorage.removeItem(CLAVE_SEGUIMIENTO); } catch (e) { /* sin persistencia */ }
+    _liberarWakeLock();
     _ultimaPosicion = null;
     _inicioSeguimientoMs = 0;
     _distanciaRecorridaKm = 0;
@@ -1088,7 +1138,10 @@ const RutaArchivoModule = (() => {
     _desactivarOrientacion();
     MapModule.limpiarPosicionUsuario();
     if (el.seguirRuta) el.seguirRuta.hidden = true;
-    if (el.btnGps) el.btnGps.classList.remove('activo');
+    if (el.btnGps) {
+      el.btnGps.classList.remove('activo');
+      el.btnGps.classList.remove('gps-opaca');
+    }
     _ocultarIndicadorPerfilGps();
   }
 
@@ -1239,6 +1292,18 @@ const RutaArchivoModule = (() => {
 
   function initEventos() {
     _cargarGuardadas();
+    // Si el seguimiento estaba activo al cerrar la app, se reactiva solo al
+    // abrir: vuelve a indicar la ubicación del usuario (con la primera fijación
+    // se centra una vez para ubicarlo).
+    try {
+      const idGuardado = localStorage.getItem(CLAVE_SEGUIMIENTO);
+      if (idGuardado && _rutas.some((r) => String(r.id) === String(idGuardado))) {
+        _modoActivo = true;
+        _rutaActualId = String(idGuardado);
+        if (el.btnGps) el.btnGps.hidden = false;
+        activarSeguimiento();
+      }
+    } catch (e) { /* sin persistencia */ }
     // El diálogo de carga (tecla K) es React (CargarRutaDialogo): el input de
     // archivo, "Continuar con la actual" y Cancelar los maneja el componente
     // con los puentes procesarArchivosRuta/continuarRuta/cerrarDialogoRuta.

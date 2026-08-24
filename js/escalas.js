@@ -13,6 +13,19 @@
     });
   }
 
+  /** Encuadra el mapa para que se vea toda la ruta: extremos, pueblos
+   *  intermedios y paradas ya elegidos. */
+  function _encuadrarRutaCompleta() {
+    const coords = [];
+    if (state.origen && state.origen.lat != null) coords.push([Number(state.origen.lat), Number(state.origen.lon)]);
+    state.escalas.forEach((e2) => { if (e2.lat != null && e2.lon != null) coords.push([Number(e2.lat), Number(e2.lon)]); });
+    state.paradas.forEach((p) => { if (p.lat != null && p.lon != null) coords.push([Number(p.lat), Number(p.lon)]); });
+    if (state.destino && state.destino.lat != null) coords.push([Number(state.destino.lat), Number(state.destino.lon)]);
+    if (coords.length >= 2 && typeof MapModule !== 'undefined' && typeof MapModule.encuadrar === 'function') {
+      MapModule.encuadrar(coords, [50, 50]);
+    }
+  }
+
 
   function agregarEscala(datos = null) {
     const row = document.createElement('div');
@@ -45,11 +58,13 @@
         // Registra el pueblo en state.escalas sin calcular OSRM: el usuario
         // elige después si el tramo es por carro (botón verde) o avión.
         actualizarEscalas();
+        _encuadrarRutaCompleta();
         _mostrarAvisoTransporte(row);
       },
       onEnter: () => {
         // Igual que onSelect: no se recalcula hasta elegir carro o avión.
         actualizarEscalas();
+        _encuadrarRutaCompleta();
         _mostrarAvisoTransporte(row);
       },
     });

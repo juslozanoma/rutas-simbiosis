@@ -2837,7 +2837,14 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     btn.className = 'rosa-vientos';
     btn.title = 'Mover para rotar el mapa · clic para orientar al norte';
     btn.setAttribute('aria-label', 'Mueve este botón para rotar el mapa o haz clic para orientar al norte');
-    btn.innerHTML = '<span class="rosa-vientos__aguja" aria-hidden="true"><img src="/rutas-simbiosis/icons/direction.svg" alt="" width="20" height="20"></span>';
+    // En celular se muestran además cuatro flechas cardinales apuntando hacia
+    // afuera (solo se ven con la regla de media query móvil).
+    btn.innerHTML =
+      '<span class="rosa-vientos__flecha rosa-vientos__flecha--norte" aria-hidden="true"><img src="/rutas-simbiosis/icons/arrow.svg" alt=""></span>' +
+      '<span class="rosa-vientos__flecha rosa-vientos__flecha--este" aria-hidden="true"><img src="/rutas-simbiosis/icons/arrow.svg" alt=""></span>' +
+      '<span class="rosa-vientos__flecha rosa-vientos__flecha--sur" aria-hidden="true"><img src="/rutas-simbiosis/icons/arrow.svg" alt=""></span>' +
+      '<span class="rosa-vientos__flecha rosa-vientos__flecha--oeste" aria-hidden="true"><img src="/rutas-simbiosis/icons/arrow.svg" alt=""></span>' +
+      '<span class="rosa-vientos__aguja" aria-hidden="true"><img src="/rutas-simbiosis/icons/direction.svg" alt="" width="20" height="20"></span>';
     contenedor.appendChild(btn);
 
     // Aviso automático al cargar la página: aparece a la izquierda de la rosa
