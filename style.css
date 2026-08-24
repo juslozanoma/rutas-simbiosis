@@ -1985,6 +1985,8 @@ input, select{ font-family: inherit; }
   display: block;
   filter: brightness(0) invert(1);
 }
+/* Formato estándar de los avisos automáticos de la app: fondo verde
+   (--teal-500) con letras blancas y flecha del mismo color. */
 /* Aviso automático de la rosa de los vientos: aparece a la izquierda del
    botón al cargar la página y desaparece a los pocos segundos. */
 .rosa-vientos-tip{
@@ -1992,9 +1994,9 @@ input, select{ font-family: inherit; }
   right: calc(100% + 10px);
   top: 50%;
   transform: translateY(-50%);
-  background: #ffffff;
-  color: var(--teal-500);
-  border: 1px solid var(--line-200);
+  background: var(--teal-500);
+  color: #ffffff;
+  border: none;
   box-shadow: 0 2px 8px rgba(0,0,0,0.18);
   border-radius: 8px;
   padding: 8px 12px;
@@ -2012,7 +2014,7 @@ input, select{ font-family: inherit; }
   left: 100%;
   transform: translateY(-50%);
   border: 6px solid transparent;
-  border-left-color: #ffffff;
+  border-left-color: var(--teal-500);
 }
 .rosa-vientos-tip--oculto{ opacity: 0; }
 /* Aviso automático del botón "Mostrar sitios turísticos cercanos": aparece la
@@ -2020,9 +2022,9 @@ input, select{ font-family: inherit; }
 .btn-mostrar-sitios-tip{
   position: fixed;
   z-index: 1500;
-  background: #ffffff;
-  color: var(--teal-600);
-  border: 1px solid var(--line-200);
+  background: var(--teal-500);
+  color: #ffffff;
+  border: none;
   box-shadow: 0 2px 8px rgba(0,0,0,0.18);
   border-radius: 8px;
   padding: 8px 12px;
@@ -2041,7 +2043,7 @@ input, select{ font-family: inherit; }
   height: 0;
   transform: translateY(-50%);
   border: 7px solid transparent;
-  border-right-color: #ffffff;
+  border-right-color: var(--teal-500);
   border-left: 0;
 }
 .btn-mostrar-sitios-tip--izquierda::after{
@@ -2049,7 +2051,7 @@ input, select{ font-family: inherit; }
   right: -7px;
   border-right: 0;
   border-right-color: transparent;
-  border-left: 7px solid #ffffff;
+  border-left: 7px solid var(--teal-500);
 }
 .btn-mostrar-sitios-tip--oculto{ opacity: 0; }
 /* Aviso automático del botón VS del perfil: aparece a la derecha del botón
@@ -2057,9 +2059,9 @@ input, select{ font-family: inherit; }
 .vs-tip{
   position: fixed;
   z-index: 1500;
-  background: #ffffff;
-  color: var(--teal-600);
-  border: 1px solid var(--line-200);
+  background: var(--teal-500);
+  color: #ffffff;
+  border: none;
   box-shadow: 0 2px 8px rgba(0,0,0,0.18);
   border-radius: 8px;
   padding: 8px 12px;
@@ -2078,7 +2080,7 @@ input, select{ font-family: inherit; }
   height: 0;
   transform: translateY(-50%);
   border: 7px solid transparent;
-  border-right-color: #ffffff;
+  border-right-color: var(--teal-500);
   border-left: 0;
 }
 .vs-tip--izquierda::after{
@@ -2086,7 +2088,7 @@ input, select{ font-family: inherit; }
   right: -7px;
   border-right: 0;
   border-right-color: transparent;
-  border-left: 7px solid #ffffff;
+  border-left: 7px solid var(--teal-500);
 }
 .vs-tip--oculto{ opacity: 0; }
 /* Botón "+" para añadir una nueva ruta desde la barra de pestañas móvil */
@@ -2724,9 +2726,9 @@ input, select{ font-family: inherit; }
   font-weight: 500;
 }
 .altimetria__hover-info span:empty{ display: none; }
-/* Aviso de comparación: se ancla dentro del perfil visible, en la parte alta
-   del cuadro blanco (donde se muestran la distancia y la altura al hacer hover)
-   o, si no hay perfil visible, sobre el borde inferior del mapa. */
+/* Aviso de comparación: en escritorio queda FUERA de la caja blanca del
+   perfil, flotando encima de su borde superior y alineado a la derecha; en
+   celular (o sin perfil visible) se ancla sobre el borde inferior del mapa. */
 .comparar-banner{
   position: absolute;
   left: 50%;
@@ -2740,7 +2742,7 @@ input, select{ font-family: inherit; }
   background: var(--teal-500);
   border: none;
   color: #ffffff;
-  padding: 8px 30px 8px 16px;
+  padding: 8px 56px 8px 16px;
   border-radius: 10px;
   font-size: 0.78rem;
   font-weight: 400;
@@ -2748,7 +2750,15 @@ input, select{ font-family: inherit; }
   box-shadow: 0 4px 16px rgba(0,0,0,0.25);
   text-align: center;
 }
-.comparar-banner--dentro-perfil{ top: 6px; transform: translateX(-50%); }
+/* Escritorio: hijo de #altimetria con bottom:100%+gap → queda fuera de la
+   caja blanca, encima de ella; right lo pega a la esquina superior derecha. */
+.comparar-banner--dentro-perfil{
+  top: auto;
+  bottom: calc(100% + 10px);
+  left: auto;
+  right: 12px;
+  transform: none;
+}
 .comparar-banner--sobre-mapa{ bottom: 6px; transform: translateX(-50%); }
 .comparar-banner__titulo{ white-space: nowrap; color: #ffffff; font-weight: 400; }
 .comparar-banner__stats{
@@ -2759,18 +2769,20 @@ input, select{ font-family: inherit; }
 }
 .comparar-banner__cerrar{
   position: absolute;
-  top: 4px;
-  right: 8px;
+  top: 5px;
+  right: 9px;
   background: transparent;
   border: none;
   color: #ffffff;
-  font-size: 1.05rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   line-height: 1;
   cursor: pointer;
-  padding: 0 2px;
-  opacity: 0.9;
+  padding: 0;
 }
-.comparar-banner__cerrar:hover{ opacity: 1; }
+.comparar-banner__cerrar:hover{ opacity: 0.8; }
 /* Al arrastrar el aviso de comparación (celular) se desactiva el desplazamiento
    táctil del fondo y el aviso queda en la posición elegida por el usuario. */
 .comparar-banner--arrastrando{ cursor: grabbing; touch-action: none; user-select: none; }

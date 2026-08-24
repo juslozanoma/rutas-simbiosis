@@ -8,7 +8,7 @@
  * (título, estadísticas y botón de cerrar) por portal al contenedor y lo
  * re-monta entero en cada notificación (key = versión del store).
  *
- * El botón × delega en la función global que termina la comparación; el
+ * El botón "cerrar" delega en la función global que termina la comparación; el
  * arrastre del aviso sigue gestionándose en vanilla sobre el contenedor.
  * ---------------------------------------------------------------------------
  */
@@ -62,7 +62,7 @@ function BannerContenido({ banner }) {
           if (u && typeof u.cerrarBannerComparar === 'function') u.cerrarBannerComparar();
         }}
       >
-        &times;
+        cerrar
       </button>
     </Fragment>
   );

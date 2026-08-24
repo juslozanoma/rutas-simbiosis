@@ -1310,13 +1310,13 @@ const AltimetriaModule = (() => {
     if (_followActivo && _onCentrarMapa) { _onCentrarMapa(_puntoHover); }
     // En una comparación la distancia mostrada es la recorrida desde el inicio
     // del perfil (el primer punto elegido) y entre paréntesis la distancia
-    // total desde el origen A de la ruta hasta el punto señalado.
+    // total desde el origen de la ruta hasta el punto señalado.
     const suffix = cont.id.includes('-panel') ? '-panel' : '';
     const distEl = document.getElementById('altimetria-dist' + suffix);
     const altEl = document.getElementById('altimetria-alt' + suffix);
     if (distEl) {
       if (_compararActivo) {
-        distEl.textContent = `${(dist - cont._zoomStart).toFixed(1)} km (${dist.toFixed(1)} km desde A)`;
+        distEl.textContent = `${(dist - cont._zoomStart).toFixed(1)} km (${dist.toFixed(1)} km)`;
       } else {
         distEl.textContent = `${dist.toFixed(1)} km`;
       }
@@ -1466,13 +1466,13 @@ const AltimetriaModule = (() => {
     if (_followActivo && _onCentrarMapa) { _onCentrarMapa(_puntoHover); }
     // En una comparación la distancia mostrada es la recorrida desde el inicio
     // del perfil (el primer punto elegido) y entre paréntesis la distancia
-    // total desde el origen A de la ruta hasta el punto señalado.
+    // total desde el origen de la ruta hasta el punto señalado.
     const suffix = cont.id.includes('-panel') ? '-panel' : '';
     const distEl = document.getElementById('altimetria-dist' + suffix);
     const altEl = document.getElementById('altimetria-alt' + suffix);
     if (distEl) {
       if (_compararActivo) {
-        distEl.textContent = `${(dist - cont._zoomStart).toFixed(1)} km (${dist.toFixed(1)} km desde A)`;
+        distEl.textContent = `${(dist - cont._zoomStart).toFixed(1)} km (${dist.toFixed(1)} km)`;
       } else {
         distEl.textContent = `${dist.toFixed(1)} km`;
       }
