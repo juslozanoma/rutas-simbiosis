@@ -238,6 +238,9 @@ const TourismModule = (() => {
       }))
       : [];
     return {
+      esPuerto: !!opciones.esPuerto,
+      tipoCatalogo: opciones.tipoCatalogo || '',
+      refItem: opciones.refItem || null,
       categoria: opciones.categoria || '',
       color: opciones.color || colorCategoria(opciones.categoria),
       nombre: opciones.nombre || '',

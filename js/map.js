@@ -2485,8 +2485,13 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     });
   }
 
-  /** Tooltip permanente del lugar buscado: el nombre y una "×" roja al final
-   *  que oculta el elemento del mapa sin quitar la búsqueda. */
+  /** Estado de fijado del lugar buscado: inactivo (gris) tras cada búsqueda;
+   *  al pulsarlo se fija (verde) y al pulsarlo estando fijo desaparece del
+   *  mapa. */
+  let _lugarFijado = false;
+
+  /** Tooltip permanente del lugar buscado: nombre + botón con pin2.svg que
+   *  fija/quita el sitio del mapa (verde = fijado, gris = sin fijar). */
   function _crearTooltipLugar(nombre) {
     const contenedor = document.createElement('span');
     contenedor.className = 'site-label__contenido';
@@ -2494,14 +2499,21 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     texto.textContent = nombre;
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'site-label__cerrar';
-    btn.setAttribute('aria-label', 'Ocultar este sitio del mapa');
-    btn.title = 'Ocultar del mapa';
-    btn.innerHTML = '&times;';
+    btn.className = 'site-label__fijar' + (_lugarFijado ? ' site-label__fijar--activa' : '');
+    btn.setAttribute('aria-pressed', String(_lugarFijado));
+    btn.title = _lugarFijado ? 'Quitar del mapa' : 'Fijar en el mapa';
     btn.addEventListener('click', (e) => {
       L.DomEvent.stopPropagation(e);
       L.DomEvent.preventDefault(e);
-      limpiarLugarBuscado();
+      if (!_lugarFijado) {
+        _lugarFijado = true;
+        btn.classList.add('site-label__fijar--activa');
+        btn.setAttribute('aria-pressed', 'true');
+        btn.title = 'Quitar del mapa';
+      } else {
+        _lugarFijado = false;
+        limpiarLugarBuscado();
+      }
     });
     contenedor.appendChild(texto);
     contenedor.appendChild(btn);
@@ -2516,6 +2528,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   function mostrarLugarBuscado(tipo, item) {
     if (!capaLugarBuscado || !item) return;
     capaLugarBuscado.clearLayers();
+    _lugarFijado = false;
     const lat = Number(item.lat);
     const lon = Number(item.lon);
     if (!isFinite(lat) || !isFinite(lon)) return;

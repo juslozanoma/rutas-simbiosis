@@ -181,7 +181,7 @@ input, select{ font-family: inherit; }
   display: grid;
   gap: 8px;
   justify-content: center;
-  margin: 50px 10px 0px 10px;
+  margin: 10px 10px 20px 10px;
   max-width: 480px;
 }
 .btn-acciones-ruta > button{ flex: 1; margin: 0; min-width: 0; color: #8a867d; border-color: var(--line-300); }
@@ -1329,24 +1329,48 @@ input, select{ font-family: inherit; }
   align-items: center;
   gap: 6px;
 }
-.site-label__cerrar{
-  background: #c0392b;
-  color: #ffffff;
+/* Botón fijar del tooltip del lugar buscado: glifo pin2.svg recortado con
+   máscara; gris cuando está inactivo, verde al fijar. */
+.site-label__fijar{
+  width: 15px;
+  height: 15px;
   border: none;
-  border-radius: 50%;
-  width: 15px; height: 15px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
   padding: 0;
-  flex-shrink: 0;
-  pointer-events: auto;
+  background-color: #b9bdb4;
+  -webkit-mask-image: url('/rutas-simbiosis/icons/pin2.svg');
+  mask-image: url('/rutas-simbiosis/icons/pin2.svg');
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
 }
-.site-label__cerrar:hover{ background: #a93226; }
+.site-label__fijar--activa{ background-color: var(--teal-500); }
+/* El label del tooltip apaga los pointer-events; el botón fijar los necesita. */
+.site-label__fijar{ pointer-events: auto; }
+/* Botón fijar dentro de la ficha informativa (junto al río y a la X). */
+.popup-sitio__fijar{
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border: none;
+  padding: 0;
+  background-color: #b9bdb4;
+  -webkit-mask-image: url('/rutas-simbiosis/icons/pin2.svg');
+  mask-image: url('/rutas-simbiosis/icons/pin2.svg');
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+.popup-sitio__fijar--activa{ background-color: var(--teal-500); }
 /* Etiqueta con el número del listado de Descubre: insignia circular verde */
 .site-label--num{
   background: var(--teal-500);

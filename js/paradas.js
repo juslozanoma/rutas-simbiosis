@@ -1122,6 +1122,8 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
       TourismModule.mostrarCuadroInfo({
         color: esDepto ? '#3f6f8f' : '#2b6a8f',
         categoria: esDepto ? 'Departamento' : 'Municipio',
+        tipoCatalogo: tipo,
+        refItem: item,
         nombre: `${item.nombre} (${esDepto ? (item.ano || '') : (item.ano_fundacion || '')})`,
         ciudad: '',
         ubicacion: esDepto ? `Capital: ${item.capital}` : (item.departamento || ''),
@@ -1142,6 +1144,9 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
     if (map) map.closePopup();
     MapModule.centrarEn(Number(item.latitud), Number(item.longitud), 13);
     TourismModule.mostrarCuadroInfo({
+      esPuerto,
+      tipoCatalogo: tipo,
+      refItem: item,
       color: esPuerto ? '#2f7a6b' : '#4a6fa5',
       nombre: item.nombre || '',
       ciudad: item.ciudad || '',
