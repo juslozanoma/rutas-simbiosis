@@ -285,7 +285,49 @@ const MapModule = (() => {
 
     _crearRosaVientos();
 
+    // Simetría en escritorio: los botones satélite y rosa de los vientos quedan
+    // a 12 px debajo de la barra superior (la misma distancia que los separa
+    // del borde izquierdo/derecho). Se mide la barra real para no depender de
+    // alturas estimadas; en móvil se limpia el estilo inline (mandan las
+    // reglas de las media queries).
+    _alinearBotonesSuperiores();
+    window.addEventListener('resize', _alinearBotonesSuperiores);
+    setTimeout(_alinearBotonesSuperiores, 300);
+
     return map;
+  }
+
+  /** Coloca los contenedores de satélite y rosa de los vientos DEBAJO de la
+   *  barra superior (buscador), con una separación de 12 px igual al margen
+   *  lateral que los separa de los bordes izquierdo/derecho (simetría); el
+   *  GPS queda justo debajo de la rosa. En móvil se limpia el estilo inline
+   *  (mandan las media queries). */
+  function _alinearBotonesSuperiores() {
+    const satelite = document.getElementById('btns-map-gps');
+    const compass = document.getElementById('btns-map-compass');
+    const gpsSolo = document.getElementById('btns-map-gps-solo');
+    if (!satelite || !compass || !gpsSolo) return;
+    // El botón flotante de mostrar/ocultar sitios queda en la misma columna
+    // izquierda, justo debajo del satélite (antes quedaba superpuesto).
+    const flotanteSitios = document.getElementById('btn-toggle-sitios-float');
+    if (typeof esMovil === 'function' && esMovil()) {
+      satelite.style.top = '';
+      compass.style.top = '';
+      gpsSolo.style.top = '';
+      if (flotanteSitios) flotanteSitios.style.top = '';
+      return;
+    }
+    const btn = satelite.firstElementChild;
+    const altoBtn = (btn && btn.offsetHeight) || 34;
+    const barra = document.getElementById('buscar-lugar');
+    let top = 44;
+    if (barra && barra.offsetParent !== null) {
+      top = Math.round(barra.getBoundingClientRect().bottom) + 12;
+    }
+    satelite.style.top = top + 'px';
+    compass.style.top = top + 'px';
+    gpsSolo.style.top = (top + altoBtn + 6) + 'px';
+    if (flotanteSitios) flotanteSitios.style.top = (top + altoBtn + 6) + 'px';
   }
 
   /** Devuelve la instancia cruda de Leaflet (uso controlado, solo lectura conceptual). */
@@ -720,49 +762,19 @@ const MapModule = (() => {
       const num = e._numero || ++indiceEscala;
       const marker = L.marker([e.lat, e.lon], { icon: _iconoEscala(num), zIndexOffset: 950 });
       _marcadorEscalas.set(e.id, marker);
-      const muni = _municipioDe(e);
-      let nombrePop = '';
-      if (e.nombre) {
-        nombrePop = e.nombre === 'Bogotá D.C.'
-          ? 'Bogotá, D.C.'
-          : (e.departamento && e.departamento !== e.nombre ? `${e.nombre}, ${e.departamento}` : e.nombre);
-        if (muni && muni.ano_fundacion) nombrePop += ` (${muni.ano_fundacion})`;
-      }
       // Tooltip con el nombre del pueblo intermedio sobre su ícono.
       marker.bindTooltip(e.nombre || 'Pueblo intermedio', { direction: 'top', offset: [0, -16], className: 'site-label' });
-      // En celular el clic sobre el pueblo intermedio abre su ficha en el panel
-      // inferior y deja el nombre como tooltip; en escritorio sigue el popup.
+      // Clic sobre el pin (PC y celular): centra el pueblo, muestra su tooltip
+      // con el nombre y abre su ficha informativa (en escritorio va al panel
+      // lateral; en celular, a la hoja inferior). Ya no se abre popup en el mapa.
       marker.on('click', () => {
         if (Date.now() < _pinMenuSuprimirHasta) return;
-        if (typeof esMovil === 'function' && esMovil()) {
-          if (marker.getPopup && marker.getPopup()) marker.closePopup();
-          marker.openTooltip();
-          if (typeof mostrarCuadroEscala === 'function') mostrarCuadroEscala(e);
-        }
+        if (marker.getPopup && marker.getPopup()) marker.closePopup();
+        marker.openTooltip();
+        if (typeof mostrarCuadroEscala === 'function') mostrarCuadroEscala(e);
       });
       // Menú contextual del pin (mismo menú que la fila del panel).
       _menuPin(marker, (x, y) => { if (_onMenuEscala) _onMenuEscala(e, x, y); });
-      marker.bindPopup(`
-        <div class="popup-sitio">
-          <div class="popup-sitio__head">
-            <span class="popup-sitio__cat">Pueblo intermedio</span>
-            ${muni && muni.temperatura_promedio ? `<span class="popup-sitio__stat">${muni.temperatura_promedio}</span>` : ''}
-            ${muni && muni.altura ? `<span class="popup-sitio__stat">${_msnm(muni.altura)}</span>` : ''}
-          </div>
-          <h3 class="popup-sitio__nombre">${nombrePop}</h3>
-          ${_htmlDatosMunicipio(muni)}
-          ${muni && muni.descripción ? `<p class="popup-sitio__desc">${muni.descripción}</p>` : ''}
-          <p class="popup-sitio__dist mono"></p>
-        </div>
-      `);
-      marker.on('popupopen', (ev) => {
-        const el = ev.popup.getElement();
-        const catBadge = el && el.querySelector('.popup-sitio__cat');
-        if (catBadge) {
-          catBadge.style.background = '#4a6fa522';
-          catBadge.style.color = '#4a6fa5';
-        }
-      });
       marker.addTo(capaEscalas);
     });
   }
@@ -1194,6 +1206,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
       if (el.icoDescubreTabDesktop) el.icoDescubreTabDesktop.hidden = true;
       if (el.sitiosContadorTab) el.sitiosContadorTab.hidden = false;
       if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.hidden = false;
+      if (typeof _syncIndicadorDescubre === 'function') _syncIndicadorDescubre();
       if (typeof activarPanelTab === 'function') activarPanelTab('descubre');
       if (typeof esMovil === 'function' && esMovil() && typeof setMobileTab === 'function') setMobileTab('descubre');
     }
@@ -1233,6 +1246,24 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     _buscarSitiosSnapshot = { radio: 30 };
     _colocarBarraBuscarSitios();
     _notificarBuscarSitios();
+  }
+
+  /** Inicia el contexto de búsqueda de sitios (barra de radio): guarda el
+   *  listado previo para restaurarlo con la X de la barra. Debe llamarse
+   *  ANTES de modificar state.sitiosFiltrados*. */
+  function iniciarBusquedaSitios(lat, lng) {
+    _buscarSitiosCtx = {
+      origen: [lat, lng],
+      base: state.sitiosFiltradosBase,
+      filtrados: state.sitiosFiltrados,
+      modoVisibilidad: state.modoVisibilidad,
+      categorias: state.categoriasSeleccionadas ? [...state.categoriasSeleccionadas] : [],
+    };
+  }
+
+  /** Garantiza que la capa de marcadores de sitios esté visible en el mapa. */
+  function asegurarClusterSitios() {
+    if (map && !map.hasLayer(clusterSitios)) map.addLayer(clusterSitios);
   }
 
   /** Ajusta el anclaje de la barra: sobre el borde inferior del mapa; si el
@@ -2454,8 +2485,13 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     });
   }
 
-  /** Tooltip permanente del lugar buscado: el nombre y una "×" roja al final
-   *  que oculta el elemento del mapa sin quitar la búsqueda. */
+  /** Estado de fijado del lugar buscado: inactivo (gris) tras cada búsqueda;
+   *  al pulsarlo se fija (verde) y al pulsarlo estando fijo desaparece del
+   *  mapa. */
+  let _lugarFijado = false;
+
+  /** Tooltip permanente del lugar buscado: nombre + botón con pin2.svg que
+   *  fija/quita el sitio del mapa (verde = fijado, gris = sin fijar). */
   function _crearTooltipLugar(nombre) {
     const contenedor = document.createElement('span');
     contenedor.className = 'site-label__contenido';
@@ -2463,14 +2499,21 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     texto.textContent = nombre;
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'site-label__cerrar';
-    btn.setAttribute('aria-label', 'Ocultar este sitio del mapa');
-    btn.title = 'Ocultar del mapa';
-    btn.innerHTML = '&times;';
+    btn.className = 'site-label__fijar' + (_lugarFijado ? ' site-label__fijar--activa' : '');
+    btn.setAttribute('aria-pressed', String(_lugarFijado));
+    btn.title = _lugarFijado ? 'Quitar del mapa' : 'Fijar en el mapa';
     btn.addEventListener('click', (e) => {
       L.DomEvent.stopPropagation(e);
       L.DomEvent.preventDefault(e);
-      limpiarLugarBuscado();
+      if (!_lugarFijado) {
+        _lugarFijado = true;
+        btn.classList.add('site-label__fijar--activa');
+        btn.setAttribute('aria-pressed', 'true');
+        btn.title = 'Quitar del mapa';
+      } else {
+        _lugarFijado = false;
+        limpiarLugarBuscado();
+      }
     });
     contenedor.appendChild(texto);
     contenedor.appendChild(btn);
@@ -2485,6 +2528,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   function mostrarLugarBuscado(tipo, item) {
     if (!capaLugarBuscado || !item) return;
     capaLugarBuscado.clearLayers();
+    _lugarFijado = false;
     const lat = Number(item.lat);
     const lon = Number(item.lon);
     if (!isFinite(lat) || !isFinite(lon)) return;
@@ -2802,7 +2846,7 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const tip = document.createElement('div');
     tip.className = 'rosa-vientos-tip';
     tip.setAttribute('role', 'status');
-    tip.innerHTML = '<span class="rosa-vientos-tip__texto">Mueve este botón para rotar el mapa</span>';
+    tip.innerHTML = '<span class="rosa-vientos-tip__texto">Mueve este botón para rotar el mapa.<br>Oprime una vez para apuntar al norte. </span>';
     contenedor.appendChild(tip);
     setTimeout(() => {
       tip.classList.add('rosa-vientos-tip--oculto');
@@ -2890,6 +2934,9 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     setOnMenuPuntoRutaArchivo,
     setOnMenuExtremo,
     setOnMenuEscala,
+    iniciarBusquedaSitios,
+    mostrarBarraBuscarSitios: _mostrarBarraBuscarSitios,
+    asegurarClusterSitios,
     dibujarConexiones,
     limpiarConexiones,
     estanConexionesAbiertas,

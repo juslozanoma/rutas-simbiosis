@@ -179,6 +179,7 @@
     if (el.icoDescubreTabDesktop) el.icoDescubreTabDesktop.hidden = true;
     if (el.sitiosContadorTab) el.sitiosContadorTab.hidden = false;
     if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.hidden = false;
+    _syncIndicadorDescubre();
     if (el.loadingRuta) el.loadingRuta.hidden = true;
     el.loadingSitios.hidden = false;
     if (!silencioso) el.panelSitios.hidden = false;
@@ -222,6 +223,7 @@
     if (el.sitiosContador) el.sitiosContador.textContent = '0';
     if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = '0';
     if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = '0';
+    _syncIndicadorDescubre();
   }
 
   /** Alterna el filtro "solo sitios visibles": activo filtra, inactivo muestra la lista completa. */
@@ -417,6 +419,7 @@
     el.sitiosContador.textContent = String(sitiosOrdenados.length);
     if (el.sitiosContadorTab) el.sitiosContadorTab.textContent = String(sitiosOrdenados.length);
     if (el.sitiosContadorTabDesktop) el.sitiosContadorTabDesktop.textContent = String(sitiosOrdenados.length);
+    _syncIndicadorDescubre();
     // El botón flotante del mapa solo aparece cuando hay listado.
     if (el.btnToggleSitiosFloat) el.btnToggleSitiosFloat.hidden = sitiosOrdenados.length === 0;
     // Aviso automático: la primera vez que se calcula el listado se muestra un

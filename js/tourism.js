@@ -121,9 +121,19 @@ const TourismModule = (() => {
     _notificarPopupSitio();
     _notificarCuadroInfo();
     if (_popupOverlay) {
-      _popupOverlay.remove();
+      // Solo se elimina si es un overlay flotante creado aquí; la zona
+      // informativa del panel (#panel-info) es persistente y se vacía sola
+      // al desmontarse React (queda oculta por CSS con :empty).
+      if (_popupOverlay.classList && _popupOverlay.classList.contains('sitio-overlay')) {
+        _popupOverlay.remove();
+      }
       _popupOverlay = null;
     }
+    // Sin ficha activa se retiran las marcas que ajustan la lista de paradas.
+    const zonaInfo = document.getElementById('panel-info');
+    if (zonaInfo) zonaInfo.classList.remove('con-ficha');
+    const raizApp = document.getElementById('app');
+    if (raizApp) raizApp.classList.remove('ficha-info-activa');
     if (_popupSitioId != null) {
       if (typeof MapModule !== 'undefined' && MapModule.cerrarTooltipSitio) {
         MapModule.cerrarTooltipSitio(_popupSitioId);
@@ -132,8 +142,29 @@ const TourismModule = (() => {
     }
   }
 
-  /** Monta la ficha centrada (o en la mitad inferior en celular para pueblos/paradas). */
+  /** Monta la ficha: en escritorio dentro de la zona informativa del panel
+   *  (#panel-info, mitad inferior de la pestaña Ruta); en celular sigue como
+   *  cuadro sobre el mapa (centrado u hoja inferior). */
   function _montarCuadroCentrado(nodo, abajo) {
+    // En escritorio la ficha vive en el panel lateral: nada flotando en el mapa.
+    if (window.innerWidth > 860) {
+      const zona = document.getElementById('panel-info');
+      if (zona) {
+        // La ficha pertenece a la pestaña Ruta: si el usuario está viendo
+        // Descubre se pasa a Ruta para que la ficha sea visible.
+        if (typeof estaEnPestanaDescubre === 'function' && estaEnPestanaDescubre()
+            && typeof activarPanelTab === 'function') {
+          activarPanelTab('ruta');
+        }
+        if (nodo) zona.appendChild(nodo);
+        zona.classList.add('con-ficha');
+        const raizApp = document.getElementById('app');
+        if (raizApp) raizApp.classList.add('ficha-info-activa');
+        _popupOverlay = zona;
+        return true;
+      }
+    }
+
     const mapContainer = (typeof MapModule !== 'undefined' && MapModule.getMap)
       ? (MapModule.getMap().getContainer())
       : null;
@@ -207,6 +238,9 @@ const TourismModule = (() => {
       }))
       : [];
     return {
+      esPuerto: !!opciones.esPuerto,
+      tipoCatalogo: opciones.tipoCatalogo || '',
+      refItem: opciones.refItem || null,
       categoria: opciones.categoria || '',
       color: opciones.color || colorCategoria(opciones.categoria),
       nombre: opciones.nombre || '',
