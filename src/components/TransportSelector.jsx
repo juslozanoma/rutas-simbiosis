@@ -9,19 +9,29 @@
  *   - este componente selecciona llamando a `TransportConfigModule.setIcono`,
  *     `setIconoHiking` o `setColor`, y se refresca con `setOnCambio`.
  *
- * Mantiene los mismos ids/clases que el original para no tocar el CSS.
+ * La escucha del puente vive a NIVEL DE MÓDULO (no en un useEffect): queda
+ * registrada apenas se evalúa este archivo, antes de que corra cualquier
+ * script clásico, y el panel se abre con flushSync dentro del mismo evento
+ * que lo pide (inmune a remontajes/HMR y a carreras con oyentes del document).
+ *
+ * Mantiene las mismas clases que el original para no tocar el CSS.
  * ---------------------------------------------------------------------------
  */
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import '../bridge';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { createPortal, flushSync } from 'react-dom';
+import bridge from '../bridge';
 
 const T = () => (typeof window !== 'undefined' ? window.TransportConfigModule : undefined);
+
+// Marcador de versión de este componente (diagnóstico en consola).
+if (typeof window !== 'undefined') window.SIMBIOSIS_TS_V = 'ts2';
 
 function _estiloMascara(path) {
   return {
     width: '26px',
     height: '26px',
+    // Sin fondo la máscara no muestra nada: el glifo se recorta del color.
+    backgroundColor: '#14201b',
     WebkitMaskImage: "url('" + path + "')",
     WebkitMaskRepeat: 'no-repeat',
     WebkitMaskPosition: 'center',
@@ -33,42 +43,75 @@ function _estiloMascara(path) {
   };
 }
 
+// ---- Store del puente: vanilla pide abrir/cerrar y React repinta ------------
+
+const VERSION = { n: 0 };
+let suscriptor = null;
+let estado = { abierto: false, peticion: null };
+
+function subscribirse(cb) {
+  suscriptor = cb;
+  return () => { suscriptor = null; };
+}
+
+/** Repinta sincrónicamente (flushSync): el panel existe en el DOM antes de que
+ *  el evento en curso termine de propagarse por el document. Si flushSync no
+ *  está disponible en este contexto, cae a un repintado normal para no perder
+ *  el pedido de apertura/cierre. */
+function _repintar() {
+  const pintar = () => {
+    VERSION.n += 1;
+    if (suscriptor) suscriptor();
+  };
+  try {
+    flushSync(pintar);
+  } catch (e) {
+    pintar();
+  }
+}
+
+function _cerrarPanel() {
+  if (!estado.abierto && !estado.peticion) return;
+  estado = { abierto: false, peticion: null };
+  _repintar();
+}
+
+// Engancha el repintado del panel a los cambios de vehículo/color hechos en
+// cualquier parte. Se llama al abrir (el módulo clásico ya existe entonces);
+// el flag evita registrar el callback más de una vez.
+let cambiosEnganchados = false;
+
+function _engancharCambios() {
+  const mod = T();
+  if (!mod || cambiosEnganchados || typeof mod.setOnCambio !== 'function') return;
+  cambiosEnganchados = true;
+  mod.setOnCambio(_repintar);
+}
+
+// Registro a nivel de módulo: corre una sola vez, al importar este archivo.
+bridge.on('transport-selector:abrir', (dato) => {
+  _engancharCambios();
+  estado = { abierto: true, peticion: dato || {} };
+  _repintar();
+});
+bridge.on('transport-selector:cerrar', () => {
+  _cerrarPanel();
+});
+
 export default function TransportSelector() {
-  const [abierto, setAbierto] = useState(false);
+  useSyncExternalStore(subscribirse, () => VERSION.n);
+
   const [pos, setPos] = useState({ left: 0, top: 0 });
-  const [peticion, setPeticion] = useState(null);
-  const [activo, setActivo] = useState('');
-  const [color, setColor] = useState('#1c1c1c');
   const rootRef = useRef(null);
 
-  // Escucha al puente: abrir/cerrar pedidos desde el código vanilla.
-  useEffect(() => {
-    const b = window.SimbiosisUI;
-    if (!b) return;
-    const abrir = (dato) => {
-      setPeticion(dato || {});
-      setAbierto(true);
-    };
-    const cerrar = () => setAbierto(false);
-    b.on('transport-selector:abrir', abrir);
-    b.on('transport-selector:cerrar', cerrar);
-    return () => {
-      b.off('transport-selector:abrir', abrir);
-      b.off('transport-selector:cerrar', cerrar);
-    };
-  }, []);
-
-  // Refresca el estado activo al abrir o al cambiar vehículo/color en otra parte.
-  useEffect(() => {
-    const t = T();
-    if (!t) return;
-    const refrescar = () => {
-      setActivo(t.esHiking() ? t.getIconoHiking() : t.getIcono());
-      setColor(t.getColor());
-    };
-    refrescar();
-    if (typeof t.setOnCambio === 'function') t.setOnCambio(refrescar);
-  }, []);
+  const t = T();
+  const abierto = estado.abierto;
+  const peticion = estado.peticion;
+  // Vehículo y color activos se leen del módulo en cada render (no en estado
+  // local): así el resaltado siempre refleja el valor real al abrirse y tras
+  // cada selección (el enganche _engancharCambios dispara el repintado).
+  const activo = t ? (t.esHiking() ? t.getIconoHiking() : t.getIcono()) : '';
+  const color = t ? t.getColor() : '#1c1c1c';
 
   // Al abrir, mide el selector y lo posiciona cerca del clic (mismo recorte
   // que el original: nunca se sale de la ventana).
@@ -83,27 +126,30 @@ export default function TransportSelector() {
     });
   }, [abierto, peticion]);
 
-  // Cierra con Escape o clic fuera del selector.
-  // Se usa 'mousedown' en lugar de 'click' para evitar que el mismo clic que
-  // abre el selector (en el mapa o la altimetría) cierre inmediatamente el
-  // panel: mousedown se dispara antes de que el clic se propague al document.
+  // Cierra con Escape o puntero fuera del selector.
+  // 'pointerdown' en fase de captura (respaldo 'mousedown'): el down ocurre
+  // antes del click que pudo abrir el panel y no se sintetiza tras touchend,
+  // así ningún resto de la interacción que abrió lo cierra. La ventana de
+  // gracia de 450 ms cubre además pulsaciones largas y re-tocar el ícono.
   useEffect(() => {
     if (!abierto) return;
-    const alClic = (e) => {
-      if (rootRef.current && !rootRef.current.contains(e.target)) setAbierto(false);
+    const apertura = Date.now();
+    const tipoDown = typeof window !== 'undefined' && window.PointerEvent ? 'pointerdown' : 'mousedown';
+    const alCerrar = (e) => {
+      if (Date.now() - apertura < 450) return;
+      if (rootRef.current && !rootRef.current.contains(e.target)) _cerrarPanel();
     };
     const alTecla = (e) => {
-      if (e.key === 'Escape') setAbierto(false);
+      if (e.key === 'Escape') _cerrarPanel();
     };
-    document.addEventListener('mousedown', alClic);
+    document.addEventListener(tipoDown, alCerrar, true);
     document.addEventListener('keydown', alTecla);
     return () => {
-      document.removeEventListener('mousedown', alClic);
+      document.removeEventListener(tipoDown, alCerrar, true);
       document.removeEventListener('keydown', alTecla);
     };
   }, [abierto]);
 
-  const t = T();
   if (!t) return null;
 
   const seleccionarIcono = (file) => {
@@ -125,7 +171,7 @@ export default function TransportSelector() {
           className="transport-selector__cerrar"
           title="Cerrar"
           aria-label="Cerrar selector de vehículo"
-          onClick={() => setAbierto(false)}
+          onClick={() => _cerrarPanel()}
         >
           ×
         </button>

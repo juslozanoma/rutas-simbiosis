@@ -43,6 +43,9 @@ export const bridge = { on, off, emit };
 
 if (typeof window !== 'undefined') {
   window.SimbiosisUI = bridge;
+  // Marcador de versión del puente (diagnóstico: verificar en consola qué
+  // código está corriendo realmente el navegador).
+  window.SIMBIOSIS_BRIDGE_V = 'v3';
 }
 
 export default bridge;

@@ -161,3 +161,10 @@ const TransportConfigModule = (() => {
   return { ICONOS, COLORES, getIcono, getColor, setIcono, setColor, setOnCambio, esHiking, iconoPath, color, divIconoHTML, getIconoHiking, setIconoHiking, abrirSelector, cerrarSelector };
 
 })();
+
+// Expuesto como propiedad de window para que React (módulos ES) pueda
+// leerlo: un `const` de script clásico vive en el ámbito léxico global y NO
+// se cuelga de window automáticamente.
+if (typeof window !== 'undefined') {
+  window.TransportConfigModule = TransportConfigModule;
+}
