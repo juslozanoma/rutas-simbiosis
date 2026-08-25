@@ -1,4 +1,4 @@
-/**
+﻿/**
  * map.js
  * ---------------------------------------------------------------------------
  * Encapsula todo lo relacionado con el mapa Leaflet: inicialización, capa
@@ -31,6 +31,10 @@ const MapModule = (() => {
   let capaConexiones = null;    // L.layerGroup con las líneas de conexión de un puerto/aeropuerto
   let capaComparacion = null;   // L.layerGroup con los círculos naranjas de comparación (1 y 2)
   let capaLugarBuscado = null;  // L.layerGroup con el marcador del lugar seleccionado en el buscador superior
+  let capaRecorridoIndep = null; // L.layerGroup con el recorrido independiente origen→sitio (no toca la ruta)
+  let _lineaRecorridoIndep = null; // L.geoJSON del recorrido independiente activo
+  let capaOrigenSitios = null;  // L.layerGroup con el pin naranja fijo de "Origen" del listado de sitios
+  let capaLugaresFijados = null; // L.layerGroup persistente con los lugares FIJADOS (verde) del buscador
   let _marcadoresComparacion = []; // L.marker de los círculos naranjas 1 y 2
   let capaRedFluvial = null;    // L.geoJSON con la red fluvial del grafo (tecla W)
   let _redFluvialVisible = false;
@@ -185,6 +189,9 @@ const MapModule = (() => {
       maxZoom: 18,
       zoomSnap: 0.25,
       zoomDelta: 0.25,
+      // Pasos de rueda más finos en PC: se requieren más píxeles de scroll
+      // por nivel, así cada muesca avanza ~0.25–0.5 en vez de niveles enteros.
+      wheelPxPerZoomLevel: 240,
       rotate: true,
       rotateControl: false,
       // En celular la rotación solo se hace con la rosa de los vientos, no con
@@ -266,6 +273,9 @@ const MapModule = (() => {
     capaConexiones = L.layerGroup().addTo(map);
     capaComparacion = L.layerGroup().addTo(map);
     capaLugarBuscado = L.layerGroup().addTo(map);
+    capaRecorridoIndep = L.layerGroup().addTo(map);
+    capaOrigenSitios = L.layerGroup().addTo(map);
+    capaLugaresFijados = L.layerGroup().addTo(map);
     _capaPinCtx = L.layerGroup().addTo(map);
 
     // El contenedor del mapa nace con un tamaño definido por CSS (flex),
@@ -282,6 +292,13 @@ const MapModule = (() => {
     map.on('moveend', () => {
       if (_capaFlechas) _actualizarFlechaRuta();
     });
+
+    // El tooltip de parada seleccionada (desde la lista) se cierra cuando el
+    // usuario arrastra el mapa o hace zoom por su cuenta.
+    // El tooltip de parada seleccionada se cierra cuando el usuario arrastra
+    // el mapa o hace zoom por su cuenta (con gracia tras la apertura).
+    map.on('dragstart', () => _cerrarTooltipSelSiUsuario());
+    map.on('zoomstart', (e) => { if (!e || !e.hard) _cerrarTooltipSelSiUsuario(); });
 
     _crearRosaVientos();
 
@@ -602,7 +619,7 @@ const MapModule = (() => {
   function setMarcadorOrigen(lat, lon, etiqueta) {
     if (markerOrigen) map.removeLayer(markerOrigen);
     const mk = L.marker([lat, lon], { icon: iconoOrigen(), zIndexOffset: 50 })
-      .bindTooltip(`Origen: ${etiqueta}`, { direction: 'top', offset: [0, -10] });
+      .bindTooltip(`${etiqueta}<span class="site-label-flecha"></span>`, { direction: 'top', offset: [0, -44], className: 'site-label site-label--verde' });
     mk.on('click', () => {
       if (Date.now() < _pinMenuSuprimirHasta) return;
       if (_onClicMarcadorExtremo) _onClicMarcadorExtremo('origen');
@@ -616,7 +633,7 @@ const MapModule = (() => {
   function setMarcadorDestino(lat, lon, etiqueta) {
     if (markerDestino) map.removeLayer(markerDestino);
     const mk = L.marker([lat, lon], { icon: iconoDestino(), zIndexOffset: 50 })
-      .bindTooltip(`Destino: ${etiqueta}`, { direction: 'top', offset: [0, -10] });
+      .bindTooltip(`${etiqueta}<span class="site-label-flecha"></span>`, { direction: 'top', offset: [0, -44], className: 'site-label site-label--verde' });
     mk.on('click', () => {
       if (Date.now() < _pinMenuSuprimirHasta) return;
       if (_onClicMarcadorExtremo) _onClicMarcadorExtremo('destino');
@@ -678,67 +695,83 @@ const MapModule = (() => {
     onEliminarParadaCallback = callback;
   }
 
+  /** Ordena ids según su posición PROYECTADA sobre la ruta actual (km desde
+   *  el inicio). Los ids sin coordenadas o sin ruta conservan su orden relativo
+   *  al final. Fuente única para las letras de pueblos en mapa y panel. */
+  function idsEnOrdenDeRuta(ids) {
+    const limpios = (ids || []).map(String);
+    const geo = state.rutaActual && state.rutaActual.geojson;
+    const line = geo && geo.geometry && geo.geometry.coordinates;
+    if (!line || line.length < 2 || typeof turf === 'undefined') {
+      return limpios.slice();
+    }
+    const acum = [0];
+    for (let i = 1; i < line.length; i++) {
+      acum.push(acum[i - 1] + turf.distance(turf.point(line[i - 1]), turf.point(line[i]), { units: 'kilometers' }));
+    }
+    const conPos = [];
+    const sinPos = [];
+    limpios.forEach((id) => {
+      const p = (state.paradas || []).find((x) => String(x.id) === id)
+        || (state.escalas || []).find((x) => String(x.id) === id)
+        || null;
+      const lat = p ? Number(p.lat != null ? p.lat : p.latitud) : NaN;
+      const lon = p ? Number(p.lon != null ? p.lon : p.longitud) : NaN;
+      if (!isFinite(lat) || !isFinite(lon)) { sinPos.push(id); return; }
+      let mejor = 0;
+      let bd = Infinity;
+      for (let i = 0; i < line.length; i++) {
+        const d = turf.distance(turf.point([lon, lat]), turf.point(line[i]), { units: 'kilometers' });
+        if (d < bd) { bd = d; mejor = i; }
+      }
+      conPos.push({ id, pos: acum[mejor] });
+    });
+    conPos.sort((a, b) => a.pos - b.pos);
+    return conPos.map((x) => x.id).concat(sinPos);
+  }
+
+  /** Letras por posición proyectada sobre la ruta para TODOS los puntos del
+   *  viaje (pueblos + sitios): origen=A, luego B, C, D… destino=Z. Fuente
+   *  única usada por mapa y panel. */
+  function _letrasPorPosicionRuta() {
+    const puntos = [
+      ...(state.paradas || []),
+      ...(state.escalas || []),
+    ].filter((p) => p.lat != null && p.lon != null && !p._dragGenerated);
+    const letras = new Map();
+    idsEnOrdenDeRuta(puntos.map((p) => String(p.id))).forEach((id, i) => {
+      letras.set(id, typeof etiquetaIntermedia === 'function' ? etiquetaIntermedia(i) : String(i + 1));
+    });
+    return letras;
+  }
+
   /** Repinta los marcadores numerados de los sitios agregados a la ruta, en orden de visita. */
   function setMarcadoresParadas(paradas) {
     capaParadas.clearLayers();
     _marcadorParadas.clear();
+    const letras = _letrasPorPosicionRuta();
     paradas.forEach((sitio, i) => {
-      const num = sitio._numero || i + 1;
-      const marker = L.marker([sitio.lat, sitio.lon], { icon: _iconoParada(num), zIndexOffset: 900 });
-      _marcadorParadas.set(sitio.id, marker);
+      const letra = letras.get(String(sitio.id)) || String(i + 1);
+      // Pin verde con la LETRA de la posición en la ruta (B, C, …).
+      const marker = L.marker([sitio.lat, sitio.lon], { icon: _pinDivIcon(letra, '#2f7a6b'), zIndexOffset: 900 });
+      _marcadorParadas.set(String(sitio.id), marker);
 
-      // Tooltip con el nombre del sitio sobre su ícono.
-      marker.bindTooltip(sitio.nombre, { direction: 'top', offset: [0, -16], className: 'site-label' });
-      // En celular el clic sobre el sitio agregado abre su ficha en el panel
-      // inferior y deja el nombre como tooltip; en escritorio sigue el popup.
+      // Tooltip con el nombre del sitio sobre su ícono (verde, arriba del pin).
+      marker.bindTooltip(`${sitio.nombre}<span class="site-label-flecha"></span>`, { direction: 'top', offset: [0, -44], className: 'site-label site-label--verde' });
+      // Clic sobre el pin: centra, muestra el tooltip verde y abre la ficha
+      // (en PC al panel lateral; en celular a la hoja inferior). Sin popup.
       marker.on('click', () => {
-        if (typeof esMovil === 'function' && esMovil()) {
-          if (marker.getPopup && marker.getPopup()) marker.closePopup();
-          marker.openTooltip();
-          if (typeof mostrarCuadroParada === 'function') mostrarCuadroParada(sitio);
-        }
+        if (typeof mostrarCuadroParada === 'function') mostrarCuadroParada(sitio);
       });
-
-      const distTxt = sitio.distanciaRutaKm != null
-        ? `A ${sitio.distanciaRutaKm.toFixed(1)} km del corredor · ~${Math.round(sitio.tiempoDesvioMin)} min de desvío`
-        : '';
-      const cat = sitio.categoria || '';
-
-      marker.bindPopup(`
-        <div class="popup-sitio">
-          <span class="popup-sitio__cat">${cat}</span>
-          <h3 class="popup-sitio__nombre">${sitio.nombre}</h3>
-          <p class="popup-sitio__ubicacion">${sitio.municipio ? `${sitio.municipio}, ` : ''}${sitio.departamento || ''}</p>
-          <p class="popup-sitio__desc">${sitio.descripcion || ''}</p>
-          <p class="popup-sitio__dist mono">${distTxt}</p>
-          <button type="button" class="popup-parada__eliminar" data-parada-id="${sitio.id}">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 7h16M9 7V4h6v3M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/>
-              <path d="M10 11v6M14 11v6"/>
-            </svg>
-            Quitar de la ruta
-          </button>
-        </div>
-      `);
-
-      // El botón de eliminar solo existe en el DOM mientras el popup está
-      // abierto, por lo que el listener se ata cada vez que se abre.
-      marker.on('popupopen', (e) => {
-        const el = e.popup.getElement();
-        const catBadge = el.querySelector('.popup-sitio__cat');
-        if (catBadge && sitio.categoria) {
-          const color = (typeof TourismModule !== 'undefined' && TourismModule.colorCategoria)
-            ? TourismModule.colorCategoria(sitio.categoria)
-            : '#6c7369';
-          catBadge.style.background = `${color}22`;
-          catBadge.style.color = color;
+      // Clic secundario: menú contextual propio (info / añadir-eliminar / avión).
+      marker.on('contextmenu', (ev) => {
+        if (ev.originalEvent) {
+          ev.originalEvent.preventDefault();
+          ev.originalEvent.stopPropagation();
         }
-        const boton = el.querySelector('.popup-parada__eliminar');
-        if (boton) {
-          boton.addEventListener('click', () => {
-            marker.closePopup();
-            if (onEliminarParadaCallback) onEliminarParadaCallback(sitio.id);
-          });
+        L.DomEvent.stopPropagation(ev);
+        if (typeof _menuCatalogo === 'function') {
+          _menuCatalogo('sitio', sitio, marker, ev.originalEvent ? ev.originalEvent.clientX : 0, ev.originalEvent ? ev.originalEvent.clientY : 0);
         }
       });
 
@@ -751,19 +784,75 @@ const MapModule = (() => {
     _marcadorParadas.clear();
   }
 
+  /** Tooltip de selección (independiente del marcador): se ancla directamente
+   *  al mapa en las coordenadas del lugar, SIEMPRE por encima del pin, y solo
+   *  se cierra al seleccionar otro lugar, arrastrar/hacer zoom el usuario o
+   *  reiniciar. */
+  let _tooltipSel = null;
+  let _tooltipSelTs = 0;
+
+  function _cerrarTooltipSeleccion() {
+    try { if (_tooltipSel && map) map.removeLayer(_tooltipSel); } catch (e) { /* ya removido */ }
+    _tooltipSel = null;
+  }
+
+  function _mostrarTooltipSeleccion(lat, lon, texto, verde) {
+    if (!isFinite(Number(lat)) || !isFinite(Number(lon))) return;
+    _cerrarTooltipSeleccion();
+    const clase = 'site-label' + (verde ? ' site-label--verde' : '');
+    // offset -44: deja el tooltip por encima de la altura completa del pin.
+    _tooltipSel = L.tooltip({
+      permanent: true,
+      direction: 'top',
+      offset: [0, -44],
+      className: clase,
+    }).setLatLng([Number(lat), Number(lon)]).setContent((texto || '') + (verde ? '<span class="site-label-flecha"></span>' : '')).addTo(map);
+    _tooltipSelTs = Date.now();
+  }
+
+  /** Cierra el tooltip de selección si el movimiento fue del usuario (no el
+   *  centrado animado que sigue a la apertura: gracia de 600 ms). */
+  function _cerrarTooltipSelSiUsuario() {
+    if (_tooltipSel && Date.now() - _tooltipSelTs > 600) _cerrarTooltipSeleccion();
+  }
+
+  /** Abre el tooltip (nombre, verde) del marcador de una parada de la ruta. */
+  function abrirTooltipParada(id, nombre) {
+    let p = (state.paradas || []).find((x) => String(x.id) === String(id));
+    if (!p && nombre != null) p = (state.paradas || []).find((x) => x.nombre === nombre);
+    if (!p) return;
+    _mostrarTooltipSeleccion(p.lat, p.lon, p.nombre, true);
+  }
+
+  /** Abre el tooltip del pin de un pueblo intermedio. */
+  function abrirTooltipEscala(id, nombre) {
+    let e2 = (state.escalas || []).find((x) => String(x.id) === String(id));
+    if (!e2 && nombre != null) e2 = (state.escalas || []).find((x) => x.nombre === nombre);
+    if (!e2) return;
+    _mostrarTooltipSeleccion(e2.lat, e2.lon, e2.nombre || '', false);
+  }
+
+  /** Abre el tooltip del pin de origen ('origen') o destino ('destino'). */
+  function abrirTooltipExtremo(tipo) {
+    const o = tipo === 'origen' ? state.origen : state.destino;
+    if (!o || o.lat == null) return;
+    _mostrarTooltipSeleccion(o.lat, o.lon, o.nombre || '', true);
+  }
+
   /** Repinta los marcadores numerados de las escalas (municipios intermedios). */
   function setMarcadoresEscalas(escalas) {
     capaEscalas.clearLayers();
     _marcadorEscalas.clear();
-    let indiceEscala = 0;
+    const letras = _letrasPorPosicionRuta();
     escalas.forEach((e) => {
       if (e.lat == null || e.lon == null) return;
       if (e._dragGenerated) return;
-      const num = e._numero || ++indiceEscala;
-      const marker = L.marker([e.lat, e.lon], { icon: _iconoEscala(num), zIndexOffset: 950 });
-      _marcadorEscalas.set(e.id, marker);
-      // Tooltip con el nombre del pueblo intermedio sobre su ícono.
-      marker.bindTooltip(e.nombre || 'Pueblo intermedio', { direction: 'top', offset: [0, -16], className: 'site-label' });
+      // Letra según posición proyectada sobre la ruta (B, C, D…).
+      const letra = letras.get(String(e.id)) || 'A';
+      const marker = L.marker([e.lat, e.lon], { icon: _pinDivIcon(letra, '#2f7a6b'), zIndexOffset: 950 });
+      _marcadorEscalas.set(String(e.id), marker);
+      // Tooltip con el nombre del pueblo intermedio (verde, arriba del pin).
+      marker.bindTooltip(`${e.nombre || 'Pueblo intermedio'}<span class="site-label-flecha"></span>`, { direction: 'top', offset: [0, -44], className: 'site-label site-label--verde' });
       // Clic sobre el pin (PC y celular): centra el pueblo, muestra su tooltip
       // con el nombre y abre su ficha informativa (en escritorio va al panel
       // lateral; en celular, a la hoja inferior). Ya no se abre popup en el mapa.
@@ -772,6 +861,7 @@ const MapModule = (() => {
         if (marker.getPopup && marker.getPopup()) marker.closePopup();
         marker.openTooltip();
         if (typeof mostrarCuadroEscala === 'function') mostrarCuadroEscala(e);
+        _mostrarTooltipSeleccion(e.lat, e.lon, e.nombre || 'Pueblo intermedio', true);
       });
       // Menú contextual del pin (mismo menú que la fila del panel).
       _menuPin(marker, (x, y) => { if (_onMenuEscala) _onMenuEscala(e, x, y); });
@@ -1151,8 +1241,11 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
    *  de RADIO_KM del punto elegido, y acerca la vista a la zona. */
   function _buscarSitiosCercanos(lat, lng) {
     const RADIO_KM = 30;
+    // Este punto queda como ORIGEN del listado: pin naranja fijo + contexto
+    // para el recorrido independiente de las fichas.
+    fijarPinOrigen(lat, lng);
+    try { state.origenSitios = { lat: Number(lat), lon: Number(lng), nombre: 'Origen' }; } catch (e) {}
     // Se guarda el estado previo a la búsqueda para poder restaurarlo con la X
-    // roja de la barra de radio (0–50 km) al cerrar la búsqueda de sitios.
     _buscarSitiosCtx = {
       origen: [lat, lng],
       base: state.sitiosFiltradosBase,
@@ -1214,7 +1307,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     const coords = cercanos
       .filter((s) => s.lat != null && s.lon != null)
       .map((s) => [Number(s.lat), Number(s.lon)]);
-    if (coords.length && typeof MapModule.encuadrar === 'function') {
+    if (coords.length && typeof MapModule.encuadrarVisible === 'function') {
+      coords.push([lat, lng]);
+      MapModule.encuadrarVisible(coords);
+    } else if (coords.length && typeof MapModule.encuadrar === 'function') {
       coords.push([lat, lng]);
       MapModule.encuadrar(coords, [40, 40]);
     } else if (typeof MapModule.centrarEn === 'function') {
@@ -1363,6 +1459,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
   if (typeof window !== 'undefined' && window.SimbiosisUI) {
     /** Snapshot de la barra flotante (null si está cerrada). */
     window.SimbiosisUI.datosBuscarSitios = () => _buscarSitiosSnapshot;
+    /** Estado del lugar buscado y su fijado (null si no hay lugar activo). */
+    window.SimbiosisUI.datosLugarFijado = () => _lugarActual
+      ? { activo: _lugarFijado, tipo: _lugarActual.tipo, nombre: _lugarActual.nombre, lat: _lugarActual.lat, lon: _lugarActual.lon }
+      : null;
     /** Aplica un nuevo radio (km) a la búsqueda de sitios cercanos. */
     window.SimbiosisUI.aplicarRadioBuscarSitios = (radioKm) => _aplicarRadioBuscarSitios(Number(radioKm));
     /** Cierra la búsqueda y restaura el listado previo. */
@@ -2289,6 +2389,9 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     limpiarConexiones();
     if (capaRedFluvial) { map.removeLayer(capaRedFluvial); capaRedFluvial = null; _redFluvialVisible = false; }
     limpiarLugarBuscado();
+    if (capaLugaresFijados) capaLugaresFijados.clearLayers();
+    _lugaresFijados.clear();
+    limpiarRecorridoIndependiente();
     clusterSitios.clearLayers();
   }
 
@@ -2458,6 +2561,52 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     if (bounds.isValid()) map.fitBounds(bounds, { padding });
   }
 
+  /** Encuadra evitando los elementos de interfaz que tapan el mapa: barra
+   *  superior y botones flotantes (PC y celular), panel inferior (celular,
+   *  vía altura del contenedor) y perfil de altimetría + barra de radio
+   *  cuando estén visibles. Así ningún punto queda detrás de la interfaz. */
+  function encuadrarVisible(geojsonOCoords, zoomMax = 15) {
+    if (!geojsonOCoords || !map) return;
+    let bounds;
+    if (geojsonOCoords.type) {
+      bounds = L.geoJSON(geojsonOCoords).getBounds();
+    } else {
+      const limpias = geojsonOCoords.filter((c) => c && isFinite(Number(c[0])) && isFinite(Number(c[1])));
+      if (!limpias.length) return;
+      bounds = L.latLngBounds(limpias);
+    }
+    if (!bounds.isValid()) return;
+    const movil = typeof esMovil === 'function' && esMovil();
+    let top = 8;
+    let bottom = 8;
+    let left = 12;
+    if (!movil) {
+      const barra = document.getElementById('buscar-lugar');
+      if (barra && barra.offsetParent !== null) {
+        top += Math.round(barra.getBoundingClientRect().bottom);
+      } else {
+        top += 44;
+      }
+      const perfil = document.getElementById('altimetria');
+      if (perfil && perfil.offsetParent !== null) bottom += perfil.offsetHeight + 10;
+      const barraRadio = document.querySelector('.buscar-sitios-bar');
+      if (barraRadio) bottom += barraRadio.offsetHeight + 10;
+      // Columna izquierda de botones flotantes (satélite, rosa, GPS, sitios).
+      left += 56;
+    } else {
+      const resumen = document.querySelector('.mobile-summary');
+      if (resumen && resumen.offsetHeight > 0) top += resumen.offsetHeight + 6;
+      left += 52;
+      const barraRadio = document.querySelector('.buscar-sitios-bar');
+      if (barraRadio) bottom += barraRadio.offsetHeight + 10;
+    }
+    map.fitBounds(bounds, {
+      paddingTopLeft: [left, top],
+      paddingBottomRight: [left, bottom],
+      maxZoom: zoomMax,
+    });
+  }
+
   function centrarEn(lat, lon, zoom) {
     map.setView([lat, lon], zoom != null ? zoom : map.getZoom(), { animate: true });
   }
@@ -2485,39 +2634,118 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     });
   }
 
-  /** Estado de fijado del lugar buscado: inactivo (gris) tras cada búsqueda;
-   *  al pulsarlo se fija (verde) y al pulsarlo estando fijo desaparece del
-   *  mapa. */
+  /** Estado de fijado del lugar buscado (ÚNICA fuente de verdad): inactivo
+   *  (gris) tras cada búsqueda; pulsarlo fija (verde) o quita el sitio del
+   *  mapa. El botón del tooltip y el de la ficha leen/delegan aquí y quedan
+   *  sincronizados por el puente (notificarLugarFijado). */
   let _lugarFijado = false;
+  let _lugarActual = null; // { tipo, nombre, lat, lon }
+  let _marcadorLugarTransitorio = null; // marcador gris del último lugar buscado (se reemplaza)
+  const _lugaresFijados = new Map(); // clave 'tipo|lat|lon' -> L.marker fijo
 
-  /** Tooltip permanente del lugar buscado: nombre + botón con pin2.svg que
-   *  fija/quita el sitio del mapa (verde = fijado, gris = sin fijar). */
-  function _crearTooltipLugar(nombre) {
+  function _claveLugar(tipo, lat, lon) {
+    return tipo + '|' + Number(lat).toFixed(6) + '|' + Number(lon).toFixed(6);
+  }
+
+  function _notificarLugarFijado() {
+    try {
+      const oyentes = window.SimbiosisUI && window.SimbiosisUI.oyentesLugarFijado;
+      if (oyentes) oyentes.forEach((fn) => { try { fn(); } catch (e2) {} });
+    } catch (e) { /* sin oyentes */ }
+  }
+
+  function _mismoLugar(tipoTxt, datos) {
+    return !!_lugarActual
+      && _lugarActual.tipo === tipoTxt
+      && Math.abs(_lugarActual.lat - Number(datos.lat)) < 1e-9
+      && Math.abs(_lugarActual.lon - Number(datos.lon)) < 1e-9;
+  }
+
+  /** Aplica el estado de fijado lógico y avisa a React (las fichas leen el
+   *  snapshot); los botones del mapa ya llevan su propio estado al construirse
+   *  o parcharse en cada toggle. */
+  function _aplicarEstadoFijado(valor) {
+    _lugarFijado = valor;
+    _notificarLugarFijado();
+  }
+
+  /** Alterna el fijado de un lugar: gris→verde (fija; queda en la capa
+   *  persistente y sobrevive a búsquedas y cierres) y verde→gris (deja de
+   *  estar fijo: se repone como marcador transitorio, sin desaparecer hasta
+   *  cierre del cuadro o nueva búsqueda). Tooltip y fichas delegan aquí. */
+  function alternarFijarLugar(tipoTxt, datos) {
+    if (!datos || !isFinite(Number(datos.lat)) || !isFinite(Number(datos.lon))) return;
+    const lat = Number(datos.lat);
+    const lon = Number(datos.lon);
+    const nombre = datos.nombre || '';
+    if (_lugarActual && _mismoLugar(tipoTxt, datos)) {
+      if (!_lugarFijado) {
+        // Fijar: el transitorio gris sale y entra uno fijo (verde).
+        _lugarFijado = true;
+        if (_marcadorLugarTransitorio && capaLugarBuscado) {
+          capaLugarBuscado.removeLayer(_marcadorLugarTransitorio);
+          _marcadorLugarTransitorio = null;
+        }
+        const mk = _construirMarcadorLugar(tipoTxt, { lat, lon, nombre }, true);
+        mk.addTo(capaLugaresFijados);
+        _lugaresFijados.set(_claveLugar(tipoTxt, lat, lon), mk);
+        if (typeof mk.openTooltip === 'function') mk.openTooltip();
+      } else {
+        // Dejar de fijar: el fijo verde sale y vuelve el transitorio gris.
+        _lugarFijado = false;
+        const clave = _claveLugar(tipoTxt, lat, lon);
+        const mk = _lugaresFijados.get(clave);
+        if (mk && capaLugaresFijados) {
+          capaLugaresFijados.removeLayer(mk);
+          _lugaresFijados.delete(clave);
+        }
+        _marcadorLugarTransitorio = _construirMarcadorLugar(tipoTxt, { lat, lon, nombre }, false);
+        _marcadorLugarTransitorio.addTo(capaLugarBuscado);
+        if (typeof _marcadorLugarTransitorio.openTooltip === 'function') _marcadorLugarTransitorio.openTooltip();
+      }
+      _notificarLugarFijado();
+      return;
+    }
+    // Lugar distinto al actual: dibujarlo y dejarlo fijo de una vez.
+    mostrarLugarBuscado(tipoTxt, datos);
+    _aplicarEstadoFijado(true);
+  }
+
+  /** Tooltip permanente del lugar buscado: nombre + botón pin2 (verde/gris). */
+  function _crearTooltipLugar(nombre, onClickFijar, activo) {
     const contenedor = document.createElement('span');
     contenedor.className = 'site-label__contenido';
     const texto = document.createElement('span');
     texto.textContent = nombre;
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'site-label__fijar' + (_lugarFijado ? ' site-label__fijar--activa' : '');
-    btn.setAttribute('aria-pressed', String(_lugarFijado));
-    btn.title = _lugarFijado ? 'Quitar del mapa' : 'Fijar en el mapa';
+    btn.className = 'site-label__fijar' + (activo ? ' site-label__fijar--activa' : '');
+    btn.setAttribute('aria-pressed', String(activo));
+    btn.title = activo ? 'Quitar del mapa' : 'Fijar en el mapa';
     btn.addEventListener('click', (e) => {
       L.DomEvent.stopPropagation(e);
       L.DomEvent.preventDefault(e);
-      if (!_lugarFijado) {
-        _lugarFijado = true;
-        btn.classList.add('site-label__fijar--activa');
-        btn.setAttribute('aria-pressed', 'true');
-        btn.title = 'Quitar del mapa';
-      } else {
-        _lugarFijado = false;
-        limpiarLugarBuscado();
-      }
+      onClickFijar();
     });
     contenedor.appendChild(texto);
     contenedor.appendChild(btn);
     return contenedor;
+  }
+
+  /** Construye el marcador de un lugar buscado (transitorio gris o fijo
+   *  verde) con su tooltip y el clic que abre la ficha. */
+  function _construirMarcadorLugar(tipo, item, fijado) {
+    const marker = L.marker([item.lat, item.lon], { icon: _iconoLugarBuscado(tipo), zIndexOffset: fijado ? 1150 : 1200 });
+    const alFijar = () => alternarFijarLugar(tipo, { lat: item.lat, lon: item.lon, nombre: item.nombre || '' });
+    marker.bindTooltip(_crearTooltipLugar(item.nombre || '', alFijar, fijado), {
+      direction: 'top',
+      offset: [0, -16],
+      className: 'site-label',
+      permanent: true,
+      interactive: false,
+    });
+    marker.on('click', () => _abrirFichaMarcadorBuscado(tipo, item, item.lat, item.lon));
+    return marker;
   }
 
   /** Dibuja/mueve el único marcador del lugar elegido en el buscador superior
@@ -2527,22 +2755,18 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
    *  al hacer clic en el icono se abre su ficha informativa. */
   function mostrarLugarBuscado(tipo, item) {
     if (!capaLugarBuscado || !item) return;
+    // Solo se reemplaza el marcador TRANSITORIO: los fijados (verde) siguen.
     capaLugarBuscado.clearLayers();
-    _lugarFijado = false;
+    _marcadorLugarTransitorio = null;
     const lat = Number(item.lat);
     const lon = Number(item.lon);
     if (!isFinite(lat) || !isFinite(lon)) return;
-    const marker = L.marker([lat, lon], { icon: _iconoLugarBuscado(tipo), zIndexOffset: 1200 });
-    marker.bindTooltip(_crearTooltipLugar(item.nombre || ''), {
-      direction: 'top',
-      offset: [0, -16],
-      className: 'site-label',
-      permanent: true,
-      interactive: false,
-    });
-    marker.on('click', () => _abrirFichaMarcadorBuscado(tipo, item, lat, lon));
-    marker.addTo(capaLugarBuscado);
-    if (typeof marker.openTooltip === 'function') marker.openTooltip();
+    _marcadorLugarTransitorio = _construirMarcadorLugar(tipo, { lat, lon, nombre: item.nombre || '' }, false);
+    capaLugarBuscado.addLayer(_marcadorLugarTransitorio);
+    if (typeof _marcadorLugarTransitorio.openTooltip === 'function') _marcadorLugarTransitorio.openTooltip();
+    _lugarActual = { tipo, nombre: item.nombre || '', lat, lon };
+    _lugarFijado = false;
+    _notificarLugarFijado();
   }
 
   /** Abre la ficha informativa del marcador elegido en el buscador superior,
@@ -2574,6 +2798,60 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
 
   function limpiarLugarBuscado() {
     if (capaLugarBuscado) capaLugarBuscado.clearLayers();
+    _marcadorLugarTransitorio = null;
+    _lugarActual = null;
+    _lugarFijado = false;
+    _notificarLugarFijado();
+  }
+
+  /** Al cerrar el cuadro informativo: si el lugar NO está fijado desaparece
+   *  del mapa; si está fijo (verde) permanece. */
+  function limpiarLugarBuscadoSiNoFijado() {
+    if (_lugarFijado) {
+      _notificarLugarFijado();
+      return;
+    }
+    limpiarLugarBuscado();
+  }
+
+  // ---------------------------------------------------------------------
+  // Recorrido independiente origen→sitio (ficha de Descubre/Tour)
+  // Se dibuja sobre lo existente con color distinto al verde y no modifica
+  // la ruta calculada, las paradas ni el turf de Descubre.
+  // ---------------------------------------------------------------------
+
+  const COLOR_RECORRIDO_INDEP = '#8e44ad'; // morado, claramente distinto del verde
+
+  /** Dibuja (reemplazando el anterior) el recorrido independiente. */
+  function mostrarRecorridoIndependiente(geojson, etiqueta) {
+    if (!capaRecorridoIndep || !geojson || !geojson.geometry) return;
+    capaRecorridoIndep.clearLayers();
+    _lineaRecorridoIndep = L.geoJSON(geojson, {
+      style: { color: COLOR_RECORRIDO_INDEP, weight: 5, opacity: 0.9, lineCap: 'round', lineJoin: 'round' },
+      interactive: true,
+    });
+    if (etiqueta) {
+      const capas = typeof _lineaRecorridoIndep.getLayers === 'function' ? _lineaRecorridoIndep.getLayers() : [];
+      if (capas[0] && capas[0].bindTooltip) {
+        capas[0].bindTooltip(etiqueta, { sticky: true, className: 'route-tooltip', direction: 'top' });
+      }
+    }
+    capaRecorridoIndep.addLayer(_lineaRecorridoIndep);
+  }
+
+  function limpiarRecorridoIndependiente() {
+    if (capaRecorridoIndep) capaRecorridoIndep.clearLayers();
+    _lineaRecorridoIndep = null;
+  }
+
+  /** Pin NARANJA FIJO de "Origen" para los listados de sitios cercanos: no se
+   *  quita al cerrar menús ni al navegar; un nuevo origen lo reemplaza. */
+  function fijarPinOrigen(lat, lng) {
+    if (!capaOrigenSitios || !isFinite(Number(lat)) || !isFinite(Number(lng))) return;
+    capaOrigenSitios.clearLayers();
+    const marker = L.marker([Number(lat), Number(lng)], { icon: _iconoPinCtx(), zIndexOffset: 1150 });
+    marker.bindTooltip('Origen', { direction: 'top', offset: [0, -14], className: 'site-label', permanent: true });
+    marker.addTo(capaOrigenSitios);
   }
 
   /** ¿Está un punto (lat, lon) dentro de la vista actual del mapa? */
@@ -2747,11 +3025,10 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     _capasOcultasInfra = null;
   }
 
-  /** Ajusta la vista del mapa a los límites de las coordenadas dadas. */
-  function ajustarVista(coords, padding) {
-    if (!coords || !coords.length) return;
-    const bounds = L.latLngBounds(coords);
-    if (bounds.isValid()) map.fitBounds(bounds, { padding: padding || [40, 40] });
+  /** Ajusta la vista a las coordenadas respetando la interfaz (barra superior,
+   *  botones flotantes, altimetría, etc.). */
+  function ajustarVista(coords) {
+    encuadrarVisible(coords);
   }
 
   /** Ícono del indicador GPS: un círculo con una punta que indica hacia donde
@@ -2952,6 +3229,9 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     ocultarRutasYSitios,
     limpiarMarcadoresRuta,
     setMarcadoresParadas,
+    abrirTooltipParada,
+    abrirTooltipEscala,
+    abrirTooltipExtremo,
     setOnEliminarParada,
     limpiarParadas,
     setMarcadoresEscalas,
@@ -3016,10 +3296,25 @@ function mostrarAlertaRuta(lnglat, mensaje, color) {
     abrirTooltipSitio,
     cerrarTooltipSitio,
     encuadrar,
+    encuadrarVisible,
     centrarEn,
     mostrarLugarBuscado,
     limpiarLugarBuscado,
+    mostrarRecorridoIndependiente,
+    limpiarRecorridoIndependiente,
+    fijarPinOrigen,
+    limpiarLugarBuscadoSiNoFijado,
+    idsEnOrdenDeRuta,
+    alternarFijarLugar,
     puntoEnVista,
     onMoveend,
   };
+
 })();
+
+// Expuesto como propiedad de window para que React (módulos ES) pueda leerlo:
+// un `const` de script clásico vive en el ámbito léxico global y NO se cuelga
+// de window automáticamente.
+if (typeof window !== 'undefined') {
+  window.MapModule = MapModule;
+}

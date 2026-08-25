@@ -99,7 +99,7 @@
       } catch (err) {
         // Sin ruta por carretera (p. ej. San Andrés o la Amazonía): se prueba
         // el avión, luego el río y, si ninguno cubre todo el trayecto, una ruta
-        // multimodal que combina avión + barco (p. ej. San Andrés → Puerto Nariño).
+        // multimodal que combina avión + barco (p. ej. San Andrés ↑ Puerto Nariño).
         console.warn('Ruta por carretera no disponible:', err.message);
         const antes = state.rutaActual;
         await calcularRutaAerea(true);
@@ -186,8 +186,8 @@
       }
 
     } catch (err) {
-      if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = '—';
-      if (el.statTiempoMobile) el.statTiempoMobile.textContent = '—';
+      if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = '–';
+      if (el.statTiempoMobile) el.statTiempoMobile.textContent = '–';
       console.warn('Error al calcular ruta', err);
     } finally {
       ponerEnCargaRuta(false);
@@ -344,7 +344,7 @@
   }
 
   /** Consulta y guarda la elevación real (msnm) de los aeropuertos en sus
-   *  objetos, para que el símbolo ✈ del perfil use la altura del aeropuerto y
+   *  objetos, para que el símbolo ⛈ del perfil use la altura del aeropuerto y
    *  no la del punto de la carretera donde termina el tramo en carro. */
   async function _obtenerElevacionesAeropuertos(aeropuertos) {
     const unicos = [];
@@ -357,11 +357,11 @@
     unicos.forEach((ap, i) => { if (elevs[i] != null) ap.elevacionMsnm = elevs[i]; });
   }
 
-  /** Calcula la ruta directamente en avión (carro→aeropuerto→vuelo→aeropuerto→carro).
+  /** Calcula la ruta directamente en avión (carro↑aeropuerto↑vuelo↑aeropuerto↑carro).
    *  Con pueblos intermedios el trayecto se encadena: cada pueblo genera su
-   *  propio tramo carro→vuelo→carro, y los tramos se enlazan en el aeropuerto
-   *  más cercano de cada pueblo (p. ej. Bogotá → Medellín → Cartagena vuela
-   *  Bogotá→EOH, EOH→CTG). */
+   *  propio tramo carro↑vuelo↑carro, y los tramos se enlazan en el aeropuerto
+   *  más cercano de cada pueblo (p. ej. Bogotá ↑ Medellín ↑ Cartagena vuela
+   *  Bogotá↑EOH, EOH↑CTG). */
   async function calcularRutaAerea(silencioso = false) {
     if (!state.origen || !state.destino) return;
     if (!state.aeropuertos || !state.aeropuertos.length) {
@@ -371,7 +371,7 @@
     cerrarAltimetria();
     // Se prueban los aeropuertos más cercanos de cada extremo (hasta K) y se
     // elige el primer par con conexión; el más cercano puede no tener vuelos
-    // hacia el otro extremo (p. ej. Bogotá→Medellín cae por EOH y sí por MDE).
+    // hacia el otro extremo (p. ej. Bogotá↑Medellín cae por EOH y sí por MDE).
     const K_AEROPUERTOS = 5;
 
     // Pueblos intermedios en orden de visita (los que ya tienen coordenadas).
@@ -386,7 +386,7 @@
       }
     }
 
-    // Por cada par consecutivo se planea el vuelo carro→aeropuerto→vuelo→aeropuerto→carro.
+    // Por cada par consecutivo se planea el vuelo carro↑aeropuerto↑vuelo↑aeropuerto↑carro.
     const apSegs = [];
     for (let i = 0; i < puntos.length - 1; i++) {
       const a = puntos[i], b = puntos[i + 1];
@@ -509,7 +509,7 @@
       state.altimetriaTotalKm = totalKmPerfil;
       AltimetriaModule.setDatos(geojsonPerfil, state.elevacion, state.altimetriaTotalKm);
       AltimetriaModule.setExtremos(formatMunicipio(state.origen), formatMunicipio(state.destino));
-      // Elevación real de los aeropuertos para que el ✈ del perfil se ubique a
+      // Elevación real de los aeropuertos para que el ⛈ del perfil se ubique a
       // la altura del aeropuerto (no a la del punto donde termina la carretera).
       await _obtenerElevacionesAeropuertos(apSegs.flatMap((seg) => [seg.apOri, seg.hub, seg.apDes]));
       // Extremos de cada tramo en carro (los botones numerados del perfil): los
@@ -565,7 +565,7 @@
       MapModule.setMarcadoresEscalas(state.escalas);
       MapModule.setMarcadoresParadas(state.paradas);
       MapModule.setMarcadoresPuntosDesvio(state.escalas);
-      MapModule.encuadrar(geojsonMapa);
+      MapModule.encuadrarVisible(geojsonMapa);
 
       const distTexto = Utils.formatearDistancia(totalDist);
       const durTexto = Utils.formatearDuracion(totalDur);
@@ -641,7 +641,7 @@
 
   /** Une el extremo de un tramo en carro con el puerto fluvial si OSRM no lo
    *  alcanzó (el puerto está a la orilla del río, fuera de la red de carreteras).
-   *  `lado` es 'inicio' (puerto→carretera) o 'final' (carretera→puerto). */
+   *  `lado` es 'inicio' (puerto↑carretera) o 'final' (carretera↑puerto). */
   function _unirPuertoACarretera(coords, puerto, lado) {
     if (!coords || !coords.length) return coords;
     const puertoCoord = [Number(puerto.longitud), Number(puerto.latitud)];
@@ -655,7 +655,7 @@
     return coords;
   }
 
-  /** Calcula la ruta por río (carro→puerto→trayecto fluvial→puerto→carro). */
+  /** Calcula la ruta por río (carro↑puerto↑trayecto fluvial↑puerto↑carro). */
   async function calcularRutaFluvial(silencioso = false) {
     if (!state.origen || !state.destino) return;
     if (!state.puertos || !state.puertos.length) {
@@ -696,7 +696,7 @@
     const hub = pares.length > 1 ? pares[0].b : null;
 
     ponerEnCargaRuta(true);
-    // Carretera origen→puerto y puerto→destino. En zonas sin carreteras
+    // Carretera origen↑puerto y puerto↑destino. En zonas sin carreteras
     // (p. ej. la Amazonía) OSRM falla: se completa con una línea recta de
     // acceso para que la ruta fluvial siempre se muestre.
     const _rutaCarroSegura = async (a, b) => {
@@ -713,7 +713,7 @@
     ]);
 
     try {
-      // Carretera origen→puerto y puerto→destino, completando la carretera de
+      // Carretera origen↑puerto y puerto↑destino, completando la carretera de
       // acceso al puerto si OSRM no la dibujó (el puerto está a la orilla).
       const coordsCarro1 = rutaCarro1
         ? _unirPuertoACarretera(rutaCarro1.geojson.geometry.coordinates, po, 'final')
@@ -831,12 +831,12 @@
         AltimetriaModule.agregarParada(p.lat, p.lon, p.nombre, p._distKm, mapaEtiquetas.get('parada_' + p.id) || '', p.id, 'parada');
       });
 
-      // Puertos en el perfil: salida, (conexión) y llegada. El símbolo 🚢 es el
+      // Puertos en el perfil: salida, (conexión) y llegada. El símbolo 🙢 es el
       // mismo tanto para el puerto de salida como para el de llegada.
       const puertos = [{ p: po }, ...(hub ? [{ p: hub }] : []), { p: pd }];
       puertos.forEach(({ p }) => {
         if (!p) return;
-        AltimetriaModule.agregarParada(p.latitud, p.longitud, p.nombre, _distKmEnPerfil(geojsonPerfil, p.longitud, p.latitud), '🚢', 'puerto_' + p.id, 'puerto');
+        AltimetriaModule.agregarParada(p.latitud, p.longitud, p.nombre, _distKmEnPerfil(geojsonPerfil, p.longitud, p.latitud), '🙢', 'puerto_' + p.id, 'puerto');
       });
 
       MapModule.dibujarRuta(geojsonMapa, {
@@ -855,7 +855,7 @@
       MapModule.setMarcadoresEscalas(state.escalas);
       MapModule.setMarcadoresParadas(state.paradas);
       MapModule.setMarcadoresPuntosDesvio(state.escalas);
-      MapModule.encuadrar(geojsonMapa);
+      MapModule.encuadrarVisible(geojsonMapa);
 
       const distTexto = Utils.formatearDistancia(totalDist);
       const durTexto = Utils.formatearDuracion(totalDur);
@@ -881,9 +881,9 @@
   }
 
   // -------------------------------------------------------------------
-  // Ruta multimodal (avión + barco): carro→aeropuerto→vuelo→aeropuerto con
-  // puerto→barco→puerto→carro. Se usa cuando no existe una ruta completa por
-  // carretera, avión o río por separado (p. ej. San Andrés → Puerto Nariño).
+  // Ruta multimodal (avión + barco): carro↑aeropuerto↑vuelo↑aeropuerto con
+  // puerto↑barco↑puerto↑carro. Se usa cuando no existe una ruta completa por
+  // carretera, avión o río por separado (p. ej. San Andrés ↑ Puerto Nariño).
   // -------------------------------------------------------------------
 
   /** Puerto del catálogo situado en la misma ciudad que un aeropuerto. */
@@ -904,8 +904,8 @@
     return res;
   }
 
-  /** Busca un plan multimodal: aeropuerto origen → aeropuerto con puerto en su
-   *  ciudad → barco hacia el puerto del destino. Devuelve null si no hay ruta. */
+  /** Busca un plan multimodal: aeropuerto origen ↑ aeropuerto con puerto en su
+   *  ciudad ↑ barco hacia el puerto del destino. Devuelve null si no hay ruta. */
   function _planearRutaMixta() {
     if (!state.aeropuertos || !state.aeropuertos.length || !state.puertos || !state.puertos.length) return null;
     const K = 6;
@@ -965,8 +965,8 @@
     cerrarAltimetria();
     ponerEnCargaRuta(true);
     try {
-      // Carretera origen→aeropuerto origen, carretera aeropuerto destino→puerto
-      // (misma ciudad, casi siempre corta), carretera puerto→destino.
+      // Carretera origen↑aeropuerto origen, carretera aeropuerto destino↑puerto
+      // (misma ciudad, casi siempre corta), carretera puerto↑destino.
       const _rutaCarroSegura = async (a, b) => {
         try {
           const r = await RoutingModule.calcularRuta(a, b, 'driving');
@@ -1088,7 +1088,7 @@
       state.altimetriaTotalKm = totalKmPerfil;
       AltimetriaModule.setDatos(geojsonPerfil, state.elevacion, state.altimetriaTotalKm);
       AltimetriaModule.setExtremos(formatMunicipio(state.origen), formatMunicipio(state.destino));
-      // Elevación real de los aeropuertos para que el ✈ del perfil se ubique a
+      // Elevación real de los aeropuertos para que el ⛈ del perfil se ubique a
       // la altura del aeropuerto (no a la del punto donde termina la carretera).
       await _obtenerElevacionesAeropuertos([ao, paresVuelo.length > 1 ? paresVuelo[0].b : null, ad]);
       AltimetriaModule.setSegmentosExtremos([
@@ -1118,7 +1118,7 @@
       ]);
       MapModule.setMarcadorOrigen(state.origen.lat, state.origen.lon, state.origen.nombre);
       MapModule.setMarcadorDestino(state.destino.lat, state.destino.lon, state.destino.nombre);
-      MapModule.encuadrar(geojsonMapa);
+      MapModule.encuadrarVisible(geojsonMapa);
 
       const distTexto = Utils.formatearDistancia(totalDist);
       const durTexto = Utils.formatearDuracion(totalDur);
@@ -1133,7 +1133,7 @@
       _habilitarMostrarSitios();
       limpiarCuadrosEscala();
       if (!silencioso) {
-        _mostrarNotificacion(`Ruta mixta: ${ao.ciudad || 'aeropuerto'} ✈ → ${ad.ciudad || ''} → 🚢 ${pd.ciudad || 'puerto'}`);
+        _mostrarNotificacion(`Ruta mixta: ${ao.ciudad || 'aeropuerto'} ⛈ ↑ ${ad.ciudad || ''} ↑ 🙢 ${pd.ciudad || 'puerto'}`);
       }
     } catch (err) {
       console.warn('Error al calcular ruta multimodal', err);
@@ -1237,6 +1237,43 @@
     };
   }
 
+
+  /** Calcula y dibuja un recorrido independiente desde el punto de origen
+   *  actual hasta el sitio indicado. No modifica la ruta calculada, ni las
+   *  paradas, ni el turf/listado de Descubre: se dibuja sobre lo existente
+   *  con color morado y se reemplaza con cada nueva consulta. */
+  async function mostrarRecorridoASitio(sitio, boton) {
+    if (!sitio || sitio.lat == null || sitio.lon == null) return;
+    // Origen contextual: el de la ruta actual (municipio/punto en el mapa) o,
+    // en su defecto, el del listado de sitios (municipio/departamento o el
+    // punto donde se pidió la búsqueda – el pin naranja "Origen").
+    let origen = state.origen;
+    if (!origen || origen.lat == null || origen.lon == null) {
+      origen = state.origenSitios || null;
+    }
+    if (!origen || origen.lat == null || origen.lon == null) return;
+    if (typeof RoutingModule === 'undefined' || typeof RoutingModule.calcularRuta !== 'function') return;
+    if (boton) ponerEnCarga(boton, true);
+    try {
+      const ruta = await RoutingModule.calcularRuta(
+        { lat: Number(origen.lat), lon: Number(origen.lon) },
+        { lat: Number(sitio.lat), lon: Number(sitio.lon) }
+      );
+      const km = ruta.distanciaMetros / 1000;
+      const min = Math.round(ruta.duracionSegundos / 60);
+      MapModule.mostrarRecorridoIndependiente(
+        ruta.geojson,
+        'Recorrido hasta ' + (sitio.nombre || '') + ': ' + km.toFixed(1) + ' km · ' + min + ' min'
+      );
+      if (typeof _mostrarNotificacion === 'function') {
+        _mostrarNotificacion('Recorrido hasta ' + (sitio.nombre || '') + ': ' + km.toFixed(1) + ' km · ' + min + ' min');
+      }
+    } catch (err) {
+      if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion('No se pudo calcular el recorrido.');
+    } finally {
+      if (boton) ponerEnCarga(boton, false);
+    }
+  }
 
   async function aplicarRutaConDesvios(opciones = {}) {
     if (!state.rutaBase) return;
@@ -1348,11 +1385,16 @@
     } else if (state.modoFluvial && state.tramosFluviales) {
       totalKm = (state.tramosFluviales.distCarro1 + state.tramosFluviales.distCarro2) / 1000;
     } else {
-      totalKm = state.rutaBase ? state.rutaBase.distanciaMetros / 1000 : 0;
+      // Perfil sobre la RUTA COMPLETA dibujada (incluye desvíos a pueblos y
+      // sitios), no solo la base.
+      totalKm = state.rutaActual
+        ? state.rutaActual.distanciaMetros / 1000
+        : (state.rutaBase ? state.rutaBase.distanciaMetros / 1000 : 0);
     }
     const geoPerfil = (state.modoAereo || state.modoFluvial) && state.altimetriaGeo
       ? state.altimetriaGeo
-      : (state.rutaBase ? state.rutaBase.geojson : state.rutaActual.geojson);
+      : (state.rutaActual ? state.rutaActual.geojson : (state.rutaBase ? state.rutaBase.geojson : null));
+    if (!geoPerfil) return;
     if (state.rutaBase && state.rutaBase.elevacion) {
       state.elevacion = state.rutaBase.elevacion;
     }
@@ -1397,7 +1439,7 @@
     MapModule.setMarcadoresParadas(state.paradas);
     MapModule.setMarcadoresPuntosDesvio(state.escalas);
     // Al añadir/quitar paradas el mapa no debe cambiar de posición.
-    if (!opciones.mantenerMapa) MapModule.encuadrar(state.rutaActual.geojson);
+    if (!opciones.mantenerMapa) MapModule.encuadrarVisible(state.rutaActual.geojson);
     const distTexto = Utils.formatearDistancia(state.rutaActual.distanciaMetros);
     const durTexto = Utils.formatearDuracion(state.rutaActual.duracionSegundos);
     if (el.statDistanciaMobile) el.statDistanciaMobile.textContent = distTexto;

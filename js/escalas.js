@@ -14,15 +14,21 @@
   }
 
   /** Encuadra el mapa para que se vea toda la ruta: extremos, pueblos
-   *  intermedios y paradas ya elegidos. */
+   *  intermedios y paradas ya elegidos. Usa encuadrarVisible para que ningún
+   *  punto quede detrás de la barra superior, los botones flotantes o la
+   *  altimetría (PC) / panel inferior (celular). */
   function _encuadrarRutaCompleta() {
     const coords = [];
     if (state.origen && state.origen.lat != null) coords.push([Number(state.origen.lat), Number(state.origen.lon)]);
     state.escalas.forEach((e2) => { if (e2.lat != null && e2.lon != null) coords.push([Number(e2.lat), Number(e2.lon)]); });
     state.paradas.forEach((p) => { if (p.lat != null && p.lon != null) coords.push([Number(p.lat), Number(p.lon)]); });
     if (state.destino && state.destino.lat != null) coords.push([Number(state.destino.lat), Number(state.destino.lon)]);
-    if (coords.length >= 2 && typeof MapModule !== 'undefined' && typeof MapModule.encuadrar === 'function') {
-      MapModule.encuadrar(coords, [50, 50]);
+    if (coords.length >= 2 && typeof MapModule !== 'undefined') {
+      if (typeof MapModule.encuadrarVisible === 'function') {
+        MapModule.encuadrarVisible(coords);
+      } else if (typeof MapModule.encuadrar === 'function') {
+        MapModule.encuadrar(coords, [50, 50]);
+      }
     }
   }
 
@@ -59,12 +65,16 @@
         // elige después si el tramo es por carro (botón verde) o avión.
         actualizarEscalas();
         _encuadrarRutaCompleta();
+        // Los sitios visibles se ocultan hasta que se vuelva a calcular el
+        // turf desde Descubre (el pueblo nuevo cambia la ruta).
+        if (typeof _ocultarSitiosCatalogo === 'function') _ocultarSitiosCatalogo();
         _mostrarAvisoTransporte(row);
       },
       onEnter: () => {
         // Igual que onSelect: no se recalcula hasta elegir carro o avión.
         actualizarEscalas();
         _encuadrarRutaCompleta();
+        if (typeof _ocultarSitiosCatalogo === 'function') _ocultarSitiosCatalogo();
         _mostrarAvisoTransporte(row);
       },
     });

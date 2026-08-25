@@ -181,7 +181,7 @@
         .map((s) => [Number(s.lat), Number(s.lon)]);
       if (coords.length && typeof MapModule.encuadrar === 'function') {
         coords.push([Number(m.lat), Number(m.lon)]);
-        MapModule.encuadrar(coords, [40, 40]);
+        if (typeof MapModule.encuadrarVisible === 'function') { MapModule.encuadrarVisible(coords); } else { MapModule.encuadrar(coords, [40, 40]); }
       } else if (typeof MapModule.centrarEn === 'function') {
         MapModule.centrarEn(Number(m.lat), Number(m.lon), 10);
       }
@@ -245,7 +245,8 @@
     });
   }
 
-  /** Distancia en km del sitio al destino del tour más cercano. */
+  /** Distancia en km del sitio al destino del tour más cercano (respaldo del
+   *  orden por distancia cuando el sitio no tiene punto de desvío calculado). */
   function _distanciaAlDestinoMasCercano(sitio) {
     if (!state.tourDestinos || !state.tourDestinos.length) return Infinity;
     if (sitio.lat == null || sitio.lon == null) return Infinity;
@@ -262,9 +263,20 @@
     return min;
   }
 
+  /** Clave del orden por distancia: punto de desvío más cercano primero. Usa
+   *  la distancia acumulada hasta el desvío del sitio (calculada con la última
+   *  ruta); si el sitio no la tiene, respaldo: distancia al destino más
+   *  cercano del tour. */
+  function _claveOrdenDistancia(sitio) {
+    if (typeof sitio.distanciaOrigenDesvioKm === 'number' && isFinite(sitio.distanciaOrigenDesvioKm)) {
+      return sitio.distanciaOrigenDesvioKm;
+    }
+    return _distanciaAlDestinoMasCercano(sitio);
+  }
+
   // Orden de los sitios del tour: dos toggles INDEPENDIENTES. El de "Orden"
-  // ordena por nombre (ascendente/descendente) y el de "Distancia" por la
-  // distancia al destino más cercano (menor/mayor). El último tocado define el
+  // ordena por nombre (ascendente/descendente) y el de "Distancia" por el
+  // punto de desvío más cercano (menor/mayor). El último tocado define el
   // orden activo.
   let _tourOrdenActivo = 'distancia';   // 'nombre' | 'distancia'
   let _tourOrdenDirNombre = 'asc';
@@ -277,7 +289,7 @@
       _sitiosTour.sort((a, b) => dir * String(a.nombre).localeCompare(String(b.nombre), 'es'));
     } else {
       const dir = _tourOrdenDirDistancia === 'desc' ? -1 : 1;
-      _sitiosTour.sort((a, b) => dir * (_distanciaAlDestinoMasCercano(a) - _distanciaAlDestinoMasCercano(b)));
+      _sitiosTour.sort((a, b) => dir * (_claveOrdenDistancia(a) - _claveOrdenDistancia(b)));
     }
     _actualizarBotonesOrdenTour();
     _mostrarSitiosTour();
@@ -355,7 +367,7 @@
       .map((s) => [Number(s.lat), Number(s.lon)]);
     if (coords.length && typeof MapModule.encuadrar === 'function') {
       coords.push([Number(d.lat), Number(d.lon)]);
-      MapModule.encuadrar(coords, [40, 40]);
+      if (typeof MapModule.encuadrarVisible === 'function') { MapModule.encuadrarVisible(coords); } else { MapModule.encuadrar(coords, [40, 40]); }
     } else if (typeof MapModule.centrarEn === 'function') {
       MapModule.centrarEn(Number(d.lat), Number(d.lon), 10);
     }
@@ -418,6 +430,6 @@
       const d = state.tourDestinos.find((x) => String(x.id) === String(id));
       if (d) _centrarDestinoTour(d);
     };
-    /** Quita un destino (lo invoca el botón × de una fila). */
+    /** Quita un destino (lo invoca el botón Ö de una fila). */
     window.SimbiosisUI.quitarDestinoTour = (id) => _quitarDestinoTour(id);
   }
