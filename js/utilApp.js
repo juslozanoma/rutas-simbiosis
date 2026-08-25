@@ -137,7 +137,7 @@
       const coords = lista
         .filter((m) => m.lat != null && m.lon != null && !isNaN(Number(m.lat)) && !isNaN(Number(m.lon)))
         .map((m) => [Number(m.lat), Number(m.lon)]);
-      if (coords.length >= 2) MapModule.encuadrar(coords, [40, 40]);
+      if (coords.length >= 2) if (typeof MapModule.encuadrarVisible === 'function') { MapModule.encuadrarVisible(coords); } else { MapModule.encuadrar(coords, [40, 40]); }
     }
     if (typeof renderizarInfraListado === 'function') renderizarInfraListado();
   }
@@ -269,7 +269,7 @@
     if (_aeropuertosVisibles) partes.push('AEROPUERTOS');
     if (_departamentosVisibles) partes.push('DEPARTAMENTOS');
     if (_municipiosVisibles) partes.push('MUNICIPIOS');
-    if (_categoriasVisibles) partes.push('CATEGORÍAS');
+    if (_categoriasVisibles) partes.push('CATEGOR�?AS');
     if (_fronteraVisibles) partes.push('FRONTERA');
     return partes.join(' Y ');
   }
@@ -370,10 +370,10 @@
       let desde;
       if (state.ordenSitios === 'origen') {
         const n = state.origen?.nombre;
-        desde = _esNombreCoordenadas(n) ? 'Desde A ↓' : (n ? `Desde ${n} ↓` : 'Desde Origen ↓');
+        desde = _esNombreCoordenadas(n) ? 'Desde A →' : (n ? `Desde ${n} →` : 'Desde Origen →');
       } else {
         const n = state.destino?.nombre;
-        desde = _esNombreCoordenadas(n) ? 'Desde Z ↑' : (n ? `Desde ${n} ↑` : 'Desde Destino ↑');
+        desde = _esNombreCoordenadas(n) ? 'Desde Z ←' : (n ? `Desde ${n} ←` : 'Desde Destino ←');
       }
       el.btnOrdenOrigenDes.textContent = desde;
     }
@@ -648,7 +648,7 @@
   }
 
   // -------------------------------------------------------------------
-  // Marcación de tramos peligrosos (clic secundario → confirmación)
+  // Marcación de tramos peligrosos (clic secundario ↑ confirmación)
   // -------------------------------------------------------------------
 
 

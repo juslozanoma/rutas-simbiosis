@@ -14,7 +14,7 @@
  * botón "Agregar a la ruta" delega en la función global (agregarParadaDesdePopup).
  * ---------------------------------------------------------------------------
  */
-import { Fragment, useRef, useSyncExternalStore } from 'react';
+import { Fragment, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import bridge from '../bridge';
 
@@ -41,6 +41,10 @@ function subscribirse(cb) {
 
 bridge.notificarPopupSitio = notificarPopupSitio;
 
+// El fijado del lugar buscado también re-renderiza esta ficha (botón pin2).
+if (!bridge.oyentesLugarFijado) bridge.oyentesLugarFijado = new Set();
+bridge.oyentesLugarFijado.add(notificarPopupSitio);
+
 function _ui() {
   return w.SimbiosisUI || null;
 }
@@ -55,11 +59,34 @@ function FichaSitio({ sitio, color }) {
   const distTxt = sitio.distanciaCorredorKm != null
     ? `A ${sitio.distanciaCorredorKm.toFixed(1)} km del corredor · ~${Math.round(sitio.tiempoDesvioMin)} min de desvío`
     : '';
+  // Fijar/quitar el pin de este sitio en el mapa (glifo pin2, verde/gris),
+  // sincronizado con el botón del tooltip vía el puente.
+  const u0 = _ui();
+  const fij = u0 && typeof u0.datosLugarFijado === 'function' ? u0.datosLugarFijado() : null;
+  const esEste = !!(fij
+    && fij.activo
+    && fij.tipo === 'Sitio turístico'
+    && Math.abs(fij.lat - Number(sitio.lat)) < 1e-9
+    && Math.abs(fij.lon - Number(sitio.lon)) < 1e-9);
+  const fijarEnMapa = () => {
+    const mod = w.MapModule;
+    if (!mod || typeof mod.alternarFijarLugar !== 'function') return;
+    mod.alternarFijarLugar('Sitio turístico', { lat: Number(sitio.lat), lon: Number(sitio.lon), nombre: sitio.nombre });
+  };
   return (
     <div className="popup-sitio">
       <span className="popup-sitio__cat" style={{ background: color + '22', color }}>{sitio.categoria}</span>
       <div className="popup-sitio__fila-titulo">
         <h3 className="popup-sitio__nombre">{sitio.nombre}</h3>
+        {sitio.lat != null && sitio.lon != null && (
+          <button
+            type="button"
+            className={'popup-sitio__fijar' + (esEste ? ' popup-sitio__fijar--activa' : '')}
+            title={esEste ? 'Quitar el pin del mapa' : 'Fijar en el mapa'}
+            aria-pressed={String(esEste)}
+            onClick={fijarEnMapa}
+          />
+        )}
         <button
           type="button"
           className="popup-sitio__close"

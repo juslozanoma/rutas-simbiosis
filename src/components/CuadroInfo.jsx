@@ -14,7 +14,7 @@
  * turísticos", etc.) también se delega. El cierre (×) llama a cerrarPopupSitio.
  * ---------------------------------------------------------------------------
  */
-import { Fragment, useState, useSyncExternalStore } from 'react';
+import { Fragment, useSyncExternalStore } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import bridge from '../bridge';
 
@@ -40,6 +40,9 @@ function subscribirse(cb) {
 }
 
 bridge.notificarCuadroInfo = notificarCuadroInfo;
+// El fijado del lugar buscado también re-renderiza esta ficha (botón pin2).
+if (!bridge.oyentesLugarFijado) bridge.oyentesLugarFijado = new Set();
+bridge.oyentesLugarFijado.add(notificarCuadroInfo);
 
 function _ui() {
   return w.SimbiosisUI || null;
@@ -61,21 +64,25 @@ function CuadroContenido({ info }) {
   if (info.superficie_total) partes.push(info.superficie_total);
   const conCabecera = info.botonCabecera && info.botonCabecera.etiqueta;
   // Fijar/quitar el pin de este lugar en el mapa (glifo pin2, verde/gris).
-  const [fijado, setFijado] = useState(false);
+  // El estado vive en MapModule y llega sincronizado por el puente: el botón
+  // del tooltip y este quedan siempre de acuerdo.
+  const u0 = _ui();
+  const fij = u0 && typeof u0.datosLugarFijado === 'function' ? u0.datosLugarFijado() : null;
+  const tipoTxt = { municipio: 'Municipio', departamento: 'Departamento', aeropuerto: 'Aeropuerto', puerto: 'Puerto' }[info.tipoCatalogo] || '';
+  const norm = (v) => Number(v);
+  const esEste = !!(fij
+    && fij.activo
+    && info.refItem
+    && fij.tipo === tipoTxt
+    && Math.abs(fij.lat - norm(info.refItem.lat != null ? info.refItem.lat : info.refItem.latitud)) < 1e-9
+    && Math.abs(fij.lon - norm(info.refItem.lon != null ? info.refItem.lon : info.refItem.longitud)) < 1e-9);
   const fijarEnMapa = () => {
     const mod = w.MapModule;
-    if (!mod || !info.refItem) return;
-    if (!fijado) {
-      if (typeof mod.mostrarLugarBuscado !== 'function') return;
-      const it = info.refItem;
-      const lat = Number(it.lat != null ? it.lat : it.latitud);
-      const lon = Number(it.lon != null ? it.lon : it.longitud);
-      const tipoTxt = { municipio: 'Municipio', departamento: 'Departamento', aeropuerto: 'Aeropuerto', puerto: 'Puerto' }[info.tipoCatalogo] || 'Municipio';
-      mod.mostrarLugarBuscado(tipoTxt, { lat, lon, nombre: info.nombre });
-    } else if (typeof mod.limpiarLugarBuscado === 'function') {
-      mod.limpiarLugarBuscado();
-    }
-    setFijado(!fijado);
+    if (!mod || !info.refItem || typeof mod.alternarFijarLugar !== 'function') return;
+    const it = info.refItem;
+    const lat = norm(it.lat != null ? it.lat : it.latitud);
+    const lon = norm(it.lon != null ? it.lon : it.longitud);
+    mod.alternarFijarLugar(tipoTxt, { lat, lon, nombre: info.nombre });
   };
   return (
     <div className="popup-sitio">
@@ -98,9 +105,9 @@ function CuadroContenido({ info }) {
         {info.tipoCatalogo && info.refItem && (
           <button
             type="button"
-            className={'popup-sitio__fijar' + (fijado ? ' popup-sitio__fijar--activa' : '')}
-            title={fijado ? 'Quitar el pin del mapa' : 'Fijar en el mapa'}
-            aria-pressed={String(fijado)}
+            className={'popup-sitio__fijar' + (esEste ? ' popup-sitio__fijar--activa' : '')}
+            title={esEste ? 'Quitar el pin del mapa' : 'Fijar en el mapa'}
+            aria-pressed={String(esEste)}
             onClick={fijarEnMapa}
           />
         )}

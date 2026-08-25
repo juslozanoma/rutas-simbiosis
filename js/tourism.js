@@ -129,6 +129,10 @@ const TourismModule = (() => {
       }
       _popupOverlay = null;
     }
+    // NOTA: el lugar buscado del mapa NO se limpia aquí. Esta función también
+    // corre como limpieza interna antes de mostrar otra ficha; el pin sin
+    // fijar se elimina solo cuando el usuario CIERRA el cuadro
+    // (ver cerrarPopupSitio más abajo).
     // Sin ficha activa se retiran las marcas que ajustan la lista de paradas.
     const zonaInfo = document.getElementById('panel-info');
     if (zonaInfo) zonaInfo.classList.remove('con-ficha');
@@ -310,7 +314,14 @@ const TourismModule = (() => {
       if (onAgregarParadaCallback) onAgregarParadaCallback(sitio, btn);
     };
     /** Cierra la ficha (lo invoca el botón × de la ficha). */
-    window.SimbiosisUI.cerrarPopupSitio = () => ocultarPopupSitio();
+    window.SimbiosisUI.cerrarPopupSitio = () => {
+    ocultarPopupSitio();
+    // Al cerrar el cuadro el usuario: el lugar buscado sin fijar desaparece
+    // del mapa; si está fijo (verde) permanece.
+    if (typeof MapModule !== 'undefined' && typeof MapModule.limpiarLugarBuscadoSiNoFijado === 'function') {
+      MapModule.limpiarLugarBuscadoSiNoFijado();
+    }
+  };
   }
 
   return {

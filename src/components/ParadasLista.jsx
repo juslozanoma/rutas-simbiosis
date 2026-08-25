@@ -123,7 +123,25 @@ function construirFilas(datos) {
     const p = paradas.find((x) => x.id === o.id);
     if (!p) return null;
     return { tipo: 'parada', datos: p };
-  }).filter(Boolean).filter((item) => !item.datos._dragGenerated);
+    }).filter(Boolean).filter((item) => !item.datos._dragGenerated);
+
+    // Reordenar automáticamente por cercanía al ORIGEN (proyección de cada
+    // punto sobre la ruta): el listado y las letras siguen la misma secuencia.
+    try {
+      const idsTodos = items.map((it) => String(it.datos.id));
+      let ordenIds = idsTodos;
+      if (w.MapModule && typeof w.MapModule.idsEnOrdenDeRuta === 'function') {
+        ordenIds = w.MapModule.idsEnOrdenDeRuta(idsTodos);
+      }
+      const posDe = new Map(ordenIds.map((id, i) => [id, i]));
+      items.sort((a, b) => (
+        (posDe.get(String(a.datos.id)) != null ? posDe.get(String(a.datos.id)) : 9999)
+        - (posDe.get(String(b.datos.id)) != null ? posDe.get(String(b.datos.id)) : 9999)
+      ));
+    } catch (e) {
+      console.error('[simbiosis] reorden por cercanía falló:', e);
+    }
+
 
   // Distancia desde la parada anterior: diferencia del km acumulado entre
   // paradas consecutivas (la primera mide desde el origen, km 0). Se calcula
@@ -143,7 +161,11 @@ function construirFilas(datos) {
     });
   }
 
-  const total = items.length;
+    // Letras por secuencia del listado YA ordenado por cercanía al origen:
+    // el punto más cercano sigue a A con la siguiente letra, y así sucesivamente.
+    const etqDe = (it2, baseIdx) => etiquetaIntermedia(baseIdx);
+
+    const total = items.length;
   const incluirExtremos = Boolean(rutaActual && origen && destino);
 
   // Días de viaje: cada parada queda en su día. Si se arrastró una parada a
@@ -283,13 +305,15 @@ function construirFilas(datos) {
         if (pueblo) {
           itemsRestantes.splice(itemsRestantes.indexOf(pueblo), 1);
           asegurarDiaPara(idxItem);
-          const etq = etiquetaIntermedia(idxItem++);
+          const etq = etqDe(pueblo, idxItem);
+          idxItem++;
           agregarItem(filaItem(pueblo, etq), { item: pueblo, etiqueta: etq });
         }
         while (itemsRestantes.length && itemsRestantes[0].tipo !== 'escala') {
           asegurarDiaPara(idxItem);
           const it = itemsRestantes.shift();
-          const etq = etiquetaIntermedia(idxItem++);
+          const etq = etqDe(it, idxItem);
+          idxItem++;
           agregarItem(filaItem(it, etq), { item: it, etiqueta: etq });
         }
       }
@@ -297,7 +321,8 @@ function construirFilas(datos) {
     while (itemsRestantes.length) {
       asegurarDiaPara(idxItem);
       const it = itemsRestantes.shift();
-      const etq = etiquetaIntermedia(idxItem++);
+      const etq = etqDe(it, idxItem);
+      idxItem++;
       agregarItem(filaItem(it, etq), { item: it, etiqueta: etq });
     }
     // Ruta multimodal (avión + barco): tras el tramo aéreo se intercalan los
@@ -320,7 +345,7 @@ function construirFilas(datos) {
     }
     items.forEach((item, idx) => {
       asegurarDiaPara(idx);
-      const etq = etiquetaIntermedia(idx);
+      const etq = etqDe(item, idx);
       agregarItem(filaItem(item, etq), { item, etiqueta: etq });
     });
     if (modoFluvial && tramosFluviales && tramosFluviales.pd) {
@@ -395,6 +420,10 @@ function FilaExtremo({ letra, nombre, distTexto, subTipo, origen, destino }) {
     const extremo = subTipo === 'origen' ? origen : destino;
     if (extremo && extremo.lat != null) {
       if (typeof w.mostrarCuadroExtremo === 'function') w.mostrarCuadroExtremo(subTipo, extremo.nombre || '', (extremo.departamento || ''));
+      // Tooltip sobre el pin A/Z en el mapa.
+      if (w.MapModule && typeof w.MapModule.abrirTooltipExtremo === 'function') {
+        w.MapModule.abrirTooltipExtremo(subTipo);
+      }
     }
   };
   const opciones = () => {
@@ -494,8 +523,16 @@ function FilaItem({ item, etiqueta, nombre, distTexto }) {
     if (typeof w.cerrarMenuFila === 'function') w.cerrarMenuFila();
     if (item.tipo === 'parada') {
       if (typeof w.mostrarCuadroParada === 'function') w.mostrarCuadroParada(e);
+      // Tooltip verde con el nombre sobre el pin del sitio en el mapa.
+      if (w.MapModule && typeof w.MapModule.abrirTooltipParada === 'function') {
+        w.MapModule.abrirTooltipParada(e.id, e.nombre);
+      }
     } else if (item.tipo === 'escala') {
       if (typeof w.mostrarCuadroEscala === 'function') w.mostrarCuadroEscala(e);
+      // Tooltip con el nombre sobre el pin del pueblo intermedio.
+      if (w.MapModule && typeof w.MapModule.abrirTooltipEscala === 'function') {
+        w.MapModule.abrirTooltipEscala(e.id, e.nombre);
+      }
     }
   };
   const construirOpciones = () => {

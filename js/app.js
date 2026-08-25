@@ -18,23 +18,73 @@
       const extremo = tipo === 'origen' ? state.origen : state.destino;
       if (extremo) mostrarCuadroExtremo(tipo, extremo.nombre || '', extremo.departamento || '');
     });
-    // Menú contextual de los pines A/Z del mapa (clic derecho / pulsación
-    // larga): las mismas opciones que la fila de origen/destino del panel.
-    MapModule.setOnMenuExtremo((subTipo, clientX, clientY) => {
-      const opciones = [];
+    // Menú contextual de los pines A/Z del mapa: información y eliminar de la
+    // ruta (el extremo se quita junto con la ruta calculada que dependía de él).
+    const ICONO_INFO = '/rutas-simbiosis/icons/info.svg';
+    const ICONO_TRASH = '/rutas-simbiosis/icons/trash.svg';
+    const _eliminarExtremoDeLaRuta = (subTipo) => {
+      UndoManager.registrar();
       if (subTipo === 'origen') {
-        opciones.push({ etiqueta: 'Cambiar lugar de origen', icono: '/rutas-simbiosis/icons/replay.svg', accion: () => irCambiarOrigen() });
+        state.origen = null;
+        if (el.origenInput) { el.origenInput.value = ''; delete el.origenInput.dataset.selectedId; }
       } else {
-        opciones.push({ etiqueta: 'Cambiar lugar de destino', icono: '/rutas-simbiosis/icons/replay.svg', accion: () => irCambiarDestino() });
-        opciones.push({ etiqueta: 'Llegar en avión a este lugar', icono: '/rutas-simbiosis/icons/airplane.svg', accion: () => llegarEnAvionAlDestino() });
+        state.destino = null;
+        if (el.destinoInput) { el.destinoInput.value = ''; delete el.destinoInput.dataset.selectedId; }
       }
+      state.rutaBase = null;
+      state.rutaActual = null;
+      state.tramosAereo = null;
+      state.tramosFluviales = null;
+      state.modoAereo = false;
+      state.modoFluvial = false;
+      state.paradas = [];
+      MapModule.limpiarRuta();
+      MapModule.limpiarMarcadoresRuta();
+      MapModule.limpiarParadas();
+      if (typeof _limpiarTurfYListado === 'function') _limpiarTurfYListado();
+      if (typeof AltimetriaModule !== 'undefined' && typeof AltimetriaModule.limpiar === 'function') AltimetriaModule.limpiar();
+      renderizarParadas();
+      if (typeof sincronizarModoRutaMovil === 'function') sincronizarModoRutaMovil();
+      if (typeof actualizarEstadoBotonCalcular === 'function') actualizarEstadoBotonCalcular();
+      if (typeof _mostrarNotificacion === 'function') _mostrarNotificacion(subTipo === 'origen' ? 'Origen eliminado de la ruta.' : 'Destino eliminado de la ruta.');
+    };
+    MapModule.setOnMenuExtremo((subTipo, clientX, clientY) => {
+      const ext = subTipo === 'origen' ? state.origen : state.destino;
+      const opciones = [
+        {
+          etiqueta: 'Ver más información',
+          icono: ICONO_INFO,
+          accion: () => {
+            if (ext && typeof mostrarCuadroExtremo === 'function') mostrarCuadroExtremo(subTipo, ext.nombre || '', ext.departamento || '');
+          },
+        },
+        { etiqueta: 'Eliminar de la ruta', icono: ICONO_TRASH, accion: () => _eliminarExtremoDeLaRuta(subTipo) },
+      ];
       abrirMenuFila(opciones, clientX, clientY);
     });
-    // Menú contextual del pin de un pueblo intermedio en el mapa.
+    // Menú contextual del pin de un pueblo intermedio.
     MapModule.setOnMenuEscala((escala, clientX, clientY) => {
       abrirMenuFila([
-        { etiqueta: 'Llegar en avión a este lugar', icono: '/rutas-simbiosis/icons/airplane.svg', accion: () => llegarEnAvionAParada(escala, 'escala') },
-        { etiqueta: 'Cambiar pueblo intermedio', icono: '/rutas-simbiosis/icons/replay.svg', accion: () => cambiarPueblo(escala) },
+        {
+          etiqueta: 'Ver más información',
+          icono: ICONO_INFO,
+          accion: () => { if (typeof mostrarCuadroEscala === 'function') mostrarCuadroEscala(escala); },
+        },
+        {
+          etiqueta: 'Llegar en avión a este lugar',
+          icono: '/rutas-simbiosis/icons/airplane.svg',
+          accion: () => { if (typeof llegarEnAvionAParada === 'function') llegarEnAvionAParada(escala, 'escala'); },
+        },
+        {
+          etiqueta: 'Cambiar pueblo intermedio',
+          icono: '/rutas-simbiosis/icons/replay.svg',
+          accion: () => { if (typeof cambiarPueblo === 'function') cambiarPueblo(escala); },
+        },
+        {
+          etiqueta: 'Eliminar de la ruta',
+          icono: ICONO_TRASH,
+          accion: () => { if (typeof eliminarEscala === 'function') eliminarEscala(escala.id); },
+        },
       ], clientX, clientY);
     });
     // Clic en un puerto/aeropuerto del mapa: solo líneas hacia sus conexiones
@@ -518,9 +568,29 @@
   }
 
   /** Abre el menú contextual de un ítem del catálogo (aeropuerto/municipio/
-   *  departamento/sitio/frontera). */
+   *  departamento/sitio/frontera). Los sitios turísticos y de frontera tienen
+   *  menú propio simplificado: Ver más información, Añadir/Eliminar de la
+   *  ruta (y Llegar en avión si ya es parada), sin mover/editar/borrar. */
   function _menuCatalogo(tipo, item, marker, clientX, clientY) {
     if (!item) return;
+    if (tipo === 'sitio' || tipo === 'frontera') {
+      const yaParada = (state.paradas || []).some((p) => String(p.id) === String(item.id));
+      const plusMask = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round"/></svg>'
+      );
+      const opciones = [
+        { etiqueta: 'Ver más información', icono: '/rutas-simbiosis/icons/info.svg', accion: () => _verInfoCatalogo(tipo, item) },
+        yaParada
+          ? { etiqueta: 'Eliminar de la ruta', icono: '/rutas-simbiosis/icons/trash.svg', accion: () => eliminarParada(item.id) }
+          : { etiqueta: 'Añadir a la ruta', icono: plusMask, accion: () => agregarParada(item) },
+      ];
+      // Si el sitio ya es parada se conserva la opción de llegar en avión.
+      if (yaParada && typeof llegarEnAvionAParada === 'function') {
+        opciones.splice(1, 0, { etiqueta: 'Llegar en avión a este lugar', icono: '/rutas-simbiosis/icons/airplane.svg', accion: () => llegarEnAvionAParada(item, 'parada') });
+      }
+      abrirMenuFila(opciones, clientX, clientY);
+      return;
+    }
     const opciones = [
       { etiqueta: 'Ver más información', accion: () => _verInfoCatalogo(tipo, item) },
       { etiqueta: 'Mover', accion: () => MapModule.iniciarArrastreCatalogo(marker, tipo, item.id) },

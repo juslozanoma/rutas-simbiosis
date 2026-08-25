@@ -1323,6 +1323,44 @@ input, select{ font-family: inherit; }
   border-top-color: rgba(255,255,255,0.92);
   pointer-events: none;
 }
+/* Flecha real (elemento hijo) para los tooltips verdes: centrada bajo el
+   cuadro, sin depender de pseudo-elementos de Leaflet. */
+.site-label-flecha{
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border: 6px solid transparent;
+  border-top-color: #ffffff;
+  pointer-events: none;
+}
+.site-label--verde .site-label-flecha{ border-top-color: var(--teal-500); }
+/* Variante VERDE del tooltip de sitio (fichas de paradas de la ruta):
+   fondo teal-500 totalmente opaco (cero transparencia), sin borde, letras
+   blancas y flecha del mismo color. */
+.site-label--verde{
+  background-color: var(--teal-500);
+  background-image: none;
+  border: none;
+  color: #ffffff;
+  opacity: 1 !important;
+}
+.site-label--verde::before{
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  border-top-color: var(--teal-500);
+}
+/* Variante VERDE: se suprime cualquier flecha pseudo-elemento (la nuestra y
+   la de Leaflet) porque chocan entre sí; la flecha real es un elemento hijo
+   (.site-label-flecha) perfectamente centrado. */
+.site-label--verde::before,
+.site-label--verde.leaflet-tooltip-top::before,
+.site-label--verde.leaflet-tooltip-bottom::before{ content: none !important; }
+.site-label--verde .site-label-flecha{ border-top-color: var(--teal-500); }
 /* Contenido del tooltip del lugar buscado: nombre + "×" roja al final */
 .site-label__contenido{
   display: inline-flex;
@@ -3521,6 +3559,30 @@ input, select{ font-family: inherit; }
   display: block;
   background-color: var(--teal-500);
 }
+
+/* Botón "Mostrar recorrido hasta aquí" en la ficha de sitio: sin círculo,
+   solo el glifo del vehículo en verde (más grande que antes). */
+.sitio-card__recorrido{
+  position: relative;
+  width: 28px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.sitio-card__recorrido:hover{ background: var(--teal-50); }
+.sitio-card__recorrido-ico{
+  width: 20px;
+  height: 16px;
+  display: block;
+  background-color: var(--teal-500);
+}
+.sitio-card__recorrido .icon-btn__spinner{ width: 12px; height: 12px; }
 
 /* Bloque de parada clicable como elemento */
 .parada-item{

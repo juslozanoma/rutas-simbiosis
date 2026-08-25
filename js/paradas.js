@@ -21,17 +21,16 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
     UndoManager.registrar();
     if (boton) ponerEnCarga(boton, true);
     state.paradas.push(sitio);
-    const map = MapModule.getMap();
-    const center = map.getCenter();
-    const zoom = map.getZoom();
     try {
-      if (!el.btnAutoOrganizar || el.btnAutoOrganizar.getAttribute('aria-pressed') === 'true') {
-        await organizarAutomaticamente();
-      } else {
-        await aplicarRutaConDesvios();
-        renderizarParadas();
+      // La nueva ruta se construye como DESVÍO desde la ruta actual (sin
+      // recalcular la base OSRM ni el turf de Descubre) y se dibuja completa.
+      // Si aún no hay ruta, solo se agrega el marcador y la fila.
+      sincronizarOrden();
+      if (state.rutaBase) {
+        await aplicarRutaConDesvios({ mantenerMapa: true });
       }
-      map.setView(center, zoom, { animate: false });
+      renderizarParadas();
+      MapModule.setMarcadoresParadas(state.paradas);
       limpiarPreview();
       // Actualiza la tarjeta en su lugar (resaltado + botón "−") sin recargar la lista.
       _marcarSitioAgregadoEnLista(sitio);
@@ -42,7 +41,7 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
   }
 
   /** Cambia en el lugar la tarjeta de un sitio a "ya agregado" (resaltado y
-   *  botón −). Las tarjetas las renderiza React (SitiosLista): se notifica al
+   *  botón ∑). Las tarjetas las renderiza React (SitiosLista): se notifica al
    *  puente y el componente re-renderiza leyendo state.paradas. */
 
   function _marcarSitioAgregadoEnLista(sitio) {
@@ -91,6 +90,11 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
       if (sitio.lat != null && sitio.lon != null) {
         MapModule.agregarMarcadorSitio(TourismModule.crearMarcador(sitio, _numeroListaSitio(sitio)));
       }
+    }
+    // Con la ruta actualizada (sin el sitio eliminado) se re-encuadra el mapa
+    // para que se vea completa.
+    if (state.rutaActual && typeof _encuadrarRutaCompleta === 'function') {
+      _encuadrarRutaCompleta();
     }
   }
 
@@ -841,6 +845,10 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
     const map = MapModule.getMap();
     if (map) map.closePopup();
     MapModule.centrarEn(sitio.lat, sitio.lon);
+    // Tooltip verde con el nombre sobre el pin de la parada en el mapa.
+    if (typeof MapModule.abrirTooltipParada === 'function') {
+      MapModule.abrirTooltipParada(String(sitio.id), sitio.nombre);
+    }
 
     const distTxt = sitio.distanciaRutaKm != null
       ? `A ${sitio.distanciaRutaKm.toFixed(1)} km del corredor · ~${Math.round(sitio.tiempoDesvioMin)} min de desvío`
@@ -899,6 +907,10 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
     const map = MapModule.getMap();
     if (map) map.closePopup();
     MapModule.centrarEn(escala.lat, escala.lon);
+    // Tooltip con el nombre sobre el pin del pueblo intermedio.
+    if (typeof MapModule.abrirTooltipEscala === 'function') {
+      MapModule.abrirTooltipEscala(String(escala.id), escala.nombre);
+    }
 
     const btnCambiar = {
       etiqueta: 'Cambiar pueblo intermedio',
@@ -942,6 +954,10 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
     const map = MapModule.getMap();
     if (map) map.closePopup();
     MapModule.centrarEn(extremo.lat, extremo.lon);
+    // Tooltip sobre el pin A/Z del extremo en el mapa.
+    if (typeof MapModule.abrirTooltipExtremo === 'function') {
+      MapModule.abrirTooltipExtremo(tipo);
+    }
 
     const btnCambiar = {
       etiqueta: tipo === 'origen' ? 'Cambiar lugar de origen' : 'Cambiar lugar de destino',
@@ -1114,7 +1130,7 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
         const coords = state.municipios
           .filter((m) => m.departamento === item.nombre && m.lat != null && m.lon != null && !isNaN(Number(m.lat)) && !isNaN(Number(m.lon)))
           .map((m) => [Number(m.lat), Number(m.lon)]);
-        if (coords.length >= 2) MapModule.encuadrar(coords, [40, 40]);
+        if (coords.length >= 2) if (typeof MapModule.encuadrarVisible === 'function') { MapModule.encuadrarVisible(coords); } else { MapModule.encuadrar(coords, [40, 40]); }
         else MapModule.centrarEn(Number(item.lat), Number(item.lon), 9);
       } else {
         MapModule.centrarEn(Number(item.lat), Number(item.lon), 12);
@@ -1165,6 +1181,12 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
   function _mostrarSitiosTurísticos(item, tipo) {
     const lat = Number(item.lat);
     const lng = Number(item.lon);
+    // Este municipio/departamento queda como ORIGEN del listado: pin naranja
+    // fijo en el mapa + contexto para el recorrido independiente.
+    if (typeof MapModule !== 'undefined' && typeof MapModule.fijarPinOrigen === 'function') {
+      MapModule.fijarPinOrigen(lat, lng);
+    }
+    try { state.origenSitios = { lat, lon: lng, nombre: item.nombre || 'Origen' }; } catch (e) {}
     // Contexto para la barra de radio del mapa: la X restaurará este listado.
     if (typeof MapModule !== 'undefined' && typeof MapModule.iniciarBusquedaSitios === 'function') {
       MapModule.iniciarBusquedaSitios(lat, lng);
@@ -1212,7 +1234,7 @@ let _infraSnapshot = null; // [{ id, tipo, nombre, sub, sufijo, rio, activa, idx
     if (el.btnTabDescubre) el.btnTabDescubre.hidden = false;
     if (el.btnTabPanelDescubre) el.btnTabPanelDescubre.disabled = false;
     if (el.btnTabDescubre) el.btnTabDescubre.disabled = false;
-    // Barra de filtro por radio (la misma del clic derecho → buscar sitios).
+    // Barra de filtro por radio (la misma del clic derecho ↑ buscar sitios).
     if (typeof MapModule !== 'undefined' && typeof MapModule.mostrarBarraBuscarSitios === 'function') {
       MapModule.mostrarBarraBuscarSitios(lat, lng);
     }

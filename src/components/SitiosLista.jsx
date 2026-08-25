@@ -86,10 +86,18 @@ function TextoDistancia({ sitio }) {
 
 /** Tarjeta de un sitio en el listado de Descubre (mismo DOM que
  *  js/descubre.js:crearTarjetaSitio). El clic en la fila previsualiza la ruta
- *  hacia el sitio; el botón agrega/quita el sitio de la ruta. */
+ *  hacia el sitio; el botón agrega/quita el sitio de la ruta; el botón del
+ *  vehículo calcula y dibuja un recorrido independiente desde el origen. */
 function SitioCard({ sitio, numero, esParada }) {
   const liRef = useRef(null);
   const btnRef = useRef(null);
+  const recorridoRef = useRef(null);
+
+  // Ícono del vehículo elegido por el usuario (car.svg por defecto).
+  const tVehiculo = w.TransportConfigModule;
+  const iconoVehiculo = (tVehiculo && typeof tVehiculo.iconoPath === 'function')
+    ? tVehiculo.iconoPath()
+    : '/rutas-simbiosis/icons/car.svg';
 
   const accionBoton = (e) => {
     e.stopPropagation();
@@ -99,6 +107,13 @@ function SitioCard({ sitio, numero, esParada }) {
       }
     } else if (typeof w.agregarParada === 'function') {
       w.agregarParada(sitio, btnRef.current);
+    }
+  };
+
+  const accionRecorrido = (e) => {
+    e.stopPropagation();
+    if (typeof w.mostrarRecorridoASitio === 'function') {
+      w.mostrarRecorridoASitio(sitio, recorridoRef.current);
     }
   };
 
@@ -120,6 +135,29 @@ function SitioCard({ sitio, numero, esParada }) {
           <span className="sitio-card__num">{numero}.</span>&nbsp;{sitio.nombre}
         </span>
         <div className="sitio-card__top-right">
+          <button
+            ref={recorridoRef}
+            type="button"
+            className="sitio-card__recorrido"
+            title="Mostrar recorrido hasta aquí"
+            aria-label={'Mostrar recorrido hasta ' + sitio.nombre}
+            onClick={accionRecorrido}
+          >
+            <span
+              className="icon-btn__icon sitio-card__recorrido-ico"
+              style={{
+                WebkitMaskImage: "url('" + iconoVehiculo + "')",
+                maskImage: "url('" + iconoVehiculo + "')",
+                WebkitMaskRepeat: 'no-repeat',
+                maskRepeat: 'no-repeat',
+                WebkitMaskPosition: 'center',
+                maskPosition: 'center',
+                WebkitMaskSize: 'contain',
+                maskSize: 'contain',
+              }}
+            />
+            <span className="icon-btn__spinner" aria-hidden="true"></span>
+          </button>
           <button
             ref={btnRef}
             type="button"
